@@ -1,4 +1,7 @@
 
+;; helper function to get bytes of an account
+(define-private (principal-to-bytes (p principal))  (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
+
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -27,4 +30,5 @@
 ;; The minimum delay required between rotations
 (define-data-var minimum-rotation-delay uint u0)
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
+
 

@@ -6,8 +6,11 @@ telemetry = true
 requirements = []
 cache_dir = "./.cache"
 boot_contracts = ["pox", "costs-v2", "bns"]
+
 [contracts.gateway]
 path = "contracts/gateway.clar"
+clarity_version = 2
+epoch = 2.5
 
 [repl]
 costs_version = 2
