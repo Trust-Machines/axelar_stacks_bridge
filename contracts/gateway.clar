@@ -1,7 +1,10 @@
+(define-constant INVALID-SIGNERS-DATA (err u101))
+(define-constant INVALID-SIGNERS (err u201))
+(define-constant INVALID-SIGNER-WEIGHT (err u206))
+(define-constant INVALID-SIGNER-ORDER (err u211))
+(define-constant INVALID-SIGNERS-THRESHOLD (err u218))
 
-;; helper function to get bytes of an account
-(define-private (principal-to-bytes (p principal))  (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
-
+(define-constant NULL-ADDRESS 'SP000000000000000000002Q6VF78)
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -31,4 +34,41 @@
 (define-data-var minimum-rotation-delay uint u0)
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
 
+;; helper function to get bytes of an account
+(define-private (principal-to-bytes (p principal))  (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
 
+(define-private (get-signer-weight (signer {signer: principal, weight: uint})) (get weight signer))
+
+(define-data-var prev-signer principal NULL-ADDRESS)
+
+(define-private (reset-prev-signer) (var-set prev-signer NULL-ADDRESS))
+
+(define-private (validate-signer (signer {signer: principal, weight: uint})) 
+    (begin 
+       (asserts! (> (get weight signer) u0) INVALID-SIGNER-WEIGHT)
+       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get prev-signer))) INVALID-SIGNER-ORDER)
+       (var-set prev-signer (get signer signer))
+       (ok true)
+    )
+)
+
+(define-private (validate-signers (new-signers-data (buff 1024))) 
+    (let
+        (
+            (new-signers (unwrap! (from-consensus-buff? { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            } new-signers-data) INVALID-SIGNERS-DATA) )
+            (signers (get signers new-signers))
+            (threshold (get threshold new-signers))
+            (total-weight (fold + (map get-signer-weight signers) u0))
+        )
+        (asserts! (> (len signers) u0)  INVALID-SIGNERS)
+        (asserts! (> threshold u0) INVALID-SIGNERS-THRESHOLD)
+        (asserts! (>= total-weight threshold) INVALID-SIGNERS-THRESHOLD)
+        (map validate-signer signers)
+        (reset-prev-signer)
+        (ok u1)
+    )
+)
