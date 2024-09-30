@@ -7,6 +7,7 @@
 (define-constant INVALID-SIGNERS-THRESHOLD (err u218))
 (define-constant INVALID-SIGNERS-THRESHOLD-MISMATCH (err u223))
 (define-constant INSUFFICIENT-ROTATION-DELAY (err u231))
+(define-constant DUPLICATE-SIGNERS (err u261))
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -60,14 +61,13 @@
 )
 
 ;; This function checks if the provided signers are valid
-(define-private (validate-signers (new-signers-data (buff 1024))) 
-    (let
-        (
-            (new-signers (unwrap! (from-consensus-buff? { 
+(define-private (validate-signers (new-signers { 
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
-            } new-signers-data) INVALID-SIGNERS-DATA) )
+            })) 
+    (let
+        (
             (signers (get signers new-signers))
             (threshold (get threshold new-signers))
             (total-weight (fold + (map get-signer-weight signers) u0))
@@ -93,3 +93,26 @@
         (ok u1)
     )
 )
+
+(define-private (rotate-signers-inner (new-signers-data (buff 1024)) (enforce-rotation-delay bool)) 
+    (let 
+        (
+            (new-signers (unwrap! (from-consensus-buff? { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            } new-signers-data) INVALID-SIGNERS-DATA) )
+            (new-signers-hash (keccak256 new-signers-data))
+            (new-epoch (+ (var-get epoch) u1))
+        )
+        (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) DUPLICATE-SIGNERS)
+        (try! (validate-signers new-signers))
+        (try! (update-rotation-timestamp enforce-rotation-delay))
+        (var-set epoch new-epoch)
+        (map-set signer-hash-by-epoch new-epoch new-signers-hash)
+        (map-set epoch-by-signer-hash new-signers-hash new-epoch)
+        (print {action: "rotate-signers", new-epoch: new-epoch, new-signers-hash: new-signers-hash, new-signers-data: new-signers-data})
+        (ok u1)
+    )
+)
+
