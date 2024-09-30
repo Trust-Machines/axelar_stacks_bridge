@@ -17,7 +17,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal)) 
     (begin
-        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq tx-sender (var-get operator)) ERR-ONLY-OPERATOR)
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
         (ok u1)
