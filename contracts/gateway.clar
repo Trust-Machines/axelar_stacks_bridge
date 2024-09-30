@@ -139,7 +139,7 @@
                 threshold: uint, 
                 nonce: (buff 32) 
             } new-signers-data) ERR-SIGNERS-DATA))
-            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers { type: "RotateSigners"})))))
+            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers { type: "rotate-signers"})))))
         )
         (ok u1)
     )
