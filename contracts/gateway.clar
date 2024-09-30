@@ -1,13 +1,13 @@
 (define-constant NULL-ADDRESS 'SP000000000000000000002Q6VF78)
 
-(define-constant INVALID-SIGNERS-DATA (err u101))
-(define-constant INVALID-SIGNERS (err u201))
-(define-constant INVALID-SIGNER-WEIGHT (err u206))
-(define-constant INVALID-SIGNER-ORDER (err u211))
-(define-constant INVALID-SIGNERS-THRESHOLD (err u218))
-(define-constant INVALID-SIGNERS-THRESHOLD-MISMATCH (err u223))
-(define-constant INSUFFICIENT-ROTATION-DELAY (err u231))
-(define-constant DUPLICATE-SIGNERS (err u261))
+(define-constant ERR-SIGNERS-DATA (err u101))
+(define-constant ERR-SIGNERS-LEN (err u201))
+(define-constant ERR-SIGNER-WEIGHT (err u206))
+(define-constant ERR-SIGNER-ORDER (err u211))
+(define-constant ERR-SIGNERS-THRESHOLD (err u218))
+(define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u223))
+(define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u231))
+(define-constant ERR-DUPLICATE-SIGNERS (err u261))
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -52,9 +52,9 @@
 ;; Validates a particular signer
 (define-private (validate-signer (signer {signer: principal, weight: uint})) 
     (begin 
-       (asserts! (> (get weight signer) u0) INVALID-SIGNER-WEIGHT)
+       (asserts! (> (get weight signer) u0) ERR-SIGNER-WEIGHT)
        ;; signers need to be in strictly increasing order
-       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get prev-signer))) INVALID-SIGNER-ORDER)
+       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get prev-signer))) ERR-SIGNER-ORDER)
        (var-set prev-signer (get signer signer))
        (ok true)
     )
@@ -72,9 +72,9 @@
             (threshold (get threshold new-signers))
             (total-weight (fold + (map get-signer-weight signers) u0))
         )
-        (asserts! (> (len signers) u0)  INVALID-SIGNERS)
-        (asserts! (> threshold u0) INVALID-SIGNERS-THRESHOLD)
-        (asserts! (>= total-weight threshold) INVALID-SIGNERS-THRESHOLD-MISMATCH)
+        (asserts! (> (len signers) u0) ERR-SIGNERS-LEN)
+        (asserts! (> threshold u0) ERR-SIGNERS-THRESHOLD)
+        (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
         (map validate-signer signers)
         (reset-prev-signer)
         (ok u1)
@@ -88,7 +88,7 @@
             (last-rotation-timestamp_ (var-get last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time block-height)))
         )
-        (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) INSUFFICIENT-ROTATION-DELAY))
+        (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) ERR-INSUFFICIENT-ROTATION-DELAY))
         (var-set last-rotation-timestamp current-ts)
         (ok u1)
     )
@@ -101,11 +101,11 @@
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
-            } new-signers-data) INVALID-SIGNERS-DATA) )
+            } new-signers-data) ERR-SIGNERS-DATA) )
             (new-signers-hash (keccak256 new-signers-data))
             (new-epoch (+ (var-get epoch) u1))
         )
-        (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) DUPLICATE-SIGNERS)
+        (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
         (try! (validate-signers new-signers))
         (try! (update-rotation-timestamp enforce-rotation-delay))
         (var-set epoch new-epoch)
@@ -116,3 +116,8 @@
     )
 )
 
+(define-public (rotate-signers (new-signers-data (buff 1024)) (proof-data (buff 1024))) 
+    (begin
+        (ok u1)
+    )
+)
