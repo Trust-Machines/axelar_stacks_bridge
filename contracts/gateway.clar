@@ -2,6 +2,7 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u20))
 (define-constant ERR-SIGNERS-DATA (err u101))
+(define-constant ERR-PROOF-DATA (err u106))
 (define-constant ERR-SIGNERS-LEN (err u201))
 (define-constant ERR-SIGNER-WEIGHT (err u206))
 (define-constant ERR-SIGNER-ORDER (err u211))
@@ -139,6 +140,14 @@
                 threshold: uint, 
                 nonce: (buff 32) 
             } new-signers-data) ERR-SIGNERS-DATA))
+             (proof (unwrap! (from-consensus-buff? { 
+                weighted-signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 64))
+            } new-signers-data) ERR-PROOF-DATA))
             (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers { type: "rotate-signers"})))))
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
         )
