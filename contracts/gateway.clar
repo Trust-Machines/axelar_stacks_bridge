@@ -140,7 +140,10 @@
                 nonce: (buff 32) 
             } new-signers-data) ERR-SIGNERS-DATA))
             (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers { type: "rotate-signers"})))))
+            (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
         )
+        ;; TODO: _validateProof
+        (try! (rotate-signers-inner new-signers-data enforce-rotation-delay))
         (ok u1)
     )
 )
