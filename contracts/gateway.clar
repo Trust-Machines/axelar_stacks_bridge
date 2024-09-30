@@ -1,5 +1,6 @@
 (define-constant NULL-ADDRESS 'SP000000000000000000002Q6VF78)
 
+(define-constant ERR-ONLY-OPERATOR (err u20))
 (define-constant ERR-SIGNERS-DATA (err u101))
 (define-constant ERR-SIGNERS-LEN (err u201))
 (define-constant ERR-SIGNER-WEIGHT (err u206))
@@ -8,6 +9,20 @@
 (define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u223))
 (define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u231))
 (define-constant ERR-DUPLICATE-SIGNERS (err u261))
+
+;; Operator
+(define-data-var operator principal tx-sender)
+(define-read-only (get-operator) (var-get operator))
+
+;; Transfers operatorship to a new account
+(define-public (transfer-operatorship (new-operator principal)) 
+    (begin
+        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
+        (var-set operator new-operator)
+        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (ok u1)
+    )
+)
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
