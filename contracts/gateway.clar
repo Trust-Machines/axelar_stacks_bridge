@@ -101,7 +101,7 @@
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
-            } new-signers-data) ERR-SIGNERS-DATA) )
+            } new-signers-data) ERR-SIGNERS-DATA))
             (new-signers-hash (keccak256 new-signers-data))
             (new-epoch (+ (var-get epoch) u1))
         )
@@ -117,7 +117,15 @@
 )
 
 (define-public (rotate-signers (new-signers-data (buff 1024)) (proof-data (buff 1024))) 
-    (begin
+    (let 
+        (
+            (new-signers (unwrap! (from-consensus-buff? { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            } new-signers-data) ERR-SIGNERS-DATA))
+            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers { type: "RotateSigners"})))))
+        )
         (ok u1)
     )
 )
