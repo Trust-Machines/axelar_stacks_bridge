@@ -6,6 +6,7 @@
 (define-constant INVALID-SIGNER-ORDER (err u211))
 (define-constant INVALID-SIGNERS-THRESHOLD (err u218))
 (define-constant INVALID-SIGNERS-THRESHOLD-MISMATCH (err u223))
+(define-constant INSUFFICIENT-ROTATION-DELAY (err u231))
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -76,6 +77,19 @@
         (asserts! (>= total-weight threshold) INVALID-SIGNERS-THRESHOLD-MISMATCH)
         (map validate-signer signers)
         (reset-prev-signer)
+        (ok u1)
+    )
+)
+
+;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
+(define-private (update-rotation-timestamp (enforce-rotation-delay bool)) 
+    (let   
+        (
+            (last-rotation-timestamp_ (var-get last-rotation-timestamp))
+            (current-ts (unwrap-panic (get-block-info? time block-height)))
+        )
+        (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) INSUFFICIENT-ROTATION-DELAY))
+        (var-set last-rotation-timestamp current-ts)
         (ok u1)
     )
 )
