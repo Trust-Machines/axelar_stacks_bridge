@@ -10,6 +10,7 @@
 (define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u223))
 (define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u231))
 (define-constant ERR-DUPLICATE-SIGNERS (err u261))
+(define-constant ERR-SIGNERS-RETENTION (err u271))
 
 ;; Operator
 (define-data-var operator principal tx-sender)
@@ -141,7 +142,7 @@
                 nonce: (buff 32) 
             } new-signers-data) ERR-SIGNERS-DATA))
              (proof (unwrap! (from-consensus-buff? { 
-                weighted-signers: {
+                signers: {
                     signers: (list 32 {signer: principal, weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
@@ -156,3 +157,73 @@
         (ok u1)
     )
 )
+
+(define-read-only (message-hash-to-sign (signers-hash (buff 64)) (data-hash (buff 64))) 
+    (keccak256 
+        (concat 
+            (unwrap-panic (to-consensus-buff? "Stacks Signed Message")) 
+            (concat 
+                (var-get domain-separator)
+                (concat 
+                    signers-hash 
+                    data-hash
+                )
+            )
+        )
+    )
+)
+
+;; This function takes dataHash and proof data and reverts if proof is invalid
+(define-private (validate-proof (data-hash (buff 1044)) (proof { 
+                signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 32))
+            })) 
+    (let 
+        (
+            (signers (get signers proof))
+            (signers-hash (keccak256 (unwrap-panic (to-consensus-buff? signers))))
+            (signer-epoch (default-to u0 (map-get? epoch-by-signer-hash signers-hash)))
+            (current-epoch (var-get epoch))
+            (is-latest-signers (is-eq signer-epoch current-epoch))
+        ) 
+
+        (and 
+            (or 
+                (is-eq signer-epoch u0) 
+                (> (- current-epoch signer-epoch) (var-get previous-signers-retention))
+            ) 
+            (asserts! (is-eq 0 1) ERR-SIGNERS-RETENTION)
+        )
+
+        (ok u1)
+    )
+)
+
+
+(define-data-var message-hash-to-verify (buff 32) 0x00)
+(define-private (reset-message-hash-to-verify) (var-set message-hash-to-verify 0x00))
+
+(define-private (verify-signature (signature (buff 64))) 
+    (secp256k1-recover? (var-get message-hash-to-verify) signature)      
+)
+
+(define-private (validate-signatures 
+                (message-hash (buff 32)) 
+                (weighted-signers {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                })
+                (signatures (list 32 (buff 64)))
+) 
+    (begin 
+        (var-set message-hash-to-verify message-hash)
+        (map verify-signature signatures)
+        (reset-message-hash-to-verify)
+    )
+)
+
