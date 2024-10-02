@@ -205,10 +205,39 @@
 
 
 (define-data-var message-hash-to-verify (buff 32) 0x00)
-(define-private (reset-message-hash-to-verify) (var-set message-hash-to-verify 0x00))
+(define-data-var weighted-signers-to-verify (list 32 {signer: principal, weight: uint}) (list))
 
-(define-private (verify-signature (signature (buff 64))) 
-    (secp256k1-recover? (var-get message-hash-to-verify) signature)      
+(define-read-only (signature-to-address (signature (buff 64))) 
+    (ok (unwrap! (from-consensus-buff? principal (unwrap! (secp256k1-recover? (var-get message-hash-to-verify) signature) (err u123))) (err u234)))
+)
+
+(define-read-only (unwrap-address-response (p (response principal uint)))
+    (unwrap-panic p)
+)
+
+
+(define-data-var temp-address principal NULL-ADDRESS)
+
+(define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-address) (get signer signer)))
+
+(define-private (accumulate-weights (address principal) (accumulator uint))
+    (begin 
+       (var-set temp-address address)
+       (let 
+            (
+                (signer (element-at? (filter is-the-signer (var-get weighted-signers-to-verify)) u0)) 
+            )
+            (if (is-some signer) 
+                  (let 
+                    (
+                        (signer-weight (unwrap-panic (get weight signer)))
+                    )
+                    (+ accumulator signer-weight)
+                  )
+                  accumulator
+            )
+       )
+    )
 )
 
 (define-private (validate-signatures 
@@ -222,8 +251,14 @@
 ) 
     (begin 
         (var-set message-hash-to-verify message-hash)
-        (map verify-signature signatures)
-        (reset-message-hash-to-verify)
+        (let  
+            (
+                (principals (map unwrap-address-response (map signature-to-address signatures)))
+                (total-weight (fold accumulate-weights principals u0))
+            )
+            (var-set message-hash-to-verify 0x00)
+            (asserts! (>= total-weight (get threshold weighted-signers)) (err u111))
+            (ok u1) 
+        )
     )
 )
-
