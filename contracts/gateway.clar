@@ -215,7 +215,6 @@
     (unwrap-panic p)
 )
 
-
 (define-data-var temp-address principal NULL-ADDRESS)
 
 (define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-address) (get signer signer)))
