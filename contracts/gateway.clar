@@ -227,6 +227,7 @@
             (
                 (signer (element-at? (filter is-the-signer (var-get weighted-signers-to-verify)) u0)) 
             )
+            (var-set temp-address NULL-ADDRESS)
             (if (is-some signer) 
                   (let 
                     (
@@ -251,12 +252,14 @@
 ) 
     (begin 
         (var-set message-hash-to-verify message-hash)
+        (var-set weighted-signers-to-verify (get signers weighted-signers))
         (let  
             (
                 (principals (map unwrap-address-response (map signature-to-address signatures)))
                 (total-weight (fold accumulate-weights principals u0))
             )
             (var-set message-hash-to-verify 0x00)
+            (var-set weighted-signers-to-verify (list))
             (asserts! (>= total-weight (get threshold weighted-signers)) (err u111))
             (ok u1) 
         )
