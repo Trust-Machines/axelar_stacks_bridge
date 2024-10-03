@@ -1,4 +1,4 @@
-## Interface
+## Gateway Interface
 
 ```clarity
 (define-public (call-contract 
