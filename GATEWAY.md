@@ -10,14 +10,10 @@
 
 ```clarity
 (define-public (approve-messages 
-    (messages (buff 4096)) 
-    (proof (buff 7168))
+    (messages (buff 4096)) ;; Serialized data from Messages type
+    (proof (buff 7168)) ;; Serialized data from Proof type
 )
 ```
-
-`messages` gets parsed into a [Message](#message) list of max 10 items.
-
-`proof` gets parsed into [Proof](#proof) type
 
 
 ```clarity
@@ -48,34 +44,25 @@
 
 ```clarity
 (define-public (rotate-signers 
-    (new-signers (buff 4096))
-    (proof (buff 7168))
+    (new-signers (buff 4096)) ;; Serialized data from Signers type
+    (proof (buff 7168)) ;; Serialized data from Proof type
 )
 ```
 
 ## Types
 
-### Message 
-<a name="message-type"></a>
+### Messages
 ```clarity
-{
-    source-chain: (buff 18),
-    message-id: (buff 32),
-    source-address: (buff 96),
-    contract-address: (buff 96),
-    payload-hash: (buff 32)
-}
+    (list 10 {
+        source-chain: (buff 18),
+        message-id: (buff 32),
+        source-address: (buff 96),
+        contract-address: (buff 96),
+        payload-hash: (buff 32)
+    })
 ```
 
-### WeightedSigner
-```clarity
-{
-    signer: principal, 
-    weight: uint
-}
-```
-
-### WeightedSigners
+### Signers
 ```clarity
 { 
     signers: (list 32 {signer: principal, weight: uint}), 
@@ -85,7 +72,6 @@
 ```
 
 ### Proof 
-<a name="proof-type"></a>
 ```clarity
 { 
     signers: {
