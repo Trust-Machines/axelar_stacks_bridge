@@ -102,6 +102,36 @@ const messages = bufferCV(
 }
 ```
 
+Serialization example: 
+```js
+
+import { bufferCV, bufferCVFromString, listCV, principalCV, serializeCV, tupleCV, uintCV, bufferFromAscii, bufferFromHex  } from "@stacks/transactions";
+
+
+const signers = bufferCV(
+    serializeCV(
+        tupleCV({
+            "signers": listCV([
+                tupleCV({
+                    "signer": principalCV("SP31SWB58Q599WE8YP6BEJP3XD3QMBJJ7534HSCZV"),
+                    "weight": uintCV(1)
+                    }),
+                    tupleCV({
+                        "signer": principalCV("SP1H6WMP29RXTQQCB3QSA146P6SR7G59BVHTTKWCC"),
+                        "weight": uintCV(2)
+                    }),
+                    tupleCV({
+                        "signer": principalCV("SP1N6CA5FQPE8PH1MK074YA8XQJZYPS8D56GKS9W6"),
+                        "weight": uintCV(2)
+                    }),
+                ]),
+                "threshold": uintCV(3),
+                "nonce": bufferFromHex("11228e4ef3805b921c2a5062537ebcb8bff5635c72f5ec6950c8c37c0cad8669")
+            })
+        )
+    );
+```
+
 ### Proof 
 ```clarity
 { 
