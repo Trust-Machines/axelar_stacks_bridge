@@ -186,8 +186,8 @@ const proof = bufferCV(
 ```clarity
 {
     type: "contract-call",
-    sender: string,
-    destination-chain: (buff 18)
+    sender: principal,
+    destination-chain: (buff 18),
     destination-contract-address: (buff 96),
     payload-hash: (buff 32),
     payload: (buff 10240)
