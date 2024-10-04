@@ -150,6 +150,8 @@ const signers = bufferCV(
 Serialization example: 
 
 ```js
+import { bufferCV, bufferCVFromString, listCV, principalCV, serializeCV, tupleCV, uintCV, bufferFromAscii, bufferFromHex } from "@stacks/transactions";
+
 const proof = bufferCV(
     serializeCV(
         tupleCV({
