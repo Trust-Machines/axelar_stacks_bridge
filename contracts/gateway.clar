@@ -3,14 +3,14 @@
 (define-public (call-contract 
     (destination-chain (buff 18)) 
     (destination-contract-address (buff 96)) 
-    (call-data (buff 10240))
+    (payload (buff 10240))
 ) 
     (ok true)
 )
 
 (define-public (approve-messages 
-    (messages-data (buff 4096)) 
-    (proof-data (buff 7168))
+    (messages (buff 4096)) 
+    (proof (buff 7168))
 )
     (ok true)
 )
@@ -42,8 +42,8 @@
 )
 
 (define-public (rotate-signers 
-    (new-signers-data (buff 4096))
-    (proof-data (buff 7168))
+    (new-signers (buff 4096))
+    (proof (buff 7168))
 )
     (ok true)
 )
