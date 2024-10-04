@@ -109,7 +109,6 @@ Serialization example:
 
 import { bufferCV, bufferCVFromString, listCV, principalCV, serializeCV, tupleCV, uintCV, bufferFromAscii, bufferFromHex  } from "@stacks/transactions";
 
-
 const signers = bufferCV(
     serializeCV(
         tupleCV({
