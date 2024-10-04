@@ -12,8 +12,8 @@
 
 ```clarity
 (define-public (approve-messages 
-    (messages (buff 4096)) ;; Serialized data from Messages type
-    (proof (buff 7168)) ;; Serialized data from Proof type
+    (messages (buff 4096)) ;; Serialized buff data from Messages type
+    (proof (buff 7168)) ;; Serialized buff data from Proof type
 )
 ```
 
@@ -46,8 +46,8 @@
 
 ```clarity
 (define-public (rotate-signers 
-    (new-signers (buff 4096)) ;; Serialized data from Signers type
-    (proof (buff 7168)) ;; Serialized data from Proof type
+    (new-signers (buff 4096)) ;; Serialized buff data from Signers type
+    (proof (buff 7168)) ;; Serialized buff data from Proof type
 )
 ```
 
