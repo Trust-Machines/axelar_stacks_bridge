@@ -79,13 +79,13 @@ const messages = bufferCV(
                 "contract-address": bufferFromHex("000F9B4FF55aFcC3C4f9f325EE890c0C806E8FCC"),
                 "payload-hash": bufferFromHex("0ceb6cf5466ce364a10d9e045726eb10f01667b8c0a1293ae4ae43baee439833")
                 }),
-                tupleCV({
-                    "source-chain": bufferCVFromString("ethereum"),
-                    "message-id": bufferFromHex("fe0d2393e76ea487217b1606aff64535f8526a00e007704f8391fa41c78fb451"),
-                    "source-address": bufferFromHex("000E91D671C29c2DBBc81D16adA4a8bDd6fE518F"),
-                    "contract-address": bufferFromHex("000D56AA59a39557B62584CEEaF00a55d426E3a3"),
-                    "payload-hash": bufferFromHex("dab0a0dbe44a3789aab44865f310d59df48c068855d112686bd6359d737aa422")
-                })
+            tupleCV({
+                "source-chain": bufferCVFromString("ethereum"),
+                "message-id": bufferFromHex("fe0d2393e76ea487217b1606aff64535f8526a00e007704f8391fa41c78fb451"),
+                "source-address": bufferFromHex("000E91D671C29c2DBBc81D16adA4a8bDd6fE518F"),
+                "contract-address": bufferFromHex("000D56AA59a39557B62584CEEaF00a55d426E3a3"),
+                "payload-hash": bufferFromHex("dab0a0dbe44a3789aab44865f310d59df48c068855d112686bd6359d737aa422")
+            })
             ]
         )
     )
