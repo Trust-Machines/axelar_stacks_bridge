@@ -127,9 +127,10 @@ const signers = bufferCV(
                 ]),
                 "threshold": uintCV(3),
                 "nonce": bufferFromHex("11228e4ef3805b921c2a5062537ebcb8bff5635c72f5ec6950c8c37c0cad8669")
-            })
+            }
         )
-    );
+    )
+)
 ```
 
 ### Proof 
