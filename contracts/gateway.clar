@@ -255,7 +255,7 @@
 
 
 ;; This function takes message-hash and proof data and reverts if proof is invalid
-;; The signers and signatures should be sorted by signer address in ascending order
+;; The signers and signatures should be sorted by signer address in ascending order: < TODO this
 ;; @param message-hash; The hash of the message that was signed
 ;; @param signers; The weighted signers
 ;; @param signatures The sorted signatures data
@@ -282,6 +282,7 @@
             ;; reset temp vars
             (var-set temp-message-hash 0x00)
             (var-set temp-signers (list))
+            (var-set temp-principal NULL-ADDRESS)
             ;; total-weight must be bigger than the signers threshold 
             (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
             (ok true) 
