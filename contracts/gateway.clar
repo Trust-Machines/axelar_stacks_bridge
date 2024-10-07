@@ -92,8 +92,10 @@
 (define-data-var minimum-rotation-delay uint u0)
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
 
-;; A principal typed helper var to use within loops
-(define-data-var temp-principal principal NULL-ADDRESS)
+;; Helper vars to use within loops
+(define-data-var temp-account principal NULL-ADDRESS)
+(define-data-var temp-hash (buff 32) 0x00)
+(define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
 
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domainSeparator`, `signersHash`, and `dataHash`.
@@ -150,10 +152,21 @@
     (begin 
        ;; signer weight must be bigger than zero
        (asserts! (> (get weight signer) u0) ERR-SIGNER-WEIGHT)
-       ;; signers need to be in strictly increasing order
-       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get temp-principal))) ERR-SIGNERS-ORDER)
        ;; save this signer in order to do comparison with the next signer
-       (var-set temp-principal (get signer signer))
+       (var-set temp-account (get signer signer))
+       (ok true)
+    )
+)
+
+;; Validates signer order
+;; @param signer; Signer to validate
+;; @returns (response true) or reverts
+(define-private (validate-signer-order (signer {signer: principal, weight: uint})) 
+    (begin 
+       ;; signers need to be in strictly increasing order
+       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get temp-account))) ERR-SIGNERS-ORDER)
+       ;; save this signer in order to do comparison with the next signer
+       (var-set temp-account (get signer signer))
        (ok true)
     )
 )
@@ -180,8 +193,9 @@
         (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
         ;; signer specific validations
         (map validate-signer signers_)
-        ;; reset temp principal
-        (var-set temp-principal NULL-ADDRESS)
+        (map validate-signer-order signers_)
+        ;; reset temp var
+        (var-set temp-account NULL-ADDRESS)
         (ok true)
     )
 )
@@ -193,69 +207,63 @@
 
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
 (define-constant ERR-INVALID-SIGNATURE-DATA-TYPE (err u3053))
-(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3056))
+(define-constant ERR-MALFORMED-SIGNATURES (err u3056))
+(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3058))
 
-
-;; Helper vars to use within loops
-(define-data-var temp-message-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
-
-;; This function recovers principal using the value stored in temp-message-hash and the signature provided
-;; @param signature;
-;; @returns (response principal) or reverts
-(define-read-only (signature-to-principal (signature (buff 65))) 
-    (ok 
-        (unwrap! 
-            (principal-of?
-                (unwrap! 
-                    (secp256k1-recover? (var-get temp-message-hash) signature)
-                    ERR-INVALID-SIGNATURE-DATA
-                )
-            )
-            ERR-INVALID-SIGNATURE-DATA-TYPE
-        )
-    )
-)
-
-;; A helper function to unwrap principal value from an ok response
-;; @param p; 
-;; @returns principal
-(define-read-only (unwrap-address-response (p (response principal uint)))
-    (unwrap-panic p)
-)
-
-;; Returns true if the address of the signer provided equals to the value stored in temp-principal
+;; Returns true if the address of the signer provided equals to the value stored in temp-account
 ;; @param signer;
 ;; @returns bool
-(define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-principal) (get signer signer)))
+(define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-account) (get signer signer)))
 
-;; This function accumulates weight of the signers that matches the provided address.
-;; @param address; the principal we are looking for
-;; @accumulator
-(define-private (accumulate-weights (address principal) (accumulator uint))
-    (begin 
-       (var-set temp-principal address)
+
+;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
+;; @param signature;
+;; @returns (response {signer: principal, weight: uint}) or reverts
+(define-private (signature-to-signer (signature (buff 65))) 
+    (let 
+       (
+            (address (unwrap! 
+                (principal-of?
+                    (unwrap! 
+                        (secp256k1-recover? (var-get temp-hash) signature)
+                        ERR-INVALID-SIGNATURE-DATA
+                    )
+                )
+                ERR-INVALID-SIGNATURE-DATA-TYPE
+            ))
+       )
+       (var-set temp-account address)
        (let 
             (
-                (signer (element-at? (filter is-the-signer (var-get temp-signers)) u0)) 
+                (signers (filter is-the-signer (var-get temp-signers)))
+                (signer (unwrap! (element-at? signers u0) ERR-MALFORMED-SIGNATURES))   
             )
-            (var-set temp-principal NULL-ADDRESS)
-            (if (is-some signer) 
-                  (let 
-                    (
-                        (signer-weight (unwrap-panic (get weight signer)))
-                    )
-                    (+ accumulator signer-weight)
-                  )
-                  accumulator
-            )
+            ;; there must be only one match
+            (asserts! (is-eq (len signers) u1) ERR-MALFORMED-SIGNATURES)
+            (ok signer)
        )
     )
 )
 
 
+;; A helper function to unwrap principal value from an ok response
+;; @param p; 
+;; @returns {signer: principal, weight: uint}
+(define-read-only (unwrap-signer (signer (response {signer: principal, weight: uint} uint)))
+    (unwrap-panic signer)
+)
+
+
+;; Accumulates weight of signers 
+;; @param signer
+;; @accumulator
+(define-private (accumulate-weights (signer {signer: principal, weight: uint}) (accumulator uint))
+    (+ accumulator (get weight signer))
+)
+
+
 ;; This function takes message-hash and proof data and reverts if proof is invalid
-;; The signers and signatures should be sorted by signer address in ascending order: < TODO this
+;; The signers and signatures should be sorted by signer address in ascending order
 ;; @param message-hash; The hash of the message that was signed
 ;; @param signers; The weighted signers
 ;; @param signatures The sorted signatures data
@@ -270,22 +278,26 @@
 )) 
     (begin 
         ;; Fill temp variables with data will be used in loops
-        (var-set temp-message-hash message-hash)
+        (var-set temp-hash message-hash)
         (var-set temp-signers (get signers signers))
         (let  
             (
-                ;; Convert signatures to principals and unwrap them
-                (principals (map unwrap-address-response (map signature-to-principal signatures)))
+                ;; Convert signatures to signers
+                (signers_ (map unwrap-signer (map signature-to-signer signatures)))
                 ;; Total weight of signatures provided
-                (total-weight (fold accumulate-weights principals u0))
+                (total-weight (fold accumulate-weights signers_ u0))
             )
-            ;; reset temp vars
-            (var-set temp-message-hash 0x00)
+            ;; Reset temp principal var
+            (var-set temp-account NULL-ADDRESS)
+            ;; Make sure order
+            (map validate-signer-order signers_)
+            ;; Reset temp vars
+            (var-set temp-hash 0x00)
             (var-set temp-signers (list))
-            (var-set temp-principal NULL-ADDRESS)
+            (var-set temp-account NULL-ADDRESS)
             ;; total-weight must be bigger than the signers threshold 
             (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
             (ok true) 
-        )
+        )    
     )
 )
