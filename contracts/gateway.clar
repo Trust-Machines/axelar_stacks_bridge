@@ -200,7 +200,7 @@
 (define-data-var temp-message-hash (buff 32) 0x00)
 (define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
 
-;; This function recovers principal from message-hash using the signature provided
+;; This function recovers principal using the value stored in temp-message-hash and the signature provided
 ;; @param signature;
 ;; @returns (response principal) or reverts
 (define-read-only (signature-to-principal (signature (buff 65))) 
@@ -217,15 +217,15 @@
     )
 )
 
-;; A helper function to unwrap principal from an ok response
+;; A helper function to unwrap principal value from an ok response
 ;; @param p; 
 ;; @returns principal
 (define-read-only (unwrap-address-response (p (response principal uint)))
     (unwrap-panic p)
 )
 
-;; Return true if the address of the signer provided equals to the value stored in temp-principal
-;; @param signer;;
+;; Returns true if the address of the signer provided equals to the value stored in temp-principal
+;; @param signer;
 ;; @returns bool
 (define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-principal) (get signer signer)))
 
@@ -269,6 +269,7 @@
                 (signatures (list 32 (buff 65))
 )) 
     (begin 
+        ;; Fill temp variables with data will be used in loops
         (var-set temp-message-hash message-hash)
         (var-set temp-signers (get signers signers))
         (let  
