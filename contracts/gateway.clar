@@ -1,5 +1,6 @@
 (impl-trait .traits.gateway-trait)
 
+(define-constant NULL-ADDRESS 'SP000000000000000000002Q6VF78)
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -57,9 +58,7 @@
     (ok true)
 )
 
-;; ***********************
-;; ** Weighted Multisig **
-;; ***********************
+;; # Weighted Multisig
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -93,7 +92,7 @@
 ;; Returns an Stacks Signed Message, created from `domainSeparator`, `signersHash`, and `dataHash`.
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
 ;; @param data-hash; The hash of the data
-;; @return (buff 32); The message hash to be signed
+;; @returns (buff 32); The message hash to be signed
 (define-read-only (message-hash-to-sign (signers-hash (buff 32)) (data-hash (buff 32))) 
     (keccak256 
         (concat 
@@ -114,4 +113,68 @@
     (proof (buff 7168))
 )
     (ok true)
+)
+
+;; ## Signers validation
+
+(define-constant ERR-SIGNERS-LEN (err u2051))
+(define-constant ERR-SIGNER-WEIGHT (err u2053))
+(define-constant ERR-SIGNERS-ORDER (err u2054))
+(define-constant ERR-SIGNERS-THRESHOLD (err u2055))
+(define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u2056))
+
+;; A helper fn to get bytes of an account
+;; @param p; The principal
+;; @returns (buff 20)
+(define-private (principal-to-bytes (p principal)) (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
+
+;; A principal typed helper var to use in loops
+(define-data-var temp-principal principal NULL-ADDRESS)
+
+;; Returns weight of a signer
+;; @param signer; Signer to validate
+;; @returns uint
+(define-private (get-signer-weight (signer {signer: principal, weight: uint})) (get weight signer))
+
+;; Validates a particular signer
+;; @param signer; Signer to validate
+;; @returns (response true) or reverts
+(define-private (validate-signer (signer {signer: principal, weight: uint})) 
+    (begin 
+       ;; signer weight must be bigger than zero
+       (asserts! (> (get weight signer) u0) ERR-SIGNER-WEIGHT)
+       ;; signers need to be in strictly increasing order
+       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get temp-principal))) ERR-SIGNERS-ORDER)
+       ;; save this signer in order to do comparison with the next signer
+       (var-set temp-principal (get signer signer))
+       (ok true)
+    )
+)
+
+;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
+;; @param new-signers; Signers to validate
+;; @returns (response true) or reverts
+(define-private (validate-signers (signers { 
+            signers: (list 32 {signer: principal, weight: uint}), 
+            threshold: uint, 
+            nonce: (buff 32) 
+        })) 
+    (let
+        (
+            (signers_ (get signers signers))
+            (threshold (get threshold signers))
+            (total-weight (fold + (map get-signer-weight signers_) u0))
+        )
+        ;; signers list must have at least one item
+        (asserts! (> (len signers_) u0) ERR-SIGNERS-LEN)
+        ;; threshold must be bigger than zero
+        (asserts! (> threshold u0) ERR-SIGNERS-THRESHOLD)
+        ;; total weight of signers must be bigger than the threshold
+        (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
+        ;; signer specific validations
+        (map validate-signer signers_)
+        ;; reset temp principal
+        (var-set temp-principal NULL-ADDRESS)
+        (ok true)
+    )
 )
