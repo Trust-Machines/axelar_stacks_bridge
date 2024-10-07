@@ -58,7 +58,11 @@
     (ok true)
 )
 
-;; # Weighted Multisig
+;; #########################
+;; #########################
+;; ### Weighted Multisig ###
+;; #########################
+;; #########################
 
 ;; Current signers epoch
 (define-data-var epoch uint u0)
@@ -88,6 +92,9 @@
 (define-data-var minimum-rotation-delay uint u0)
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
 
+;; A principal typed helper var to use within loops
+(define-data-var temp-principal principal NULL-ADDRESS)
+
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domainSeparator`, `signersHash`, and `dataHash`.
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
@@ -115,7 +122,10 @@
     (ok true)
 )
 
-;; ## Signers validation
+
+;; ##########################
+;; ### Signers validation ###
+;; ##########################
 
 (define-constant ERR-SIGNERS-LEN (err u2051))
 (define-constant ERR-SIGNER-WEIGHT (err u2053))
@@ -127,9 +137,6 @@
 ;; @param p; The principal
 ;; @returns (buff 20)
 (define-private (principal-to-bytes (p principal)) (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
-
-;; A principal typed helper var to use in loops
-(define-data-var temp-principal principal NULL-ADDRESS)
 
 ;; Returns weight of a signer
 ;; @param signer; Signer to validate
@@ -176,5 +183,107 @@
         ;; reset temp principal
         (var-set temp-principal NULL-ADDRESS)
         (ok true)
+    )
+)
+
+;; ############################
+;; ### Signature validation ###
+;; ############################
+
+
+(define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
+(define-constant ERR-INVALID-SIGNATURE-DATA-TYPE (err u3053))
+(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3056))
+
+
+;; Helper vars to use within loops
+(define-data-var temp-message-hash (buff 32) 0x00)
+(define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
+
+;; This function recovers principal from message-hash using the signature provided
+;; @param signature;
+;; @returns (response principal) or reverts
+(define-read-only (signature-to-principal (signature (buff 65))) 
+    (ok 
+        (unwrap! 
+            (principal-of?
+                (unwrap! 
+                    (secp256k1-recover? (var-get temp-message-hash) signature)
+                    ERR-INVALID-SIGNATURE-DATA
+                )
+            )
+            ERR-INVALID-SIGNATURE-DATA-TYPE
+        )
+    )
+)
+
+;; A helper function to unwrap principal from an ok response
+;; @param p; 
+;; @returns principal
+(define-read-only (unwrap-address-response (p (response principal uint)))
+    (unwrap-panic p)
+)
+
+;; Return true if the address of the signer provided equals to the value stored in temp-principal
+;; @param signer;;
+;; @returns bool
+(define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-principal) (get signer signer)))
+
+;; This function accumulates weight of the signers that matches the provided address.
+;; @param address; the principal we are looking for
+;; @accumulator
+(define-private (accumulate-weights (address principal) (accumulator uint))
+    (begin 
+       (var-set temp-principal address)
+       (let 
+            (
+                (signer (element-at? (filter is-the-signer (var-get temp-signers)) u0)) 
+            )
+            (var-set temp-principal NULL-ADDRESS)
+            (if (is-some signer) 
+                  (let 
+                    (
+                        (signer-weight (unwrap-panic (get weight signer)))
+                    )
+                    (+ accumulator signer-weight)
+                  )
+                  accumulator
+            )
+       )
+    )
+)
+
+
+;; This function takes message-hash and proof data and reverts if proof is invalid
+;; The signers and signatures should be sorted by signer address in ascending order
+;; @param message-hash; The hash of the message that was signed
+;; @param signers; The weighted signers
+;; @param signatures The sorted signatures data
+(define-private (validate-signatures 
+                (message-hash (buff 32)) 
+                (signers {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                })
+                (signatures (list 32 (buff 65))
+)) 
+    (begin 
+        (var-set temp-message-hash message-hash)
+        (var-set temp-signers (get signers signers))
+        (let  
+            (
+                ;; Convert signatures to principals and unwrap them
+                (principals (map unwrap-address-response (map signature-to-principal signatures)))
+                ;; Total weight of signatures provided
+                (total-weight (fold accumulate-weights principals u0))
+            )
+            ;; reset temp vars
+            (var-set temp-message-hash 0x00)
+            (var-set temp-signers (list))
+            ;; total-weight must be bigger than the signers threshold 
+            (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
+            (ok true) 
+        )
     )
 )
