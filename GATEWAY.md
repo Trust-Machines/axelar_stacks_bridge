@@ -216,19 +216,19 @@ const hex = "0x0c000000061164657374696e6174696f6e2d636861696e0200000008657468657
 
 const json = cvToJSON(deserialize(hex));
 
-console.log('type', json.value['type'].value);
-console.log('sender', json.value['sender'].value)
+console.log('type:', json.value['type'].value);
+console.log('sender:', json.value['sender'].value)
 console.log('destination-chain:', Buffer.from(json.value['destination-chain'].value.replace('0x', ''), 'hex').toString('ascii'))
 console.log('destination-contract-address:', Buffer.from(json.value['destination-contract-address'].value.replace('0x', ''), 'hex').toString('ascii'))
 console.log('payload:', Buffer.from(json.value['payload'].value.replace('0x', ''), 'hex').toString('ascii'))
 console.log('payload-hash:', json.value['payload-hash'].value)
 ```
 
-output
+output:
 
 ```
-type contract-call
-sender ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+type: contract-call
+sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
 destination-chain: ethereum
 destination-contract-address: 0x043E105189e15AC72252CFEF898EC3841A4A0561
 payload: loremipsum dolor sit amet
