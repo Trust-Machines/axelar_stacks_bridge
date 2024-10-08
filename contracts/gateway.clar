@@ -58,6 +58,27 @@
     (ok true)
 )
 
+;; ####################
+;; ####################
+;; ### Operatorship ###
+;; ####################
+;; ####################
+
+(define-constant ERR-ONLY-OPERATOR (err u1051))
+
+(define-data-var operator principal tx-sender)
+(define-read-only (get-operator) (var-get operator))
+
+;; Transfers operatorship to a new account
+(define-public (transfer-operatorship (new-operator principal)) 
+    (begin
+        (asserts! (is-eq tx-sender (var-get operator)) ERR-ONLY-OPERATOR)
+        (var-set operator new-operator)
+        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (ok u1)
+    )
+)
+
 ;; #########################
 ;; #########################
 ;; ### Weighted Multisig ###
@@ -312,7 +333,7 @@
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 32 (buff 32))
+                signatures: (list 32 (buff 65))
             })) 
     (let 
         (
@@ -345,7 +366,9 @@
 
 (define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u5051))
 (define-constant ERR-SIGNERS-DATA (err u5052))
+(define-constant ERR-PROOF-DATA (err u5052))
 (define-constant ERR-DUPLICATE-SIGNERS (err u5053))
+(define-constant ERR-NOT-LATEST-SIGNERS (err u5054))
 
 
 ;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
@@ -363,9 +386,61 @@
     )
 )
 
+;; Rotate the weighted signers, signed off by the latest Axelar signers.
+;; The minimum rotation delay is enforced by default, unless the caller is the gateway operator.
+;; The gateway operator allows recovery in case of an incorrect/malicious rotation, while still requiring a valid proof from a recent signer set.
+;; Rotation to duplicate signers is rejected.
+;; @param new-signers; The data for the new signers.
+;; @param proof; The proof signed by the Axelar verifiers for this command.
+;; @returns (response true) or reverts
 (define-public (rotate-signers 
     (new-signers (buff 4096))
     (proof (buff 7168))
 )
-    (ok true)
+    (let 
+        (
+            (signers (unwrap! (from-consensus-buff? { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            } new-signers) ERR-SIGNERS-DATA))
+            (proof_ (unwrap! (from-consensus-buff? { 
+                signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 65))
+            } proof) ERR-PROOF-DATA))
+            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: "rotate-signers"})))))
+            (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
+            (is-latest-signers (try! (validate-proof data-hash proof_)))
+        )
+        (and 
+            (is-eq enforce-rotation-delay true)
+            (is-eq is-latest-signers false) 
+            (asserts! (is-eq 0 1) ERR-NOT-LATEST-SIGNERS)
+        )
+
+        (let 
+            (
+                (new-signers-hash (keccak256 new-signers))
+                (new-epoch (+ (var-get epoch) u1))
+            )
+            (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
+            (try! (validate-signers signers))
+            (try! (update-rotation-timestamp enforce-rotation-delay))
+            (var-set epoch new-epoch)
+            (map-set signer-hash-by-epoch new-epoch new-signers-hash)
+            (map-set epoch-by-signer-hash new-signers-hash new-epoch)
+            
+            (print {
+                type: "signers-rotated",
+                epoch: new-epoch,
+                signers-hash: new-signers-hash, 
+                signers: new-signers
+            })
+            (ok true)
+        )
+    )
 )
