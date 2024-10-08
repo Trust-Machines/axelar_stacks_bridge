@@ -117,14 +117,6 @@
     )
 )
 
-(define-public (rotate-signers 
-    (new-signers (buff 4096))
-    (proof (buff 7168))
-)
-    (ok true)
-)
-
-
 ;; ##########################
 ;; ### Signers validation ###
 ;; ##########################
@@ -305,7 +297,7 @@
 
 ;; ########################
 ;; ### Proof validation ###
-;; #########################
+;; ########################
 
 (define-constant ERR-SIGNERS-RETENTION (err u4051))
 
@@ -342,7 +334,38 @@
         )
 
         (try! (validate-signatures message-hash signers (get signatures proof)))
-        
+
         (ok is-latest-signers)
     )
+)
+
+;; ########################
+;; ### Signer rotation ####
+;; ########################
+
+(define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u5051))
+(define-constant ERR-SIGNERS-DATA (err u5052))
+(define-constant ERR-DUPLICATE-SIGNERS (err u5053))
+
+
+;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
+;; @params enforce-rotation-delay
+;; @returns (response true) or reverts
+(define-private (update-rotation-timestamp (enforce-rotation-delay bool)) 
+    (let   
+        (
+            (last-rotation-timestamp_ (var-get last-rotation-timestamp))
+            (current-ts (unwrap-panic (get-block-info? time block-height)))
+        )
+        (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) ERR-INSUFFICIENT-ROTATION-DELAY))
+        (var-set last-rotation-timestamp current-ts)
+        (ok true)
+    )
+)
+
+(define-public (rotate-signers 
+    (new-signers (buff 4096))
+    (proof (buff 7168))
+)
+    (ok true)
 )
