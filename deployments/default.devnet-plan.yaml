@@ -1,0 +1,25 @@
+---
+id: 0
+name: Devnet deployment
+network: devnet
+stacks-node: "http://localhost:20443"
+bitcoin-node: "http://devnet:devnet@localhost:18443"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: traits
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 5240
+            path: contracts/traits.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gateway
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 163220
+            path: contracts/gateway.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.5"

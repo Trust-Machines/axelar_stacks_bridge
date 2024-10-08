@@ -421,7 +421,6 @@
             (is-eq is-latest-signers false) 
             (asserts! (is-eq 0 1) ERR-NOT-LATEST-SIGNERS)
         )
-
         (let 
             (
                 (new-signers-hash (keccak256 new-signers))
@@ -433,7 +432,6 @@
             (var-set epoch new-epoch)
             (map-set signer-hash-by-epoch new-epoch new-signers-hash)
             (map-set epoch-by-signer-hash new-signers-hash new-epoch)
-            
             (print {
                 type: "signers-rotated",
                 epoch: new-epoch,

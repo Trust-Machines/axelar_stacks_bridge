@@ -194,6 +194,47 @@ const proof = bufferCV(
 }
 ```
 
+Deserialization example: 
+
+**with below contract call parameters**:
+```
+// bufferFromString("ethereum")
+destination-chain: 0x657468657265756d 
+
+// bufferFromHex("0x043E105189e15AC72252CFEF898EC3841A4A0561")
+destination-contract-address: 0x307830343345313035313839653135414337323235324346454638393845433338343141344130353631 
+
+// bufferFromString("loremipsum dolor sit amet")
+payload: 0x6c6f72656d697073756d20646f6c6f722073697420616d6574 
+```
+
+```js
+
+import { cvToJSON, deserialize } from "@stacks/transactions";
+
+const hex = "0x0c000000061164657374696e6174696f6e2d636861696e0200000008657468657265756d1c64657374696e6174696f6e2d636f6e74726163742d61646472657373020000002a307830343345313035313839653135414337323235324346454638393845433338343141344130353631077061796c6f616402000000196c6f72656d697073756d20646f6c6f722073697420616d65740c7061796c6f61642d6861736802000000200338573718f5cd6d7e5a90adcdebd28b097f99574ad6febffea9a40adb17f46d0673656e646572051a6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce04747970650d0000000d636f6e74726163742d63616c6c";
+
+const json = cvToJSON(deserialize(hex));
+
+console.log('type', json.value['type'].value);
+console.log('sender', json.value['sender'].value)
+console.log('destination-chain:', Buffer.from(json.value['destination-chain'].value.replace('0x', ''), 'hex').toString('ascii'))
+console.log('destination-contract-address:', Buffer.from(json.value['destination-contract-address'].value.replace('0x', ''), 'hex').toString('ascii'))
+console.log('payload:', Buffer.from(json.value['payload'].value.replace('0x', ''), 'hex').toString('ascii'))
+console.log('payload-hash:', json.value['payload-hash'].value)
+```
+
+output
+
+```
+type contract-call
+sender ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+destination-chain: ethereum
+destination-contract-address: 0x043E105189e15AC72252CFEF898EC3841A4A0561
+payload: loremipsum dolor sit amet
+payload-hash: 0x0338573718f5cd6d7e5a90adcdebd28b097f99574ad6febffea9a40adb17f46d
+```
+
 ### message-approved
 ```clarity
 {
