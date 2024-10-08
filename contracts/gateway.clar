@@ -301,3 +301,48 @@
         )    
     )
 )
+
+
+;; ########################
+;; ### Proof validation ###
+;; #########################
+
+(define-constant ERR-SIGNERS-RETENTION (err u4051))
+
+
+;; This function takes data-hash and proof data and reverts if proof is invalid
+;; @param data-hash; The hash of the message that was signed
+;; @param proof; The multisig proof data
+;; @returns (response true) or reverts
+(define-private (validate-proof (data-hash (buff 32)) (proof { 
+                signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 32))
+            })) 
+    (let 
+        (
+            (signers (get signers proof))
+            (signers-hash (keccak256 (unwrap-panic (to-consensus-buff? signers))))
+            (signer-epoch (default-to u0 (map-get? epoch-by-signer-hash signers-hash)))
+            (current-epoch (var-get epoch))
+            ;; True if the proof is from the latest signer set
+            (is-latest-signers (is-eq signer-epoch current-epoch))
+            (message-hash (message-hash-to-sign signers-hash data-hash))
+        ) 
+
+        (and 
+            (or 
+                (is-eq signer-epoch u0) 
+                (> (- current-epoch signer-epoch) (var-get previous-signers-retention))
+            ) 
+            (asserts! (is-eq 0 1) ERR-SIGNERS-RETENTION)
+        )
+
+        (try! (validate-signatures message-hash signers (get signatures proof)))
+        
+        (ok is-latest-signers)
+    )
+)
