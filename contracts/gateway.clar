@@ -226,7 +226,7 @@
 ;; Returns true if the address of the signer provided equals to the value stored in temp-account
 ;; @param signer;
 ;; @returns bool
-(define-read-only (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-account) (get signer signer)))
+(define-private (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-account) (get signer signer)))
 
 
 ;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
@@ -262,7 +262,7 @@
 ;; A helper function to unwrap principal value from an ok response
 ;; @param p; 
 ;; @returns {signer: principal, weight: uint}
-(define-read-only (unwrap-signer (signer (response {signer: principal, weight: uint} uint)))
+(define-private (unwrap-signer (signer (response {signer: principal, weight: uint} uint)))
     (unwrap-panic signer)
 )
 
