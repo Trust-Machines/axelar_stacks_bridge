@@ -430,7 +430,7 @@
 )
     (let 
         (
-            (signers (unwrap! (from-consensus-buff? { 
+            (new-signers_ (unwrap! (from-consensus-buff? { 
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
@@ -443,7 +443,7 @@
                 },
                 signatures: (list 32 (buff 65))
             } proof) ERR-PROOF-DATA))
-            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: "rotate-signers"})))))
+            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers_ { type: "rotate-signers"})))))
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
             (is-latest-signers (try! (validate-proof data-hash proof_)))
         )
@@ -452,25 +452,7 @@
             (is-eq is-latest-signers false) 
             (asserts! (is-eq 0 1) ERR-NOT-LATEST-SIGNERS)
         )
-        (let 
-            (
-                (new-signers-hash (keccak256 new-signers))
-                (new-epoch (+ (var-get epoch) u1))
-            )
-            (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
-            (try! (validate-signers signers))
-            (try! (update-rotation-timestamp enforce-rotation-delay))
-            (var-set epoch new-epoch)
-            (map-set signer-hash-by-epoch new-epoch new-signers-hash)
-            (map-set epoch-by-signer-hash new-signers-hash new-epoch)
-            (print {
-                type: "signers-rotated",
-                epoch: new-epoch,
-                signers-hash: new-signers-hash, 
-                signers: new-signers
-            })
-            (try! (rotate-signers-inner signers enforce-rotation-delay))
-            (ok true)
-        )
+        (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
+        (ok true)
     )
 )
