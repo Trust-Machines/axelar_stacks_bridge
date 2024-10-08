@@ -151,7 +151,7 @@
 ;; A helper fn to get bytes of an account
 ;; @param p; The principal
 ;; @returns (buff 20)
-(define-private (principal-to-bytes (p principal)) (get hash-bytes (unwrap-err-panic (principal-destruct? p))))
+(define-private (principal-to-bytes (p principal)) (get hash-bytes (unwrap-panic (principal-destruct? p))))
 
 ;; Returns weight of a signer
 ;; @param signer; Signer to validate
@@ -378,7 +378,7 @@
     (let   
         (
             (last-rotation-timestamp_ (var-get last-rotation-timestamp))
-            (current-ts (unwrap-panic (get-block-info? time block-height)))
+            (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
         )
         (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) ERR-INSUFFICIENT-ROTATION-DELAY))
         (var-set last-rotation-timestamp current-ts)
@@ -390,7 +390,7 @@
 ;; @param new-signers The new weighted signers data
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
-(define-private (rotate-signers-inner (new-signers { 
+(define-public (rotate-signers-inner (new-signers { 
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
@@ -456,3 +456,5 @@
         (ok true)
     )
 )
+
+(rotate-signers-inner {signers: (list {signer: tx-sender, weight: u1}),threshold: u1,nonce: 0x00} false)
