@@ -386,6 +386,37 @@
     )
 )
 
+;; This function rotates the current signers with a new set of signers
+;; @param new-signers The new weighted signers data
+;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
+;; @returns (response true) or reverts
+(define-private (rotate-signers-inner (new-signers { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            }) (enforce-rotation-delay bool)
+)
+    (let 
+            (
+                (new-signers-hash (keccak256 (unwrap-panic (to-consensus-buff? new-signers))))
+                (new-epoch (+ (var-get epoch) u1))
+            )
+            (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
+            (try! (validate-signers new-signers))
+            (try! (update-rotation-timestamp enforce-rotation-delay))
+            (var-set epoch new-epoch)
+            (map-set signer-hash-by-epoch new-epoch new-signers-hash)
+            (map-set epoch-by-signer-hash new-signers-hash new-epoch)
+            (print {
+                type: "signers-rotated",
+                epoch: new-epoch,
+                signers-hash: new-signers-hash, 
+                signers: new-signers
+            })
+            (ok true)
+        ) 
+)
+
 ;; Rotate the weighted signers, signed off by the latest Axelar signers.
 ;; The minimum rotation delay is enforced by default, unless the caller is the gateway operator.
 ;; The gateway operator allows recovery in case of an incorrect/malicious rotation, while still requiring a valid proof from a recent signer set.
@@ -438,6 +469,7 @@
                 signers-hash: new-signers-hash, 
                 signers: new-signers
             })
+            (try! (rotate-signers-inner signers enforce-rotation-delay))
             (ok true)
         )
     )
