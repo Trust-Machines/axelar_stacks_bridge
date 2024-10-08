@@ -196,15 +196,15 @@ const proof = bufferCV(
 
 Deserialization example: 
 
-**with below contract call parameters**:
+*with below contract call parameters*:
 ```
-// bufferFromString("ethereum")
+// bufferCVFromString("ethereum")
 destination-chain: 0x657468657265756d 
 
 // bufferFromHex("0x043E105189e15AC72252CFEF898EC3841A4A0561")
 destination-contract-address: 0x307830343345313035313839653135414337323235324346454638393845433338343141344130353631 
 
-// bufferFromString("loremipsum dolor sit amet")
+// bufferCVFromString("loremipsum dolor sit amet")
 payload: 0x6c6f72656d697073756d20646f6c6f722073697420616d6574 
 ```
 
