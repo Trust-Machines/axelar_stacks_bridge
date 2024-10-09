@@ -138,6 +138,33 @@
     )
 )
 
+;; Helper function to build keccak256 data-hash from signers with a type
+;; @param signers; 
+;; @param type; "rotate-signers" or ?
+;; @returns (response (buff 32)) 
+(define-read-only (data-hash-from-signers (signers { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            })
+            (type (string-ascii 20))
+)
+    (ok (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: type })))))
+)
+
+;; Helper function to build keccak256 of signers
+;; @param signers; 
+;; @returns (response (buff 32)) 
+(define-read-only (get-signers-hash (signers { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            })
+)
+    (ok (keccak256 (unwrap-panic (to-consensus-buff? signers))))
+)
+
+
 ;; ##########################
 ;; ### Signers validation ###
 ;; ##########################
@@ -338,7 +365,7 @@
     (let 
         (
             (signers (get signers proof))
-            (signers-hash (keccak256 (unwrap-panic (to-consensus-buff? signers))))
+            (signers-hash (unwrap-panic (get-signers-hash signers)))
             (signer-epoch (default-to u0 (map-get? epoch-by-signer-hash signers-hash)))
             (current-epoch (var-get epoch))
             ;; True if the proof is from the latest signer set
@@ -443,7 +470,7 @@
                 },
                 signatures: (list 32 (buff 65))
             } proof) ERR-PROOF-DATA))
-            (data-hash (keccak256 (unwrap-panic (to-consensus-buff? (merge new-signers_ { type: "rotate-signers"})))))
+            (data-hash (unwrap-panic (data-hash-from-signers new-signers_ "rotate-signers")))
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
             (is-latest-signers (try! (validate-proof data-hash proof_)))
         )
