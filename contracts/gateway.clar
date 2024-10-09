@@ -119,7 +119,7 @@
 (define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
 
 ;; Compute the message hash that is signed by the weighted signers
-;; Returns an Stacks Signed Message, created from `domainSeparator`, `signersHash`, and `dataHash`.
+;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
 ;; @param data-hash; The hash of the data
 ;; @returns (buff 32); The message hash to be signed
