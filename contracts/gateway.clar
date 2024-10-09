@@ -106,7 +106,7 @@
 (define-read-only (get-previous-signers-retention) (var-get previous-signers-retention))
 
 ;; The domain separator for the signer proof
-(define-data-var domain-separator (buff 24) 0x)
+(define-data-var domain-separator (buff 24) 0x5f5f) ;; __
 (define-read-only (get-domain-separator) (var-get domain-separator))
 
 ;; The minimum delay required between rotations
