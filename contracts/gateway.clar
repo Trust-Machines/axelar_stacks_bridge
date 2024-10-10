@@ -13,6 +13,7 @@
     (payload (buff 10240))
 ) 
     (begin 
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
             sender: tx-sender,
@@ -29,7 +30,10 @@
     (messages (buff 4096)) 
     (proof (buff 7168))
 )
-    (ok true)
+    (begin 
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
+        (ok true)
+    )
 )
 
 (define-public (validate-message 
@@ -38,7 +42,10 @@
     (source-address (buff 96)) 
     (payload-hash (buff 32))
 ) 
-    (ok true)
+    (begin 
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
+        (ok true)
+    )
 )
 
 (define-read-only (is-message-approved 
@@ -66,12 +73,13 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u1051))
 
-(define-data-var operator principal tx-sender)
+(define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal)) 
     (begin
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (var-get operator)) ERR-ONLY-OPERATOR)
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
@@ -106,7 +114,7 @@
 (define-read-only (get-previous-signers-retention) (var-get previous-signers-retention))
 
 ;; The domain separator for the signer proof
-(define-data-var domain-separator (buff 24) 0x5f5f) ;; __
+(define-data-var domain-separator (buff 32) 0x00)
 (define-read-only (get-domain-separator) (var-get domain-separator))
 
 ;; The minimum delay required between rotations
@@ -468,10 +476,55 @@
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
             (is-latest-signers (try! (validate-proof data-hash proof_)))
         )
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
         (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
         (ok true)
     )
 )
 
-(rotate-signers-inner {signers: (list {signer: tx-sender, weight: u1}), threshold: u1, nonce: (keccak256 u1)} false)
+
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-constant ERR-STARTED (err u6051))
+(define-constant ERR-NOT-STARTED (err u6052))
+
+(define-data-var is-started bool false)
+(define-read-only (get-is-started) (var-get is-started))
+
+;; Constructor function
+;; @param signers; The data for the new signers.
+;; @param operator_
+;; @previous-signers-retention_
+;; @domain-separator_
+;; @minimum-rotation-delay_
+;; @returns (response true) or reverts
+(define-public (init 
+    (signers (buff 4096)) 
+    (operator_ principal) 
+    (previous-signers-retention_ uint) 
+    (domain-separator_ (buff 32)) 
+    (minimum-rotation-delay_ uint)
+) 
+    (let
+        (
+            (signers_ (unwrap! (from-consensus-buff? { 
+                signers: (list 32 {signer: principal, weight: uint}), 
+                threshold: uint, 
+                nonce: (buff 32) 
+            } signers) ERR-SIGNERS-DATA))
+        )
+        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (try! (rotate-signers-inner signers_ false))
+        (var-set operator operator_)
+        (var-set previous-signers-retention previous-signers-retention_)
+        (var-set domain-separator domain-separator_)
+        (var-set minimum-rotation-delay minimum-rotation-delay_)
+        (var-set is-started true) 
+        (ok true)
+    )
+)
