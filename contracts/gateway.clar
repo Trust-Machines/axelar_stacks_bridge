@@ -387,9 +387,9 @@
 
 (define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u5051))
 (define-constant ERR-SIGNERS-DATA (err u5052))
-(define-constant ERR-PROOF-DATA (err u5052))
-(define-constant ERR-DUPLICATE-SIGNERS (err u5053))
-(define-constant ERR-NOT-LATEST-SIGNERS (err u5054))
+(define-constant ERR-PROOF-DATA (err u5053))
+(define-constant ERR-DUPLICATE-SIGNERS (err u5054))
+(define-constant ERR-NOT-LATEST-SIGNERS (err u5055))
 
 
 ;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
