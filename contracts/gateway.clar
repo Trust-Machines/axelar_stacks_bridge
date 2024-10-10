@@ -26,6 +26,88 @@
     )
 )
 
+;; ######################
+;; ######################
+;; ##### Messaging ######
+;; ######################
+;; ######################
+
+(define-constant ERR-MESSAGES-DATA (err u9051))
+(define-map messages-storage (buff 32) (buff 32))
+
+(define-private (approve-messages-inner 
+    (messages (buff 4096)) 
+    (proof (buff 7168))) 
+    (let (
+        (data-hash (keccak256 messages))
+        (proof_ (unwrap! (from-consensus-buff? 
+            { 
+                signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 65))
+            } proof) ERR-SIGNERS-DATA))
+        (messages_ (unwrap! (from-consensus-buff? 
+            (list 10 {
+                source-chain: (buff 18),
+                message-id: (buff 32),
+                source-address: (buff 96),
+                contract-address: (buff 96),
+                payload-hash: (buff 32)
+            })
+            messages) ERR-MESSAGES-DATA)))
+        (try! (validate-proof data-hash proof_))
+        (map approve-message messages_)
+        (ok true)))
+
+(define-private (approve-message (message {
+                source-chain: (buff 18),
+                message-id: (buff 32),
+                source-address: (buff 96),
+                contract-address: (buff 96),
+                payload-hash: (buff 32)
+            })) 
+            (let (
+                    (command-id (message-to-command-id (get source-chain message) (get message-id message)))
+                )
+                (if 
+                    (map-insert messages-storage command-id (get-message-hash {
+                        command-id: command-id,
+                        source-chain: (get source-chain message),
+                        source-address: (get source-address message),
+                        contract-address: (get contract-address message),
+                        payload-hash: (get payload-hash message)
+                    }))
+                    (some (print (merge message {
+                        type: "message-approved",
+                        command-id: command-id,
+                    })))
+                    none)))
+
+;; Compute the command-id for a message.
+;; @param source-chain The name of the source chain as registered on Axelar.
+;; @param message-id The unique message id for the message.
+;; @return The commandId for the message.
+(define-private (message-to-command-id (source-chain (buff 18)) (message-id (buff 32))) 
+    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
+    (keccak256 (concat (concat source-chain 0x5f) message-id)))
+
+
+;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+;; @return bytes32 the message hash
+(define-private (get-message-hash (message {
+        command-id: (buff 32),
+        source-chain: (buff 18),
+        source-address: (buff 96),
+        contract-address: (buff 96),
+        payload-hash: (buff 32)
+    })) 
+    (keccak256 (unwrap-panic (to-consensus-buff? message)))
+)
+
+
 (define-public (approve-messages 
     (messages (buff 4096)) 
     (proof (buff 7168))
@@ -470,7 +552,7 @@
                 },
                 signatures: (list 32 (buff 65))
             } proof) ERR-PROOF-DATA))
-            (data-hash (data-hash-from-signers new-signers_ "rotate-signers"))
+            (data-hash (data-hash-from-signers new-signers_))
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
             (is-latest-signers (try! (validate-proof data-hash proof_)))
         )
@@ -525,85 +607,4 @@
         (var-set is-started true) 
         (ok true)
     )
-)
-
-;; ######################
-;; ######################
-;; ##### Messaging ######
-;; ######################
-;; ######################
-
-(define-constant ERR-MESSAGES-DATA (err u9051))
-(define-map messages-storage (buff 32) (buff 32))
-
-(define-private (approve-messages-inner 
-    (messages (buff 4096)) 
-    (proof (buff 7168))) 
-    (let (
-        (data-hash (keccak256 messages))
-        (proof_ (unwrap! (from-consensus-buff? 
-            { 
-                signers: {
-                    signers: (list 32 {signer: principal, weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
-                },
-                signatures: (list 32 (buff 65))
-            } proof) ERR-SIGNERS-DATA))
-        (messages_ (unwrap! (from-consensus-buff? 
-            (list 10 {
-                source-chain: (buff 18),
-                message-id: (buff 32),
-                source-address: (buff 96),
-                contract-address: (buff 96),
-                payload-hash: (buff 32)
-            })
-            messages) ERR-MESSAGES-DATA)))
-        (try! (validate-proof data-hash proof_))
-        (map approve-message messages_)
-        (ok true)))
-
-(define-private (approve-message (message {
-                source-chain: (buff 18),
-                message-id: (buff 32),
-                source-address: (buff 96),
-                contract-address: (buff 96),
-                payload-hash: (buff 32)
-            })) 
-            (let (
-                    (command-id (message-to-command-id (get source-chain message) (get message-id message)))
-                )
-                (if 
-                    (map-insert messages-storage command-id (get-message-hash {
-                        command-id: command-id,
-                        source-chain: (get source-chain message),
-                        source-address: (get source-address message),
-                        contract-address: (get contract-address message),
-                        payload-hash: (get payload-hash message)
-                    }))
-                    (some (print (merge message {
-                        type: "message-approved",
-                        command-id: command-id,
-                    })))
-                    none)))
-
-;; Compute the command-id for a message.
-;; @param source-chain The name of the source chain as registered on Axelar.
-;; @param message-id The unique message id for the message.
-;; @return The commandId for the message.
-(define-private (message-to-command-id (source-chain (buff 18)) (message-id (buff 32))) 
-    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
-    (keccak256 (concat (concat source-chain 0x5f) message-id)))
-
-
-;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
-;; @return bytes32 the message hash
-(define-private (get-message-hash (message {
-        command-id: (buff 32),
-        source-chain: (buff 18),
-        source-address: (buff 96),
-        contract-address: (buff 96),
-        payload-hash: (buff 32)
-    })) 
-    (keccak256 (unwrap-panic (to-consensus-buff? message)))
 )
