@@ -1,6 +1,6 @@
 (impl-trait .traits.gateway-trait)
 
-(define-constant NULL-ADDRESS 'SP000000000000000000002Q6VF78)
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
