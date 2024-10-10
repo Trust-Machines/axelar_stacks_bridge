@@ -1,5 +1,5 @@
 
-import { cvToJSON, listCV, principalCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { boolCV, bufferCV, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromHex } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
 import { signMessageHashForAddress } from "./util";
@@ -25,7 +25,7 @@ describe("Gateway tests", () => {
         }),
       ]),
       "threshold": uintCV(3),
-      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334") // (keccak256 u1)
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u1)
     });
 
     const proofSigners =  tupleCV({
@@ -36,7 +36,7 @@ describe("Gateway tests", () => {
         })
       ]),
       "threshold": uintCV(1),
-      "nonce": bufferFromHex("97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334")
+      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334") // (keccak256 u2)
     })
 
     const signersHash = (() => {
@@ -49,9 +49,8 @@ describe("Gateway tests", () => {
       return cvToJSON(result).value;
     })();
 
-    
     expect(signersHash).toEqual("0xeb10ff1e268b2c648c7abfc4e6bc0deb2cf349726252b4286e21190a8fcc3651");
-    expect(dataHash).toEqual("0x56b1d353ae2b681305d53391e1942d6d25265ed76646dbbcbcb7b44366cac180");
+    expect(dataHash).toEqual("0x6875c2c5d917a3dc6e4608f0fe82735cc14222f0783d65fe302472aaf7969ff4");
 
     const messageHashToSign = (() => {
       const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
@@ -65,10 +64,11 @@ describe("Gateway tests", () => {
       ])
     });
 
-    expect(messageHashToSign).toEqual("0x4dffe5e28bc735ae453fee24cc6b334aeed63691d57e533abd39a2714f6ec33a");
+    expect(messageHashToSign).toEqual("0xa7e1eb7c736ac708bc76f23261e273d3c068359370c5b8419637dbfaf760ba6b");
 
-    // const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
-    // console.log(result)
+    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
+    
+    expect(result).toBeOk(boolCV(true));
   });
 });
 
