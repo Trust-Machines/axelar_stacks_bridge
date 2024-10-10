@@ -148,16 +148,14 @@
 
 ;; Helper function to build keccak256 data-hash from signers with a type
 ;; @param signers; 
-;; @param type; "rotate-signers" or ?
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-signers (signers { 
                 signers: (list 32 {signer: principal, weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
-            (type (string-ascii 20))
 )
-    (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: type }))))
+    (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: "rotate-signers" }))))
 )
 
 ;; Helper function to build keccak256 of signers
