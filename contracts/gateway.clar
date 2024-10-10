@@ -62,6 +62,9 @@
         (map approve-message messages_)
         (ok true)))
 
+;; Approves a message if it hasn't been approved before. The message status is set to approved.
+;; @params message;
+;; @returns (some message) or none
 (define-private (approve-message (message {
                 source-chain: (buff 18),
                 message-id: (buff 32),
