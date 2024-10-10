@@ -4,7 +4,6 @@
 (define-constant err-owner-only (err u100))
 (define-constant err-insufficient-balance (err u101))
 (define-constant err-invalid-amount (err u102))
-(define-constant err-invalid-receiver (err u103))
 
 ;; Define data variables
 (define-data-var contract-balance uint u0)
@@ -18,9 +17,10 @@
     (destination-address (string-ascii 40))
     (payload (buff 1024)))
     (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (var-set contract-balance (+ (var-get contract-balance) amount))
+        (asserts! (<= amount (var-get contract-balance)) err-insufficient-balance)
+        (var-set contract-balance (- (var-get contract-balance) amount))
         (print {
             event: "NativeGasPaidForContractCall", 
             sender: tx-sender, 
@@ -34,16 +34,17 @@
     )
 )
 
-;; Public function to add native gas
+;; Public function to add native gas (deduct from contract balance)
 (define-public (add-native-gas 
     (amount uint)
     (refund-address principal)
     (tx-hash (buff 32))
     (log-index uint))
     (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (var-set contract-balance (+ (var-get contract-balance) amount))
+        (asserts! (<= amount (var-get contract-balance)) err-insufficient-balance)
+        (var-set contract-balance (- (var-get contract-balance) amount))
         (print {
             event: "NativeGasAdded", 
             sender: tx-sender, 
@@ -56,14 +57,12 @@
     )
 )
 
-;; Function to refund gas
+;; Function to refund gas (add to contract balance)
 (define-public (refund (amount uint) (receiver principal))
     (begin
-        (asserts! (is-eq tx-sender (var-get contract-owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        (asserts! (<= amount (var-get contract-balance)) err-insufficient-balance)
-        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
-        (var-set contract-balance (- (var-get contract-balance) amount))
+        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+        (var-set contract-balance (+ (var-get contract-balance) amount))
         (print {event: "Refunded", receiver: receiver, amount: amount})
         (ok true)
     )
