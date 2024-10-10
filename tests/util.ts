@@ -18,7 +18,7 @@ const privs: Record<string, string> = {
 
 export const signMessageHashForAddress = (messageHash: string, address: string) => {
     return signMessageHashRsv({
-        messageHash,
+        messageHash: messageHash,
         privateKey: createStacksPrivateKey(
             privs[address]
         ),

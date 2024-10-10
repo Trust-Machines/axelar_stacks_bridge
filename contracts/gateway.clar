@@ -484,4 +484,4 @@
     )
 )
 
-(rotate-signers-inner {signers: (list {signer: tx-sender, weight: u1}),threshold: u1,nonce: 0x00} false)
+(rotate-signers-inner {signers: (list {signer: tx-sender, weight: u1}), threshold: u1, nonce: (keccak256 u1)} false)
