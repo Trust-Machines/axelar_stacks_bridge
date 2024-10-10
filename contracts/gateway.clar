@@ -373,13 +373,7 @@
             (message-hash (message-hash-to-sign signers-hash data-hash))
         ) 
 
-        (and 
-            (or 
-                (is-eq signer-epoch u0) 
-                (> (- current-epoch signer-epoch) (var-get previous-signers-retention))
-            ) 
-            (asserts! (is-eq 0 1) ERR-SIGNERS-RETENTION)
-        )
+        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (var-get previous-signers-retention))) false) ERR-SIGNERS-RETENTION)
 
         (try! (validate-signatures message-hash signers (get signatures proof)))
 
@@ -407,7 +401,7 @@
             (last-rotation-timestamp_ (var-get last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
         )
-        (and enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) (asserts! (is-eq 0 1) ERR-INSUFFICIENT-ROTATION-DELAY))
+        (asserts! (is-eq enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) false) ERR-INSUFFICIENT-ROTATION-DELAY)
         (var-set last-rotation-timestamp current-ts)
         (ok true)
     )
@@ -474,11 +468,7 @@
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
             (is-latest-signers (try! (validate-proof data-hash proof_)))
         )
-        (and 
-            (is-eq enforce-rotation-delay true)
-            (is-eq is-latest-signers false) 
-            (asserts! (is-eq 0 1) ERR-NOT-LATEST-SIGNERS)
-        )
+        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
         (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
         (ok true)
     )
