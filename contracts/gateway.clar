@@ -57,6 +57,19 @@
     (keccak256 (unwrap-panic (to-consensus-buff? message)))
 )
 
+;; Helper function to build keccak256 data-hash from messages
+;; @param messages; 
+;; @returns (response (buff 32)) 
+(define-read-only (data-hash-from-messages (messages (list 10 {
+                source-chain: (buff 18),
+                message-id: (buff 32),
+                source-address: (buff 96),
+                contract-address: (buff 96),
+                payload-hash: (buff 32)
+        })))
+    (keccak256 (unwrap-panic (to-consensus-buff? (merge {messages: messages} { type: "approve-messages" }))))
+)
+
 ;; Approves a message if it hasn't been approved before. The message status is set to approved.
 ;; @params message;
 ;; @returns (some message) or none
@@ -84,13 +97,16 @@
                     })))
                     none)))
 
-(define-private (approve-messages-inner 
+
+;; @notice Approves an array of messages, signed by the Axelar signers.
+;; @param messages; The list of messages to verify.
+;; @param proof; The proof signed by the Axelar signers for this command.
+;; @returns (response true) or reverts
+(define-public (approve-messages 
     (messages (buff 4096)) 
     (proof (buff 7168))) 
     (let (
-        (data-hash (keccak256 messages))
-        (proof_ (unwrap! (from-consensus-buff? 
-            { 
+        (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
                     signers: (list 32 {signer: principal, weight: uint}), 
                     threshold: uint, 
@@ -106,23 +122,13 @@
                 contract-address: (buff 96),
                 payload-hash: (buff 32)
             })
-            messages) ERR-MESSAGES-DATA)))
+            messages) ERR-MESSAGES-DATA))
+             (data-hash (data-hash-from-messages messages_)
+        ))
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
         (map approve-message messages_)
-        (ok true)))
-
-
-;; @notice Approves an array of messages, signed by the Axelar signers.
-;; @param messages; The list of messages to verify.
-;; @param proof; The proof signed by the Axelar signers for this command.
-;; @returns (response true) or reverts
-(define-public (approve-messages 
-    (messages (buff 4096)) 
-    (proof (buff 7168))
-)
-    (begin 
-        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
-        (approve-messages-inner messages proof)
+        (ok true)
     )
 )
 
@@ -236,7 +242,7 @@
     )
 )
 
-;; Helper function to build keccak256 data-hash from signers with a type
+;; Helper function to build keccak256 data-hash from signers
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-signers (signers { 
