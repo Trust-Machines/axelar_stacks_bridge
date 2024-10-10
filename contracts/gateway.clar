@@ -35,32 +35,27 @@
 (define-constant ERR-MESSAGES-DATA (err u9051))
 (define-map messages-storage (buff 32) (buff 32))
 
-(define-private (approve-messages-inner 
-    (messages (buff 4096)) 
-    (proof (buff 7168))) 
-    (let (
-        (data-hash (keccak256 messages))
-        (proof_ (unwrap! (from-consensus-buff? 
-            { 
-                signers: {
-                    signers: (list 32 {signer: principal, weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
-                },
-                signatures: (list 32 (buff 65))
-            } proof) ERR-SIGNERS-DATA))
-        (messages_ (unwrap! (from-consensus-buff? 
-            (list 10 {
-                source-chain: (buff 18),
-                message-id: (buff 32),
-                source-address: (buff 96),
-                contract-address: (buff 96),
-                payload-hash: (buff 32)
-            })
-            messages) ERR-MESSAGES-DATA)))
-        (try! (validate-proof data-hash proof_))
-        (map approve-message messages_)
-        (ok true)))
+
+;; Compute the command-id for a message.
+;; @param source-chain The name of the source chain as registered on Axelar.
+;; @param message-id The unique message id for the message.
+;; @return The commandId for the message.
+(define-private (message-to-command-id (source-chain (buff 18)) (message-id (buff 32))) 
+    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
+    (keccak256 (concat (concat source-chain 0x5f) message-id)))
+
+
+;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+;; @return bytes32 the message hash
+(define-private (get-message-hash (message {
+        command-id: (buff 32),
+        source-chain: (buff 18),
+        source-address: (buff 96),
+        contract-address: (buff 96),
+        payload-hash: (buff 32)
+    })) 
+    (keccak256 (unwrap-panic (to-consensus-buff? message)))
+)
 
 ;; Approves a message if it hasn't been approved before. The message status is set to approved.
 ;; @params message;
@@ -89,28 +84,38 @@
                     })))
                     none)))
 
-;; Compute the command-id for a message.
-;; @param source-chain The name of the source chain as registered on Axelar.
-;; @param message-id The unique message id for the message.
-;; @return The commandId for the message.
-(define-private (message-to-command-id (source-chain (buff 18)) (message-id (buff 32))) 
-    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
-    (keccak256 (concat (concat source-chain 0x5f) message-id)))
+(define-private (approve-messages-inner 
+    (messages (buff 4096)) 
+    (proof (buff 7168))) 
+    (let (
+        (data-hash (keccak256 messages))
+        (proof_ (unwrap! (from-consensus-buff? 
+            { 
+                signers: {
+                    signers: (list 32 {signer: principal, weight: uint}), 
+                    threshold: uint, 
+                    nonce: (buff 32) 
+                },
+                signatures: (list 32 (buff 65))
+            } proof) ERR-SIGNERS-DATA))
+        (messages_ (unwrap! (from-consensus-buff? 
+            (list 10 {
+                source-chain: (buff 18),
+                message-id: (buff 32),
+                source-address: (buff 96),
+                contract-address: (buff 96),
+                payload-hash: (buff 32)
+            })
+            messages) ERR-MESSAGES-DATA)))
+        (try! (validate-proof data-hash proof_))
+        (map approve-message messages_)
+        (ok true)))
 
 
-;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
-;; @return bytes32 the message hash
-(define-private (get-message-hash (message {
-        command-id: (buff 32),
-        source-chain: (buff 18),
-        source-address: (buff 96),
-        contract-address: (buff 96),
-        payload-hash: (buff 32)
-    })) 
-    (keccak256 (unwrap-panic (to-consensus-buff? message)))
-)
-
-
+;; @notice Approves an array of messages, signed by the Axelar signers.
+;; @param messages; The list of messages to verify.
+;; @param proof; The proof signed by the Axelar signers for this command.
+;; @returns (response true) or reverts
 (define-public (approve-messages 
     (messages (buff 4096)) 
     (proof (buff 7168))
