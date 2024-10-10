@@ -503,12 +503,12 @@
 ;; @domain-separator_
 ;; @minimum-rotation-delay_
 ;; @returns (response true) or reverts
-(define-public (init 
+(define-public (setup 
     (signers (buff 4096)) 
     (operator_ principal) 
-    (previous-signers-retention_ uint) 
     (domain-separator_ (buff 32)) 
     (minimum-rotation-delay_ uint)
+    (previous-signers-retention_ uint) 
 ) 
     (let
         (
@@ -521,9 +521,9 @@
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (try! (rotate-signers-inner signers_ false))
         (var-set operator operator_)
-        (var-set previous-signers-retention previous-signers-retention_)
         (var-set domain-separator domain-separator_)
         (var-set minimum-rotation-delay minimum-rotation-delay_)
+        (var-set previous-signers-retention previous-signers-retention_)
         (var-set is-started true) 
         (ok true)
     )

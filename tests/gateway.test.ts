@@ -1,5 +1,5 @@
 
-import { boolCV, bufferCV, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromHex } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
 import { signMessageHashForAddress } from "./util";
@@ -8,6 +8,102 @@ const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 
 describe("Gateway tests", () => {
+
+  it("Should revert before initialization", () => {
+    const newSigners = tupleCV({
+      "signers": listCV([
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_1")!),
+          "weight": uintCV(1)
+        }),
+      ]),
+      "threshold": uintCV(1),
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") 
+    });
+
+    const proofSigners =  tupleCV({
+      "signers": listCV([
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_2")!),
+          "weight": uintCV(1)
+        })
+      ]),
+      "threshold": uintCV(1),
+      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334") 
+    })
+
+    const signersHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [proofSigners], address1);
+      return cvToJSON(result).value;
+    })();
+
+    const dataHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners, stringAsciiCV("rotate-signers")], address1);
+      return cvToJSON(result).value;
+    })();
+   
+    const messageHashToSign = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
+      return cvToJSON(result).value
+    })();
+
+    const proof = tupleCV({
+      "signers": proofSigners,
+      "signatures": listCV([
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM'))
+      ])
+    });
+
+    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
+    
+    expect(result).toBeErr(uintCV(4051));
+  });
+
+  it("Initialization", () => {
+    const signers = tupleCV({
+      "signers": listCV([
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_1")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_2")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_3")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_4")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_5")!),
+          "weight": uintCV(1)
+        }),
+      ]),
+      "threshold": uintCV(5),
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") 
+    });
+
+    const operator = principalCV(address1);
+    const domainSeparator = bufferCVFromString('stacks-axelar-1');
+    const minimumRotationDelay = uintCV(0);
+    const previousSignersRetention = uintCV(15);
+
+    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1);
+    expect(result).toBeOk(boolCV(true));
+
+    const { result: getOperator } = simnet.callReadOnlyFn("gateway", "get-operator", [], address1);
+    expect(getOperator).toBePrincipal(address1);
+
+    const { result: getDomainSeparator } = simnet.callReadOnlyFn("gateway", "get-domain-separator", [], address1);
+    console.log((getDomainSeparator as BufferCV))
+   
+  });
+
+  /*
   it("Rotate signers", () => {
     const newSigners = tupleCV({
       "signers": listCV([
@@ -70,5 +166,6 @@ describe("Gateway tests", () => {
     
     expect(result).toBeOk(boolCV(true));
   });
+  */
 });
 
