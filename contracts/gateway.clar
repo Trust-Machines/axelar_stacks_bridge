@@ -33,6 +33,7 @@
 ;; ######################
 
 (define-constant ERR-MESSAGES-DATA (err u9051))
+(define-constant ERR-MESSAGE-NOT-FOUND (err u9052))
 (define-constant MESSAGE-EXECUTED 0x01)
 (define-map messages-storage (buff 32) (buff 32))
 
@@ -140,8 +141,25 @@
     (source-address (string-ascii 48)) 
     (payload-hash (buff 32))
 ) 
-    (begin 
+    (let (
+        (command-id (message-to-command-id source-chain message-id))
+        (message-hash (get-message-hash {
+                command-id: command-id,
+                source-chain: source-chain,
+                source-address: source-address,
+                contract-address: (unwrap-panic (as-max-len? (unwrap-panic (to-consensus-buff? tx-sender)) u32)),
+                payload-hash: payload-hash
+            }))
+    ) 
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
+        (map-set messages-storage command-id MESSAGE-EXECUTED)
+        (print {
+            type: "message-executed",
+            command-id: command-id,
+            source-chain: source-chain,
+            message-id: message-id,
+        })
         (ok true)
     )
 )
