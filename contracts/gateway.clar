@@ -151,7 +151,17 @@
     (contract-address (buff 96)) 
     (payload-hash (buff 32))
 )
-    (ok true)
+    (let (
+            (command-id (message-to-command-id source-chain message-id))
+            (message-hash (get-message-hash {
+                command-id: command-id,
+                source-chain: source-chain,
+                source-address: source-address,
+                contract-address: contract-address,
+                payload-hash: payload-hash
+            }))
+        ) 
+        (ok (is-eq message-hash (default-to 0x00 (map-get? messages-storage command-id)))))
 )
 
 (define-read-only (is-message-executed
