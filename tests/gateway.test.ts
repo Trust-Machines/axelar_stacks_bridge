@@ -38,7 +38,7 @@ describe("Gateway tests", () => {
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners, stringAsciiCV("rotate-signers")], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners], address1);
       return cvToJSON(result).value;
     })();
    
@@ -50,13 +50,12 @@ describe("Gateway tests", () => {
     const proof = tupleCV({
       "signers": proofSigners,
       "signatures": listCV([
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM'))
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), address1))
       ])
     });
 
-    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
-    
-    expect(result).toBeErr(uintCV(4051));
+    const { result:resultRotateSigners } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
+    expect(resultRotateSigners).toBeErr(uintCV(4051));
   });
 
   it("Initialization", () => {
@@ -99,8 +98,13 @@ describe("Gateway tests", () => {
     expect(getOperator).toBePrincipal(address1);
 
     const { result: getDomainSeparator } = simnet.callReadOnlyFn("gateway", "get-domain-separator", [], address1);
-    console.log((getDomainSeparator as BufferCV))
-   
+    expect(Buffer.from((getDomainSeparator as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
+
+    const { result: getMinimumRotationDelay } = simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], address1);
+    expect(getMinimumRotationDelay).toBeUint(0);
+
+    const { result: getPreviousSignersRetention } = simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], address1);
+    expect(getPreviousSignersRetention).toBeUint(15);
   });
 
   /*
