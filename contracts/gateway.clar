@@ -70,7 +70,7 @@
                 contract-address: (buff 32),
                 payload-hash: (buff 32)
         })))
-    (keccak256 (unwrap-panic (to-consensus-buff? (merge {messages: messages} { type: "approve-messages" }))))
+    (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: messages} { type: "approve-messages" }))))
 )
 
 ;; Approves a message if it hasn't been approved before. The message status is set to approved.
@@ -309,7 +309,7 @@
                 nonce: (buff 32) 
             })
 )
-    (keccak256 (unwrap-panic (to-consensus-buff? (merge signers { type: "rotate-signers" }))))
+    (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: signers} { type: "rotate-signers" }))))
 )
 
 ;; Helper function to build keccak256 of signers
