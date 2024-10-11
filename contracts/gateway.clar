@@ -170,6 +170,14 @@
     )
 )
 
+;; Checks if a message is approved.
+;; Determines whether a given message, identified by the source-chain and message-id, is approved.
+;; @param source-chain; The name of the source chain.
+;; @param message-id; The unique identifier of the message.
+;; @param source-address; The address of the sender on the source chain.
+;; @param contract-address; The address of the contract where the call will be executed.
+;; @param payload-hash; The keccak256 hash of the payload data.
+;; ;; @returns (response bool)
 (define-read-only (is-message-approved 
     (source-chain (string-ascii 32))
     (message-id (string-ascii 71))
