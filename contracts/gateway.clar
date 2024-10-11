@@ -135,6 +135,12 @@
     )
 )
 
+;; Validates if a message is approved. If message was in approved status, status is updated to executed to avoid replay.
+;; @param source-chain; The name of the source chain.
+;; @param message-id; The unique identifier of the message.
+;; @param source-address; The address of the sender on the source chain.
+;; @param payload-hash The keccak256 hash of the payload data.
+;; @returns (response true) or reverts
 (define-public (validate-message 
     (source-chain (string-ascii 32)) 
     (message-id (string-ascii 71)) 
