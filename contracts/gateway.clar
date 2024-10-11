@@ -197,6 +197,9 @@
     (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
 )
 
+;; Returns message with the command-id provided. Returns an empty buffer if no message matched.
+;; @param command-id
+;; @returns (buff 32) or (buff 1)
 (define-read-only (get-message
     (command-id (buff 32))
 )
