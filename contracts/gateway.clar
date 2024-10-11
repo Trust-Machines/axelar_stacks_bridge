@@ -33,6 +33,7 @@
 ;; ######################
 
 (define-constant ERR-MESSAGES-DATA (err u9051))
+(define-constant MESSAGE-EXECUTED 0x01)
 (define-map messages-storage (buff 32) (buff 32))
 
 
@@ -161,14 +162,20 @@
                 payload-hash: payload-hash
             }))
         ) 
-        (ok (is-eq message-hash (default-to 0x00 (map-get? messages-storage command-id)))))
+        (ok (is-eq message-hash (get-message command-id))))
 )
 
 (define-read-only (is-message-executed
     (source-chain (buff 18))
     (message-id (buff 32))
 ) 
-    (ok true)
+    (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
+)
+
+(define-read-only (get-message
+    (command-id (buff 32))
+)
+    (default-to 0x00 (map-get? messages-storage command-id))
 )
 
 ;; ####################
