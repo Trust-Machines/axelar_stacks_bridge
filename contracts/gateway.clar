@@ -51,7 +51,7 @@
 ;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
 ;; @return bytes32 the message hash
 (define-private (get-message-hash (message {
-        command-id: (buff 32),
+        message-id: (string-ascii 71),
         source-chain: (string-ascii 32),
         source-address: (string-ascii 48),
         contract-address: (buff 32),
@@ -88,7 +88,7 @@
                 )
                 (if 
                     (map-insert messages-storage command-id (get-message-hash {
-                        command-id: command-id,
+                        message-id: (get message-id message),
                         source-chain: (get source-chain message),
                         source-address: (get source-address message),
                         contract-address: (get contract-address message),
@@ -150,7 +150,7 @@
     (let (
         (command-id (message-to-command-id source-chain message-id))
         (message-hash (get-message-hash {
-                command-id: command-id,
+                message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
                 contract-address: (unwrap-panic (as-max-len? (unwrap-panic (to-consensus-buff? tx-sender)) u32)),
@@ -188,7 +188,7 @@
     (let (
             (command-id (message-to-command-id source-chain message-id))
             (message-hash (get-message-hash {
-                command-id: command-id,
+                message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
                 contract-address: contract-address,
