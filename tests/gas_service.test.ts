@@ -39,7 +39,7 @@ describe('gas-service contract test suite', () => {
     });
 
     it('allows owner to pay native gas for contract call', async () => {
-        // First, refund the contract to have some balance
+        // First, refund the contract to have some balance.
         await simnet.callPublicFn('gas_service', 'refund', [Cl.uint(2000), Cl.principal(wallet1)], wallet1);
 
         const payTx = await simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
