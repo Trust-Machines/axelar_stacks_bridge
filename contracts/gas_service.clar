@@ -99,15 +99,15 @@
 
 ;; Read-only function to get the current balance
 (define-read-only (get-balance)
-    (var-get contract-balance)
+    (ok (var-get contract-balance))
 )
 
 ;; Read-only function to check if the caller is the contract owner
 (define-read-only (is-contract-owner)
-    (is-eq tx-sender (var-get contract-owner))
+    (ok (is-eq tx-sender (var-get contract-owner)))
 )
 
 ;; Read-only function to get the current contract owner
 (define-read-only (get-contract-owner)
-    (var-get contract-owner)
+    (ok (var-get contract-owner))
 )
