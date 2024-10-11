@@ -177,7 +177,7 @@
 ;; @param source-address; The address of the sender on the source chain.
 ;; @param contract-address; The address of the contract where the call will be executed.
 ;; @param payload-hash; The keccak256 hash of the payload data.
-;; ;; @returns (response bool)
+;; @returns (response bool)
 (define-read-only (is-message-approved 
     (source-chain (string-ascii 32))
     (message-id (string-ascii 71))
@@ -198,6 +198,11 @@
         (ok (is-eq message-hash (get-message command-id))))
 )
 
+;; Checks if a message is executed.
+;; Determines whether a given message, identified by the source-chain and message-id is executed.
+;; @param source-chain; The name of the source chain.
+;; @param message-id; The unique identifier of the message.
+;; @returns (response bool)
 (define-read-only (is-message-executed
     (source-chain (string-ascii 32))
     (message-id (string-ascii 71))
@@ -205,7 +210,7 @@
     (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
 )
 
-;; Returns message with the command-id provided. Returns an empty buffer if no message matched.
+;; Message getter with the command-id. Returns an empty buffer if no message matched.
 ;; @param command-id
 ;; @returns (buff 32) or (buff 1)
 (define-read-only (get-message
