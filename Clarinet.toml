@@ -15,6 +15,31 @@ path = 'contracts/gateway.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.interchain-token-factory]
+path = 'contracts/interchain-token-factory.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-service]
+path = 'contracts/interchain-token-service.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-service-trait]
+path = 'contracts/interchain-token-service-trait.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.token-manager]
+path = 'contracts/token-manager.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.traits]
+path = 'contracts/traits.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.hello-world]
 path = 'contracts/hello-world.clar'
 clarity_version = 2
