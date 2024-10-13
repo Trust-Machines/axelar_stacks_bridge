@@ -7,8 +7,6 @@
 ;; traits
 ;;
 (define-trait token-manager-trait (
-    (add-flow-in (uint) (response bool uint))
-    (add-flow-out (uint) (response bool uint))
     (add-flow-limiter (principal) (response bool uint))
     (remove-flow-limiter ( principal) (response bool uint))
     (is-flow-limiter (principal) (response bool uint))

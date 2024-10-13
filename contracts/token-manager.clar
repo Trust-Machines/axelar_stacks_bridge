@@ -5,27 +5,29 @@
 ;; or setting flow limits, for interchain transfers.
 (impl-trait .token-manager-trait.token-manager-trait)
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(use-trait mintable-burnable .mintable-burnable-trait.mintable-burnable)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant CHAIN-NAME (keccak256 (unwrap-panic (to-consensus-buff? "Stacks"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
-(define-constant TOKEN-ADDRESS .sip-10-token-example)
+(define-constant TOKEN-ADDRESS .mintable-burnable-sip-010)
 (define-constant INTERCHAIN-TOKEN-ID (keccak256
     (concat
         (concat PREFIX_CANONICAL_TOKEN_SALT CHAIN-NAME)
         (unwrap-panic (to-consensus-buff? TOKEN-ADDRESS)))))
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
-(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u1)
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
-(define-constant TOKEN-TYPE-MINT-BURN-FROM u2)
+(define-constant TOKEN-TYPE-MINT-BURN-FROM u1)
 ;; The token will be locked/unlocked at the token manager.
-(define-constant TOKEN-TYPE-LOCK-UNLOCK u3)
+(define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 ;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
-(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u4)
+(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u3)
 ;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
-(define-constant TOKEN-TYPE-MINT-BURN u5)
-;; The token will be sent through the gateway via callContractWithToken
-(define-constant TOKEN-TYPE-GATEWAY u6)
+(define-constant TOKEN-TYPE-MINT-BURN u4)
+
+;; Should be a variable changed at deployment
+(define-constant TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
 
 (define-constant GATEWAY .gateway)
 (define-constant INTERCHAIN-TOKEN-SERVICE .interchain-token-service)
@@ -154,6 +156,7 @@
 (define-constant ERR-NOT-AUTHORIZED (err u2051))
 (define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
 (define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u2054))
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 (define-data-var flow-limit uint u0)
@@ -199,7 +202,7 @@
 
 ;; Adds a flow out amount while ensuring it does not exceed the flow limit.
 ;; @param flow-amount The flow out amount to add.
-(define-public (add-flow-out (flow-amount uint))
+(define-private (add-flow-out (flow-amount uint))
     (let (
             (limit  (var-get flow-limit))
             (epoch  (/ burn-block-height EPOCH-TIME))
@@ -207,7 +210,6 @@
             (current-flow-in  (unwrap-panic (get-flow-in-amount)))
             (new-flow-out (+ current-flow-out flow-amount))
         )
-        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
         (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
         (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if (is-eq limit u0)
@@ -221,14 +223,13 @@
 
 ;; Adds a flow in amount while ensuring it does not exceed the flow limit.
 ;; @param flow-amount The flow out amount to add.
-(define-public  (add-flow-in  (flow-amount uint))
+(define-private  (add-flow-in  (flow-amount uint))
     (let (
                 (limit   (var-get flow-limit))
                 (epoch   (/ burn-block-height EPOCH-TIME))
                 (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
                 (current-flow-in (unwrap-panic (get-flow-in-amount)))
                 (new-flow-in (+ current-flow-out flow-amount)))
-            (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
             (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
             (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
             (if  (is-eq limit u0)
@@ -246,10 +247,22 @@
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
-(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
-    (begin 
+(define-public (give-token (sip-010-token <mintable-burnable>) (to principal) (amount uint)) 
+    (begin
+        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (contract-of sip-010-token) TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
         (try! (add-flow-in amount))
-        (as-contract (transfer-token-from sip-010-token tx-sender to amount))))
+        (if (or
+                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN))
+                (give-token-mint-burn sip-010-token to amount)
+            (if (or 
+                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE))
+                (as-contract (transfer-token-from sip-010-token tx-sender to amount))
+            ERR-UNSUPPORTED-TOKEN-TYPE))
+        ))
 
 ;; This function takes token from a specified address to the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -257,12 +270,33 @@
 ;; @param from The address to take tokens from.
 ;; @param amount The amount of token to take.
 ;; @return (response bool uint)
-(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
+(define-public (take-token (sip-010-token <mintable-burnable>) (from principal) (amount uint)) 
     (begin
+        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (contract-of sip-010-token) TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
         (try! (add-flow-out amount))
-        (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
+        (if (or
+                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN))
+                (take-token-mint-burn sip-010-token from amount)
+            (if (or 
+                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE))
+                (transfer-token-from sip-010-token from (as-contract tx-sender) amount)
+            ERR-UNSUPPORTED-TOKEN-TYPE))
+        ))
+
+(define-private (take-token-mint-burn (mintable-burnable-token <mintable-burnable>) (from principal) (amount uint))
+    (contract-call? mintable-burnable-token burn from amount)
+)
+
+(define-private (give-token-mint-burn (mintable-burnable-token <mintable-burnable>) (to principal) (amount uint))
+    (contract-call? mintable-burnable-token mint to amount)
+)
 
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
         (asserts! (is-eq TOKEN-ADDRESS (contract-of sip-010-token)) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
+
