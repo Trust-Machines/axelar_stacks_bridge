@@ -4,6 +4,7 @@
 ;; such as setting locking token balances, 
 ;; or setting flow limits, for interchain transfers.
 (impl-trait .token-manager-trait.token-manager-trait)
+(use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant CHAIN-NAME (keccak256 (unwrap-panic (to-consensus-buff? "Stacks"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
@@ -13,6 +14,20 @@
         (concat PREFIX_CANONICAL_TOKEN_SALT CHAIN-NAME)
         (unwrap-panic (to-consensus-buff? TOKEN-ADDRESS)))))
 
+;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u1)
+;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
+(define-constant TOKEN-TYPE-MINT-BURN-FROM u2)
+;; The token will be locked/unlocked at the token manager.
+(define-constant TOKEN-TYPE-LOCK-UNLOCK u3)
+;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
+(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u4)
+;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
+(define-constant TOKEN-TYPE-MINT-BURN u5)
+;; The token will be sent through the gateway via callContractWithToken
+(define-constant TOKEN-TYPE-GATEWAY u6)
+
+(define-constant GATEWAY .gateway)
 (define-constant INTERCHAIN-TOKEN-SERVICE .interchain-token-service)
 (define-map roles principal {
     operator: bool,
@@ -138,6 +153,7 @@
 
 (define-constant ERR-NOT-AUTHORIZED (err u2051))
 (define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
+(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 (define-data-var flow-limit uint u0)
@@ -223,3 +239,30 @@
                         flow-in: new-flow-in
                     })
                     (ok true)))))
+
+;; This function gives token to a specified address from the token manager.
+;; @param sip-010-token The sip-010 interface of the token.
+;; @param token-manager The trait interface of the token manager
+;; @param to The address to give tokens to.
+;; @param amount The amount of tokens to give.
+;; @return (response bool uint)
+(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
+    (begin 
+        (try! (add-flow-in amount))
+        (as-contract (transfer-token-from sip-010-token tx-sender to amount))))
+
+;; This function takes token from a specified address to the token manager.
+;; @param sip-010-token The sip-010 interface of the token.
+;; @param token-manager The trait interface of the token manager
+;; @param from The address to take tokens from.
+;; @param amount The amount of token to take.
+;; @return (response bool uint)
+(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
+    (begin
+        (try! (add-flow-out amount))
+        (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
+
+(define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
+    (begin
+        (asserts! (is-eq TOKEN-ADDRESS (contract-of sip-010-token)) ERR-NOT-MANAGED-TOKEN)
+        (contract-call? sip-010-token transfer amount from to none)))

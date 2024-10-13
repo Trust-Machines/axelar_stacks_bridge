@@ -32,11 +32,6 @@ path = 'contracts/interchain-token-service-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
-[contracts.token-handler]
-path = 'contracts/token-handler.clar'
-clarity_version = 2
-epoch = 2.5
-
 [contracts.token-manager]
 path = 'contracts/token-manager.clar'
 clarity_version = 2
