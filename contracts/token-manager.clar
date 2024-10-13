@@ -3,7 +3,7 @@
 ;; This contract is responsible for managing tokens, 
 ;; such as setting locking token balances, 
 ;; or setting flow limits, for interchain transfers.
-
+(impl-trait .token-manager-trait.token-manager-trait)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant CHAIN-NAME (keccak256 (unwrap-panic (to-consensus-buff? "Stacks"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
@@ -55,52 +55,40 @@
 (define-read-only (interchain-token-id)
     (ok INTERCHAIN-TOKEN-ID))
 
-;;     /**
-;;      * @notice This function transfers a flow limiter for this TokenManager.
-;;      * @dev Can only be called by the operator.
-;;      * @param from the address of the old flow limiter.
-;;      * @param to the address of the new flow limiter.
-;;      */
-;;     function transferFlowLimiter(address from, address to) external onlyRole(uint8(Roles.OPERATOR)) {
-;;         _transferAccountRoles(from, to, 1 << uint8(Roles.FLOW_LIMITER));
-;;     }
+;; Query if an address is a operator.
+;; @param addr The address to query for.
+;; @return bool Boolean value representing whether or not the address is an operator.
+(define-read-only (is-operator (address principal)) 
+    (ok (default-to false (get operator (map-get? roles tx-sender)))))
 
-;;     /**
-;;      * @notice This function adds a flow limiter for this TokenManager.
-;;      * @dev Can only be called by the operator.
-;;      * @param flowLimiter the address of the new flow limiter.
-;;      */
-;;     function addFlowLimiter(address flowLimiter) external onlyRole(uint8(Roles.OPERATOR)) {
-;;         _addRole(flowLimiter, uint8(Roles.FLOW_LIMITER));
-;;     }
 
-;;     /**
-;;      * @notice This function removes a flow limiter for this TokenManager.
-;;      * @dev Can only be called by the operator.
-;;      * @param flowLimiter the address of an existing flow limiter.
-;;      */
-;;     function removeFlowLimiter(address flowLimiter) external onlyRole(uint8(Roles.OPERATOR)) {
-;;         _removeRole(flowLimiter, uint8(Roles.FLOW_LIMITER));
-;;     }
+;; This function adds a flow limiter for this TokenManager.
+;; Can only be called by the operator.
+;; @param flowLimiter the address of the new flow limiter.
+(define-public (add-flow-limiter (address principal))
+    (begin
+        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
+        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (match (map-get? roles address) 
+            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
+            (ok (map-set roles address  {flow-limiter: true, operator: false})))))
 
-;;     /**
-;;      * @notice Query if an address is a flow limiter.
-;;      * @param addr The address to query for.
-;;      * @return bool Boolean value representing whether or not the address is a flow limiter.
-;;      */
-;;     function isFlowLimiter(address addr) external view returns (bool) {
-;;         return hasRole(addr, uint8(Roles.FLOW_LIMITER));
-;;     }
-
-;;     /**
-;;      * @notice This function sets the flow limit for this TokenManager.
-;;      * @dev Can only be called by the flow limiters.
-;;      * @param flowLimit_ The maximum difference between the tokens flowing in and/or out at any given interval of time (6h).
-;;      */
-;;     function setFlowLimit(uint256 flowLimit_) external onlyRole(uint8(Roles.FLOW_LIMITER)) {
-;;         // slither-disable-next-line var-read-using-this
-;;         _setFlowLimit(flowLimit_, this.interchainTokenId());
-;;     }
+;; This function removes a flow limiter for this TokenManager.
+;; Can only be called by the operator.
+;; @param flowLimiter the address of an existing flow limiter.
+(define-public (remove-flow-limiter (address principal))
+    (begin 
+        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
+        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (match (map-get? roles address) 
+            ;; no need to check limiter if they don't exist it will be a noop
+            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
+            (ok true))))
+;; Query if an address is a flow limiter.
+;; @param addr The address to query for.
+;; @return bool Boolean value representing whether or not the address is a flow limiter.
+(define-read-only (is-flow-limiter (addr principal))
+    (default-to false (get flow-limiter (map-get? roles addr))))
 
 ;;     /**
 ;;      * @notice A function to renew approval to the service if we need to.
@@ -149,7 +137,7 @@
 ;; }
 
 (define-constant ERR-NOT-AUTHORIZED (err u2051))
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err 2052))
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 (define-data-var flow-limit uint u0)
@@ -195,7 +183,7 @@
 
 ;; Adds a flow out amount while ensuring it does not exceed the flow limit.
 ;; @param flow-amount The flow out amount to add.
-(define-private (add-flow-out (flow-amount uint))
+(define-public (add-flow-out (flow-amount uint))
     (let (
             (limit  (var-get flow-limit))
             (epoch  (/ burn-block-height EPOCH-TIME))
@@ -203,6 +191,7 @@
             (current-flow-in  (unwrap-panic (get-flow-in-amount)))
             (new-flow-out (+ current-flow-out flow-amount))
         )
+        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
         (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
         (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if (is-eq limit u0)
@@ -216,13 +205,14 @@
 
 ;; Adds a flow in amount while ensuring it does not exceed the flow limit.
 ;; @param flow-amount The flow out amount to add.
-(define-private  (add-flow-in  (flow-amount uint))
+(define-public  (add-flow-in  (flow-amount uint))
     (let (
                 (limit   (var-get flow-limit))
                 (epoch   (/ burn-block-height EPOCH-TIME))
                 (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
                 (current-flow-in (unwrap-panic (get-flow-in-amount)))
                 (new-flow-in (+ current-flow-out flow-amount)))
+            (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
             (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
             (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
             (if  (is-eq limit u0)

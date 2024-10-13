@@ -4,7 +4,9 @@ description = ''
 authors = []
 telemetry = true
 cache_dir = './.cache'
-requirements = []
+
+[[project.requirements]]
+contract_id = 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard'
 [contracts.gas-service]
 path = 'contracts/gas-service.clar'
 clarity_version = 2
@@ -30,8 +32,18 @@ path = 'contracts/interchain-token-service-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.token-handler]
+path = 'contracts/token-handler.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.token-manager]
 path = 'contracts/token-manager.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.token-manager-trait]
+path = 'contracts/token-manager-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
