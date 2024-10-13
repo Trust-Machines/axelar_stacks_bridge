@@ -78,6 +78,21 @@
 ;;         uint8 decimals
 ;;     );
 ;;     event InterchainTokenIdClaimed(bytes32 indexed tokenId, address indexed deployer, bytes32 indexed salt);
+(define-constant ERR-NOT-AUTHORIZED (err u1051))
+(define-constant ERR-PAUSED (err u1052))
+(define-constant OWNER tx-sender)
+(define-data-var is-paused bool false)
+
+(define-public (set-paused (status bool))
+    (begin 
+        (asserts! (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
+        (ok (var-set is-paused status))))
+
+(define-read-only (get-is-paused) 
+    (ok (var-get is-paused)))
+
+(define-private (require-not-paused) 
+    (ok (asserts! (not (var-get is-paused)) ERR-PAUSED)))
 
 (define-constant GATEWAY .gateway)
 (define-constant GAS-SERVICE .gas-service)
