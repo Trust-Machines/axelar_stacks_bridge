@@ -67,22 +67,23 @@
 Serialization example: 
 
 ```js
-import { bufferCV, bufferCVFromString, listCV, serializeCV, tupleCV, bufferFromHex, bufferFromAscii } from "@stacks/transactions";
+import { bufferCV, stringAsciiCV, listCV, serializeCV, tupleCV } from "@stacks/transactions";
+import { bufferFromHex } from "@stacks/transactions/dist/cl";
 
 const messages = bufferCV(
     serializeCV(
         listCV(
             [
                 tupleCV({
-                    "source-chain": bufferCVFromString("ethereum"),
-                    "message-id": bufferFromHex("210d370a7aa448c50d2efa7b1df884da31c9f43aa8e9763df087bb5c592058c5"),
+                    "source-chain": stringAsciiCV("ethereum"),
+                    "message-id": stringAsciiCV("210d370a7aa448c50d2efa7b1df884da31c9f43aa8e9763df087bb5c592058c5-0"),
                     "source-address": bufferFromHex("000Ec41d91A35048FbA4F00522Be80DF0E39e785"),
                     "contract-address": bufferFromHex("000F9B4FF55aFcC3C4f9f325EE890c0C806E8FCC"),
                     "payload-hash": bufferFromHex("0ceb6cf5466ce364a10d9e045726eb10f01667b8c0a1293ae4ae43baee439833")
                 }),
                 tupleCV({
-                    "source-chain": bufferCVFromString("ethereum"),
-                    "message-id": bufferFromHex("fe0d2393e76ea487217b1606aff64535f8526a00e007704f8391fa41c78fb451"),
+                    "source-chain": stringAsciiCV("ethereum"),
+                    "message-id": stringAsciiCV("fe0d2393e76ea487217b1606aff64535f8526a00e007704f8391fa41c78fb451-0"),
                     "source-address": bufferFromHex("000E91D671C29c2DBBc81D16adA4a8bDd6fE518F"),
                     "contract-address": bufferFromHex("000D56AA59a39557B62584CEEaF00a55d426E3a3"),
                     "payload-hash": bufferFromHex("dab0a0dbe44a3789aab44865f310d59df48c068855d112686bd6359d737aa422")
@@ -107,7 +108,8 @@ Serialization example:
 
 ```js
 
-import { bufferCV, bufferCVFromString, listCV, principalCV, serializeCV, tupleCV, uintCV, bufferFromAscii, bufferFromHex  } from "@stacks/transactions";
+import { bufferCV, listCV, principalCV, serializeCV, tupleCV, uintCV } from "@stacks/transactions";
+import {bufferFromHex} from "@stacks/transactions/dist/cl"
 
 const signers = bufferCV(
     serializeCV(
@@ -148,7 +150,8 @@ const signers = bufferCV(
 Serialization example: 
 
 ```js
-import { bufferCV, bufferCVFromString, listCV, principalCV, serializeCV, tupleCV, uintCV, bufferFromAscii, bufferFromHex } from "@stacks/transactions";
+import { bufferCV, listCV, principalCV, serializeCV, tupleCV, uintCV } from "@stacks/transactions";
+import {bufferFromHex} from "@stacks/transactions/dist/cl"
 
 const proof = bufferCV(
     serializeCV(
@@ -210,11 +213,11 @@ payload: 0x6c6f72656d697073756d20646f6c6f722073697420616d6574
 
 ```js
 
-import { cvToJSON, deserialize } from "@stacks/transactions";
+import { cvToJSON, hexToCV } from "@stacks/transactions";
 
 const hex = "0x0c000000061164657374696e6174696f6e2d636861696e0200000008657468657265756d1c64657374696e6174696f6e2d636f6e74726163742d61646472657373020000002a307830343345313035313839653135414337323235324346454638393845433338343141344130353631077061796c6f616402000000196c6f72656d697073756d20646f6c6f722073697420616d65740c7061796c6f61642d6861736802000000200338573718f5cd6d7e5a90adcdebd28b097f99574ad6febffea9a40adb17f46d0673656e646572051a6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce04747970650d0000000d636f6e74726163742d63616c6c";
 
-const json = cvToJSON(deserialize(hex));
+const json = cvToJSON(hexToCV(hex));
 
 console.log('type:', json.value['type'].value);
 console.log('sender:', json.value['sender'].value)
