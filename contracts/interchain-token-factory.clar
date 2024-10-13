@@ -3,6 +3,7 @@
 ;; version:
 ;; summary:
 ;; description:
+;; This contract is responsible for deploying new interchain tokens and managing their token managers.
 
 ;; traits
 ;;
@@ -28,90 +29,47 @@
 ;; private functions
 ;;
 
-;; // SPDX-License-Identifier: MIT
 
-;; pragma solidity ^0.8.0;
+(define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
+(define-constant PREFIX-CANONICAL-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
+(define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
+(define-constant PREFIX-GATEWAY-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "gateway-token-salt"))))
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+(define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
+(define-constant CHAIN-NAME-HASH (unwrap-panic (contract-call? .interchain-token-service get-chain-name-hash)))
+(define-constant GATEWAY (unwrap-panic (contract-call? .interchain-token-service get-gateway)))
+;; The address of the interchain token service.
+(define-constant ITS .interchain-token-service)
 
-;; import { AddressBytes } from '@axelar-network/axelar-gmp-sdk-solidity/contracts/libs/AddressBytes.sol';
-;; import { Multicall } from '@axelar-network/axelar-gmp-sdk-solidity/contracts/utils/Multicall.sol';
-;; import { Upgradable } from '@axelar-network/axelar-gmp-sdk-solidity/contracts/upgradable/Upgradable.sol';
-;; import { IAxelarGateway } from '@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol';
+;; Getter for the contract id.
+;; @return bytes32 The contract id of this contract.
+(define-read-only (get-contract-id) 
+    (ok CONTRACT-ID))
 
-;; import { IInterchainTokenService } from './interfaces/IInterchainTokenService.sol';
-;; import { IInterchainTokenFactory } from './interfaces/IInterchainTokenFactory.sol';
-;; import { ITokenManagerType } from './interfaces/ITokenManagerType.sol';
-;; import { ITokenManager } from './interfaces/ITokenManager.sol';
-;; import { IInterchainToken } from './interfaces/IInterchainToken.sol';
+;; Calculates the salt for an interchain token.
+;; @param chainNameHash_ The hash of the chain name.
+;; @param deployer The address of the deployer.
+;; @param salt A unique identifier to generate the salt.
+;; @return tokenSalt The calculated salt for the interchain token.
+(define-read-only (get-interchain-token-salt (chain-name-hash_ (buff 32)) (deployer principal) (salt (buff 32)))
+    (ok
+        (keccak256 
+            (concat
+                (concat PREFIX-INTERCHAIN-TOKEN-SALT chain-name-hash_)
+                (concat 
+                    (unwrap-panic (to-consensus-buff? deployer))
+                    salt)))))
 
-;; /**
-;;  * @title InterchainTokenFactory
-;;  * @notice This contract is responsible for deploying new interchain tokens and managing their token managers.
-;;  */
-;; contract InterchainTokenFactory is IInterchainTokenFactory, ITokenManagerType, Multicall, Upgradable {
-;;     using AddressBytes for address;
-
-;;     IInterchainTokenService public immutable interchainTokenService;
-;;     bytes32 public immutable chainNameHash;
-;;     IAxelarGateway public immutable gateway;
-
-;;     bytes32 private constant CONTRACT_ID = keccak256('interchain-token-factory');
-;;     bytes32 internal constant PREFIX_CANONICAL_TOKEN_SALT = keccak256('canonical-token-salt');
-;;     bytes32 internal constant PREFIX_INTERCHAIN_TOKEN_SALT = keccak256('interchain-token-salt');
-;;     bytes32 internal constant PREFIX_GATEWAY_TOKEN_SALT = keccak256('gateway-token-salt');
-;;     address private constant TOKEN_FACTORY_DEPLOYER = address(0);
-
-;;     /**
-;;      * @notice Constructs the InterchainTokenFactory contract.
-;;      * @param interchainTokenService_ The address of the interchain token service.
-;;      */
-;;     constructor(address interchainTokenService_) {
-;;         if (interchainTokenService_ == address(0)) revert ZeroAddress();
-
-;;         interchainTokenService = IInterchainTokenService(interchainTokenService_);
-
-;;         chainNameHash = interchainTokenService.chainNameHash();
-;;         gateway = interchainTokenService.gateway();
-;;     }
-
-;;     /**
-;;      * @notice Getter for the contract id.
-;;      * @return bytes32 The contract id of this contract.
-;;      */
-;;     function contractId() external pure returns (bytes32) {
-;;         return CONTRACT_ID;
-;;     }
-
-;;     /**
-;;      * @notice Calculates the salt for an interchain token.
-;;      * @param chainNameHash_ The hash of the chain name.
-;;      * @param deployer The address of the deployer.
-;;      * @param salt A unique identifier to generate the salt.
-;;      * @return tokenSalt The calculated salt for the interchain token.
-;;      */
-;;     function interchainTokenSalt(bytes32 chainNameHash_, address deployer, bytes32 salt) public pure returns (bytes32 tokenSalt) {
-;;         tokenSalt = keccak256(abi.encode(PREFIX_INTERCHAIN_TOKEN_SALT, chainNameHash_, deployer, salt));
-;;     }
-
-;;     /**
-;;      * @notice Calculates the salt for a canonical interchain token.
-;;      * @param chainNameHash_ The hash of the chain name.
-;;      * @param tokenAddress The address of the token.
-;;      * @return salt The calculated salt for the interchain token.
-;;      */
-;;     function canonicalInterchainTokenSalt(bytes32 chainNameHash_, address tokenAddress) public pure returns (bytes32 salt) {
-;;         salt = keccak256(abi.encode(PREFIX_CANONICAL_TOKEN_SALT, chainNameHash_, tokenAddress));
-;;     }
-(define-read-only (canonical-interchain-token-salt (token-address principal))
-    (ok true))
-
-;;     /**
-;;      * @notice Calculates the salt for a gateway interchain token.
-;;      * @param tokenIdentifier A unique identifier to generate the salt.
-;;      * @return salt The calculated salt for the interchain token.
-;;      */
-;;     function gatewayTokenSalt(bytes32 tokenIdentifier) public pure returns (bytes32 salt) {
-;;         salt = keccak256(abi.encode(PREFIX_GATEWAY_TOKEN_SALT, tokenIdentifier));
-;;     }
+;; Calculates the salt for a canonical interchain token.
+;; @param chain-name-hash The hash of the chain name.
+;; @param token-address The address of the token.
+;; @return salt The calculated salt for the interchain token.
+(define-read-only (get-canonical-interchain-token-salt (chain-name-hash_ (buff 32)) (token-address principal))
+    (ok 
+        (keccak256 
+            (concat 
+                (concat PREFIX-CANONICAL-TOKEN-SALT chain-name-hash_) 
+                (unwrap-panic (to-consensus-buff? token-address))))))
 
 ;;     /**
 ;;      * @notice Computes the ID for an interchain token based on the deployer and a salt.

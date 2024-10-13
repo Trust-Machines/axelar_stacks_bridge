@@ -105,6 +105,12 @@
 (define-constant GATEWAY-CALLER none)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
+
+(define-read-only (get-chain-name-hash) 
+    (ok CHAIN-NAME-HASH))
+
+(define-read-only (get-gateway) 
+    (ok GATEWAY))
 ;;         if (bytes(chainName_).length == 0) revert InvalidChainName();
 ;;         chainNameHash = keccak256(bytes(chainName_));
 
