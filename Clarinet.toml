@@ -17,6 +17,11 @@ path = 'contracts/gateway.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.interchain-address-tracker]
+path = 'contracts/interchain-address-tracker.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.interchain-token-factory]
 path = 'contracts/interchain-token-factory.clar'
 clarity_version = 2
