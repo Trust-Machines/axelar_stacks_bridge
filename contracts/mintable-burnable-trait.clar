@@ -7,13 +7,6 @@
 ;; traits
 ;;
 
-;; function mint(address account, uint256 amount) external onlyRole(uint8(Roles.MINTER)) {
-;;         _mint(account, amount);
-;;     }
-
-;;     function burn(address account, uint256 amount) external onlyRole(uint8(Roles.MINTER)) {
-;;         _burn(account, amount);
-;;     }
 (define-trait mintable-burnable (
     (mint (principal uint) (response bool uint))
     (burn (principal uint) (response bool uint))
@@ -37,24 +30,3 @@
     ;; an optional URI that represents metadata of this token
     (get-token-uri () (response (optional (string-utf8 256)) uint))
 ))
-;; token definitions
-;;
-
-;; constants
-;;
-
-;; data vars
-;;
-
-;; data maps
-;;
-
-;; public functions
-;;
-
-;; read only functions
-;;
-
-;; private functions
-;;
-

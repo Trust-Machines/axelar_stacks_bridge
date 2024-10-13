@@ -23,24 +23,3 @@
     (take-token-lock-unlock (<sip-010-trait> principal uint) (response bool uint))
     (give-token-lock-unlock (<sip-010-trait> principal uint) (response bool uint))
 ))
-;; token definitions
-;;
-
-;; constants
-;;
-
-;; data vars
-;;
-
-;; data maps
-;;
-
-;; public functions
-;;
-
-;; read only functions
-;;
-
-;; private functions
-;;
-
