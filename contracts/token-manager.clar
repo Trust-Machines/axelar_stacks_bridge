@@ -64,7 +64,7 @@
 
 ;; Reads the managed token address
 ;; @return principal The address of the token.
-(define-read-only (token-address)
+(define-read-only (get-token-address)
     (ok TOKEN-ADDRESS))
 
 ;; A function that returns the interchain token id.
@@ -107,52 +107,6 @@
 (define-read-only (is-flow-limiter (addr principal))
     (ok (default-to false (get flow-limiter (map-get? roles addr)))))
 
-;;     /**
-;;      * @notice A function to renew approval to the service if we need to.
-;;      */
-;;     function approveService() external onlyService {
-;;         /**
-;;          * @dev Some tokens may not obey the infinite approval.
-;;          * Even so, it is unexpected to run out of allowance in practice.
-;;          * If needed, we can upgrade to allow replenishing the allowance in the future.
-;;          */
-;;         IERC20(this.tokenAddress()).safeCall(abi.encodeWithSelector(IERC20.approve.selector, interchainTokenService, UINT256_MAX));
-;;     }
-
-;;     /**
-;;      * @notice Getter function for the parameters of a lock/unlock TokenManager.
-;;      * @dev This function will be mainly used by frontends.
-;;      * @param operator_ The operator of the TokenManager.
-;;      * @param tokenAddress_ The token to be managed.
-;;      * @return params_ The resulting params to be passed to custom TokenManager deployments.
-;;      */
-;;     function params(bytes calldata operator_, address tokenAddress_) external pure returns (bytes memory params_) {
-;;         params_ = abi.encode(operator_, tokenAddress_);
-;;     }
-
-;;     /**
-;;      * @notice External function to allow the service to mint tokens through the tokenManager
-;;      * @dev This function should revert if called by anyone but the service.
-;;      * @param tokenAddress_ The address of the token, since its cheaper to pass it in instead of reading it as the token manager.
-;;      * @param to The recipient.
-;;      * @param amount The amount to mint.
-;;      */
-;;     function mintToken(address tokenAddress_, address to, uint256 amount) external onlyService {
-;;         IERC20(tokenAddress_).safeCall(abi.encodeWithSelector(IERC20MintableBurnable.mint.selector, to, amount));
-;;     }
-
-;;     /**
-;;      * @notice External function to allow the service to burn tokens through the tokenManager
-;;      * @dev This function should revert if called by anyone but the service.
-;;      * @param tokenAddress_ The address of the token, since its cheaper to pass it in instead of reading it as the token manager.
-;;      * @param from The address to burn the token from.
-;;      * @param amount The amount to burn.
-;;      */
-;;     function burnToken(address tokenAddress_, address from, uint256 amount) external onlyService {
-;;         IERC20(tokenAddress_).safeCall(abi.encodeWithSelector(IERC20MintableBurnable.burn.selector, from, amount));
-;;     }
-;; }
-
 (define-constant ERR-NOT-AUTHORIZED (err u2051))
 (define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
 (define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
@@ -181,7 +135,7 @@
         (perms (unwrap! (map-get? roles tx-sender) ERR-NOT-AUTHORIZED))
     )
     (asserts! (get flow-limiter perms) ERR-NOT-AUTHORIZED)
-    ;; no need to check can be set to 0 to practically make it unlimited
+    ;; no need to check can be set to 0 to practically makes it unlimited
     (var-set flow-limit limit)
     (ok true))
 )
@@ -225,21 +179,21 @@
 ;; @param flow-amount The flow out amount to add.
 (define-private  (add-flow-in  (flow-amount uint))
     (let (
-                (limit   (var-get flow-limit))
-                (epoch   (/ burn-block-height EPOCH-TIME))
-                (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
-                (current-flow-in (unwrap-panic (get-flow-in-amount)))
-                (new-flow-in (+ current-flow-out flow-amount)))
-            (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
-            (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
-            (if  (is-eq limit u0)
-                (ok true)
-                (begin
-                    (map-set flows epoch {
-                        flow-out: current-flow-out,
-                        flow-in: new-flow-in
-                    })
-                    (ok true)))))
+            (limit   (var-get flow-limit))
+            (epoch   (/ burn-block-height EPOCH-TIME))
+            (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
+            (current-flow-in (unwrap-panic (get-flow-in-amount)))
+            (new-flow-in (+ current-flow-out flow-amount)))
+        (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
+        (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
+        (if  (is-eq limit u0)
+            (ok true)
+            (begin
+                (map-set flows epoch {
+                    flow-out: current-flow-out,
+                    flow-in: new-flow-in
+                })
+                (ok true)))))
 
 ;; This function gives token to a specified address from the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -247,22 +201,10 @@
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
-(define-public (give-token (sip-010-token <mintable-burnable>) (to principal) (amount uint)) 
+(define-public (give-token-lock-unlock (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
-        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
-        (asserts! (is-eq (contract-of sip-010-token) TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
         (try! (add-flow-in amount))
-        (if (or
-                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN))
-                (give-token-mint-burn sip-010-token to amount)
-            (if (or 
-                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE))
-                (as-contract (transfer-token-from sip-010-token tx-sender to amount))
-            ERR-UNSUPPORTED-TOKEN-TYPE))
-        ))
+        (as-contract (transfer-token-from sip-010-token tx-sender to amount))))
 
 ;; This function takes token from a specified address to the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -270,33 +212,47 @@
 ;; @param from The address to take tokens from.
 ;; @param amount The amount of token to take.
 ;; @return (response bool uint)
-(define-public (take-token (sip-010-token <mintable-burnable>) (from principal) (amount uint)) 
+(define-public (take-token-lock-unlock (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
-        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
-        (asserts! (is-eq (contract-of sip-010-token) TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
         (try! (add-flow-out amount))
-        (if (or
-                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN))
-                (take-token-mint-burn sip-010-token from amount)
-            (if (or 
-                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE))
-                (transfer-token-from sip-010-token from (as-contract tx-sender) amount)
-            ERR-UNSUPPORTED-TOKEN-TYPE))
-        ))
+        (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
 
-(define-private (take-token-mint-burn (mintable-burnable-token <mintable-burnable>) (from principal) (amount uint))
-    (contract-call? mintable-burnable-token burn from amount)
+(define-public (take-token-mint-burn (mintable-burnable-token <mintable-burnable>) (from principal) (amount uint))
+    (begin
+        (try! (token-auth (contract-of mintable-burnable-token)))
+        (try! (token-type-check-mint-burn))
+        (try! (add-flow-out amount))
+        (contract-call? mintable-burnable-token burn from amount))
 )
 
-(define-private (give-token-mint-burn (mintable-burnable-token <mintable-burnable>) (to principal) (amount uint))
-    (contract-call? mintable-burnable-token mint to amount)
+(define-public (give-token-mint-burn (mintable-burnable-token <mintable-burnable>) (to principal) (amount uint))
+    (begin
+        (try! (token-auth (contract-of mintable-burnable-token)))
+        (try! (token-type-check-mint-burn))
+        (try! (add-flow-in amount))
+        (contract-call? mintable-burnable-token mint to amount))
 )
 
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
-        (asserts! (is-eq TOKEN-ADDRESS (contract-of sip-010-token)) ERR-NOT-MANAGED-TOKEN)
+        (try! (token-auth (contract-of sip-010-token)))
+        (try! (token-type-check-lock-unlock))
         (contract-call? sip-010-token transfer amount from to none)))
 
+(define-private (token-auth (token-address principal)) 
+    (begin 
+        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq token-address TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
+        (ok true)
+))
+
+(define-private (token-type-check-lock-unlock)
+    (ok (asserts! (or 
+        (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
+        (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE)) ERR-UNSUPPORTED-TOKEN-TYPE)))
+
+(define-private (token-type-check-mint-burn) 
+    (ok (asserts! (or
+                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
+                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN)) ERR-UNSUPPORTED-TOKEN-TYPE)))
