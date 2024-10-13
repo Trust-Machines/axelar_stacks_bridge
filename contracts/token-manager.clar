@@ -88,7 +88,7 @@
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is a flow limiter.
 (define-read-only (is-flow-limiter (addr principal))
-    (default-to false (get flow-limiter (map-get? roles addr))))
+    (ok (default-to false (get flow-limiter (map-get? roles addr)))))
 
 ;;     /**
 ;;      * @notice A function to renew approval to the service if we need to.
