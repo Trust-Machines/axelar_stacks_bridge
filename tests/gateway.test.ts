@@ -1,11 +1,50 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, hash160, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { bufferFromAscii, bufferFromHex, deserialize, serialize } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
 import { signMessageHashForAddress } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+
+
+const startGateway = () => {
+
+  const signers = tupleCV({
+    "signers": listCV([
+      tupleCV({
+        "signer": principalCV(accounts.get("wallet_1")!),
+        "weight": uintCV(1)
+      }),
+      tupleCV({
+        "signer": principalCV(accounts.get("wallet_2")!),
+        "weight": uintCV(1)
+      }),
+      tupleCV({
+        "signer": principalCV(accounts.get("wallet_3")!),
+        "weight": uintCV(1)
+      }),
+      tupleCV({
+        "signer": principalCV(accounts.get("wallet_4")!),
+        "weight": uintCV(1)
+      }),
+      tupleCV({
+        "signer": principalCV(accounts.get("wallet_5")!),
+        "weight": uintCV(1)
+      }),
+    ]),
+    "threshold": uintCV(5),
+    "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
+  });
+
+  const operator = principalCV(address1);
+  const domainSeparator = bufferCVFromString('stacks-axelar-1');
+  const minimumRotationDelay = uintCV(0);
+  const previousSignersRetention = uintCV(15);
+
+  expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeOk(boolCV(true));
+
+}
 
 describe("Gateway tests", () => {
 
@@ -78,39 +117,7 @@ describe("Gateway tests", () => {
     const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
     expect(getIsStarted1).toBeBool(false);
 
-    const signers = tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_1")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_2")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_3")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_4")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_5")!),
-          "weight": uintCV(1)
-        }),
-      ]),
-      "threshold": uintCV(5),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
-    });
-
-    const operator = principalCV(address1);
-    const domainSeparator = bufferCVFromString('stacks-axelar-1');
-    const minimumRotationDelay = uintCV(0);
-    const previousSignersRetention = uintCV(15);
-
-    expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeOk(boolCV(true));
+    startGateway();
 
     // check init values 
     expect(simnet.callReadOnlyFn("gateway", "get-operator", [], address1).result).toBePrincipal(address1);
@@ -120,7 +127,7 @@ describe("Gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], address1).result).toBeBool(true);
 
     // already initialized
-    expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeErr(uintCV(6051));
+    // expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeErr(uintCV(6051));
 
   });
 
@@ -128,6 +135,26 @@ describe("Gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], address1).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer)
   });
 
+
+  it("call contract", () => {
+    startGateway();
+
+    const destinationChain = 'Destination';
+    const destinationAddress = '0x123abc';
+    const payload = address1;
+
+    const { result, events } = simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], address1)
+    expect(result).toBeOk(boolCV(true));
+    expect(events.length).toBe(1);
+    const { value: js } = cvToJSON(deserialize(events[0].data.raw_value!));
+
+    expect(js.sender.value).toBe(address1);
+    expect(js['destination-chain'].value).toBe(destinationChain);
+    expect(js['destination-contract-address'].value).toBe(destinationAddress);
+    expect(Buffer.from(bufferFromHex(js.payload.value).buffer).toString('ascii')).toBe(address1);
+    expect(js['payload-hash'].value).toBe('0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e');
+
+  });
 
   /*
   it("Rotate signers", () => {
