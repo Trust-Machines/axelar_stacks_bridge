@@ -18,10 +18,10 @@ describe("Gateway tests", () => {
         }),
       ]),
       "threshold": uintCV(1),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") 
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
     });
 
-    const proofSigners =  tupleCV({
+    const proofSigners = tupleCV({
       "signers": listCV([
         tupleCV({
           "signer": principalCV(accounts.get("wallet_2")!),
@@ -29,7 +29,7 @@ describe("Gateway tests", () => {
         })
       ]),
       "threshold": uintCV(1),
-      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334") 
+      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334")
     })
 
     const signersHash = (() => {
@@ -41,7 +41,7 @@ describe("Gateway tests", () => {
       const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners], address1);
       return cvToJSON(result).value;
     })();
-   
+
     const messageHashToSign = (() => {
       const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
       return cvToJSON(result).value
@@ -50,12 +50,11 @@ describe("Gateway tests", () => {
     const proof = tupleCV({
       "signers": proofSigners,
       "signatures": listCV([
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), address1))
+        bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), address1))
       ])
     });
 
-    const { result:resultRotateSigners } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
-    expect(resultRotateSigners).toBeErr(uintCV(4051));
+    expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(4051));
   });
 
   it("Initialization", () => {
@@ -86,7 +85,7 @@ describe("Gateway tests", () => {
         }),
       ]),
       "threshold": uintCV(5),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") 
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
     });
 
     const operator = principalCV(address1);
@@ -94,23 +93,17 @@ describe("Gateway tests", () => {
     const minimumRotationDelay = uintCV(0);
     const previousSignersRetention = uintCV(15);
 
-    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1);
-    expect(result).toBeOk(boolCV(true));
+    expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeOk(boolCV(true));
 
-    const { result: getOperator } = simnet.callReadOnlyFn("gateway", "get-operator", [], address1);
-    expect(getOperator).toBePrincipal(address1);
+    expect(simnet.callReadOnlyFn("gateway", "get-operator", [], address1).result).toBePrincipal(address1);
 
-    const { result: getDomainSeparator } = simnet.callReadOnlyFn("gateway", "get-domain-separator", [], address1);
-    expect(Buffer.from((getDomainSeparator as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
+    expect(Buffer.from((simnet.callReadOnlyFn("gateway", "get-domain-separator", [], address1).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
 
-    const { result: getMinimumRotationDelay } = simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], address1);
-    expect(getMinimumRotationDelay).toBeUint(0);
+    expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], address1).result).toBeUint(0);
 
-    const { result: getPreviousSignersRetention } = simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], address1);
-    expect(getPreviousSignersRetention).toBeUint(15);
+    expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], address1).result).toBeUint(15);
 
-    const { result: getIsStarted2 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
-    expect(getIsStarted2).toBeBool(true);
+    expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], address1).result).toBeBool(true);
   });
 
   /*
