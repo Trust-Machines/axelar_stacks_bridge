@@ -34,7 +34,7 @@ const startGateway = () => {
       }),
     ]),
     "threshold": uintCV(5),
-    "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
+    "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u2)
   });
 
   const operator = principalCV(address1);
@@ -156,7 +156,28 @@ describe("Gateway tests", () => {
   });
 
   it("Rotate signers", () => {
+    startGateway();
+
     const newSigners = tupleCV({
+      "signers": listCV([
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_6")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_7")!),
+          "weight": uintCV(2)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_8")!),
+          "weight": uintCV(2)
+        }),
+      ]),
+      "threshold": uintCV(3),
+      "nonce": bufferFromHex("0x48dd032f5ebe0286a7aae330fe25a2fbe8e8288814e8f7ccb149f024611e71b1") // (keccak256 u3)
+    });
+
+    const proofSigners =  tupleCV({
       "signers": listCV([
         tupleCV({
           "signer": principalCV(accounts.get("wallet_1")!),
@@ -164,26 +185,23 @@ describe("Gateway tests", () => {
         }),
         tupleCV({
           "signer": principalCV(accounts.get("wallet_2")!),
-          "weight": uintCV(2)
+          "weight": uintCV(1)
         }),
         tupleCV({
           "signer": principalCV(accounts.get("wallet_3")!),
-          "weight": uintCV(2)
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_4")!),
+          "weight": uintCV(1)
+        }),
+        tupleCV({
+          "signer": principalCV(accounts.get("wallet_5")!),
+          "weight": uintCV(1)
         }),
       ]),
-      "threshold": uintCV(3),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u1)
-    });
-
-    const proofSigners =  tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM'),
-          "weight": uintCV(1)
-        })
-      ]),
-      "threshold": uintCV(1),
-      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334") // (keccak256 u2)
+      "threshold": uintCV(5),
+      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u2)
     })
 
     const signersHash = (() => {
@@ -196,9 +214,6 @@ describe("Gateway tests", () => {
       return cvToJSON(result).value;
     })();
 
-    //expect(signersHash).toEqual("0xeb10ff1e268b2c648c7abfc4e6bc0deb2cf349726252b4286e21190a8fcc3651");
-   // expect(dataHash).toEqual("0x6875c2c5d917a3dc6e4608f0fe82735cc14222f0783d65fe302472aaf7969ff4");
-
     const messageHashToSign = (() => {
       const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
       return cvToJSON(result).value
@@ -207,14 +222,15 @@ describe("Gateway tests", () => {
     const proof = tupleCV({
       "signers": proofSigners,
       "signatures": listCV([
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM'))
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_1")!)),
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_2")!)),
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_3")!)),
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_4")!)),
+         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_5")!))
       ])
     });
 
-   // expect(messageHashToSign).toEqual("0xa7e1eb7c736ac708bc76f23261e273d3c068359370c5b8419637dbfaf760ba6b");
-
-    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
-    
+    const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
     expect(result).toBeOk(boolCV(true));
   });
 
