@@ -124,6 +124,11 @@ describe("Gateway tests", () => {
 
   });
 
+  it("message-to-command-id", () => {
+    expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], address1).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer)
+  });
+
+
   /*
   it("Rotate signers", () => {
     const newSigners = tupleCV({

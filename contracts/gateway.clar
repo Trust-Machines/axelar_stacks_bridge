@@ -43,7 +43,7 @@
 ;; @param message-id The unique message id for the message.
 ;; @return The commandId for the message.
 ;; 64
-(define-private (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 71))) 
+(define-read-only (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 71))) 
     ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
