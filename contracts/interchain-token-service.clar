@@ -27,7 +27,6 @@
         is-enabled: bool,
         ;; operator: principal,
     })
-(define-map token-to-token-id principal (buff 32))
 
 (define-public (set-paused (status bool))
     (begin 
@@ -301,19 +300,20 @@
         token-type: token-manager-type,
         is-enabled: false,
     })
-    (map-set token-to-token-id (contract-of token) token-id)
     (as-contract 
         (contract-call? .gateway call-contract CHAIN-NAME (var-get its-contract-name) (unwrap-panic (to-consensus-buff? {
             token-address: (contract-of token),
             token-manager-address: token-manager-address,
+            token-id: token-id,
     }))))))
 
 (define-public (execute-enable-token
         (message-id (string-ascii 71)) 
+        (token-id (buff 32))
         (token-address principal) 
         (token-manager-address principal))
     (let (
-        (token-id (unwrap! (map-get? token-to-token-id token-address) ERR-TOKEN-NOT-FOUND))
+        ;; #[filter(token-id)]
         (token-info (unwrap! (map-get? tokens-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
         (try!
@@ -324,8 +324,19 @@
                     token-manager-address: token-manager-address,
             }))))))
         (map-set tokens-managers token-id (merge token-info {is-enabled: true}))
+        ;; emit TokenManagerDeployed(tokenId, tokenManager_, tokenManagerType, params);
+        (print {
+            type: "token-manager-deployed",
+            token-id: token-id,
+            token-manager: token-manager-address,
+            token-type: (get token-type token-info),
+        })
         (ok true)
     ))
+
+(define-read-only (valid-token-address (token-id (buff 32))) 
+    (ok (default-to false (get is-enabled (map-get? tokens-managers token-id)))))
+
 ;; So this is what I have got so far the factory gets called with the 
 ;; ######################
 ;; ######################

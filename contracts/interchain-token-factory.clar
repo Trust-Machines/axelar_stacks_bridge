@@ -381,18 +381,21 @@
 
 ;;         tokenId = _deployInterchainToken(salt, destinationChain, tokenName, tokenSymbol, tokenDecimals, '', gasValue);
 ;;     }
-
+(define-constant ERR-TOKEN-NOT-ENABLED (err u1051))
 (define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 32)) (gas-value uint))
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (interchain-token-id TOKEN-FACTORY-DEPLOYER salt))
-            ;; (token (unwrap! (valid-token-address token-id)))
+            (token-id (unwrap-panic (interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
             (token-name (unwrap-panic (contract-call? token get-name)))
             (token-symbol (unwrap-panic (contract-call? token get-symbol)))
             (token-decimals (unwrap-panic (contract-call? token get-decimals)))
         )
+        (asserts! (unwrap-panic (contract-call? .interchain-token-service valid-token-address token-id)) ERR-TOKEN-NOT-ENABLED)
+        ;; (tokenId (deploy-interchain-token! salt destination-chain token-id tokenName tokenSymbol tokenDecimals gasValue))
         ;; (ok (deploy-interchain-token_ salt destination-chain token-name token-symbol token-decimals (buff 0) gas-value))
-        (ok true)
+        ;; (ok true)
+        ;; "pay gas not implemented"
+        (err u0)
     )
 )
