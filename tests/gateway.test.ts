@@ -59,6 +59,9 @@ describe("Gateway tests", () => {
   });
 
   it("Initialization", () => {
+    const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
+    expect(getIsStarted1).toBeBool(false);
+
     const signers = tupleCV({
       "signers": listCV([
         tupleCV({
@@ -105,6 +108,9 @@ describe("Gateway tests", () => {
 
     const { result: getPreviousSignersRetention } = simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], address1);
     expect(getPreviousSignersRetention).toBeUint(15);
+
+    const { result: getIsStarted2 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
+    expect(getIsStarted2).toBeBool(true);
   });
 
   /*
