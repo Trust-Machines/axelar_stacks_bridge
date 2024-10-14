@@ -27,6 +27,7 @@
         is-enabled: bool,
         ;; operator: principal,
     })
+(define-map token-to-token-id principal (buff 32))
 
 (define-public (set-paused (status bool))
     (begin 
@@ -185,6 +186,7 @@
         (ok (map-delete trusted-chain-address chain-name))))
 
 (define-constant ERR-UNTRUSTED-CHAIN (err u3051))
+(define-constant ERR-TOKEN-NOT-FOUND (err u3052))
 
 (define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 1024)))
     (let (
@@ -299,11 +301,31 @@
         token-type: token-manager-type,
         is-enabled: false,
     })
+    (map-set token-to-token-id (contract-of token) token-id)
     (as-contract 
         (contract-call? .gateway call-contract CHAIN-NAME (var-get its-contract-name) (unwrap-panic (to-consensus-buff? {
             token-address: (contract-of token),
             token-manager-address: token-manager-address,
     }))))))
+
+(define-public (execute-enable-token
+        (message-id (string-ascii 71)) 
+        (token-address principal) 
+        (token-manager-address principal))
+    (let (
+        (token-id (unwrap! (map-get? token-to-token-id token-address) ERR-TOKEN-NOT-FOUND))
+        (token-info (unwrap! (map-get? tokens-managers token-id) ERR-TOKEN-NOT-FOUND))
+    )
+        (try!
+            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id 
+                (var-get its-contract-name)
+                (keccak256 (unwrap-panic (to-consensus-buff? {
+                    token-address: token-address,
+                    token-manager-address: token-manager-address,
+            }))))))
+        (map-set tokens-managers token-id (merge token-info {is-enabled: true}))
+        (ok true)
+    ))
 ;; So this is what I have got so far the factory gets called with the 
 ;; ######################
 ;; ######################
