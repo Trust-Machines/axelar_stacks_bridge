@@ -135,7 +135,6 @@ describe("Gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], address1).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer)
   });
 
-
   it("call contract", () => {
     startGateway();
 
@@ -156,7 +155,6 @@ describe("Gateway tests", () => {
 
   });
 
-  /*
   it("Rotate signers", () => {
     const newSigners = tupleCV({
       "signers": listCV([
@@ -194,12 +192,12 @@ describe("Gateway tests", () => {
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners, stringAsciiCV("rotate-signers")], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners], address1);
       return cvToJSON(result).value;
     })();
 
-    expect(signersHash).toEqual("0xeb10ff1e268b2c648c7abfc4e6bc0deb2cf349726252b4286e21190a8fcc3651");
-    expect(dataHash).toEqual("0x6875c2c5d917a3dc6e4608f0fe82735cc14222f0783d65fe302472aaf7969ff4");
+    //expect(signersHash).toEqual("0xeb10ff1e268b2c648c7abfc4e6bc0deb2cf349726252b4286e21190a8fcc3651");
+   // expect(dataHash).toEqual("0x6875c2c5d917a3dc6e4608f0fe82735cc14222f0783d65fe302472aaf7969ff4");
 
     const messageHashToSign = (() => {
       const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
@@ -213,12 +211,12 @@ describe("Gateway tests", () => {
       ])
     });
 
-    expect(messageHashToSign).toEqual("0xa7e1eb7c736ac708bc76f23261e273d3c068359370c5b8419637dbfaf760ba6b");
+   // expect(messageHashToSign).toEqual("0xa7e1eb7c736ac708bc76f23261e273d3c068359370c5b8419637dbfaf760ba6b");
 
-    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
+    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
     
     expect(result).toBeOk(boolCV(true));
   });
-  */
+
 });
 
