@@ -7,12 +7,27 @@
 
 ;; traits
 ;;
-
+(use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 ;; token definitions
 ;;
 
 ;; constants
 ;;
+;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; that are deployed outside of the contracts but registered by the ITS contract
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
+;; @notice rares: maybe will not be used
+(define-constant TOKEN-TYPE-MINT-BURN-FROM u1)
+;; The token will be locked/unlocked at the token manager.
+(define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
+;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
+;; @notice rares: will not be used
+(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u3)
+;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
+;; @notice rares: maybe will not be used
+(define-constant TOKEN-TYPE-MINT-BURN u4)
 
 ;; data vars
 ;;
@@ -52,24 +67,22 @@
 ;; @param salt A unique identifier to generate the salt.
 ;; @return tokenSalt The calculated salt for the interchain token.
 (define-read-only (get-interchain-token-salt (chain-name-hash_ (buff 32)) (deployer principal) (salt (buff 32)))
-    (ok
         (keccak256 
             (concat
                 (concat PREFIX-INTERCHAIN-TOKEN-SALT chain-name-hash_)
                 (concat 
                     (unwrap-panic (to-consensus-buff? deployer))
-                    salt)))))
+                    salt))))
 
 ;; Calculates the salt for a canonical interchain token.
 ;; @param chain-name-hash The hash of the chain name.
 ;; @param token-address The address of the token.
 ;; @return salt The calculated salt for the interchain token.
 (define-read-only (get-canonical-interchain-token-salt (chain-name-hash_ (buff 32)) (token-address principal))
-    (ok 
         (keccak256 
             (concat 
                 (concat PREFIX-CANONICAL-TOKEN-SALT chain-name-hash_) 
-                (unwrap-panic (to-consensus-buff? token-address))))))
+                (unwrap-panic (to-consensus-buff? token-address)))))
 
 ;;     /**
 ;;      * @notice Computes the ID for an interchain token based on the deployer and a salt.
@@ -80,6 +93,10 @@
 ;;     function interchainTokenId(address deployer, bytes32 salt) public view returns (bytes32 tokenId) {
 ;;         tokenId = interchainTokenService.interchainTokenId(TOKEN_FACTORY_DEPLOYER, interchainTokenSalt(chainNameHash, deployer, salt));
 ;;     }
+
+(define-private (interchain-token-id (deployer principal) (salt (buff 32)))
+    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER 
+        (get-interchain-token-salt CHAIN-NAME-HASH deployer salt))))
 
 ;;     /**
 ;;      * @notice Computes the ID for a canonical interchain token based on its address.
@@ -93,6 +110,9 @@
 ;;         );
 ;;     }
 
+(define-private (canonical-interchain-token-id (token-address principal))
+    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address))))
+
 ;;     /**
 ;;      * @notice Retrieves the address of an interchain token based on the deployer and a salt.
 ;;      * @param deployer The address that deployed the interchain token.
@@ -102,6 +122,9 @@
 ;;     function interchainTokenAddress(address deployer, bytes32 salt) public view returns (address tokenAddress) {
 ;;         tokenAddress = interchainTokenService.interchainTokenAddress(interchainTokenId(deployer, salt));
 ;;     }
+
+;; (define-private (interchain-token-address (deployer principal) (salt (buff 32)))
+;;     (ok (contract-call? .interchain-token-service interchain-token-address (unwrap! (interchain-token-id deployer salt)))))
 
 ;;     /**
 ;;      * @notice Deploys a new interchain token with specified parameters.
@@ -154,6 +177,50 @@
 ;;         }
 ;;     }
 
+;; (define-public (deploy-interchain-token (salt (buff 32)) (name (string-ascii 32)) (symbol (string-ascii 32)) (decimals uint) (initial-supply uint) (minter principal))
+;;     (let
+;;         (
+;;             (sender tx-sender)
+;;             (salt (unwrap! (get-interchain-token-salt CHAIN-NAME-HASH sender salt)))
+;;         )
+;;         (begin
+;;             (if (> initial-supply u0)
+;;                 (let ((minter-bytes (unwrap-panic (to-consensus-buff? sender))))
+;;                     (ok true)
+;;                 )
+;;                 (if (is-eq minter NULL-ADDRESS)
+;;                     (ok true)
+;;                     (if (is-eq minter ITS)
+;;                         (err u1007) ;; InvalidMinter
+;;                         (let ((minter-bytes (unwrap-panic (to-consensus-buff? minter))))
+;;                             (ok true)
+;;                         )
+;;                     )
+;;                 )
+;;             )
+;;             (let ((token-id (unwrap! (deploy-interchain-token_ salt "" name symbol decimals minter-bytes u0))))
+;;                 (if (> initial-supply u0)
+;;                     (let
+;;                         (
+;;                             (token (contract-call? ITS interchain-token-address token-id))
+;;                             (token-manager (contract-call? ITS token-manager-address token-id))
+;;                         )
+;;                         (begin
+;;                             (contract-call? token mint sender initial-supply)
+;;                             (contract-call? token transfer-mintership minter)
+;;                             (contract-call? token-manager remove-flow-limiter sender)
+;;                             (contract-call? token-manager add-flow-limiter minter)
+;;                             (contract-call? token-manager transfer-operatorship minter)
+;;                             (ok token-id)
+;;                         )
+;;                     )
+;;                     (ok token-id)
+;;                 )
+;;             )
+;;         )
+;;     )
+;; )
+
 ;;     /**
 ;;      * @notice Deploys a remote interchain token on a specified destination chain.
 ;;      * @param salt The unique salt for deploying the token.
@@ -193,6 +260,39 @@
 ;;         tokenId = _deployInterchainToken(salt, destinationChain, tokenName, tokenSymbol, tokenDecimals, minter_, gasValue);
 ;;     }
 
+;; (define-public (deploy-remote-interchain-token (salt (buff 32)) (minter principal) (destination-chain (string-ascii 32)) (gas-value uint))
+;;     (let
+;;         (
+;;             (salt (unwrap! (get-interchain-token-salt CHAIN-NAME-HASH tx-sender salt)))
+;;             (token-id (unwrap! (contract-call? ITS interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+;;             (token (contract-call? ITS interchain-token-address token-id))
+;;             (token-name (contract-call? token name))
+;;             (token-symbol (contract-call? token symbol))
+;;             (token-decimals (contract-call? token decimals))
+;;         )
+;;         (begin
+;;             (let
+;;                 (
+                    
+;;                 )
+;;                 (if (is-eq minter NULL-ADDRESS)
+;;                     (ok true)
+;;                     (if (is-eq minter ITS)
+;;                         (err u1007) ;; InvalidMinter
+;;                         (if (is-eq (contract-call? token is-minter minter) true)
+;;                             (let ((minter-bytes (unwrap-panic (to-consensus-buff? minter))))
+;;                                 (ok true)
+;;                             )
+;;                             (err u1008) ;; NotMinter
+;;                         )
+;;                     )
+;;                 )
+;;             )
+;;             (ok (unwrap! (deploy-interchain-token_ salt destination-chain token-name token-symbol token-decimals minter-bytes gas-value)))
+;;         )
+;;     )
+;; )
+
 ;;     /**
 ;;      * @notice Deploys a new interchain token with specified parameters.
 ;;      * @param salt The unique salt for deploying the token.
@@ -225,19 +325,34 @@
 ;;         );
 ;;     }
 
-;;     /**
-;;      * @notice Registers a canonical token as an interchain token and deploys its token manager.
-;;      * @param tokenAddress The address of the canonical token.
-;;      * @return tokenId The tokenId corresponding to the registered canonical token.
-;;      */
-;;     function registerCanonicalInterchainToken(address tokenAddress) external payable returns (bytes32 tokenId) {
-;;         bytes memory params = abi.encode('', tokenAddress);
-;;         bytes32 salt = canonicalInterchainTokenSalt(chainNameHash, tokenAddress);
 
-;;         tokenId = interchainTokenService.deployTokenManager(salt, '', TokenManagerType.LOCK_UNLOCK, params, 0);
-;;     }
-(define-public (register-canonical-interchain-token (token-address principal))
-    (ok true))
+;; (define-private (deploy-interchain-token_ (salt (buff 32)) 
+;;     (destination-chain (string-ascii 32)) 
+;;     (token-name (string-ascii 32)) 
+;;     (token-symbol (string-ascii 32)) 
+;;     (token-decimals uint) 
+;;     (minter (buff 32)) 
+;;     (gas-value uint))
+;;     (ok (contract-call? .interchain-token-service deploy-interchain-token
+;;             salt destination-chain token-name token-symbol token-decimals minter gas-value)))
+
+
+;; Registers a canonical token as an interchain token and deploys its token manager.
+;; @param tokenAddress The address of the canonical token.
+;; @return tokenId The tokenId corresponding to the registered canonical token.
+(define-public (register-canonical-interchain-token (token-address <sip-010-trait>) (token-manager-address principal))
+    (contract-call? 
+        .interchain-token-service deploy-canonical-token-manager
+            (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address)) 
+            "" 
+            TOKEN-TYPE-LOCK-UNLOCK 
+            token-address 
+            token-manager-address 
+            u0)
+)
+
+;; (define-public (register-canonical-interchain-token (token-address principal))
+;;     (ok true))
 
 ;;     /**
 ;;      * @notice Deploys a canonical interchain token on a remote chain.
@@ -266,3 +381,18 @@
 
 ;;         tokenId = _deployInterchainToken(salt, destinationChain, tokenName, tokenSymbol, tokenDecimals, '', gasValue);
 ;;     }
+
+(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 32)) (gas-value uint))
+    (let
+        (
+            (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
+            (token-id (interchain-token-id TOKEN-FACTORY-DEPLOYER salt))
+            ;; (token (unwrap! (valid-token-address token-id)))
+            (token-name (unwrap-panic (contract-call? token get-name)))
+            (token-symbol (unwrap-panic (contract-call? token get-symbol)))
+            (token-decimals (unwrap-panic (contract-call? token get-decimals)))
+        )
+        ;; (ok (deploy-interchain-token_ salt destination-chain token-name token-symbol token-decimals (buff 0) gas-value))
+        (ok true)
+    )
+)

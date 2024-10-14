@@ -1,0 +1,22 @@
+- Assume there is an existing token on stacks (token 1 T1)
+- I want to bridge that token to ethereum
+- I have 100 T1
+- Steps
+  - The user deploys a token manager contract
+    - the token calls the register the canonical token in the stacks ITS factory (register-canonical-interchain-token through the factory) permissionless
+      - registers the token id which is a hashed version of the sender the salt and stores its metadata for stacks
+      - ITS send a gateway message to verify the contract (payload : contract address, token id, token address)
+        - msg arrives to the validators
+        - validators check the message sender is the ITS contract
+        - validators send proof to gateway
+        - they check the token manager contract is valid
+        - relay calls the ITS contract function to execute-enable-token (source-chain) (message-id) (source-address) (payload-hash)
+          - calls validate message on the gateway to check the token manager contract is valid
+    - deploy remote canonical interchain token for remote chain
+      - pay gas
+      - sends a gateway message with the token info
+    - token is registered
+  - interchain transfer on the ITS (same transaction)
+    - lock the token on the token manager contract
+    - pay gas
+    - send the gateway message (_transmitInterchainTransfer)
