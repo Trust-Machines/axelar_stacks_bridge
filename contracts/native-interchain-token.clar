@@ -18,6 +18,8 @@
 (define-fungible-token itscoin)
 ;; constants
 ;;
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+
 (define-constant MINTER .interchain-token-service)
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
 (define-constant ERR-INVALID-PARAMS (err u1052))
@@ -26,9 +28,6 @@
 (define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u2054))
 
-(define-constant TOKEN-ID 0x)
-(define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
-(define-constant INTERCHAIN-TOKEN-ID (keccak256 (concat PREFIX-INTERCHAIN-TOKEN-ID TOKEN-ID)))
 ;; data vars
 ;;
 
@@ -83,21 +82,13 @@
 ;; private functions
 ;;
 
-
-;; Getter for the contract id.
-;; @return (buff 32) The contract id.
-;; (define-read-only (contract-id)
-;;     (ok CONTRACT-ID))
-
 ;; Reads the managed token address
 ;; @return principal The address of the token.
 (define-read-only (get-token-address)
     (ok (as-contract tx-sender)))
 
-;; A function that returns the interchain token id.
-;; @return (buff 32) The interchain token ID.
-(define-read-only (interchain-token-id)
-    (ok INTERCHAIN-TOKEN-ID))
+(define-read-only (get-token-type)
+    (ok TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
 
 ;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself 
 ;; the flow would still be handled by the ITS
@@ -108,8 +99,6 @@
         (try! (add-flow-out amount))
         (burn from amount))
 )
-
-
 
 (define-public (give-token (token <sip-010-trait>) (to principal) (amount uint))
     (begin
@@ -138,7 +127,7 @@
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is an operator.
 (define-read-only (is-operator (address principal)) 
-    (ok (default-to false (get operator (map-get? roles tx-sender)))))
+    (ok (default-to false (get operator (map-get? roles address)))))
 
 
 ;; This function adds a flow limiter for this TokenManager.
@@ -147,8 +136,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
-        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
-        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
             (ok (map-set roles address  {flow-limiter: true, operator: false})))))
@@ -158,8 +146,7 @@
 ;; @param flowLimiter the address of an existing flow limiter.
 (define-public (remove-flow-limiter (address principal))
     (begin 
-        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
-        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
