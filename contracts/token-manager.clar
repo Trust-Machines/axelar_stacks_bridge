@@ -5,7 +5,6 @@
 ;; or setting flow limits, for interchain transfers.
 (impl-trait .token-manager-trait.token-manager-trait)
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
-(use-trait mintable-burnable .mintable-burnable-trait.mintable-burnable)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant CHAIN-NAME (keccak256 (unwrap-panic (to-consensus-buff? "Stacks"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
@@ -190,7 +189,7 @@
             (epoch   (/ burn-block-height EPOCH-TIME))
             (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
             (current-flow-in (unwrap-panic (get-flow-in-amount)))
-            (new-flow-in (+ current-flow-out flow-amount)))
+            (new-flow-in (+ current-flow-in flow-amount)))
         (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
         (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if  (is-eq limit u0)
@@ -210,7 +209,7 @@
 ;; @return (response bool uint)
 ;; @notice rares: give and take lock and unlock will be moved to ITS
 ;; the ITS will hold all the tokens the 
-(define-public (give-token-lock-unlock (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
+(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (try! (add-flow-in amount))
         (as-contract (transfer-token-from sip-010-token tx-sender to amount))))
@@ -221,52 +220,14 @@
 ;; @param from The address to take tokens from.
 ;; @param amount The amount of token to take.
 ;; @return (response bool uint)
-(define-public (take-token-lock-unlock (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
+(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
 
-;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself 
-;; the flow would still be handled by the ITS
-;; subject to change
-(define-public (take-token-mint-burn (mintable-burnable-token <mintable-burnable>) (from principal) (amount uint))
-    (begin
-        (try! (token-auth (contract-of mintable-burnable-token)))
-        (try! (token-type-check-mint-burn))
-        (try! (add-flow-out amount))
-        (contract-call? mintable-burnable-token burn from amount))
-)
-
-
-
-(define-public (give-token-mint-burn (mintable-burnable-token <mintable-burnable>) (to principal) (amount uint))
-    (begin
-        (try! (token-auth (contract-of mintable-burnable-token)))
-        (try! (token-type-check-mint-burn))
-        (try! (add-flow-in amount))
-        (contract-call? mintable-burnable-token mint to amount))
-)
 
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
-        (try! (token-auth (contract-of sip-010-token)))
-        (try! (token-type-check-lock-unlock))
+        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
         (contract-call? sip-010-token transfer amount from to none)))
 
-(define-private (token-auth (token-address principal)) 
-    (begin 
-        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
-        (asserts! (is-eq token-address TOKEN-ADDRESS) ERR-NOT-MANAGED-TOKEN)
-        (ok true)
-))
-
-(define-private (token-type-check-lock-unlock)
-    (ok (asserts! (or 
-        (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
-        (is-eq TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK-FEE)) ERR-UNSUPPORTED-TOKEN-TYPE)))
-
-(define-private (token-type-check-mint-burn) 
-    (ok (asserts! (or
-                (is-eq TOKEN-TYPE TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN-FROM)
-                (is-eq TOKEN-TYPE TOKEN-TYPE-MINT-BURN)) ERR-UNSUPPORTED-TOKEN-TYPE)))
