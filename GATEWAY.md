@@ -98,7 +98,7 @@ const messages = bufferCV(
 ### Signers
 ```clarity
 { 
-    signers: (list 32 {signer: principal, weight: uint}), 
+    signers: (list 32 {signer: (buff 33), weight: uint}), 
     threshold: uint, 
     nonce: (buff 32) 
 }
@@ -116,15 +116,15 @@ const signers = bufferCV(
         tupleCV({
             "signers": listCV([
                 tupleCV({
-                    "signer": principalCV("SP31SWB58Q599WE8YP6BEJP3XD3QMBJJ7534HSCZV"),
+                    "signer": bufferFromHex("02acd623205fb9f264b0b483a94269a814c0e1a3396308a08b739ee401d474c3ef"),
                     "weight": uintCV(1)
                 }),
                 tupleCV({
-                    "signer": principalCV("SP1H6WMP29RXTQQCB3QSA146P6SR7G59BVHTTKWCC"),
+                    "signer": bufferFromHex("02e2f437a4231244bc185ce4ba5f9638d039e4337af71d280c3c366159e6d7bedc"),
                     "weight": uintCV(2)
                 }),
                 tupleCV({
-                    "signer": principalCV("SP1N6CA5FQPE8PH1MK074YA8XQJZYPS8D56GKS9W6"),
+                    "signer": bufferFromHex("03a59cff8eb6f7fd5972f24468e88ba23bd85960dfe0912c9434cabe92acf130d7"),
                     "weight": uintCV(2)
                 }),
             ]),
@@ -139,7 +139,7 @@ const signers = bufferCV(
 ```clarity
 { 
     signers: {
-        signers: (list 32 {signer: principal, weight: uint}), 
+        signers: (list 32 {signer: (buff 33), weight: uint}), 
         threshold: uint, 
         nonce: (buff 32) 
     },
@@ -159,15 +159,15 @@ const proof = bufferCV(
             "signers": tupleCV({
                 "signers": listCV([
                     tupleCV({
-                        "signer": principalCV("SP31SWB58Q599WE8YP6BEJP3XD3QMBJJ7534HSCZV"),
+                        "signer": bufferFromHex("02acd623205fb9f264b0b483a94269a814c0e1a3396308a08b739ee401d474c3ef"),
                         "weight": uintCV(1)
                     }),
                     tupleCV({
-                        "signer": principalCV("SP1H6WMP29RXTQQCB3QSA146P6SR7G59BVHTTKWCC"),
+                        "signer": bufferFromHex("02e2f437a4231244bc185ce4ba5f9638d039e4337af71d280c3c366159e6d7bedc"),
                         "weight": uintCV(2)
                     }),
                     tupleCV({
-                        "signer": principalCV("SP1N6CA5FQPE8PH1MK074YA8XQJZYPS8D56GKS9W6"),
+                        "signer": bufferFromHex("03a59cff8eb6f7fd5972f24468e88ba23bd85960dfe0912c9434cabe92acf130d7"),
                         "weight": uintCV(2)
                     }),
                 ]),
