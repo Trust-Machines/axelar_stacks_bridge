@@ -16,14 +16,19 @@
         (unwrap-panic (to-consensus-buff? TOKEN-ADDRESS)))))
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; that are deployed outside of the contracts but registered by the ITS contract
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
+;; @notice rares: maybe will not be used
 (define-constant TOKEN-TYPE-MINT-BURN-FROM u1)
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 ;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
+;; @notice rares: will not be used
 (define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u3)
 ;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
+;; @notice rares: maybe will not be used
 (define-constant TOKEN-TYPE-MINT-BURN u4)
 
 ;; Should be a variable changed at deployment
@@ -114,6 +119,8 @@
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 (define-data-var flow-limit uint u0)
+;; instead of epoch as key use {token-id: (keccak hash buff 32), epoch: uint}
+;; in ITS
 (define-map flows uint {
     flow-in: uint,
     flow-out: uint,
@@ -201,6 +208,8 @@
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
+;; @notice rares: give and take lock and unlock will be moved to ITS
+;; the ITS will hold all the tokens the 
 (define-public (give-token-lock-unlock (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (try! (add-flow-in amount))
@@ -217,6 +226,9 @@
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
 
+;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself 
+;; the flow would still be handled by the ITS
+;; subject to change
 (define-public (take-token-mint-burn (mintable-burnable-token <mintable-burnable>) (from principal) (amount uint))
     (begin
         (try! (token-auth (contract-of mintable-burnable-token)))
@@ -224,6 +236,8 @@
         (try! (add-flow-out amount))
         (contract-call? mintable-burnable-token burn from amount))
 )
+
+
 
 (define-public (give-token-mint-burn (mintable-burnable-token <mintable-burnable>) (to principal) (amount uint))
     (begin

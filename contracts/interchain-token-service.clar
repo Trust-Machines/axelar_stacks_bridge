@@ -16,10 +16,17 @@
 
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
 (define-constant ERR-PAUSED (err u1052))
+
+(define-constant ERR-UNTRUSTED-CHAIN (err u3051))
+(define-constant ERR-TOKEN-NOT-FOUND (err u3052))
+(define-constant ERR-TOKEN-NOT-ENABLED (err u3053))
+(define-constant ERR-TOKEN-EXISTS (err u3054))
+(define-constant ERR-GAS-NOT-PAID (err u3055))
+
 (define-constant OWNER tx-sender)
 (define-data-var is-paused bool false)
 
-(define-map tokens-managers (buff 32) 
+(define-map token-managers (buff 32) 
     {
         token-address: principal,
         manager-address: principal,
@@ -30,7 +37,7 @@
 
 (define-public (set-paused (status bool))
     (begin 
-        (asserts! (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (ok (var-set is-paused status))))
 
 (define-read-only (get-is-paused) 
@@ -113,7 +120,7 @@
 (define-public (transfer-operatorship (new-operator principal)) 
     (begin
         (asserts! (is-eq (var-get is-paused) false) ERR-PAUSED)
-        (asserts! (is-eq tx-sender (var-get operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
@@ -163,9 +170,9 @@
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @param address_ the string representation of the trusted address
-(define-private (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
+(define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (begin
-        ;; (asserts!  (is-eq tx-sender ITS) ERR-NOT-AUTHORIZED)
+        (asserts!  (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
         (print {
             type: "trusted-address-set",
             chain: chain-name,
@@ -175,17 +182,15 @@
 
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
-(define-private (remove-trusted-address  (chain-name  (string-ascii 18)))
+(define-public (remove-trusted-address  (chain-name  (string-ascii 18)))
     (begin
-        ;; (asserts!  (is-eq tx-sender ITS) ERR-NOT-AUTHORIZED)
+        (asserts!  (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
         (print {
             type: "trusted-address-removed",
             chain: chain-name
         })
         (ok (map-delete trusted-chain-address chain-name))))
 
-(define-constant ERR-UNTRUSTED-CHAIN (err u3051))
-(define-constant ERR-TOKEN-NOT-FOUND (err u3052))
 
 (define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 1024)))
     (let (
@@ -211,7 +216,17 @@
                 payload: payload,
             }))))
 
-;; (define-public (deploy-interchain-token) )
+(define-private (pay-gas 
+        (amount uint)
+        (refund-address principal)
+        (destination-chain (string-ascii 32))
+        (destination-address (string-ascii 48))
+        (payload (buff 1024))) 
+    ;; FIXME: GAS service not implemented
+    (if 
+        (> amount u0)
+            ERR-GAS-NOT-PAID
+        (ok true)))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
@@ -219,7 +234,7 @@
 ;; @param destinationChain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 1024)) (metadata-version uint) (gas-value uint))
+(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 1024)) (gas-value uint))
     (let
         (
             (params (unwrap-panic (get-call-params destination-chain payload)))
@@ -227,65 +242,27 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        (as-contract (contract-call? .gateway call-contract destination-chain destination-address_ payload))
+        (try! (pay-gas gas-value tx-sender destination-chain_ destination-address_ payload))
+        (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload))
     )
 )
-
-;; (define-private (register-canonical-token (token-address principal) (token-manager principal))
-;;     )
-
-
-;; /**
-;;     * @notice Used to deploy remote custom TokenManagers.
-;;     * @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
-;;     * part of a multicall involving multiple functions that could make remote contract calls.
-;;     * @param salt The salt to be used during deployment.
-;;     * @param destinationChain The name of the chain to deploy the TokenManager and standardized token to.
-;;     * @param tokenManagerType The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
-;;     * @param params The params that will be used to initialize the TokenManager.
-;;     * @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
-;;     * @return tokenId The tokenId corresponding to the deployed TokenManager.
-;;     * @notice 
-;;     */
-;; function deployTokenManager(
-;;     bytes32 salt,
-;;     string calldata destinationChain,
-;;     TokenManagerType tokenManagerType,
-;;     bytes calldata params,
-;;     uint256 gasValue
-;; ) external payable whenNotPaused returns (bytes32 tokenId) {
-;;     // Custom token managers can't be deployed with native interchain token type, which is reserved for interchain tokens
-;;     if (tokenManagerType == TokenManagerType.NATIVE_INTERCHAIN_TOKEN) revert CannotDeploy(tokenManagerType);
-
-;;     address deployer = msg.sender;
-
-;;     if (deployer == interchainTokenFactory) {
-;;         // rares zero address (null address) is deployer
-;;         deployer = TOKEN_FACTORY_DEPLOYER;
-;;     }
-
-;;     tokenId = interchainTokenId(deployer, salt);
-
-;;     emit InterchainTokenIdClaimed(tokenId, deployer, salt);
-
-;;     if (bytes(destinationChain).length == 0) {
-;;         _deployTokenManager(tokenId, tokenManagerType, params);
-;;     } else {
-;;         if (chainNameHash == keccak256(bytes(destinationChain))) revert CannotDeployRemotelyToSelf();
-
-;;         _deployRemoteTokenManager(tokenId, destinationChain, gasValue, tokenManagerType, params);
-;;     }
-;; }
-
+;; Used to deploy remote custom TokenManagers.
+;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
+;; part of a multicall involving multiple functions that could make remote contract calls.
+;; @param salt The salt to be used during deployment.
+;; @param destinationChain The name of the chain to deploy the TokenManager and standardized token to.
+;; @param tokenManagerType The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
+;; @param params The params that will be used to initialize the TokenManager.
+;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
+;; @return tokenId The tokenId corresponding to the deployed TokenManager.
 (define-public (deploy-canonical-token-manager
         (salt (buff 32))
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
         (token <sip-010-trait>)
-        (token-manager-address principal)
-        (gas-value uint))
+        (token-manager-address principal))
     (let (
-        (deployer (if (is-eq tx-sender (var-get interchain-token-factory)) NULL-ADDRESS tx-sender))
+        (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
         (token-id (interchain-token-id deployer salt))
     )
     (print {
@@ -294,18 +271,21 @@
         deployer: deployer,
         salt: salt,
     })
-    (map-set tokens-managers token-id {
+    (asserts! (map-insert token-managers token-id {
         token-address: (contract-of token),
         manager-address: token-manager-address,
         token-type: token-manager-type,
         is-enabled: false,
-    })
+    }) ERR-TOKEN-EXISTS)
     (as-contract 
-        (contract-call? .gateway call-contract CHAIN-NAME (var-get its-contract-name) (unwrap-panic (to-consensus-buff? {
-            token-address: (contract-of token),
-            token-manager-address: token-manager-address,
-            token-id: token-id,
-    }))))))
+        (contract-call? .gateway call-contract 
+            CHAIN-NAME 
+            (var-get its-contract-name) 
+            (unwrap-panic (to-consensus-buff? {
+                token-address: (contract-of token),
+                token-manager-address: token-manager-address,
+                token-id: token-id,
+            }))))))
 
 (define-public (execute-enable-token
         (message-id (string-ascii 71)) 
@@ -314,7 +294,7 @@
         (token-manager-address principal))
     (let (
         ;; #[filter(token-id)]
-        (token-info (unwrap! (map-get? tokens-managers token-id) ERR-TOKEN-NOT-FOUND))
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id 
@@ -323,7 +303,7 @@
                     token-address: token-address,
                     token-manager-address: token-manager-address,
             }))))))
-        (map-set tokens-managers token-id (merge token-info {is-enabled: true}))
+        (map-set token-managers token-id (merge token-info {is-enabled: true}))
         ;; emit TokenManagerDeployed(tokenId, tokenManager_, tokenManagerType, params);
         (print {
             type: "token-manager-deployed",
@@ -334,8 +314,50 @@
         (ok true)
     ))
 
+;; Deploys an interchain token on a destination chain.
+;; @param salt The salt to be used during deployment.
+;; @param name The name of the token.
+;; @param symbol The symbol of the token.
+;; @param decimals The number of decimals of the token.
+;; @param minter The minter address for the token.
+;; @param destinationChain The destination chain where the token will be deployed.
+;; @param gasValue The amount of gas to be paid for the transaction.
+(define-public (deploy-remote-interchain-token 
+        (salt (buff 32))
+        (token <sip-010-trait>)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
+        (minter principal)
+        (destination-chain (string-ascii 18))
+        (gas-value uint))
+    (let (
+        (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
+        (token-id (interchain-token-id deployer salt))
+        (payload (unwrap-panic (to-consensus-buff? {
+            type: MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN,
+            token-id: token-id,
+            name: name,
+            symbol: symbol,
+            decimals: decimals,
+            minter: minter
+        })))
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+    )
+    (asserts! (get is-enabled token-info) ERR-TOKEN-NOT-ENABLED)
+    (print {
+        type:"interchain-token-deployment-started",
+        token-id: token-id,
+        name: name,
+        symbol: symbol,
+        decimals: decimals,
+        minter: minter,
+        destination-chain: destination-chain,
+    })
+    (call-contract destination-chain payload gas-value)))
+
 (define-read-only (valid-token-address (token-id (buff 32))) 
-    (ok (default-to false (get is-enabled (map-get? tokens-managers token-id)))))
+    (ok (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND)))
 
 ;; So this is what I have got so far the factory gets called with the 
 ;; ######################
