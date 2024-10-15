@@ -38,6 +38,7 @@
 (define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
 (define-constant PREFIX-GATEWAY-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "gateway-token-salt"))))
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+(define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
 (define-constant CHAIN-NAME-HASH (unwrap-panic (contract-call? .interchain-token-service get-chain-name-hash)))
 (define-constant GATEWAY (unwrap-panic (contract-call? .interchain-token-service get-gateway)))
@@ -120,6 +121,6 @@
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
             (token (try! (contract-call? .interchain-token-service valid-token-address token-id)))
         )
-        (contract-call? .interchain-token-service deploy-remote-interchain-token salt token name symbol decimals NULL-ADDRESS destination-chain gas-value)
+        (contract-call? .interchain-token-service deploy-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
     )
 )

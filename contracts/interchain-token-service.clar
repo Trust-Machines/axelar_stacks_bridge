@@ -344,14 +344,13 @@
 ;; @param minter The minter address for the token.
 ;; @param destinationChain The destination chain where the token will be deployed.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-public (deploy-remote-interchain-token 
+(define-public (deploy-interchain-token 
         (salt (buff 32))
-        (token <sip-010-trait>)
+        (destination-chain (string-ascii 18))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
-        (minter principal)
-        (destination-chain (string-ascii 18))
+        (minter (buff 32))
         (gas-value uint))
     (let (
         (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
