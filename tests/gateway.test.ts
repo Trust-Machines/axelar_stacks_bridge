@@ -92,7 +92,7 @@ describe("Gateway tests", () => {
         "source-chain": stringAsciiCV("foo"),
         "message-id": stringAsciiCV("bar"),
         "source-address": stringAsciiCV("baz"),
-        "contract-address": bufferCVFromString("x"),
+        "contract-address": principalCV(address1),
         "payload-hash": bufferCVFromString("y")
       })
     ]);

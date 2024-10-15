@@ -54,7 +54,7 @@
         message-id: (string-ascii 71),
         source-chain: (string-ascii 32),
         source-address: (string-ascii 48),
-        contract-address: (buff 32),
+        contract-address: principal,
         payload-hash: (buff 32)
     })) 
     (keccak256 (unwrap-panic (to-consensus-buff? message)))
@@ -67,7 +67,7 @@
                 source-chain: (string-ascii 32),
                 message-id: (string-ascii 71),
                 source-address: (string-ascii 48),
-                contract-address: (buff 32),
+                contract-address: principal,
                 payload-hash: (buff 32)
         })))
     (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: messages} { type: "approve-messages" }))))
@@ -80,7 +80,7 @@
                 source-chain: (string-ascii 32),
                 message-id: (string-ascii 71),
                 source-address: (string-ascii 48),
-                contract-address: (buff 32),
+                contract-address: principal,
                 payload-hash: (buff 32)
             })) 
             (let (
@@ -122,7 +122,7 @@
                 source-chain: (string-ascii 32),
                 message-id: (string-ascii 71),
                 source-address: (string-ascii 48),
-                contract-address: (buff 32),
+                contract-address: principal,
                 payload-hash: (buff 32)
             })
             messages) ERR-MESSAGES-DATA))
@@ -153,7 +153,7 @@
                 message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
-                contract-address: (unwrap-panic (as-max-len? (unwrap-panic (to-consensus-buff? tx-sender)) u32)),
+                contract-address: tx-sender,
                 payload-hash: payload-hash
             }))
     ) 
@@ -182,7 +182,7 @@
     (source-chain (string-ascii 32))
     (message-id (string-ascii 71))
     (source-address (string-ascii 48)) 
-    (contract-address (buff 32)) 
+    (contract-address principal) 
     (payload-hash (buff 32))
 )
     (let (

@@ -59,7 +59,7 @@
         source-chain: (string-ascii 32),
         message-id: (string-ascii 71),
         source-address: (string-ascii 48),
-        contract-address: (buff 32),
+        contract-address: principal,
         payload-hash: (buff 32)
     })
 ```
@@ -246,7 +246,7 @@ payload-hash: 0x0338573718f5cd6d7e5a90adcdebd28b097f99574ad6febffea9a40adb17f46d
     source-chain: (string-ascii 32), 
     message-id: (string-ascii 71),
     source-address: (string-ascii 48), 
-    contract-address: (buff 32),
+    contract-address: principal,
     payload-hash: (buff 32)
 }
 ```
