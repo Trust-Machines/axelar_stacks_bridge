@@ -111,11 +111,11 @@
     (let (
         (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
-                    signers: (list 32 {signer: (buff 33), weight: uint}), 
+                    signers: (list 48 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 32 (buff 65))
+                signatures: (list 48 (buff 65))
             } proof) ERR-SIGNERS-DATA))
         (messages_ (unwrap! (from-consensus-buff? 
             (list 10 {
@@ -278,7 +278,7 @@
 ;; Helper vars to use within loops
 (define-data-var temp-pub (buff 33) NULL-PUB)
 (define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 32 {signer: (buff 33), weight: uint}) (list))
+(define-data-var temp-signers (list 48 {signer: (buff 33), weight: uint}) (list))
 
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
@@ -304,7 +304,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-signers (signers { 
-                signers: (list 32 {signer: (buff 33), weight: uint}), 
+                signers: (list 48 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -316,7 +316,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (get-signers-hash (signers { 
-                signers: (list 32 {signer: (buff 33), weight: uint}), 
+                signers: (list 48 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -375,7 +375,7 @@
 ;; @param new-signers; Signers to validate
 ;; @returns (response true) or reverts
 (define-private (validate-signers (signers { 
-            signers: (list 32 {signer: (buff 33), weight: uint}), 
+            signers: (list 48 {signer: (buff 33), weight: uint}), 
             threshold: uint, 
             nonce: (buff 32) 
         })) 
@@ -461,11 +461,11 @@
 (define-private (validate-signatures 
                 (message-hash (buff 32)) 
                 (signers {
-                    signers: (list 32 {signer: (buff 33), weight: uint}), 
+                    signers: (list 48 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 })
-                (signatures (list 32 (buff 65))
+                (signatures (list 48 (buff 65))
 )) 
     (begin 
         ;; Fill temp variables with data will be used in loops
@@ -507,11 +507,11 @@
 ;; @returns (response true) or reverts
 (define-private (validate-proof (data-hash (buff 32)) (proof { 
                 signers: {
-                    signers: (list 32 {signer: (buff 33), weight: uint}), 
+                    signers: (list 48 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 32 (buff 65))
+                signatures: (list 48 (buff 65))
             })) 
     (let 
         (
@@ -563,7 +563,7 @@
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
 (define-private (rotate-signers-inner (new-signers { 
-                signers: (list 32 {signer: (buff 33), weight: uint}), 
+                signers: (list 48 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             }) (enforce-rotation-delay bool)
@@ -603,17 +603,17 @@
     (let 
         (
             (new-signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 32 {signer: (buff 33), weight: uint}), 
+                signers: (list 48 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             } new-signers) ERR-SIGNERS-DATA))
             (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
-                    signers: (list 32 {signer: (buff 33), weight: uint}), 
+                    signers: (list 48 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 32 (buff 65))
+                signatures: (list 48 (buff 65))
             } proof) ERR-PROOF-DATA))
             (data-hash (data-hash-from-signers new-signers_))
             (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
@@ -656,7 +656,7 @@
     (let
         (
             (signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 32 {signer: (buff 33), weight: uint}), 
+                signers: (list 48 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             } signers) ERR-SIGNERS-DATA))

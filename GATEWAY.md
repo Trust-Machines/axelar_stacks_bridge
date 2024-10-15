@@ -98,7 +98,7 @@ const messages = bufferCV(
 ### Signers
 ```clarity
 { 
-    signers: (list 32 {signer: (buff 33), weight: uint}), 
+    signers: (list 48 {signer: (buff 33), weight: uint}), 
     threshold: uint, 
     nonce: (buff 32) 
 }
@@ -139,11 +139,11 @@ const signers = bufferCV(
 ```clarity
 { 
     signers: {
-        signers: (list 32 {signer: (buff 33), weight: uint}), 
+        signers: (list 48 {signer: (buff 33), weight: uint}), 
         threshold: uint, 
         nonce: (buff 32) 
     },
-    signatures: (list 32 (buff 65))
+    signatures: (list 48 (buff 65))
 }
 ```
 
