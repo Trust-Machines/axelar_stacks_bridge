@@ -1,6 +1,6 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, hash160, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex, deserialize, serialize } from "@stacks/transactions/dist/cl";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { bufferFromAscii, bufferFromHex, deserialize } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
 import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
 
@@ -66,7 +66,7 @@ const startContract = () => {
 
 describe("Gateway tests", () => {
 
-  it("Should revert all public functions before initialization", () => {
+  it("should revert all public functions before initialization", () => {
     const newSigners = getSigners(0, 1, 1, 2, "1");
     const proofSigners = getSigners(0, 1, 1, 2, "1")
 
@@ -97,8 +97,6 @@ describe("Gateway tests", () => {
       })
     ]);
 
-    // all public functions should revert before initialization
-    // 4051 since signer-epoch is 0 by default
     expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], address1).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(6052));
@@ -107,7 +105,7 @@ describe("Gateway tests", () => {
   });
 
 
-  it("Initialization", () => {
+  it("queries", () => {
     const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
     expect(getIsStarted1).toBeBool(false);
 
@@ -119,13 +117,10 @@ describe("Gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], address1).result).toBeUint(0);
     expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], address1).result).toBeUint(15);
     expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], address1).result).toBeBool(true);
-
+    expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], address1).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
+    
     // already initialized
     // expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeErr(uintCV(6051));
-  });
-
-  it("message-to-command-id", () => {
-    expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], address1).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer)
   });
 
   it("call contract", () => {
@@ -149,7 +144,7 @@ describe("Gateway tests", () => {
   });
 
 
-  it("Rotate signers", () => {
+  it("rotate signers", () => {
     const newSigners = getSigners(11, 15, 1, 3, "2")
 
     const proofSigners =  startContract();
