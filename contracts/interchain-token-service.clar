@@ -233,7 +233,7 @@
     ;; FIXME: GAS service not implemented
     (if 
         (> amount u0)
-            ERR-GAS-NOT-PAID
+            ERR-GAS-NOT-PAID 
         (ok true)))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
@@ -292,43 +292,58 @@
         deployer: deployer,
         salt: salt,
     })
+    (asserts! (is-eq 
+        (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
+        token-manager-type
+    ) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-ok (contract-call? token get-name)) ERR-TOKEN-NOT-DEPLOYED)
     (asserts! (is-eq managed-token (contract-of token)) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
-    (asserts! (map-insert token-managers token-id {
-        token-address: (contract-of token),
-        manager-address: (contract-of token-manager),
-        token-type: token-manager-type,
-        is-enabled: false,
-    }) ERR-TOKEN-EXISTS)
+    (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
     (as-contract 
-        (contract-call? .gateway call-contract 
+        (contract-call? .gateway call-contract
             CHAIN-NAME 
             (var-get its-contract-name) 
             (unwrap-panic (to-consensus-buff? {
+                type: "verify-token-manager",
                 token-address: (contract-of token),
                 token-manager-address: (contract-of token-manager),
                 token-id: token-id,
+                token-type: token-manager-type,
             }))))))
 
 (define-public (execute-enable-token
-        (message-id (string-ascii 71)) 
-        (token-id (buff 32))
-        (token-address principal) 
-        (token-manager-address principal))
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
+        (payload (buff 1024)))
     (let (
         ;; #[filter(token-id)]
+        (data (unwrap! (from-consensus-buff? {
+                type: (string-ascii 100),
+                token-address: principal,
+                token-manager-address: principal,
+                token-id: (buff 32),
+                token-type: uint,
+            } payload) ERR-INVALID-PAYLOAD))
+        (token-id (get token-id data))
+        (token-address (get token-address data))
+        (token-manager-address (get token-manager-address data))
+        (token-type (get token-type data))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+    
     )
+        (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
+        (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id 
                 (var-get its-contract-name)
-                (keccak256 (unwrap-panic (to-consensus-buff? {
-                    token-address: token-address,
-                    token-manager-address: token-manager-address,
-            }))))))
-        (map-set token-managers token-id (merge token-info {is-enabled: true}))
-        ;; emit TokenManagerDeployed(tokenId, tokenManager_, tokenManagerType, params);
+                (keccak256 payload))))
+        (asserts! (map-insert token-managers token-id {
+            token-address: token-address,
+            manager-address: token-manager-address,
+            token-type: token-type,
+        }) ERR-TOKEN-EXISTS)
         (print {
             type: "token-manager-deployed",
             token-id: token-id,
@@ -365,10 +380,9 @@
             decimals: decimals,
             minter: minter
         })))
-        ;; #[filter(destination-chain)]
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
-    (asserts! (get is-enabled token-info) ERR-TOKEN-NOT-ENABLED)
+    (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
     (print {
         type:"interchain-token-deployment-started",
         token-id: token-id,
@@ -384,7 +398,6 @@
 (define-read-only (valid-token-address (token-id (buff 32))) 
     (ok (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND)))
 
-;; So this is what I have got so far the factory gets called with the 
 ;; ######################
 ;; ######################
 ;; ### Initialization ###
@@ -405,6 +418,7 @@
     (interchain-token-factory_ principal)
 ) 
     (begin
+        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (var-set is-started true)
         ;; FIXME: should there be any checks here
