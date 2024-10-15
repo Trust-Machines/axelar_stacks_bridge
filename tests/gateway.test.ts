@@ -1,11 +1,12 @@
 
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex, deserialize } from "@stacks/transactions/dist/cl";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+const address2 = accounts.get("wallet_2")!;
 
 type Signers = {
   signers: {
@@ -35,7 +36,6 @@ const makeProofCV = (data: Signers, messageHashToSign: string) => {
     "signers": signersToCv(data),
     "signatures": listCV([
       ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
-
     ])
   });
 }
@@ -140,7 +140,6 @@ describe("Gateway tests", () => {
     expect(js['destination-contract-address'].value).toBe(destinationAddress);
     expect(Buffer.from(bufferFromHex(js.payload.value).buffer).toString('ascii')).toBe(address1);
     expect(js['payload-hash'].value).toBe('0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e');
-
   });
 
 
@@ -169,5 +168,22 @@ describe("Gateway tests", () => {
     const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1);
     expect(result).toBeOk(boolCV(true));
   });
+
+  describe("operatorship", () => {
+    beforeEach(() => {
+      startContract();
+    })
+
+    it("should allow transferring operatorship", () => {
+      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(address2)], address1);
+      expect(result).toBeOk(boolCV(true));
+    });
+
+    it("should not allow transferring operatorship", () => {
+      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(address1)], address2);
+      expect(result).toBeErr(uintCV(1051));
+    });
+  });
 });
+
 
