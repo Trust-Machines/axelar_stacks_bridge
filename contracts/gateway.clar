@@ -570,7 +570,7 @@
 )
     (let 
             (
-                (new-signers-hash (keccak256 (unwrap-panic (to-consensus-buff? new-signers))))
+                (new-signers-hash (get-signers-hash new-signers))
                 (new-epoch (+ (var-get epoch) u1))
             )
             (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
