@@ -22,4 +22,5 @@
     (give-token-mint-burn (<mintable-burnable> principal uint) (response bool uint))
     (take-token-lock-unlock (<sip-010-trait> principal uint) (response bool uint))
     (give-token-lock-unlock (<sip-010-trait> principal uint) (response bool uint))
+    (get-token-address () (response principal uint))
 ))

@@ -100,7 +100,7 @@
                 "" 
                 TOKEN-TYPE-LOCK-UNLOCK 
                 token-address 
-                (contract-of token-manager-address))
+                token-manager-address)
     ))
 
 

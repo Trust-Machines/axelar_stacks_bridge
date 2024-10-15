@@ -7,6 +7,7 @@
 ;; traits
 ;;
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(use-trait token-manager-trait .token-manager-trait.token-manager-trait)
 
 ;; token definitions
 ;;
@@ -22,6 +23,18 @@
 (define-constant ERR-TOKEN-NOT-ENABLED (err u3053))
 (define-constant ERR-TOKEN-EXISTS (err u3054))
 (define-constant ERR-GAS-NOT-PAID (err u3055))
+(define-constant ERR-TOKEN-NOT-DEPLOYED (err u3056))
+(define-constant ERR-TOKEN-MANAGER-NOT-DEPLOYED (err u3057))
+(define-constant ERR-TOKEN-MANAGER-MISMATCH (err u3058))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u3059))
+
+;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; that are deployed outside of the contracts but registered by the ITS contract
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+;; The token will be locked/unlocked at the token manager.
+(define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
+
 
 (define-constant OWNER tx-sender)
 (define-data-var is-paused bool false)
@@ -84,6 +97,11 @@
 
 (define-read-only (get-gateway) 
     (ok GATEWAY))
+
+(define-read-only (is-valid-token-type (token-type uint)) 
+    (or 
+        (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+        (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK)))
 
 ;; ;; data vars
 ;;
@@ -260,10 +278,11 @@
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
         (token <sip-010-trait>)
-        (token-manager-address principal))
+        (token-manager <token-manager-trait>))
     (let (
         (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
         (token-id (interchain-token-id deployer salt))
+        (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
     )
     (print {
         type: "interchain-token-id-claimed",
@@ -271,9 +290,12 @@
         deployer: deployer,
         salt: salt,
     })
+    (asserts! (is-ok (contract-call? token get-name)) ERR-TOKEN-NOT-DEPLOYED)
+    (asserts! (is-eq managed-token (contract-of token)) ERR-TOKEN-MANAGER-MISMATCH)
+    (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (map-insert token-managers token-id {
         token-address: (contract-of token),
-        manager-address: token-manager-address,
+        manager-address: (contract-of token-manager),
         token-type: token-manager-type,
         is-enabled: false,
     }) ERR-TOKEN-EXISTS)
@@ -283,7 +305,7 @@
             (var-get its-contract-name) 
             (unwrap-panic (to-consensus-buff? {
                 token-address: (contract-of token),
-                token-manager-address: token-manager-address,
+                token-manager-address: (contract-of token-manager),
                 token-id: token-id,
             }))))))
 
@@ -342,6 +364,7 @@
             decimals: decimals,
             minter: minter
         })))
+        ;; #[filter(destination-chain)]
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
     (asserts! (get is-enabled token-info) ERR-TOKEN-NOT-ENABLED)
@@ -354,6 +377,7 @@
         minter: minter,
         destination-chain: destination-chain,
     })
+    ;; #[allow(unchecked_data)]
     (call-contract destination-chain payload gas-value)))
 
 (define-read-only (valid-token-address (token-id (buff 32))) 
