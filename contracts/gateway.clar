@@ -498,7 +498,7 @@
 ;; ### Proof validation ###
 ;; ########################
 
-(define-constant ERR-SIGNERS-RETENTION (err u4051))
+(define-constant ERR-INVALID-SIGNERS (err u4051))
 
 
 ;; This function takes data-hash and proof data and reverts if proof is invalid
@@ -524,7 +524,7 @@
             (message-hash (message-hash-to-sign signers-hash data-hash))
         ) 
 
-        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (var-get previous-signers-retention))) false) ERR-SIGNERS-RETENTION)
+        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (var-get previous-signers-retention))) false) ERR-INVALID-SIGNERS)
 
         (try! (validate-signatures message-hash signers (get signatures proof)))
 
