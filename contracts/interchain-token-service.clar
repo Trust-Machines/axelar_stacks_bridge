@@ -184,7 +184,7 @@
 ;; @param address_ the string representation of the trusted address
 (define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (begin
-        (asserts!  (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
+        (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (print {
             type: "trusted-address-set",
             chain: chain-name,
