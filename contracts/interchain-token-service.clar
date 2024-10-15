@@ -217,22 +217,17 @@
         ;; Prevent sending directly to the ITS Hub chain. This is not supported yet, 
         ;; so fail early to prevent the user from having their funds stuck.
         (asserts! (not (is-eq destination-chain ITS-HUB-CHAIN-NAME)) ERR-UNTRUSTED-CHAIN)
-        (ok (if (is-eq destination-address-hash ITS-HUB-ROUTING-IDENTIFIER-HASH)
+        (ok 
             {
                 ;; Wrap ITS message in an ITS Hub message
-                destination-address: (unwrap-panic (get-trusted-address ITS-HUB-CHAIN-NAME)),
+                destination-address: destination-address,
                 destination-chain: ITS-HUB-CHAIN-NAME,
                 payload: (unwrap-panic (to-consensus-buff? {
                     type: MESSAGE-TYPE-SEND-TO-HUB,
                     destination-chain: destination-chain,
                     payload: payload,
                 })),
-            }
-            {
-                destination-address: destination-address,
-                destination-chain: destination-chain,
-                payload: payload,
-            }))))
+            })))
 
 (define-private (pay-gas 
         (amount uint)
