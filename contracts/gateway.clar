@@ -1,6 +1,6 @@
 (impl-trait .traits.gateway-trait)
 
-(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+(define-constant NULL-PUB 0x03a1f11842608956458bdcb8a0517348b7a9e21b7cb5f9ccb132f69d0894e68ede)
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -111,7 +111,7 @@
     (let (
         (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
-                    signers: (list 32 {signer: principal, weight: uint}), 
+                    signers: (list 32 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
@@ -227,7 +227,7 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u1051))
 
-(define-data-var operator principal NULL-ADDRESS)
+(define-data-var operator principal tx-sender)
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
@@ -276,9 +276,9 @@
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
 
 ;; Helper vars to use within loops
-(define-data-var temp-account principal NULL-ADDRESS)
+(define-data-var temp-pub (buff 33) NULL-PUB)
 (define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 32 {signer: principal, weight: uint}) (list))
+(define-data-var temp-signers (list 32 {signer: (buff 33), weight: uint}) (list))
 
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
@@ -304,7 +304,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-signers (signers { 
-                signers: (list 32 {signer: principal, weight: uint}), 
+                signers: (list 32 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -316,7 +316,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (get-signers-hash (signers { 
-                signers: (list 32 {signer: principal, weight: uint}), 
+                signers: (list 32 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -343,17 +343,17 @@
 ;; Returns weight of a signer
 ;; @param signer; Signer to validate
 ;; @returns uint
-(define-private (get-signer-weight (signer {signer: principal, weight: uint})) (get weight signer))
+(define-private (get-signer-weight (signer {signer: (buff 33), weight: uint})) (get weight signer))
 
 ;; Validates a particular signer
 ;; @param signer; Signer to validate
 ;; @returns (response true) or reverts
-(define-private (validate-signer (signer {signer: principal, weight: uint})) 
+(define-private (validate-signer (signer {signer: (buff 33), weight: uint})) 
     (begin 
        ;; signer weight must be bigger than zero
        (asserts! (> (get weight signer) u0) ERR-SIGNER-WEIGHT)
        ;; save this signer in order to do comparison with the next signer
-       (var-set temp-account (get signer signer))
+       (var-set temp-pub (get signer signer))
        (ok true)
     )
 )
@@ -361,12 +361,12 @@
 ;; Validates signer order
 ;; @param signer; Signer to validate
 ;; @returns (response true) or reverts
-(define-private (validate-signer-order (signer {signer: principal, weight: uint})) 
+(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint})) 
     (begin 
        ;; signers need to be in strictly increasing order
-       (asserts! (> (principal-to-bytes (get signer signer)) (principal-to-bytes (var-get temp-account))) ERR-SIGNERS-ORDER)
+       (asserts! (> (principal-to-bytes (unwrap-panic (principal-of? (get signer signer)))) (principal-to-bytes (unwrap-panic (principal-of? (var-get temp-pub))))) ERR-SIGNERS-ORDER)
        ;; save this signer in order to do comparison with the next signer
-       (var-set temp-account (get signer signer))
+       (var-set temp-pub (get signer signer))
        (ok true)
     )
 )
@@ -375,7 +375,7 @@
 ;; @param new-signers; Signers to validate
 ;; @returns (response true) or reverts
 (define-private (validate-signers (signers { 
-            signers: (list 32 {signer: principal, weight: uint}), 
+            signers: (list 32 {signer: (buff 33), weight: uint}), 
             threshold: uint, 
             nonce: (buff 32) 
         })) 
@@ -395,7 +395,7 @@
         (map validate-signer signers_)
         (map validate-signer-order signers_)
         ;; reset temp var
-        (var-set temp-account NULL-ADDRESS)
+        (var-set temp-pub NULL-PUB)
         (ok true)
     )
 )
@@ -406,33 +406,24 @@
 
 
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-INVALID-SIGNATURE-DATA-TYPE (err u3053))
 (define-constant ERR-MALFORMED-SIGNATURES (err u3056))
 (define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3058))
 
 ;; Returns true if the address of the signer provided equals to the value stored in temp-account
 ;; @param signer;
 ;; @returns bool
-(define-private (is-the-signer (signer {signer: principal, weight: uint})) (is-eq (var-get temp-account) (get signer signer)))
+(define-private (is-the-signer (signer {signer: (buff 33), weight: uint})) (is-eq (var-get temp-pub) (get signer signer)))
 
 
 ;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
 ;; @param signature;
-;; @returns (response {signer: principal, weight: uint}) or reverts
+;; @returns (response {signer: (buff 33), weight: uint}) or reverts
 (define-private (signature-to-signer (signature (buff 65))) 
     (let 
        (
-            (address (unwrap! 
-                (principal-of?
-                    (unwrap! 
-                        (secp256k1-recover? (var-get temp-hash) signature)
-                        ERR-INVALID-SIGNATURE-DATA
-                    )
-                )
-                ERR-INVALID-SIGNATURE-DATA-TYPE
-            ))
+            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) ERR-INVALID-SIGNATURE-DATA))
        )
-       (var-set temp-account address)
+       (var-set temp-pub pub)
        (let 
             (
                 (signers (filter is-the-signer (var-get temp-signers)))
@@ -446,10 +437,10 @@
 )
 
 
-;; A helper function to unwrap principal value from an ok response
+;; A helper function to unwrap signer value from an ok response
 ;; @param p; 
-;; @returns {signer: principal, weight: uint}
-(define-private (unwrap-signer (signer (response {signer: principal, weight: uint} uint)))
+;; @returns {signer: (buff 33), weight: uint}
+(define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
     (unwrap-panic signer)
 )
 
@@ -457,7 +448,7 @@
 ;; Accumulates weight of signers 
 ;; @param signer
 ;; @accumulator
-(define-private (accumulate-weights (signer {signer: principal, weight: uint}) (accumulator uint))
+(define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
     (+ accumulator (get weight signer))
 )
 
@@ -470,7 +461,7 @@
 (define-private (validate-signatures 
                 (message-hash (buff 32)) 
                 (signers {
-                    signers: (list 32 {signer: principal, weight: uint}), 
+                    signers: (list 32 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 })
@@ -488,13 +479,13 @@
                 (total-weight (fold accumulate-weights signers_ u0))
             )
             ;; Reset temp principal var
-            (var-set temp-account NULL-ADDRESS)
+            (var-set temp-pub NULL-PUB)
             ;; Make sure order
             (map validate-signer-order signers_)
             ;; Reset temp vars
             (var-set temp-hash 0x00)
             (var-set temp-signers (list))
-            (var-set temp-account NULL-ADDRESS)
+            (var-set temp-pub NULL-PUB)
             ;; total-weight must be bigger than the signers threshold 
             (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
             (ok true) 
@@ -516,7 +507,7 @@
 ;; @returns (response true) or reverts
 (define-private (validate-proof (data-hash (buff 32)) (proof { 
                 signers: {
-                    signers: (list 32 {signer: principal, weight: uint}), 
+                    signers: (list 32 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
@@ -572,7 +563,7 @@
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
 (define-private (rotate-signers-inner (new-signers { 
-                signers: (list 32 {signer: principal, weight: uint}), 
+                signers: (list 32 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             }) (enforce-rotation-delay bool)
@@ -612,13 +603,13 @@
     (let 
         (
             (new-signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 32 {signer: principal, weight: uint}), 
+                signers: (list 32 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             } new-signers) ERR-SIGNERS-DATA))
             (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
-                    signers: (list 32 {signer: principal, weight: uint}), 
+                    signers: (list 32 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
@@ -665,7 +656,7 @@
     (let
         (
             (signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 32 {signer: principal, weight: uint}), 
+                signers: (list 32 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             } signers) ERR-SIGNERS-DATA))

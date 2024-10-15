@@ -2,82 +2,81 @@
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, hash160, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex, deserialize, serialize } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
-import { signMessageHashForAddress } from "./util";
+import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 
+type Signers = {
+  signers: {
+    signer: string,
+    weight: number
+  }[],
+  threshold: number,
+  nonce: string
+}
+
+const signersToCv = (data: Signers) => {
+  return tupleCV({
+    "signers": listCV([
+      ...data.signers.map(x => tupleCV({
+        "signer": bufferFromHex(x.signer),
+        "weight": uintCV(x.weight)
+      }))
+
+    ]),
+    "threshold": uintCV(data.threshold),
+    "nonce": bufferFromAscii(data.nonce)
+  })
+}
+
+const makeProofCV = (data: Signers, messageHashToSign: string) => {
+  return tupleCV({
+    "signers": signersToCv(data),
+    "signatures": listCV([
+      ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+
+    ])
+  });
+}
+
+const getSigners = (start: number, end: number, weight: number, threshold: number, nonce: string): Signers => {
+  return {
+    signers: Object.keys(SIGNER_KEYS).slice(start, end).map(s => ({
+      signer: s,
+      weight
+    })),
+    threshold,
+    nonce
+  }
+}
+
 
 const startGateway = () => {
-
-  const signers = tupleCV({
-    "signers": listCV([
-      tupleCV({
-        "signer": principalCV(accounts.get("wallet_1")!),
-        "weight": uintCV(1)
-      }),
-      tupleCV({
-        "signer": principalCV(accounts.get("wallet_2")!),
-        "weight": uintCV(1)
-      }),
-      tupleCV({
-        "signer": principalCV(accounts.get("wallet_3")!),
-        "weight": uintCV(1)
-      }),
-      tupleCV({
-        "signer": principalCV(accounts.get("wallet_4")!),
-        "weight": uintCV(1)
-      }),
-      tupleCV({
-        "signer": principalCV(accounts.get("wallet_5")!),
-        "weight": uintCV(1)
-      }),
-    ]),
-    "threshold": uintCV(5),
-    "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u2)
-  });
-
+  const signers = getSigners(0, 10, 1, 10, "1");
   const operator = principalCV(address1);
   const domainSeparator = bufferCVFromString('stacks-axelar-1');
   const minimumRotationDelay = uintCV(0);
   const previousSignersRetention = uintCV(15);
 
-  expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeOk(boolCV(true));
+  expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeOk(boolCV(true));
 
+  return signers;
 }
 
 describe("Gateway tests", () => {
 
-  it("Should revert before initialization", () => {
-    const newSigners = tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_1")!),
-          "weight": uintCV(1)
-        }),
-      ]),
-      "threshold": uintCV(1),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c")
-    });
-
-    const proofSigners = tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_2")!),
-          "weight": uintCV(1)
-        })
-      ]),
-      "threshold": uintCV(1),
-      "nonce": bufferFromHex("0x97550c84a9e30d01461a29ac1c54c29e82c1925ee78b2ee1776d9e20c0183334")
-    })
+  it("Should revert all public functions before initialization", () => {
+    const newSigners = getSigners(0, 1, 1, 2, "1");
+    const proofSigners = getSigners(0, 1, 1, 2, "1")
 
     const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [proofSigners], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], address1);
       return cvToJSON(result).value;
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], address1);
       return cvToJSON(result).value;
     })();
 
@@ -86,12 +85,7 @@ describe("Gateway tests", () => {
       return cvToJSON(result).value
     })();
 
-    const proof = tupleCV({
-      "signers": proofSigners,
-      "signatures": listCV([
-        bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), address1))
-      ])
-    });
+    const proof = makeProofCV(proofSigners, messageHashToSign)
 
     const messages = listCV([
       tupleCV({
@@ -105,13 +99,14 @@ describe("Gateway tests", () => {
 
     // all public functions should revert before initialization
     // 4051 since signer-epoch is 0 by default
-    expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(4051));
+    expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(4051));
     // 6052
     expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], address1).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "validate-message", [stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], address1).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(address1)], address1).result).toBeErr(uintCV(6052));
   });
+
 
   it("Initialization", () => {
     const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
@@ -128,7 +123,6 @@ describe("Gateway tests", () => {
 
     // already initialized
     // expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], address1).result).toBeErr(uintCV(6051));
-
   });
 
   it("message-to-command-id", () => {
@@ -155,62 +149,23 @@ describe("Gateway tests", () => {
 
   });
 
+
   it("Rotate signers", () => {
-    startGateway();
+   
 
-    const newSigners = tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_6")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_7")!),
-          "weight": uintCV(2)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_8")!),
-          "weight": uintCV(2)
-        }),
-      ]),
-      "threshold": uintCV(3),
-      "nonce": bufferFromHex("0x48dd032f5ebe0286a7aae330fe25a2fbe8e8288814e8f7ccb149f024611e71b1") // (keccak256 u3)
-    });
+    const newSigners = getSigners(11, 15, 1, 3, "2")
 
-    const proofSigners =  tupleCV({
-      "signers": listCV([
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_1")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_2")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_3")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_4")!),
-          "weight": uintCV(1)
-        }),
-        tupleCV({
-          "signer": principalCV(accounts.get("wallet_5")!),
-          "weight": uintCV(1)
-        }),
-      ]),
-      "threshold": uintCV(5),
-      "nonce": bufferFromHex("0xf74616ab34b70062ff83d0f3459bee08066c0b32ed44ed6f4c52723036ee295c") // (keccak256 u2)
-    })
+
+
+    const proofSigners =  startGateway();
 
     const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [proofSigners], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], address1);
       return cvToJSON(result).value;
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [newSigners], address1);
+      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], address1);
       return cvToJSON(result).value;
     })();
 
@@ -219,20 +174,10 @@ describe("Gateway tests", () => {
       return cvToJSON(result).value
     })();
 
-    const proof = tupleCV({
-      "signers": proofSigners,
-      "signatures": listCV([
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_1")!)),
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_2")!)),
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_3")!)),
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_4")!)),
-         bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), accounts.get("wallet_5")!))
-      ])
-    });
+    const proof = makeProofCV(proofSigners, messageHashToSign)
 
-    const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(newSigners)), bufferCV(serializeCV(proof))], address1);
+    const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1);
     expect(result).toBeOk(boolCV(true));
   });
-
 });
 
