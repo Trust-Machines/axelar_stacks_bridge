@@ -600,29 +600,31 @@
     (new-signers (buff 4096))
     (proof (buff 7168))
 )
-    (let 
-        (
-            (new-signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 48 {signer: (buff 33), weight: uint}), 
-                threshold: uint, 
-                nonce: (buff 32) 
-            } new-signers) ERR-SIGNERS-DATA))
-            (proof_ (unwrap! (from-consensus-buff? { 
-                signers: {
+    (begin 
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
+        (let 
+            (
+                (new-signers_ (unwrap! (from-consensus-buff? { 
                     signers: (list 48 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
-                },
-                signatures: (list 48 (buff 65))
-            } proof) ERR-PROOF-DATA))
-            (data-hash (data-hash-from-signers new-signers_))
-            (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
-            (is-latest-signers (try! (validate-proof data-hash proof_)))
+                } new-signers) ERR-SIGNERS-DATA))
+                (proof_ (unwrap! (from-consensus-buff? { 
+                    signers: {
+                        signers: (list 48 {signer: (buff 33), weight: uint}), 
+                        threshold: uint, 
+                        nonce: (buff 32) 
+                    },
+                    signatures: (list 48 (buff 65))
+                } proof) ERR-PROOF-DATA))
+                (data-hash (data-hash-from-signers new-signers_))
+                (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
+                (is-latest-signers (try! (validate-proof data-hash proof_)))
+            )
+            (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
+            (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
+            (ok true)
         )
-        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
-        (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
-        (ok true)
     )
 )
 
