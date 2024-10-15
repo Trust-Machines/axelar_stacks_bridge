@@ -95,7 +95,7 @@
 
 (define-read-only (is-valid-token-type (token-type uint)) 
     (or 
-        (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+        ;; (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
         (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK)))
 
 ;; ;; data vars
