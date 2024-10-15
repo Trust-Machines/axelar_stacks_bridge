@@ -52,7 +52,7 @@ const getSigners = (start: number, end: number, weight: number, threshold: numbe
 }
 
 
-const startGateway = () => {
+const startContract = () => {
   const signers = getSigners(0, 10, 1, 10, "1");
   const operator = principalCV(address1);
   const domainSeparator = bufferCVFromString('stacks-axelar-1');
@@ -111,7 +111,7 @@ describe("Gateway tests", () => {
     const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], address1);
     expect(getIsStarted1).toBeBool(false);
 
-    startGateway();
+    startContract();
 
     // check init values 
     expect(simnet.callReadOnlyFn("gateway", "get-operator", [], address1).result).toBePrincipal(address1);
@@ -129,7 +129,7 @@ describe("Gateway tests", () => {
   });
 
   it("call contract", () => {
-    startGateway();
+    startContract();
 
     const destinationChain = 'Destination';
     const destinationAddress = '0x123abc';
@@ -150,13 +150,9 @@ describe("Gateway tests", () => {
 
 
   it("Rotate signers", () => {
-   
-
     const newSigners = getSigners(11, 15, 1, 3, "2")
 
-
-
-    const proofSigners =  startGateway();
+    const proofSigners =  startContract();
 
     const signersHash = (() => {
       const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], address1);
