@@ -61,14 +61,8 @@
 
 (define-constant GATEWAY .gateway)
 (define-constant GAS-SERVICE .gas-service)
-;; (define-constant TOKEN-MANAGER-DEPLOYER tx-sender)
-;; (define-constant INTERCHAIN-TOKEN-DEPLOYER tx-sender)
-;; (define-constant INTERCHAIN-TOKEN-FACTORY .interchain-token-factory)
-(define-constant CHAIN-NAME "Stacks")
+(define-constant CHAIN-NAME "stacks")
 (define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
-;; (define-constant TOKEN-MANAGER none)
-(define-constant TOKEN-HANDLER none)
-(define-constant GATEWAY-CALLER none)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
 
