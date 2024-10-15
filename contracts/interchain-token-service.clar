@@ -28,6 +28,10 @@
 (define-constant ERR-TOKEN-MANAGER-MISMATCH (err u3058))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u3059))
 (define-constant ERR-UNSUPPORTED (err u3060))
+(define-constant ERR-INVALID-PAYLOAD (err u3061))
+(define-constant ERR-INVALID-DESTINATION-CHAIN (err u3062))
+(define-constant ERR-INVALID-SOURCE-CHAIN (err u3063))
+(define-constant ERR-INVALID-SOURCE-ADDRESS (err u3064))
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -45,7 +49,6 @@
         token-address: principal,
         manager-address: principal,
         token-type: uint,
-        is-enabled: bool,
         ;; operator: principal,
     })
 

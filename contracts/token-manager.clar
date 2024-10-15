@@ -6,13 +6,9 @@
 (impl-trait .token-manager-trait.token-manager-trait)
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
-(define-constant CHAIN-NAME (keccak256 (unwrap-panic (to-consensus-buff? "Stacks"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
-(define-constant TOKEN-ADDRESS .mintable-burnable-sip-010)
-(define-constant INTERCHAIN-TOKEN-ID (keccak256
-    (concat
-        (concat PREFIX_CANONICAL_TOKEN_SALT CHAIN-NAME)
-        (unwrap-panic (to-consensus-buff? TOKEN-ADDRESS)))))
+
+(define-constant OWNER tx-sender)
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -31,7 +27,9 @@
 (define-constant TOKEN-TYPE-MINT-BURN u4)
 
 ;; Should be a variable changed at deployment
-(define-constant TOKEN-TYPE TOKEN-TYPE-LOCK-UNLOCK)
+
+(define-data-var token-address (optional principal) none)
+(define-data-var token-type (optional uint) none)
 
 (define-constant GATEWAY .gateway)
 (define-constant INTERCHAIN-TOKEN-SERVICE .interchain-token-service)
@@ -69,12 +67,10 @@
 ;; Reads the managed token address
 ;; @return principal The address of the token.
 (define-read-only (get-token-address)
-    (ok TOKEN-ADDRESS))
+    (ok (unwrap! (var-get token-address) ERR-NOT-STARTED)))
 
-;; A function that returns the interchain token id.
-;; @return (buff 32) The interchain token ID.
-(define-read-only (interchain-token-id)
-    (ok INTERCHAIN-TOKEN-ID))
+(define-read-only (get-token-type)
+    (ok (unwrap! (var-get token-type) ERR-NOT-STARTED)))
 
 ;; Query if an address is a operator.
 ;; @param addr The address to query for.
@@ -88,8 +84,7 @@
 ;; @param flowLimiter the address of the new flow limiter.
 (define-public (add-flow-limiter (address principal))
     (begin
-        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
-        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
             (ok (map-set roles address  {flow-limiter: true, operator: false})))))
@@ -99,8 +94,7 @@
 ;; @param flowLimiter the address of an existing flow limiter.
 (define-public (remove-flow-limiter (address principal))
     (begin 
-        ;; FIXME: Should this be guarded by contract-caller instead preventing contract calls from modifying?
-        (asserts! (unwrap-panic (is-operator tx-sender)) ERR-NOT-AUTHORIZED)
+        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
@@ -229,5 +223,36 @@
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
         (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (is-eq (contract-of sip-010-token) (unwrap-panic (var-get token-address))) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
 
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-constant ERR-STARTED (err u6051))
+(define-constant ERR-NOT-STARTED (err u6052))
+
+(define-data-var is-started bool false)
+(define-read-only (get-is-started) (var-get is-started))
+
+;; Constructor function
+;; @returns (response true) or reverts
+(define-public (setup 
+    (token-address_ principal)
+    (token-type_ uint)
+) 
+    (begin
+        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (var-set is-started true)
+        ;; #[allow(unchecked_data)]
+        (var-set token-address (some token-address_))
+        ;; #[allow(unchecked_data)]
+        (var-set token-type (some token-type_))
+        (ok true)
+    )
+)
