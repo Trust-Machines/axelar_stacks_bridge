@@ -27,6 +27,7 @@
 (define-constant ERR-TOKEN-MANAGER-NOT-DEPLOYED (err u3057))
 (define-constant ERR-TOKEN-MANAGER-MISMATCH (err u3058))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u3059))
+(define-constant ERR-UNSUPPORTED (err u3060))
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -253,6 +254,18 @@
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload))
     )
 )
+(define-public (deploy-token-manager
+            (salt (buff 32))
+            (destination-chain (string-ascii 18))
+            (token-manager-type uint)
+            (token <sip-010-trait>)
+            (token-manager <token-manager-trait>)
+            (gas-value uint))
+        (begin 
+            (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
+            (deploy-canonical-token-manager salt destination-chain token-manager-type token token-manager)
+        )
+    )
 ;; Used to deploy remote custom TokenManagers.
 ;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
 ;; part of a multicall involving multiple functions that could make remote contract calls.
