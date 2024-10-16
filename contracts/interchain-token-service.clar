@@ -36,6 +36,7 @@
 (define-constant ERR-INVALID-METADATA-VERSION (err u2066))
 (define-constant ERR-INVALID-SALT (err u2067))
 (define-constant ERR-INVALID-DESTINATION-ADDRESS (err u2068))
+(define-constant ERR-EMPTY-DATA (err u2069))
 
 
 
@@ -461,16 +462,9 @@
         })
         (gas-value uint)
     )
-    (let (
-        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
-    )
-        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) ERR-INVALID-METADATA-VERSION)
-        (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-        (asserts! (> u0 (len destination-chain)) ERR-INVALID-DESTINATION-CHAIN)
-        (asserts! (> u0 (len destination-address)) ERR-INVALID-DESTINATION-ADDRESS)
+    (begin
+        ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
+        (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
         (try! (contract-call? token-manager take-token token contract-caller amount))
         (transmit-interchain-transfer
             token-id
@@ -482,7 +476,59 @@
             (get data metadata)
             gas-value)))
 
+(define-public (call-contract-with-interchain-token
+        (token-manager <token-manager-trait>)
+        (token <sip-010-trait>)
+        (token-id (buff 32))
+        (destination-chain (string-ascii 18))
+        (destination-address (buff 100))
+        (amount uint)
+        (metadata {
+            version: uint,
+            data: (buff 1024)
+        })
+        (gas-value uint)) 
+    (begin
+        ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
+        (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
+        (asserts! (> u0 (len (get data metadata))) ERR-EMPTY-DATA)
+        (try! (contract-call? token-manager take-token token contract-caller amount))
+        (transmit-interchain-transfer
+            token-id
+            contract-caller
+            destination-chain
+            destination-address
+            amount
+            (get contract-call METADATA-VERSION)
+            (get data metadata)
+            gas-value)))
 
+(define-private (check-interchain-transfer-params
+        (token-manager <token-manager-trait>)
+        (token <sip-010-trait>)
+        (token-id (buff 32))
+        (destination-chain (string-ascii 18))
+        (destination-address (buff 100))
+        (amount uint)
+        (metadata {
+            version: uint,
+            data: (buff 1024)
+        })
+        (gas-value uint)
+) 
+    (let (
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+    ) 
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) ERR-INVALID-METADATA-VERSION)
+        (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
+        (asserts! (> u0 (len destination-chain)) ERR-INVALID-DESTINATION-CHAIN)
+        (asserts! (> u0 (len destination-address)) ERR-INVALID-DESTINATION-ADDRESS)
+        (ok true)
+)
+)
 ;; Transmit a callContractWithInterchainToken for the given tokenId.
 ;; @param tokenId The tokenId of the TokenManager (which must be the msg.sender).
 ;; @param sourceAddress The address where the token is coming from, which will also be used for gas reimbursement.
