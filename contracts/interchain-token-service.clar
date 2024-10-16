@@ -671,6 +671,32 @@
         (ok true)
     ))
 
+(define-public (execute-receive-interchain-token
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (token-manager <token-manager-trait>)
+        (token <sip-010-trait>)
+        (payload (buff 1024))
+    )
+    (let (
+        (payload-decoded (unwrap! (from-consensus-buff? {
+            type: uint,
+            token-id: (buff 32),
+            source-address: (string-ascii 48),
+            destination-address: (buff 64),
+            amount: uint,
+            data: (buff 256),
+        } payload) ERR-INVALID-PAYLOAD))
+        (token-info (unwrap! (map-get? token-managers (get token-id payload-decoded)) ERR-TOKEN-NOT-FOUND))
+        (recipient (unwrap-panic (from-consensus-buff? principal (get destination-address payload-decoded))))
+        
+    )
+    (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
+    (try! (as-contract
+        (contract-call? .gateway validate-message source-chain message-id (get source-address payload-decoded) (keccak256 payload))
+    ))
+    (contract-call? token-manager give-token token recipient (get amount payload-decoded))))
+
 
 ;; ######################
 ;; ######################

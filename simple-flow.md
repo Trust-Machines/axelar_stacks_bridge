@@ -28,7 +28,7 @@
       - if from stacks to stacks
         - you have the original its payload which has the token-id just validate and store in the token-managers
         - validate the initial message and the verify message
-    - relayer would receive a message that the validators have finished the "verify-interchain-token" process and would call (execute-deploy-interchain-token)
+    - relayer would receive a message that the validators have finished the "verify-interchain-token" process and would call (execute-deploy-interchain-token) with source chain as stacks
   - Interchain token transfer from another chain to stacks (_processInterchainTransferPayload)
     - type interchain transfer u0
     - the message is validated first
