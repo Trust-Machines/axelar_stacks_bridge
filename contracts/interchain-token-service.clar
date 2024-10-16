@@ -36,12 +36,40 @@
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
-(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+;; (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 
 
 (define-constant OWNER tx-sender)
+(define-constant GATEWAY .gateway)
+(define-constant GAS-SERVICE .gas-service)
+(define-constant CHAIN-NAME "stacks")
+(define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
+;; (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
+(define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
+
+
+;;  * @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
+;;  * This is set as a constant, since the ITS Hub will exist on Axelar.
+(define-constant ITS-HUB-CHAIN-NAME "axelarnet")
+;; FIXME: This will probably be something else
+(define-constant ITS-HUB-ADDRESS "axelarnet1xyz")
+;; (define-constant ITS-HUB-CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? "axelarnet"))))
+
+;;  * @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
+;;  * for that chain should be routed via the ITS hub.
+;; (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
+;; (define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
+
+;; (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
+(define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
+;; (define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
+(define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
+;; (define-constant MESSAGE-TYPE-RECEIVE-FROM-HUB u4)
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+;; (define-constant ITS .interchain-token-service)
+
 (define-data-var is-paused bool false)
 
 (define-map token-managers (buff 32) 
@@ -63,31 +91,6 @@
 (define-private (require-not-paused) 
     (ok (asserts! (not (var-get is-paused)) ERR-PAUSED)))
 
-(define-constant GATEWAY .gateway)
-(define-constant GAS-SERVICE .gas-service)
-(define-constant CHAIN-NAME "stacks")
-(define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
-(define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
-(define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
-
-
-;;  * @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
-;;  * This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-constant ITS-HUB-CHAIN-NAME "axelarnet")
-;; FIXME: This will probably be something else
-(define-constant ITS-HUB-ADDRESS "axelarnet1xyz")
-(define-constant ITS-HUB-CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? "axelarnet"))))
-
-;;  * @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
-;;  * for that chain should be routed via the ITS hub.
-(define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
-(define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
-
-(define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
-(define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
-(define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
-(define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
-(define-constant MESSAGE-TYPE-RECEIVE-FROM-HUB u4)
 
 
 (define-read-only (get-chain-name-hash) 
@@ -135,7 +138,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal)) 
     (begin
-        (asserts! (is-eq (var-get is-paused) false) ERR-PAUSED)
+        (try! (require-not-paused))
         (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
@@ -143,7 +146,6 @@
         (ok u1)
     )
 )
-(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 ;; ####################
 ;; ####################
@@ -151,7 +153,6 @@
 ;; ####################
 ;; ####################
 
-(define-constant ITS .interchain-token-service)
 (define-map trusted-chain-address (string-ascii 18) (string-ascii 48))
 
 (map-set trusted-chain-address ITS-HUB-CHAIN-NAME ITS-HUB-ADDRESS)
@@ -188,6 +189,7 @@
 ;; @param address_ the string representation of the trusted address
 (define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (begin
+        (try! (require-not-paused))
         (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (print {
             type: "trusted-address-set",
@@ -200,6 +202,7 @@
 ;; @param chain Chain name that should be made untrusted
 (define-public (remove-trusted-address  (chain-name  (string-ascii 18)))
     (begin
+        (try! (require-not-paused))
         (asserts!  (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
         (print {
             type: "trusted-address-removed",
@@ -264,7 +267,8 @@
             (token <sip-010-trait>)
             (token-manager <token-manager-trait>)
             (gas-value uint))
-        (begin 
+        (begin
+            (try! (require-not-paused))
             (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
             (deploy-canonical-token-manager salt destination-chain token-manager-type token token-manager)
         )
@@ -278,7 +282,7 @@
 ;; @param params The params that will be used to initialize the TokenManager.
 ;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
-(define-public (deploy-canonical-token-manager
+(define-private (deploy-canonical-token-manager
         (salt (buff 32))
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
@@ -336,6 +340,7 @@
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     
     )
+        (try! (require-not-paused))
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!
@@ -385,6 +390,7 @@
         })))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
+    (try! (require-not-paused))
     (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
     (print {
         type:"interchain-token-deployment-started",

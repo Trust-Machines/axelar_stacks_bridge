@@ -96,12 +96,13 @@
     (begin
         (asserts! (is-ok (contract-call? .token-manager contract-id)) ERR-TOKEN-NOT-ENABLED)
         (contract-call? 
-            .interchain-token-service deploy-canonical-token-manager
+            .interchain-token-service deploy-token-manager
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address)) 
                 "" 
                 TOKEN-TYPE-LOCK-UNLOCK 
                 token-address 
-                token-manager-address)
+                token-manager-address
+                u0)
     ))
 
 
