@@ -21,4 +21,5 @@
     (give-token (<sip-010-trait> principal uint) (response bool uint))
     (get-token-address () (response principal uint))
     (get-token-type () (response uint uint))
+    ;; TODO: add burn and mint functions and mark as unsupported in lock/unlock
 ))

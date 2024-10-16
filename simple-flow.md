@@ -20,3 +20,19 @@
     - lock the token on the token manager contract
     - pay gas
     - send the gateway message (_transmitInterchainTransfer)
+  - Interchain token deploy from different chain to stacks
+    - relayer would receive the message and deploy the token and send a call to the ITS (execute-deploy-interchain-token) with the token contract address and the ITS Hub payload
+      - if from different chain to stacks
+        - check is-message-approved through the gateway first to verify that it came from another chain and is valid type deploy-interchain-token (u1)
+        - The ITS calls the gateway with a message type "verify-interchain-token" (include initial source-chain, address, payload, message-id inside payload)
+      - if from stacks to stacks
+        - you have the original its payload which has the token-id just validate and store in the token-managers
+        - validate the initial message and the verify message
+    - relayer would receive a message that the validators have finished the "verify-interchain-token" process and would call (execute-deploy-interchain-token)
+  - Interchain token transfer from another chain to stacks (_processInterchainTransferPayload)
+    - type interchain transfer u0
+    - the message is validated first
+    - the tokens are sent to the recipient
+  - create a interchain token executable trait (IInterchainTokenExecutable)
+  - call contract with token on stacks from a different chain (execute-call-contract-with-interchain-token) (_processInterchainTransferPayload)
+  - callContractWithInterchainToken

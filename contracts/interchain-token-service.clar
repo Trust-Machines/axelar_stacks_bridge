@@ -351,10 +351,12 @@
                 token-type: token-manager-type,
             }))))))
 
+
 (define-public (execute-enable-token
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
+        ;; token-address
         (payload (buff 1024)))
     (let (
         ;; #[filter(token-id)]
@@ -497,7 +499,6 @@
         (amount uint)
         (metadata-version uint)
         (data (buff 1024))
-        ;; (symbol (string-ascii 100))
         (gas-value uint))
     (let
         (
@@ -552,6 +553,7 @@
         (var-set its-contract-name its-contract-address-name)
         ;; #[allow(unchecked_data)]
         (var-set interchain-token-factory interchain-token-factory_)
+        ;; FIXME: add all parameters from Sol ITS constructor and setup
         (ok true)
     )
 )
