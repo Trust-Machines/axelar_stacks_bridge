@@ -18,20 +18,22 @@
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
 (define-constant ERR-PAUSED (err u1052))
 
-(define-constant ERR-UNTRUSTED-CHAIN (err u3051))
-(define-constant ERR-TOKEN-NOT-FOUND (err u3052))
-(define-constant ERR-TOKEN-NOT-ENABLED (err u3053))
-(define-constant ERR-TOKEN-EXISTS (err u3054))
-(define-constant ERR-GAS-NOT-PAID (err u3055))
-(define-constant ERR-TOKEN-NOT-DEPLOYED (err u3056))
-(define-constant ERR-TOKEN-MANAGER-NOT-DEPLOYED (err u3057))
-(define-constant ERR-TOKEN-MANAGER-MISMATCH (err u3058))
-(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u3059))
-(define-constant ERR-UNSUPPORTED (err u3060))
-(define-constant ERR-INVALID-PAYLOAD (err u3061))
-(define-constant ERR-INVALID-DESTINATION-CHAIN (err u3062))
-(define-constant ERR-INVALID-SOURCE-CHAIN (err u3063))
-(define-constant ERR-INVALID-SOURCE-ADDRESS (err u3064))
+(define-constant ERR-UNTRUSTED-CHAIN (err u2051))
+(define-constant ERR-TOKEN-NOT-FOUND (err u2052))
+(define-constant ERR-TOKEN-NOT-ENABLED (err u2053))
+(define-constant ERR-TOKEN-EXISTS (err u2054))
+(define-constant ERR-GAS-NOT-PAID (err u2055))
+(define-constant ERR-TOKEN-NOT-DEPLOYED (err u2056))
+(define-constant ERR-TOKEN-MANAGER-NOT-DEPLOYED (err u2057))
+(define-constant ERR-TOKEN-MANAGER-MISMATCH (err u2058))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u2059))
+(define-constant ERR-UNSUPPORTED (err u2060))
+(define-constant ERR-INVALID-PAYLOAD (err u2061))
+(define-constant ERR-INVALID-DESTINATION-CHAIN (err u2062))
+(define-constant ERR-INVALID-SOURCE-CHAIN (err u2063))
+(define-constant ERR-INVALID-SOURCE-ADDRESS (err u2064))
+(define-constant ERR-ZERO-AMOUNT (err u2065))
+(define-constant INVALID-METADATA-VERSION (err u2066))
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -50,6 +52,15 @@
 (define-constant PREFIX-INTERCHAIN-TOKEN-ID (keccak256 (unwrap-panic (to-consensus-buff? "its-interchain-token-id"))))
 
 
+(define-constant METADATA-VERSION {
+    contract-call: u0,
+    express-call: u1
+})
+
+(define-constant LATEST-METADATA-VERSION u1)
+
+(define-constant EMPTY-32-BYTES 0x0000000000000000000000000000000000000000000000000000000000000000)
+
 ;;  * @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;;  * This is set as a constant, since the ITS Hub will exist on Axelar.
 (define-data-var its-hub-chain (string-ascii 18) "")
@@ -59,7 +70,7 @@
 ;; (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 ;; (define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
 
-;; (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
+(define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
 (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
 ;; (define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
@@ -74,7 +85,6 @@
         token-address: principal,
         manager-address: principal,
         token-type: uint,
-        ;; operator: principal,
     })
 
 (define-public (set-paused (status bool))
@@ -206,7 +216,7 @@
         (ok (map-delete trusted-chain-address chain-name))))
 
 
-(define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 1024)))
+(define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 10240)))
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
@@ -225,12 +235,24 @@
                 })),
             })))
 
-(define-private (pay-gas 
+(define-private (pay-native-gas-for-contract-call
         (amount uint)
         (refund-address principal)
         (destination-chain (string-ascii 32))
         (destination-address (string-ascii 48))
-        (payload (buff 1024))) 
+        (payload (buff 10240))) 
+    ;; FIXME: GAS service not implemented
+    (if 
+        (> amount u0)
+            ERR-GAS-NOT-PAID 
+        (ok true)))
+
+(define-private (pay-native-gas-for-express-call
+        (amount uint)
+        (refund-address principal)
+        (destination-chain (string-ascii 32))
+        (destination-address (string-ascii 48))
+        (payload (buff 10240))) 
     ;; FIXME: GAS service not implemented
     (if 
         (> amount u0)
@@ -243,7 +265,7 @@
 ;; @param destinationChain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 1024)) (gas-value uint))
+(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 10240)) (metadata-version uint) (gas-value uint))
     (let
         (
             (params (unwrap-panic (get-call-params destination-chain payload)))
@@ -251,7 +273,11 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        (try! (pay-gas gas-value tx-sender destination-chain_ destination-address_ payload))
+        (try! 
+            (if (is-eq (get express-call METADATA-VERSION) metadata-version)
+                (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload)
+                (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload)
+            ))
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload))
     )
 )
@@ -397,10 +423,95 @@
         destination-chain: destination-chain,
     })
     ;; #[allow(unchecked_data)]
-    (call-contract destination-chain payload gas-value)))
+    (call-contract destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
 (define-read-only (valid-token-address (token-id (buff 32))) 
     (ok (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND)))
+
+
+;; Initiates an interchain transfer of a specified token to a destination chain.
+;; @dev The function retrieves the TokenManager associated with the tokenId.
+;; @param tokenId The unique identifier of the token to be transferred.
+;; @param destinationChain The destination chain to send the tokens to.
+;; @param destinationAddress The address on the destination chain to send the tokens to.
+;; @param amount The amount of tokens to be transferred.
+;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
+(define-public (interchain-transfer
+        (token-manager <token-manager-trait>)
+        (token <sip-010-trait>)
+        (token-id (buff 32))
+        (destination-chain (string-ascii 18))
+        (destination-address (buff 100))
+        (amount uint)
+        (metadata {
+            version: uint,
+            data: (buff 1024)
+        })
+        (gas-value uint)
+    ) 
+    (let (
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+    )
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) INVALID-METADATA-VERSION)
+        (try! (contract-call? token-manager take-token token contract-caller amount))
+        (transmit-interchain-transfer 
+            token-id 
+            contract-caller
+            destination-chain
+            destination-address
+            amount 
+            (get version metadata) 
+            (get data metadata) 
+            
+            gas-value)))
+
+
+;; Transmit a callContractWithInterchainToken for the given tokenId.
+;; @param tokenId The tokenId of the TokenManager (which must be the msg.sender).
+;; @param sourceAddress The address where the token is coming from, which will also be used for gas reimbursement.
+;; @param destinationChain The name of the chain to send tokens to.
+;; @param destinationAddress The destinationAddress for the interchainTransfer.
+;; @param amount The amount of tokens to send.
+;; @param metadataVersion The version of the metadata.
+;; @param data The data to be passed with the token transfer.
+(define-private (transmit-interchain-transfer 
+        (token-id (buff 32))
+        (source-address principal)
+        (destination-chain (string-ascii 18))
+        (destination-address (buff 100))
+        (amount uint)
+        (metadata-version uint)
+        (data (buff 1024))
+        ;; (symbol (string-ascii 100))
+        (gas-value uint))
+    (let
+        (
+            (payload (unwrap-panic (to-consensus-buff? {
+                type: MESSAGE-TYPE-INTERCHAIN-TRANSFER,
+                token-id: token-id,
+                source-address: (unwrap-panic (to-consensus-buff? source-address)),
+                destination-chain: destination-chain,
+                destination-address: destination-address,
+                amount: amount,
+                data: data
+            })))
+        )
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (print {
+            type: "interchain-transfer",
+            token-id: token-id,
+            source-address: source-address,
+            destination-chain: destination-chain,
+            destination-address: destination-address,
+            amount: amount,
+            data: (if (is-eq u0 (len data)) EMPTY-32-BYTES (keccak256 data))
+        })
+        (call-contract destination-chain payload metadata-version gas-value)
+    ))
+
 
 ;; ######################
 ;; ######################
