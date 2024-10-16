@@ -61,12 +61,12 @@
 
 (define-constant EMPTY-32-BYTES 0x0000000000000000000000000000000000000000000000000000000000000000)
 
-;;  * @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
-;;  * This is set as a constant, since the ITS Hub will exist on Axelar.
+;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
+;; This is set as a constant, since the ITS Hub will exist on Axelar.
 (define-data-var its-hub-chain (string-ascii 18) "")
 
-;;  * @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
-;;  * for that chain should be routed via the ITS hub.
+;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
+;; for that chain should be routed via the ITS hub.
 ;; (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 ;; (define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
 
@@ -80,7 +80,7 @@
 
 (define-data-var is-paused bool false)
 
-(define-map token-managers (buff 32) 
+(define-map token-managers (buff 32)
     {
         token-address: principal,
         manager-address: principal,
@@ -88,26 +88,26 @@
     })
 
 (define-public (set-paused (status bool))
-    (begin 
+    (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (ok (var-set is-paused status))))
 
-(define-read-only (get-is-paused) 
+(define-read-only (get-is-paused)
     (ok (var-get is-paused)))
 
-(define-private (require-not-paused) 
+(define-private (require-not-paused)
     (ok (asserts! (not (var-get is-paused)) ERR-PAUSED)))
 
 
 
-(define-read-only (get-chain-name-hash) 
+(define-read-only (get-chain-name-hash)
     (ok CHAIN-NAME-HASH))
 
-(define-read-only (get-gateway) 
+(define-read-only (get-gateway)
     (ok GATEWAY))
 
-(define-read-only (is-valid-token-type (token-type uint)) 
-    (or 
+(define-read-only (is-valid-token-type (token-type uint))
+    (or
         ;; (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
         (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK)))
 
@@ -126,8 +126,8 @@
 ;;  @param sender The address of the TokenManager deployer.
 ;;  @param salt The salt that the deployer uses for the deployment.
 ;;  @return tokenId The tokenId that the custom TokenManager would get (or has gotten).
-(define-read-only (interchain-token-id (sender principal) (salt (buff 32))) 
-    (keccak256 (concat 
+(define-read-only (interchain-token-id (sender principal) (salt (buff 32)))
+    (keccak256 (concat
         (concat PREFIX-INTERCHAIN-TOKEN-ID (unwrap-panic (to-consensus-buff? sender)))
     salt)))
 
@@ -143,7 +143,7 @@
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
-(define-public (transfer-operatorship (new-operator principal)) 
+(define-public (transfer-operatorship (new-operator principal))
     (begin
         (try! (require-not-paused))
         (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
@@ -163,22 +163,22 @@
 (define-map trusted-chain-address (string-ascii 18) (string-ascii 48))
 
 ;; Gets the name of the chain this is deployed at
-(define-read-only (get-chain-name) 
+(define-read-only (get-chain-name)
     (ok CHAIN-NAME))
 
 
 ;; Gets the trusted address at a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @return trustedAddress_ The trusted address for the chain. Returns '' if the chain is untrusted
-(define-read-only (get-trusted-address (chain (string-ascii 18))) 
+(define-read-only (get-trusted-address (chain (string-ascii 18)))
     (map-get? trusted-chain-address chain))
 
 ;; Gets the trusted address hash for a chain
 ;; @param chain Chain name
 ;; @return trustedAddressHash_ the hash of the trusted address for that chain
-(define-read-only (get-trusted-address-hash (chain (string-ascii 18))) 
-    (ok (match (map-get? trusted-chain-address chain) 
-            trusted-address (some (keccak256 (unwrap-panic (to-consensus-buff? trusted-address)))) 
+(define-read-only (get-trusted-address-hash (chain (string-ascii 18)))
+    (ok (match (map-get? trusted-chain-address chain)
+            trusted-address (some (keccak256 (unwrap-panic (to-consensus-buff? trusted-address))))
             none)))
 
 ;; Checks whether the interchain sender is a trusted address
@@ -186,7 +186,7 @@
 ;; @param address_ Address of the sender
 ;; @return bool true if the sender chain/address are trusted, false otherwise
 
-(define-read-only (is-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48))) 
+(define-read-only (is-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (ok (is-eq address (default-to "" (map-get? trusted-chain-address chain-name)))))
 
 ;; Sets the trusted address and its hash for a remote chain
@@ -220,10 +220,10 @@
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
-        ;; Prevent sending directly to the ITS Hub chain. This is not supported yet, 
+        ;; Prevent sending directly to the ITS Hub chain. This is not supported yet,
         ;; so fail early to prevent the user from having their funds stuck.
         (asserts! (not (is-eq destination-chain (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-        (ok 
+        (ok
             {
                 ;; Wrap ITS message in an ITS Hub message
                 destination-address: destination-address,
@@ -240,11 +240,11 @@
         (refund-address principal)
         (destination-chain (string-ascii 32))
         (destination-address (string-ascii 48))
-        (payload (buff 10240))) 
+        (payload (buff 10240)))
     ;; FIXME: GAS service not implemented
-    (if 
+    (if
         (> amount u0)
-            ERR-GAS-NOT-PAID 
+            ERR-GAS-NOT-PAID
         (ok true)))
 
 (define-private (pay-native-gas-for-express-call
@@ -252,11 +252,11 @@
         (refund-address principal)
         (destination-chain (string-ascii 32))
         (destination-address (string-ascii 48))
-        (payload (buff 10240))) 
+        (payload (buff 10240)))
     ;; FIXME: GAS service not implemented
-    (if 
+    (if
         (> amount u0)
-            ERR-GAS-NOT-PAID 
+            ERR-GAS-NOT-PAID
         (ok true)))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
@@ -273,7 +273,7 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        (try! 
+        (try!
             (if (is-eq (get express-call METADATA-VERSION) metadata-version)
                 (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload)
                 (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload)
@@ -320,7 +320,7 @@
         deployer: deployer,
         salt: salt,
     })
-    (asserts! (is-eq 
+    (asserts! (is-eq
         (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
         token-manager-type
     ) ERR-TOKEN-MANAGER-MISMATCH)
@@ -328,10 +328,10 @@
     (asserts! (is-eq managed-token (contract-of token)) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
-    (as-contract 
+    (as-contract
         (contract-call? .gateway call-contract
-            CHAIN-NAME 
-            (var-get its-contract-name) 
+            CHAIN-NAME
+            (var-get its-contract-name)
             (unwrap-panic (to-consensus-buff? {
                 type: "verify-token-manager",
                 token-address: (contract-of token),
@@ -359,13 +359,13 @@
         (token-manager-address (get token-manager-address data))
         (token-type (get token-type data))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
-    
+   
     )
         (try! (require-not-paused))
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!
-            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id 
+            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (asserts! (map-insert token-managers token-id {
@@ -390,7 +390,7 @@
 ;; @param minter The minter address for the token.
 ;; @param destinationChain The destination chain where the token will be deployed.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-public (deploy-interchain-token 
+(define-public (deploy-interchain-token
         (salt (buff 32))
         (destination-chain (string-ascii 18))
         (name (string-ascii 32))
@@ -425,7 +425,7 @@
     ;; #[allow(unchecked_data)]
     (call-contract destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
-(define-read-only (valid-token-address (token-id (buff 32))) 
+(define-read-only (valid-token-address (token-id (buff 32)))
     (ok (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND)))
 
 
@@ -448,7 +448,7 @@
             data: (buff 1024)
         })
         (gas-value uint)
-    ) 
+    )
     (let (
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
@@ -457,15 +457,14 @@
         (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) INVALID-METADATA-VERSION)
         (try! (contract-call? token-manager take-token token contract-caller amount))
-        (transmit-interchain-transfer 
-            token-id 
+        (transmit-interchain-transfer
+            token-id
             contract-caller
             destination-chain
             destination-address
-            amount 
-            (get version metadata) 
-            (get data metadata) 
-            
+            amount
+            (get version metadata)
+            (get data metadata)
             gas-value)))
 
 
@@ -477,7 +476,7 @@
 ;; @param amount The amount of tokens to send.
 ;; @param metadataVersion The version of the metadata.
 ;; @param data The data to be passed with the token transfer.
-(define-private (transmit-interchain-transfer 
+(define-private (transmit-interchain-transfer
         (token-id (buff 32))
         (source-address principal)
         (destination-chain (string-ascii 18))
@@ -528,10 +527,10 @@
 
 ;; Constructor function
 ;; @returns (response true) or reverts
-(define-public (setup 
+(define-public (setup
     (its-contract-address-name (string-ascii 48))
     (interchain-token-factory_ principal)
-) 
+)
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
