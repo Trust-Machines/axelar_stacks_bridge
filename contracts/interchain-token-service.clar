@@ -33,7 +33,11 @@
 (define-constant ERR-INVALID-SOURCE-CHAIN (err u2063))
 (define-constant ERR-INVALID-SOURCE-ADDRESS (err u2064))
 (define-constant ERR-ZERO-AMOUNT (err u2065))
-(define-constant INVALID-METADATA-VERSION (err u2066))
+(define-constant ERR-INVALID-METADATA-VERSION (err u2066))
+(define-constant ERR-INVALID-SALT (err u2067))
+(define-constant ERR-INVALID-DESTINATION-ADDRESS (err u2068))
+
+
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -192,6 +196,7 @@
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @param address_ the string representation of the trusted address
+;; #[allow(unchecked_data)]
 (define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (begin
         (try! (require-not-paused))
@@ -205,6 +210,7 @@
 
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
+;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address  (chain-name  (string-ascii 18)))
     (begin
         (try! (require-not-paused))
@@ -281,6 +287,7 @@
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload))
     )
 )
+
 (define-public (deploy-token-manager
             (salt (buff 32))
             (destination-chain (string-ascii 18))
@@ -291,9 +298,13 @@
         (begin
             (try! (require-not-paused))
             (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
+            (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
+            (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
+            ;; #[filter(token, token-manager)]
             (deploy-canonical-token-manager salt destination-chain token-manager-type token token-manager)
         )
     )
+
 ;; Used to deploy remote custom TokenManagers.
 ;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
 ;; part of a multicall involving multiple functions that could make remote contract calls.
@@ -359,7 +370,6 @@
         (token-manager-address (get token-manager-address data))
         (token-type (get token-type data))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
-   
     )
         (try! (require-not-paused))
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
@@ -455,7 +465,10 @@
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) INVALID-METADATA-VERSION)
+        (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) ERR-INVALID-METADATA-VERSION)
+        (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
+        (asserts! (> u0 (len destination-chain)) ERR-INVALID-DESTINATION-CHAIN)
+        (asserts! (> u0 (len destination-address)) ERR-INVALID-DESTINATION-ADDRESS)
         (try! (contract-call? token-manager take-token token contract-caller amount))
         (transmit-interchain-transfer
             token-id

@@ -111,6 +111,7 @@
 ;; @param destinationChain The name of the chain where the token will be deployed.
 ;; @param gasValue The gas amount to be sent for deployment.
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
+;; #[allow(unchecked_data)]
 (define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 18)) (gas-value uint))
     (let
         (
