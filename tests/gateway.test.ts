@@ -1,6 +1,6 @@
 
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex, contractPrincipal, deserialize } from "@stacks/transactions/dist/cl";
+import { bufferFromAscii, bufferFromHex, contractPrincipal, deserialize, uint } from "@stacks/transactions/dist/cl";
 import { beforeEach, describe, expect, it } from "vitest";
 import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
 
@@ -292,11 +292,15 @@ describe("Gateway tests", () => {
         return cvToJSON(result).value
       })();
 
-      const proof = makeProofCV(proofSigners, messageHashToSign)
+      const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1);
       expect(result).toBeOk(boolCV(true));
-      expect(events).toMatchSnapshot()
+      expect(events).toMatchSnapshot();
+
+      // should reject rotating to the same signers
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1);
+      expect(result2).toBeErr(uintCV(5054))
     });
   });
 
