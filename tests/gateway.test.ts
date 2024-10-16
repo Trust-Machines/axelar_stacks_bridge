@@ -1,6 +1,6 @@
 
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex, deserialize } from "@stacks/transactions/dist/cl";
+import { bufferFromAscii, bufferFromHex, contractPrincipal, deserialize } from "@stacks/transactions/dist/cl";
 import { beforeEach, describe, expect, it } from "vitest";
 import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
 
@@ -167,6 +167,59 @@ describe("Gateway tests", () => {
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1);
       expect(result).toBeOk(boolCV(true));
+    });
+  });
+
+  describe("message validation", () => {
+    it("should approve and validate message", () => {
+
+      const sourceChain = stringAsciiCV("Source");
+      const messageId = stringAsciiCV("1");
+      const sourceAddress = stringAsciiCV("address0x123");
+      const contractAddress = contractPrincipal(address1, 'contract');
+      const payloadHash = bufferFromHex("0x373360faa7d5fc254d927e6aafe6127ec920f30efe61612b7ec6db33e72fb950");
+
+      const messages = listCV([
+        tupleCV({
+          "source-chain": sourceChain,
+          "message-id": messageId,
+          "source-address": sourceAddress,
+          "contract-address": contractAddress,
+          "payload-hash": payloadHash
+        })
+      ]);
+
+      const proofSigners = startContract();
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], address1);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-messages", [messages], address1);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], address1);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
+
+      expect(approveResult).toBeOk(boolCV(true));
+      expect(approveEvents).toMatchSnapshot();
+
+      const isApproved = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], address1).result;
+      expect(isApproved).toBeOk(boolCV(true));
+
+      const {result: validateResult, events: validateEvents} = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], address1);
+
+      console.log(validateResult);
+      
     });
   });
 
