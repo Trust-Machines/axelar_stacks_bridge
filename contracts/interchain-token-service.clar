@@ -37,13 +37,15 @@
 (define-constant ERR-INVALID-SALT (err u2067))
 (define-constant ERR-INVALID-DESTINATION-ADDRESS (err u2068))
 (define-constant ERR-EMPTY-DATA (err u2069))
+(define-constant ERR-TOKEN-DEPLOYMENT-NOT-APPROVED (err u2070))
+(define-constant ERR-INVALID-MESSAGE-TYPE (err u2071))
 
 
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
-;; (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 
@@ -357,7 +359,6 @@
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        ;; token-address
         (payload (buff 1024)))
     (let (
         ;; #[filter(token-id)]
@@ -463,6 +464,7 @@
         (gas-value uint)
     )
     (begin
+        (try! (require-not-paused))
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
         (try! (contract-call? token-manager take-token token contract-caller amount))
@@ -487,8 +489,9 @@
             version: uint,
             data: (buff 1024)
         })
-        (gas-value uint)) 
+        (gas-value uint))
     (begin
+        (try! (require-not-paused))
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
         (asserts! (> u0 (len (get data metadata))) ERR-EMPTY-DATA)
@@ -515,10 +518,10 @@
             data: (buff 1024)
         })
         (gas-value uint)
-) 
+)
     (let (
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
-    ) 
+    )
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
@@ -526,9 +529,7 @@
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
         (asserts! (> u0 (len destination-chain)) ERR-INVALID-DESTINATION-CHAIN)
         (asserts! (> u0 (len destination-address)) ERR-INVALID-DESTINATION-ADDRESS)
-        (ok true)
-)
-)
+        (ok true)))
 ;; Transmit a callContractWithInterchainToken for the given tokenId.
 ;; @param tokenId The tokenId of the TokenManager (which must be the msg.sender).
 ;; @param sourceAddress The address where the token is coming from, which will also be used for gas reimbursement.
@@ -569,6 +570,105 @@
             data: (if (is-eq u0 (len data)) EMPTY-32-BYTES (keccak256 data))
         })
         (call-contract destination-chain payload metadata-version gas-value)
+    ))
+
+(define-public (execute-deploy-interchain-token
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
+        (token-address principal)
+        (payload (buff 1024)))
+    (begin 
+        (try! (require-not-paused))
+        (if (is-eq CHAIN-NAME source-address)
+            (process-deploy-interchain-from-stacks message-id source-chain source-address payload)
+            (process-deploy-interchain-from-external-chain message-id source-chain source-address token-address payload))))
+
+(define-private (process-deploy-interchain-from-external-chain
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
+        (token-address principal)
+        (payload (buff 1024))
+    )
+    (let (
+        (payload-decoded (unwrap! (from-consensus-buff? {
+            type: uint,
+            token-id: (buff 32),
+            name: (string-ascii 100),
+            symbol: (string-ascii 100),
+            decimals: uint,
+            minter-bytes: (buff 64),
+        } payload) ERR-INVALID-PAYLOAD))
+    )
+    (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
+            source-chain message-id source-address token-address (keccak256 payload)))
+        ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
+    (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
+    (as-contract
+        (contract-call? .gateway call-contract
+            CHAIN-NAME
+            (var-get its-contract-name)
+            (unwrap-panic (to-consensus-buff? {
+                type: "verify-interchain-token",
+                source-chain: source-chain,
+                source-address: source-address,
+                message-id: message-id,
+                payload: payload,
+                token-address: token-address,
+                token-id: (get token-id payload-decoded),
+                token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
+            }))))
+    ))
+
+(define-private (process-deploy-interchain-from-stacks
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
+        (payload (buff 1024)))
+    (let (
+        ;; #[filter(token-id)]
+        (data (unwrap! (from-consensus-buff? {
+                type: (string-ascii 100),
+                source-chain: (string-ascii 18),
+                source-address: (string-ascii 48),
+                message-id: (string-ascii 71),
+                payload: (buff 256),
+                token-address: principal,
+                token-id: (buff 32),
+                token-type: uint,
+            } payload) ERR-INVALID-PAYLOAD))
+        (token-id (get token-id data))
+        (token-address (get token-address data))
+        (token-manager-address (get token-address data))
+        (token-type (get token-type data))
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+    )
+        (try! (require-not-paused))
+        (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
+        (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
+        (try!
+            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
+                (var-get its-contract-name)
+                (keccak256 payload))))
+        (try!
+            (as-contract (contract-call? .gateway validate-message
+                (get source-chain data)
+                (get message-id data)
+                (var-get its-contract-name)
+                (keccak256 payload))))
+        (asserts! (map-insert token-managers token-id {
+            token-address: token-address,
+            manager-address: token-manager-address,
+            token-type: token-type,
+        }) ERR-TOKEN-EXISTS)
+        (print {
+            type: "token-manager-deployed",
+            token-id: token-id,
+            token-manager: token-manager-address,
+            token-type: (get token-type token-info),
+        })
+        (ok true)
     ))
 
 
