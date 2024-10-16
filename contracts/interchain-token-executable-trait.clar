@@ -8,9 +8,16 @@
 ;;
 (define-trait interchain-token-executable-trait (
     (execute-with-interchain-token (
-        (buff 32)
-        (string-ascii 32)
-        (buff 160)
+        ;; commandId,
+        ;; sourceChain,
+        ;; sourceAddress,
+        ;; data,
+        ;; tokenId,
+        ;; tokenAddress,
+        ;; amount
+        (string-ascii 71)
+        (string-ascii 18)
+        (string-ascii 48)
         (buff 1024)
         (buff 32)
         principal

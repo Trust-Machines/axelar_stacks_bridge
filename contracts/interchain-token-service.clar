@@ -8,6 +8,7 @@
 ;;
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (use-trait token-manager-trait .token-manager-trait.token-manager-trait)
+(use-trait interchain-token-executable-trait .interchain-token-executable-trait.interchain-token-executable-trait)
 
 ;; token definitions
 ;;
@@ -676,6 +677,7 @@
         (source-chain (string-ascii 18))
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
+        (destination-contract <interchain-token-executable-trait>)
         (payload (buff 1024))
     )
     (let (
@@ -687,15 +689,33 @@
             amount: uint,
             data: (buff 256),
         } payload) ERR-INVALID-PAYLOAD))
-        (token-info (unwrap! (map-get? token-managers (get token-id payload-decoded)) ERR-TOKEN-NOT-FOUND))
+        (token-id (get token-id payload-decoded))
+        (source-address (get source-address payload-decoded))
         (recipient (unwrap-panic (from-consensus-buff? principal (get destination-address payload-decoded))))
-        
+        (amount (get amount payload-decoded))
+        (data (get data payload-decoded))
+        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+        (data-is-empty (> (len data) u0))
     )
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
-        (contract-call? .gateway validate-message source-chain message-id (get source-address payload-decoded) (keccak256 payload))
+        (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))
     ))
-    (contract-call? token-manager give-token token recipient (get amount payload-decoded))))
+    (try! (contract-call? token-manager give-token token recipient amount))
+    (print {
+        type: "interchain-transfer-received",
+        token-id: token-id,
+        source-chain: source-chain,
+        source-address: source-address,
+        destination-address: recipient,
+        amount: amount,
+        data: (if data-is-empty (keccak256 data) EMPTY-32-BYTES),
+    })
+    (asserts! (is-eq (contract-of destination-contract) recipient) ERR-INVALID-DESTINATION-ADDRESS)
+    (if data-is-empty
+        (ok 0x)
+        (contract-call? destination-contract execute-with-interchain-token 
+            message-id source-chain source-address data token-id (contract-of token) amount))))
 
 
 ;; ######################
