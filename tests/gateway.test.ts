@@ -229,6 +229,7 @@ describe("Gateway tests", () => {
       const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], address1).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
+      // should not re-validate
       const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], address1);
       expect(validateResult2).toBeErr(uintCV(9052));
     });
