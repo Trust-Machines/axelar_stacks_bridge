@@ -52,10 +52,7 @@
 
 ;;  * @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;;  * This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-constant ITS-HUB-CHAIN-NAME "axelarnet")
-;; FIXME: This will probably be something else
-(define-constant ITS-HUB-ADDRESS "axelarnet1xyz")
-;; (define-constant ITS-HUB-CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? "axelarnet"))))
+(define-data-var its-hub-chain (string-ascii 18) "")
 
 ;;  * @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;;  * for that chain should be routed via the ITS hub.
@@ -155,8 +152,6 @@
 
 (define-map trusted-chain-address (string-ascii 18) (string-ascii 48))
 
-(map-set trusted-chain-address ITS-HUB-CHAIN-NAME ITS-HUB-ADDRESS)
-
 ;; Gets the name of the chain this is deployed at
 (define-read-only (get-chain-name) 
     (ok CHAIN-NAME))
@@ -217,12 +212,12 @@
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
         ;; Prevent sending directly to the ITS Hub chain. This is not supported yet, 
         ;; so fail early to prevent the user from having their funds stuck.
-        (asserts! (not (is-eq destination-chain ITS-HUB-CHAIN-NAME)) ERR-UNTRUSTED-CHAIN)
+        (asserts! (not (is-eq destination-chain (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
         (ok 
             {
                 ;; Wrap ITS message in an ITS Hub message
                 destination-address: destination-address,
-                destination-chain: ITS-HUB-CHAIN-NAME,
+                destination-chain: (var-get its-hub-chain),
                 payload: (unwrap-panic (to-consensus-buff? {
                     type: MESSAGE-TYPE-SEND-TO-HUB,
                     destination-chain: destination-chain,
@@ -430,7 +425,6 @@
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (var-set is-started true)
-        ;; FIXME: should there be any checks here
         ;; #[allow(unchecked_data)]
         (var-set its-contract-name its-contract-address-name)
         ;; #[allow(unchecked_data)]
