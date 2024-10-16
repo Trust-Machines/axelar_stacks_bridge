@@ -16,7 +16,7 @@
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
-            sender: tx-sender,
+            sender: contract-caller,
             destination-chain: destination-chain,
             destination-contract-address: destination-contract-address,
             payload-hash: (keccak256 payload),
@@ -153,7 +153,7 @@
                 message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
-                contract-address: tx-sender,
+                contract-address: contract-caller,
                 payload-hash: payload-hash
             }))
     ) 
@@ -227,14 +227,14 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u1051))
 
-(define-data-var operator principal tx-sender)
+(define-data-var operator principal contract-caller)
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal)) 
     (begin
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq tx-sender (var-get operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
         (ok true)
@@ -618,7 +618,7 @@
                     signatures: (list 48 (buff 65))
                 } proof) ERR-PROOF-DATA))
                 (data-hash (data-hash-from-signers new-signers_))
-                (enforce-rotation-delay (not (is-eq tx-sender (var-get operator))))
+                (enforce-rotation-delay (not (is-eq contract-caller (var-get operator))))
                 (is-latest-signers (try! (validate-proof data-hash proof_)))
             )
             (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
