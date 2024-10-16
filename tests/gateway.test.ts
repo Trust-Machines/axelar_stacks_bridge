@@ -176,7 +176,7 @@ describe("Gateway tests", () => {
       const sourceChain = stringAsciiCV("Source");
       const messageId = stringAsciiCV("1");
       const sourceAddress = stringAsciiCV("address0x123");
-      const contractAddress = contractPrincipal(address1, 'contract');
+      const contractAddress = principalCV(address1);
       const payloadHash = bufferFromHex("0x373360faa7d5fc254d927e6aafe6127ec920f30efe61612b7ec6db33e72fb950");
 
       const messages = listCV([
@@ -213,13 +213,16 @@ describe("Gateway tests", () => {
       expect(approveResult).toBeOk(boolCV(true));
       expect(approveEvents).toMatchSnapshot();
 
-      const isApproved = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], address1).result;
-      expect(isApproved).toBeOk(boolCV(true));
+      const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], address1).result;
+      expect(isApprovedBefore).toBeOk(boolCV(true));
 
       const {result: validateResult, events: validateEvents} = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], address1);
 
-      console.log(validateResult);
-      
+      expect(validateResult).toBeOk(boolCV(true));
+      expect(validateEvents).toMatchSnapshot();
+
+      const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], address1).result;
+      expect(isApprovedAfter).toBeOk(boolCV(false));
     });
   });
 
