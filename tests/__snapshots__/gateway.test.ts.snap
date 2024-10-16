@@ -118,6 +118,75 @@ exports[`Gateway tests > message validation > reject re-approving a message 1`] 
 
 exports[`Gateway tests > message validation > reject re-approving a message 2`] = `[]`;
 
+exports[`Gateway tests > message validation > reject re-approving a message 3`] = `
+[
+  {
+    "data": {
+      "contract_identifier": "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway",
+      "raw_value": "0x0c000000040a636f6d6d616e642d69640200000020908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae0a6d6573736167652d69640d00000001310c736f757263652d636861696e0d00000006536f7572636504747970650d000000106d6573736167652d6578656375746564",
+      "topic": "print",
+      "value": {
+        "data": {
+          "command-id": {
+            "buffer": Uint8Array [
+              144,
+              139,
+              53,
+              57,
+              18,
+              91,
+              209,
+              56,
+              237,
+              15,
+              55,
+              72,
+              98,
+              162,
+              131,
+              40,
+              34,
+              159,
+              177,
+              7,
+              155,
+              206,
+              64,
+              239,
+              218,
+              177,
+              229,
+              47,
+              137,
+              22,
+              143,
+              174,
+            ],
+            "type": 2,
+          },
+          "message-id": {
+            "data": "1",
+            "type": 13,
+          },
+          "source-chain": {
+            "data": "Source",
+            "type": 13,
+          },
+          "type": {
+            "data": "message-executed",
+            "type": 13,
+          },
+        },
+        "type": 12,
+      },
+    },
+    "event": "print_event",
+  },
+]
+`;
+
+exports[`Gateway tests > message validation > reject re-approving a message 4`] = `[]`;
+
 exports[`Gateway tests > message validation > should approve and validate message 1`] = `
 [
   {
