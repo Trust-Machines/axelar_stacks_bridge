@@ -552,7 +552,7 @@
             (last-rotation-timestamp_ (var-get last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
         )
-        (asserts! (is-eq enforce-rotation-delay (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay)) false) ERR-INSUFFICIENT-ROTATION-DELAY)
+        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
         (var-set last-rotation-timestamp current-ts)
         (ok true)
     )
