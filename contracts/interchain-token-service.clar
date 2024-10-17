@@ -408,8 +408,8 @@
 (define-public (deploy-interchain-token
         (salt (buff 32))
         (destination-chain (string-ascii 18))
-        (name (string-ascii 100))
-        (symbol (string-ascii 100))
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
         (decimals uint)
         (minter (buff 64))
         (gas-value uint))
@@ -582,7 +582,9 @@
     (begin 
         (try! (require-not-paused))
         (if (is-eq CHAIN-NAME source-address)
+            ;; #[filter(message-id, source-chain, payload)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload)
+            ;; #[filter(message-id, source-chain, payload, token-address)]
             (process-deploy-interchain-from-external-chain message-id source-chain source-address token-address payload))))
 
 (define-private (process-deploy-interchain-from-external-chain
@@ -596,8 +598,8 @@
         (payload-decoded (unwrap! (from-consensus-buff? {
             type: uint,
             token-id: (buff 32),
-            name: (string-ascii 100),
-            symbol: (string-ascii 100),
+            name: (string-ascii 32),
+            symbol: (string-ascii 32),
             decimals: uint,
             minter-bytes: (buff 64),
         } payload) ERR-INVALID-PAYLOAD))

@@ -139,8 +139,8 @@
 {
     type:"interchain-token-deployment-started",
     token-id: (buff 32),
-    name: (string-ascii 100),
-    symbol: (string-ascii 100),
+    name: (string-ascii 32),
+    symbol: (string-ascii 32),
     decimals: uint,
     minter: principal,
     destination-chain: (string-ascii 18),
