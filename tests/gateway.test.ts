@@ -297,10 +297,92 @@ describe("Gateway tests", () => {
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
       expect(result).toBeOk(boolCV(true));
       expect(events).toMatchSnapshot();
+    });   
 
-      // reject rotating signers from an old signer set
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
-      expect(result2).toBeErr(uintCV(5055))
+    it("should reject rotating signers from an old signer set", () => {
+      const newSigners = getSigners(11, 15, 1, 3, "2")
+
+      const proofSigners = startContract();
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeOk(boolCV(true));
+
+      const newSigners2 = getSigners(21, 30, 1, 3, "3");
+  
+      const dataHash2 = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign2 = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof2 = makeProofCV(proofSigners, messageHashToSign2);
+
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contract_caller);
+      expect(result2).toBeErr(uintCV(5055));
+    });   
+
+    it("should allow rotating signers from an old signer set (called by the operator)", () => {
+      const newSigners = getSigners(11, 15, 1, 3, "2")
+
+      const proofSigners = startContract();
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeOk(boolCV(true));
+
+      const newSigners2 = getSigners(21, 30, 1, 3, "3");
+  
+      const dataHash2 = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign2 = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof2 = makeProofCV(proofSigners, messageHashToSign2);
+
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operator_address);
+      expect(result2).toBeOk(boolCV(true));
     });   
   });
 

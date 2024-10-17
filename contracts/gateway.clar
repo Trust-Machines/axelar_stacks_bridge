@@ -621,6 +621,7 @@
                 (enforce-rotation-delay (not (is-eq contract-caller (var-get operator))))
                 (is-latest-signers (try! (validate-proof data-hash proof_)))
             )
+            ;; if the caller is not the operator the signer set provided in proof must be the latest
             (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
             (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
             (ok true)
