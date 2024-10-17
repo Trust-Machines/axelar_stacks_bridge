@@ -22,7 +22,7 @@ This function allows the current owner to transfer ownership of the contract to 
 
 clarity
 {
-event: "native-gas-paid-for-contract-call",
+type: "native-gas-paid-for-contract-call",
 sender: principal,
 amount: uint,
 refund-address: principal,
@@ -35,7 +35,7 @@ payload-hash: (buff 32)
 
 clarity
 {
-event: "native-gas-added",
+type: "native-gas-added",
 sender: principal,
 amount: uint,
 refund-address: principal,
@@ -46,7 +46,7 @@ log-index: uint
 ### refunded
 
 {
-event: "refunded",
+type: "refunded",
 sender: principal,
 amount: uint,
 tx-hash: (optional (buff 32)),
@@ -57,6 +57,6 @@ log-index: (optional uint)
 
 clarity
 {
-event: "ownership-transferred",
+type: "ownership-transferred",
 new-owner: principal
 }

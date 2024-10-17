@@ -23,7 +23,7 @@
         ;; Transfer STX from the contract to the refund address
         (try! (as-contract (stx-transfer? amount tx-sender refund-address)))        
             (print {
-                event: "native-gas-paid-for-contract-call", 
+                type: "native-gas-paid-for-contract-call", 
                 sender: tx-sender, 
                 amount: amount, 
                 refund-address: refund-address,
@@ -47,7 +47,7 @@
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
         (try! (as-contract (stx-transfer? amount tx-sender refund-address)))
         (print {
-            event: "native-gas-added", 
+            type: "native-gas-added", 
             sender: tx-sender, 
             amount: amount, 
             refund-address: refund-address,
@@ -65,7 +65,7 @@
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
-            event: "refunded", 
+            type: "refunded", 
             sender: tx-sender, 
             amount: amount,
             tx-hash: tx-hash,
@@ -118,7 +118,7 @@
     (begin
         (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
         (var-set owner new-owner)
-        (print {event: "ownership-transferred", new-owner: new-owner})
+        (print {type: "ownership-transferred", new-owner: new-owner})
         (ok true)
     )
 )
