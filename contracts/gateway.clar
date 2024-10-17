@@ -236,7 +236,7 @@
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
         (var-set operator new-operator)
-        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (print {type: "transfer-operatorship", new-operator: new-operator})
         (ok true)
     )
 )
