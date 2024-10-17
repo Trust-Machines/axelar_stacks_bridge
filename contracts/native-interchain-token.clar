@@ -270,7 +270,7 @@
 ) 
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
-        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
