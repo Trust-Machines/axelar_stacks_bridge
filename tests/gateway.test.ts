@@ -299,6 +299,32 @@ describe("Gateway tests", () => {
       expect(events).toMatchSnapshot();
     });   
 
+    it("reject rotating to the same signers", () => {
+      const proofSigners = startContract();
+
+      const newSigners = {...proofSigners}
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeErr(uintCV(5054));
+    });   
+
     it("should reject rotating signers from an old signer set", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
