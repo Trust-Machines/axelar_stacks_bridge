@@ -377,7 +377,6 @@
         (token-address (get token-address data))
         (token-manager-address (get token-manager-address data))
         (token-type (get token-type data))
-        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -396,7 +395,7 @@
             type: "token-manager-deployed",
             token-id: token-id,
             token-manager: token-manager-address,
-            token-type: (get token-type token-info),
+            token-type: token-type,
         })
         (ok true)
     ))
