@@ -48,14 +48,6 @@
 (define-read-only (get-token-type)
     (ok (unwrap! (var-get token-type) ERR-NOT-STARTED)))
 
-;; Query if an address is a operator.
-;; @param addr The address to query for.
-;; @return bool Boolean value representing whether or not the address is an operator.
-(define-read-only (is-operator (address principal)) 
-    (ok (default-to false (get operator (map-get? roles address)))))
-
-
-
 ;; ######################
 ;; ######################
 ;; ##### Flow Limit #####
@@ -95,6 +87,7 @@
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
             (ok true))))
+
 ;; Query if an address is a flow limiter.
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is a flow limiter.
@@ -265,5 +258,35 @@
                 flow-limiter: true,
             })
             true))
+    )
+)
+
+;; ####################
+;; ####################
+;; ### Operatorship ###
+;; ####################
+;; ####################
+
+(define-constant ERR-ONLY-OPERATOR (err u5051))
+
+
+(define-read-only (is-operator-raw (address principal)) 
+    (default-to false (get operator (map-get? roles address))))
+
+(define-read-only (is-operator (address principal)) 
+    (ok (is-operator-raw address)))
+
+;; Transfers operatorship to a new account
+(define-public (transfer-operatorship (new-operator principal))
+    (begin
+        (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
+        (map-delete roles contract-caller)
+        ;; #[allow(unchecked_data)]
+        (map-set roles new-operator {
+            operator: true,
+            flow-limiter: true,
+        })
+        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (ok u1)
     )
 )
