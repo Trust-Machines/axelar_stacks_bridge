@@ -4,6 +4,7 @@
 (define-constant err-owner-only (err u100))
 (define-constant err-insufficient-balance (err u101))
 (define-constant err-invalid-amount (err u102))
+(define-constant err-not-implemented (err u103))
 
 ;; Define data variables
 (define-data-var owner principal tx-sender)
@@ -75,7 +76,7 @@
     (destination-chain (string-ascii 32))
     (destination-address (string-ascii 40))
     (payload (buff 1024)))
-    (err u0) ;; Not implemented
+    (err err-not-implemented) ;; Not implemented
 )
 
 ;; Placeholder for future implementation: add gas
@@ -84,7 +85,26 @@
     (refund-address principal)
     (tx-hash (buff 32))
     (log-index uint))
-    (err u0) ;; Not implemented
+    (err err-not-implemented) ;; Not implemented
+)
+
+;; Placeholder for future implementation: pay native gas for express call
+(define-public (pay-native-gas-for-express-call 
+    (amount uint)
+    (refund-address principal)
+    (destination-chain (string-ascii 32))
+    (destination-address (string-ascii 40))
+    (payload (buff 1024)))
+    (err err-not-implemented) ;; Not implemented
+)
+
+;; Placeholder for future implementation: add native express gas
+(define-public (add-native-express-gas 
+    (amount uint)
+    (refund-address principal)
+    (tx-hash (buff 32))
+    (log-index uint))
+    (err err-not-implemented) ;; Not implemented
 )
 
 ;; Public function to transfer ownership
