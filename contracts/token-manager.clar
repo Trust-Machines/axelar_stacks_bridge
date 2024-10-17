@@ -76,6 +76,7 @@
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
 ;; @param flowLimiter the address of the new flow limiter.
+;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
@@ -86,6 +87,7 @@
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
 ;; @param flowLimiter the address of an existing flow limiter.
+;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
     (begin 
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
@@ -110,6 +112,7 @@
 ;; Can only be called by the flow limiters.
 ;; @param flowLimit_ The maximum difference between the tokens 
 ;; flowing in and/or out at any given interval of time (6h).
+;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
     (let (
         (perms (unwrap! (map-get? roles contract-caller) ERR-NOT-AUTHORIZED))
@@ -183,6 +186,7 @@
 ;; ######################
 ;; ######################
 (define-constant ERR-NOT-MANAGED-TOKEN (err u3051))
+(define-constant ERR-ZERO-AMOUNT (err u3052))
 
 ;; This function gives token to a specified address from the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -192,6 +196,7 @@
 ;; @return (response bool uint)
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (try! (add-flow-in amount))
         (as-contract (transfer-token-from sip-010-token (as-contract contract-caller) to amount))))
 
@@ -203,6 +208,7 @@
 ;; @return (response bool uint)
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
