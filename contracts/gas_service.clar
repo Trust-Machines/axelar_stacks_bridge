@@ -59,12 +59,18 @@
 )
 
 ;; Function to refund gas (add to contract balance)
-(define-public (refund (amount uint))
+(define-public (refund (amount uint) (tx-hash (optional (buff 32))) (log-index (optional uint)))
     (begin
         (asserts! (> amount u0) err-invalid-amount)
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (print {event: "refunded", sender: tx-sender, amount: amount})
+        (print {
+            event: "refunded", 
+            sender: tx-sender, 
+            amount: amount,
+            tx-hash: tx-hash,
+            log-index: log-index
+        })
         (ok true)
     )
 )

@@ -24,12 +24,32 @@ describe('gas-service contract test suite', () => {
 
     it('allows refunding (topping up) the contract', () => {
         const refundAmount = 1000n;
-        const refundTx = simnet.callPublicFn('gas_service', 'refund', [Cl.uint(refundAmount)], wallet1);
+        const txHash = Buffer.alloc(32, 1);
+        const logIndex = 0n;
+        const refundTx = simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(refundAmount),
+            Cl.some(Cl.buffer(txHash)),
+            Cl.some(Cl.uint(logIndex))
+        ], wallet1);
+        expect(refundTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it('allows refunding without tx-hash and log-index', () => {
+        const refundAmount = 1000n;
+        const refundTx = simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(refundAmount),
+            Cl.none(),
+            Cl.none()
+        ], wallet1);
         expect(refundTx.result).toBeOk(Cl.bool(true));
     });
 
     it('prevents refunding with invalid amount', () => {
-        const refundTx = simnet.callPublicFn('gas_service', 'refund', [Cl.uint(0)], wallet1);
+        const refundTx = simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(0),
+            Cl.none(),
+            Cl.none()
+        ], wallet1);
         expect(refundTx.result).toBeErr(Cl.uint(102)); // err-invalid-amount
     });
 
@@ -55,7 +75,11 @@ describe('gas-service contract test suite', () => {
 
         // First, refund some STX to the contract
         const refundAmount = 1000n;
-        simnet.callPublicFn('gas_service', 'refund', [Cl.uint(refundAmount)], wallet1);
+        simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(refundAmount),
+            Cl.none(),
+            Cl.none()
+        ], wallet1);
 
         const payTx = simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
             Cl.uint(amount),
@@ -94,7 +118,11 @@ describe('gas-service contract test suite', () => {
 
         // First, refund some STX to the contract
         const refundAmount = 1000n;
-        simnet.callPublicFn('gas_service', 'refund', [Cl.uint(refundAmount)], wallet1);
+        simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(refundAmount),
+            Cl.none(),
+            Cl.none()
+        ], wallet1);
 
         const addGasTx = simnet.callPublicFn('gas_service', 'add-native-gas', [
             Cl.uint(amount),
@@ -128,7 +156,11 @@ describe('gas-service contract test suite', () => {
 
         // Refund some STX to the contract
         const refundAmount = 1000n;
-        simnet.callPublicFn('gas_service', 'refund', [Cl.uint(refundAmount)], wallet1);
+        simnet.callPublicFn('gas_service', 'refund', [
+            Cl.uint(refundAmount),
+            Cl.none(),
+            Cl.none()
+        ], wallet1);
 
         const balanceAfter = simnet.callReadOnlyFn('gas_service', 'get-balance', [], deployer);
         expect(balanceAfter.result).toBeOk(Cl.uint(refundAmount));
