@@ -566,6 +566,57 @@ describe("Gateway tests", () => {
     });
   });
 
+
+  describe("Signature validation", () => {
+    it('should reject invalid signatures ', () => {
+      const proofSigners = startContract();
+
+      const newSigners = getSigners(25, 30, 1, 3, "1");
+
+      const proof = tupleCV({
+        "signers": signersToCv(proofSigners),
+        "signatures": listCV([
+          ...proofSigners.signers.map(() => bufferFromHex("0x00"))
+        ])
+      });
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeErr(uintCV(3051));
+    });
+
+
+    it('should reject if there is signature with no match', () => {
+      const proofSigners = startContract();
+
+      const newSigners = getSigners(25, 30, 1, 3, "1");
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = tupleCV({
+        "signers": signersToCv(proofSigners),
+        "signatures": listCV([
+          ...proofSigners.signers.map(() => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), Object.keys(SIGNER_KEYS)[15])))
+        ])
+      });
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      console.log(result)
+    });
+  });
+
   describe("operatorship", () => {
     beforeEach(() => {
       startContract();

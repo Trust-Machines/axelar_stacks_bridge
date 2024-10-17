@@ -398,9 +398,9 @@
 ;; ### Signature validation ###
 ;; ############################
 
-
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-MALFORMED-SIGNATURES (err u3056))
+(define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
+(define-constant ERR-MALFORMED-SIGNATURES (err u3055))
 (define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3058))
 
 ;; Returns true if the address of the signer provided equals to the value stored in temp-account
@@ -411,33 +411,38 @@
 
 ;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
 ;; @param signature;
-;; @returns (response {signer: (buff 33), weight: uint}) or reverts
+;; @returns (response {signer: (buff 33), weight: uint}) or (err u3056)
 (define-private (signature-to-signer (signature (buff 65))) 
     (let 
        (
-            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) ERR-INVALID-SIGNATURE-DATA))
+            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
        )
        (var-set temp-pub pub)
        (let 
             (
                 (signers (filter is-the-signer (var-get temp-signers)))
-                (signer (unwrap! (element-at? signers u0) ERR-MALFORMED-SIGNATURES))   
+                (signer (unwrap! (element-at? signers u0) (err u1)))   
             )
             ;; there must be only one match
-            (asserts! (is-eq (len signers) u1) ERR-MALFORMED-SIGNATURES)
+            (asserts! (is-eq (len signers) u1) (err u2))
             (ok signer)
        )
     )
 )
 
-
 ;; A helper function to unwrap signer value from an ok response
-;; @param p; 
+;; @param signer; 
 ;; @returns {signer: (buff 33), weight: uint}
 (define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
     (unwrap-panic signer)
 )
 
+;; A helper function to determine whether the provided signer is an error.
+;; @param signer; 
+;; @returns bool
+(define-read-only (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
+  (is-err signer)
+)
 
 ;; Accumulates weight of signers 
 ;; @param signer
@@ -445,7 +450,6 @@
 (define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
     (+ accumulator (get weight signer))
 )
-
 
 ;; This function takes message-hash and proof data and reverts if proof is invalid
 ;; The signers and signatures should be sorted by signer address in ascending order
@@ -467,22 +471,30 @@
         (var-set temp-signers (get signers signers))
         (let  
             (
-                ;; Convert signatures to signers
-                (signers_ (map unwrap-signer (map signature-to-signer signatures)))
-                ;; Total weight of signatures provided
-                (total-weight (fold accumulate-weights signers_ u0))
+                (signers-raw (map signature-to-signer signatures))
+                (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
             )
-            ;; Reset temp principal var
-            (var-set temp-pub NULL-PUB)
-            ;; Make sure order
-            (map validate-signer-order signers_)
-            ;; Reset temp vars
-            (var-set temp-hash 0x00)
-            (var-set temp-signers (list))
-            (var-set temp-pub NULL-PUB)
-            ;; total-weight must be bigger than the signers threshold 
-            (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
-            (ok true) 
+            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH ERR-MALFORMED-SIGNATURES) (unwrap-err-panic (unwrap-panic signer-err)))))
+            (let 
+                (
+                    ;; Convert signatures to signers
+                    (signers- (map unwrap-signer signers-raw))
+                    ;; Total weight of signatures provided
+                    (total-weight (fold accumulate-weights signers- u0))
+                )
+
+                ;; Reset temp principal var
+                (var-set temp-pub NULL-PUB)
+                ;; Make sure order
+                (map validate-signer-order signers-)
+                ;; Reset temp vars
+                (var-set temp-hash 0x00)
+                (var-set temp-signers (list))
+                (var-set temp-pub NULL-PUB)
+                ;; total-weight must be bigger than the signers threshold 
+                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
+                (ok true)
+            )
         )    
     )
 )
