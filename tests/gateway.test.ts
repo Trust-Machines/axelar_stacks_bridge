@@ -52,11 +52,11 @@ const getSigners = (start: number, end: number, weight: number, threshold: numbe
 }
 
 
-const startContract = () => {
+const startContract = (minimumRotationDelay_: number = 0) => {
   const signers = getSigners(0, 10, 1, 10, "1");
   const operator = principalCV(operator_address);
   const domainSeparator = bufferCVFromString('stacks-axelar-1');
-  const minimumRotationDelay = uintCV(0);
+  const minimumRotationDelay = uintCV(minimumRotationDelay_);
   const previousSignersRetention = uintCV(15);
 
   expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contract_caller).result).toBeOk(boolCV(true));
@@ -232,7 +232,7 @@ describe("Gateway tests", () => {
 
       const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
-      
+
       const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contract_caller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
@@ -263,7 +263,7 @@ describe("Gateway tests", () => {
       expect(approveResult3).toBeOk(boolCV(true));
       expect(approveEvents3).toMatchSnapshot();
 
-      const isApprovedAfter2= simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
+      const isApprovedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedAfter2).toBeOk(boolCV(false));
 
       const isExecutedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contract_caller).result;
@@ -297,12 +297,12 @@ describe("Gateway tests", () => {
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
       expect(result).toBeOk(boolCV(true));
       expect(events).toMatchSnapshot();
-    });   
+    });
 
     it("reject rotating to the same signers", () => {
       const proofSigners = startContract();
 
-      const newSigners = {...proofSigners}
+      const newSigners = { ...proofSigners }
 
       const signersHash = (() => {
         const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
@@ -323,7 +323,7 @@ describe("Gateway tests", () => {
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
       expect(result).toBeErr(uintCV(5054));
-    });   
+    });
 
     it("should reject rotating signers from an old signer set", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
@@ -351,7 +351,7 @@ describe("Gateway tests", () => {
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
-  
+
       const dataHash2 = (() => {
         const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contract_caller);
         return cvToJSON(result).value;
@@ -366,7 +366,7 @@ describe("Gateway tests", () => {
 
       const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contract_caller);
       expect(result2).toBeErr(uintCV(5055));
-    });   
+    });
 
     it("should allow rotating signers from an old signer set (called by the operator)", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
@@ -394,7 +394,7 @@ describe("Gateway tests", () => {
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
-  
+
       const dataHash2 = (() => {
         const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contract_caller);
         return cvToJSON(result).value;
@@ -409,7 +409,88 @@ describe("Gateway tests", () => {
 
       const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operator_address);
       expect(result2).toBeOk(boolCV(true));
-    });   
+    });
+
+
+    it('should allow rotating signers after the delay', async () => {
+      const proofSigners = startContract((10 * 60) + 1);
+
+      simnet.mineBlock([]);
+
+      const newSigners = getSigners(11, 15, 1, 3, "2")
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeOk(boolCV(true));
+    });
+
+    it('should reject rotating signers before the delay', async () => {
+      const proofSigners = startContract((10 * 60) + 1);
+
+      const newSigners = getSigners(11, 15, 1, 3, "2")
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeErr(uintCV(5051));
+    });
+
+    it('should allow rotating signers before the delay (called by the operator)', async () => {
+      const proofSigners = startContract((10 * 60) + 1);
+
+      const newSigners = getSigners(11, 15, 1, 3, "2")
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operator_address);
+      expect(result).toBeOk(boolCV(true));
+    });
   });
 
   describe("operatorship", () => {
