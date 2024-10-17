@@ -176,7 +176,24 @@ describe('gas-service contract test suite', () => {
             Cl.uint(logIndex)
         ], deployer);
 
-        expect(payGasTx.result).toBeErr(Cl.uint(0)); // Not implemented
-        expect(addGasTx.result).toBeErr(Cl.uint(0)); // Not implemented
+        const addGasExpressTx = simnet.callPublicFn('gas_service', 'add-native-express-gas', [
+            Cl.uint(amount),
+            Cl.principal(refundAddress),
+            Cl.buffer(txHash),
+            Cl.uint(logIndex)
+        ], wallet1);
+
+        const payExpressTx = simnet.callPublicFn('gas_service', 'pay-native-gas-for-express-call', [
+            Cl.uint(amount),
+            Cl.principal(refundAddress),
+            Cl.stringAscii(destinationChain),
+            Cl.stringAscii(destinationAddress),
+            Cl.buffer(payload)
+        ], wallet1);
+
+    expect(payGasTx.result).toBeErr(Cl.error(Cl.uint(103)));
+    expect(addGasTx.result).toBeErr(Cl.error(Cl.uint(103)));
+    expect(addGasExpressTx.result).toBeErr(Cl.error(Cl.uint(103)));
+    expect(payExpressTx.result).toBeErr(Cl.error(Cl.uint(103)));
     });
 });
