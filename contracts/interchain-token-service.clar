@@ -52,8 +52,6 @@
 
 
 (define-constant OWNER tx-sender)
-(define-constant GATEWAY .gateway)
-(define-constant GAS-SERVICE .gas-service)
 (define-constant CHAIN-NAME "stacks")
 (define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
 ;; (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
@@ -97,6 +95,7 @@
 
 (define-public (set-paused (status bool))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (ok (var-set is-paused status))))
 
@@ -112,7 +111,7 @@
     (ok CHAIN-NAME-HASH))
 
 (define-read-only (get-gateway)
-    (ok GATEWAY))
+    (ok (var-get gatway)))
 
 (define-read-only (is-valid-token-type (token-type uint))
     (or
@@ -147,12 +146,13 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u2051))
 
-(define-data-var operator principal tx-sender)
+(define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
         ;; #[allow(unchecked_data)]
@@ -203,6 +203,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (print {
@@ -217,6 +218,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address  (chain-name  (string-ascii 18)))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts!  (is-eq tx-sender OWNER) ERR-NOT-AUTHORIZED)
         (print {
@@ -300,6 +302,7 @@
             (token-manager <token-manager-trait>)
             (gas-value uint))
         (begin
+            (asserts! (var-get is-started) ERR-NOT-STARTED)
             (try! (require-not-paused))
             (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
             (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
@@ -376,6 +379,7 @@
         (token-type (get token-type data))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
@@ -426,6 +430,7 @@
         })))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
+    (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
     (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
     (print {
@@ -465,6 +470,7 @@
         (gas-value uint)
     )
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
@@ -492,6 +498,7 @@
         })
         (gas-value uint))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
@@ -579,7 +586,8 @@
         (source-address (string-ascii 48))
         (token-address principal)
         (payload (buff 1024)))
-    (begin 
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (if (is-eq CHAIN-NAME source-address)
             ;; #[filter(message-id, source-chain, payload)]
@@ -699,6 +707,7 @@
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
         (data-is-empty (> (len data) u0))
     )
+    (asserts! (var-get is-started) ERR-NOT-STARTED)
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
         (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))
@@ -730,24 +739,37 @@
 (define-constant ERR-NOT-STARTED (err u6052))
 
 (define-data-var interchain-token-factory principal NULL-ADDRESS)
+(define-data-var gas-service principal NULL-ADDRESS)
+(define-data-var gatway principal NULL-ADDRESS)
 (define-data-var is-started bool false)
+
 (define-read-only (get-is-started) (var-get is-started))
 
+(define-private (extract-and-set-trusted-address 
+    (entry {chain-name: (string-ascii 18), address: (string-ascii 48)})) 
+        (map-set trusted-chain-address (get chain-name entry) (get address entry)))
 ;; Constructor function
 ;; @returns (response true) or reverts
 (define-public (setup
     (its-contract-address-name (string-ascii 48))
-    (interchain-token-factory_ principal)
+    (interchain-token-factory-address principal)
+    (gateway-address principal)
+    (gas-service-address principal)
+    (operator-address principal)
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 18), address: (string-ascii 48)}))
 )
     (begin
+        (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
-        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set its-contract-name its-contract-address-name)
         ;; #[allow(unchecked_data)]
-        (var-set interchain-token-factory interchain-token-factory_)
-        ;; FIXME: add all parameters from Sol ITS constructor and setup
+        (var-set interchain-token-factory interchain-token-factory-address)
+        (var-set gatway gateway-address)
+        (var-set gas-service gas-service-address)
+        (var-set operator operator-address)
+        (map extract-and-set-trusted-address trusted-chain-names-addresses)
         (ok true)
     )
 )
