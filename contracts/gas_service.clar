@@ -22,13 +22,13 @@
         ;; Transfer STX from the contract to the refund address
         (try! (as-contract (stx-transfer? amount tx-sender refund-address)))        
             (print {
-                event: "NativeGasPaidForContractCall", 
+                event: "native-gas-paid-for-contract-call", 
                 sender: tx-sender, 
                 amount: amount, 
-                refundAddress: refund-address,
-                destinationChain: destination-chain,
-                destinationAddress: destination-address,
-                payloadHash: (sha256 payload)
+                refund-address: refund-address,
+                destination-chain: destination-chain,
+                destination-address: destination-address,
+                payload-hash: (sha256 payload)
             })
         (ok true)
     )
@@ -46,12 +46,12 @@
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
         (try! (as-contract (stx-transfer? amount tx-sender refund-address)))
         (print {
-            event: "NativeGasAdded", 
+            event: "native-gas-added", 
             sender: tx-sender, 
             amount: amount, 
-            refundAddress: refund-address,
-            txHash: tx-hash,
-            logIndex: log-index
+            refund-address: refund-address,
+            tx-hash: tx-hash,
+            log-index: log-index
         })
         (ok true)
     )
@@ -63,7 +63,7 @@
         (asserts! (> amount u0) err-invalid-amount)
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (print {event: "Refunded", sender: tx-sender, amount: amount})
+        (print {event: "refunded", sender: tx-sender, amount: amount})
         (ok true)
     )
 )
@@ -92,7 +92,7 @@
     (begin
         (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
         (var-set owner new-owner)
-        (print {event: "OwnershipTransferred", newOwner: new-owner})
+        (print {event: "ownership-transferred", new-owner: new-owner})
         (ok true)
     )
 )

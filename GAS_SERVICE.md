@@ -1,75 +1,61 @@
 ## Function Descriptions
 
-### pay-native-gas-for-contract-call
+### native-gas-paid-for-contract-call
 
 This function is called by the contract owner to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the contract balance.
 
-### add-native-gas
+### native-gas-added
 
 This function is called by the contract owner to add additional native gas payment for an existing transaction. It deducts the specified amount from the contract balance.
 
-### refund
+### refunded
 
 This function can be called by anyone to add STX to the contract balance, effectively refunding or topping up the contract.
 
-### transfer-ownership
+### ownership-transferred
 
 This function allows the current owner to transfer ownership of the contract to a new address.
 
-## Read-Only Functions
-
-### get-balance
-
-Returns the current balance of the contract.
-
-### is-contract-owner
-
-Checks if the caller is the current contract owner.
-
-### get-contract-owner
-
-Returns the principal of the current contract owner.
-
 ## Events
 
-### NativeGasPaidForContractCall
+### native-gas-paid-for-contract-call
 
 clarity
 {
-event: "NativeGasPaidForContractCall",
+event: "native-gas-paid-for-contract-call",
 sender: principal,
 amount: uint,
-refundAddress: principal,
-destinationChain: (string-ascii 32),
-destinationAddress: (string-ascii 40),
-payloadHash: (buff 32)
+refund-address: principal,
+destination-chain: (string-ascii 32),
+destination-address: (string-ascii 40),
+payload-hash: (buff 32)
 }
 
-### NativeGasAdded
+### native-gas-added
 
 clarity
 {
-event: "NativeGasAdded",
+event: "native-gas-added",
 sender: principal,
 amount: uint,
-refundAddress: principal,
-txHash: (buff 32),
-logIndex: uint
+refund-address: principal,
+tx-hash: (buff 32),
+log-index: uint
 }
 
-### Refunded
+### refunded
 
 clarity
 {
-event: "Refunded",
-receiver: principal,
+event: "refunded",
+sender: principal,
 amount: uint
 }
 
-### OwnershipTransferred
+### ownership-transferred
 
 clarity
 {
-event: "OwnershipTransferred",
-newOwner: principal
+event: "ownership-transferred",
+new-owner: principal
 }
