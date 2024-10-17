@@ -77,7 +77,7 @@
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
-(define-private (interchain-token-id (deployer principal) (salt (buff 32)))
+(define-read-only (get-interchain-token-id (deployer principal) (salt (buff 32)))
     (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER 
         (get-interchain-token-salt CHAIN-NAME-HASH deployer salt))))
 
@@ -85,7 +85,7 @@
 ;; Computes the ID for a canonical interchain token based on its address.
 ;; @param tokenAddress The address of the canonical interchain token.
 ;; @return tokenId The ID of the canonical interchain token.
-(define-private (canonical-interchain-token-id (token-address principal))
+(define-read-only (get-canonical-interchain-token-id (token-address principal))
     (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address))))
 
 
@@ -116,7 +116,7 @@
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (unwrap-panic (interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+            (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
             (name (unwrap-panic (contract-call? token get-name)))
             (symbol (unwrap-panic (contract-call? token get-symbol)))
             (decimals (unwrap-panic (contract-call? token get-decimals)))

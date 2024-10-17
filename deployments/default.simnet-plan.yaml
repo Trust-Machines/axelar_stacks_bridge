@@ -48,6 +48,9 @@ genesis:
 plan:
   batches:
     - id: 0
+      transactions: []
+      epoch: "2.0"
+    - id: 1
       transactions:
         - emulated-contract-publish:
             contract-name: traits
@@ -69,4 +72,7 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/hello-world.clar
             clarity-version: 2
+      epoch: "2.5"
+    - id: 4
+      transactions: []
       epoch: "2.5"

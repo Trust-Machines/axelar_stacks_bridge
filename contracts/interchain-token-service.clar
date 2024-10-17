@@ -408,10 +408,10 @@
 (define-public (deploy-interchain-token
         (salt (buff 32))
         (destination-chain (string-ascii 18))
-        (name (string-ascii 32))
-        (symbol (string-ascii 32))
+        (name (string-ascii 100))
+        (symbol (string-ascii 100))
         (decimals uint)
-        (minter (buff 32))
+        (minter (buff 64))
         (gas-value uint))
     (let (
         (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
