@@ -345,17 +345,11 @@
 ;; @returns uint
 (define-private (get-signer-weight (signer {signer: (buff 33), weight: uint})) (get weight signer))
 
-;; Validates a particular signer
+;; Validates a particular signer's weight
 ;; @param signer; Signer to validate
-;; @returns (response true) or reverts
-(define-private (validate-signer (signer {signer: (buff 33), weight: uint})) 
-    (begin 
-       ;; signer weight must be bigger than zero
-       (asserts! (> (get weight signer) u0) ERR-SIGNER-WEIGHT)
-       ;; save this signer in order to do comparison with the next signer
-       (var-set temp-pub (get signer signer))
-       (ok true)
-    )
+;; @returns bool
+(define-private (validate-signer-weight (signer {signer: (buff 33), weight: uint})) 
+    (> (get weight signer) u0) ;; signer weight must be bigger than zero
 )
 
 ;; Validates signer order
@@ -392,7 +386,7 @@
         ;; total weight of signers must be bigger than the threshold
         (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
         ;; signer specific validations
-        (map validate-signer signers_)
+        (asserts! (is-eq (len (filter not (map validate-signer-weight signers_))) u0) ERR-SIGNER-WEIGHT)
         (map validate-signer-order signers_)
         ;; reset temp var
         (var-set temp-pub NULL-PUB)

@@ -491,6 +491,79 @@ describe("Gateway tests", () => {
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operator_address);
       expect(result).toBeOk(boolCV(true));
     });
+
+    it('should reject if there is no signer', () => {
+      const proofSigners = startContract();
+
+      const newSigners = getSigners(0, 0, 1, 3, "1");
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeErr(uintCV(2051))
+    });
+
+    it('should reject if signer weight is 0', () => {
+      const proofSigners = startContract();
+
+      const newSigners: Signers = {
+        signers: [
+          {
+            signer: '0277ad46cf1f82953116604c137c41d11fc095694d046417820a3d77253363b904',
+            weight: 1
+          },
+          {
+            signer: '031244d4c729f83c9e7898a85283e7460783a711746ba2ff24767443109ae1e64f',
+            weight: 0
+          },
+          {
+            signer: '03a59cff8eb6f7fd5972f24468e88ba23bd85960dfe0912c9434cabe92acf130d7',
+            weight: 1
+          },
+          {
+            signer: '0319ea093014a1cc7f4aa0219506c20bc1de1480ea157b9b28a088d5f8a70e63cb',
+            weight: 1
+          }
+        ],
+        threshold: 3,
+        nonce: '1'
+      }
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contract_caller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contract_caller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
+      expect(result).toBeErr(uintCV(2053));
+    });
   });
 
   describe("operatorship", () => {
