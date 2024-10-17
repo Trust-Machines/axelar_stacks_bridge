@@ -1,4 +1,4 @@
-# Gateway Contract
+# Interchain Token Service Contract
 
 ## Interface
 
