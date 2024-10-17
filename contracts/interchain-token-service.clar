@@ -766,8 +766,11 @@
         (var-set its-contract-name its-contract-address-name)
         ;; #[allow(unchecked_data)]
         (var-set interchain-token-factory interchain-token-factory-address)
+        ;; #[allow(unchecked_data)]
         (var-set gatway gateway-address)
+        ;; #[allow(unchecked_data)]
         (var-set gas-service gas-service-address)
+        ;; #[allow(unchecked_data)]
         (var-set operator operator-address)
         (map extract-and-set-trusted-address trusted-chain-names-addresses)
         (ok true)
