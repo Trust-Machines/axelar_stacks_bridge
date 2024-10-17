@@ -412,7 +412,7 @@ describe("Gateway tests", () => {
     });
 
 
-    it('should allow rotating signers after the delay', async () => {
+    it('should allow rotating signers after the delay', () => {
       const proofSigners = startContract((10 * 60) + 1);
 
       simnet.mineBlock([]);
@@ -440,7 +440,7 @@ describe("Gateway tests", () => {
       expect(result).toBeOk(boolCV(true));
     });
 
-    it('should reject rotating signers before the delay', async () => {
+    it('should reject rotating signers before the delay', () => {
       const proofSigners = startContract((10 * 60) + 1);
 
       const newSigners = getSigners(11, 15, 1, 3, "2")
@@ -466,7 +466,7 @@ describe("Gateway tests", () => {
       expect(result).toBeErr(uintCV(5051));
     });
 
-    it('should allow rotating signers before the delay (called by the operator)', async () => {
+    it('should allow rotating signers before the delay (called by the operator)', () => {
       const proofSigners = startContract((10 * 60) + 1);
 
       const newSigners = getSigners(11, 15, 1, 3, "2")
