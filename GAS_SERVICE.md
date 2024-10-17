@@ -45,11 +45,12 @@ log-index: uint
 
 ### refunded
 
-clarity
 {
 event: "refunded",
 sender: principal,
-amount: uint
+amount: uint,
+tx-hash: (optional (buff 32)),
+log-index: (optional uint)
 }
 
 ### ownership-transferred
