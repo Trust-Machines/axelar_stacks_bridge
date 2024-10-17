@@ -14,50 +14,26 @@
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
-;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
-;; @notice rares: maybe will not be used
-(define-constant TOKEN-TYPE-MINT-BURN-FROM u1)
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
-;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
-;; @notice rares: will not be used
-(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u3)
-;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
-;; @notice rares: maybe will not be used
-(define-constant TOKEN-TYPE-MINT-BURN u4)
 
-;; Should be a variable changed at deployment
+(define-constant ERR-NOT-AUTHORIZED (err u1051))
+
 
 (define-data-var token-address (optional principal) none)
 (define-data-var token-type (optional uint) none)
 
-(define-constant GATEWAY .gateway)
-(define-constant INTERCHAIN-TOKEN-SERVICE .interchain-token-service)
+(define-data-var interchain-token-service (optional principal) none)
+
 (define-map roles principal {
     operator: bool,
     flow-limiter: bool,
 })
 
-;; Ideally should not be set only the ITS should control the contract
-(map-set roles tx-sender {
-    operator: true,
-    flow-limiter: true,
-})
-
-;; Add operator and flow limiter role to the service. 
-;; The operator can remove the flow limiter role if they so chose 
-;; and the service has no way to use the operator role for now.
-(map-set roles INTERCHAIN-TOKEN-SERVICE {
-    operator: true,
-    flow-limiter: true,
-})
-
-(define-data-var operator principal tx-sender)
-(define-data-var flow-limiter principal tx-sender)
 
 ;; Checks that the sender is the interchain-token-service contract
 (define-read-only (is-its-sender) 
-    (is-eq tx-sender contract-caller INTERCHAIN-TOKEN-SERVICE))
+    (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))))
 
 ;; Getter for the contract id.
 ;; @return (buff 32) The contract id.
@@ -76,8 +52,26 @@
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is an operator.
 (define-read-only (is-operator (address principal)) 
-    (ok (default-to false (get operator (map-get? roles tx-sender)))))
+    (ok (default-to false (get operator (map-get? roles address)))))
 
+
+
+;; ######################
+;; ######################
+;; ##### Flow Limit #####
+;; ######################
+;; ######################
+
+;; 6 BTC hours
+(define-constant EPOCH-TIME u36)
+
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2051))
+
+(define-map flows uint {
+    flow-in: uint,
+    flow-out: uint,
+})
+(define-data-var flow-limit uint u0)
 
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
@@ -105,20 +99,6 @@
 (define-read-only (is-flow-limiter (addr principal))
     (ok (default-to false (get flow-limiter (map-get? roles addr)))))
 
-(define-constant ERR-NOT-AUTHORIZED (err u2051))
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
-(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
-(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u2054))
-;; 6 BTC hours
-(define-constant EPOCH-TIME u36)
-(define-data-var flow-limit uint u0)
-;; instead of epoch as key use {token-id: (keccak hash buff 32), epoch: uint}
-;; in ITS
-(define-map flows uint {
-    flow-in: uint,
-    flow-out: uint,
-})
-
 ;;     
 ;; Returns the current flow limit.
 ;; @return The current flow limit value.
@@ -132,7 +112,7 @@
 ;; flowing in and/or out at any given interval of time (6h).
 (define-public (set-flow-limit (limit uint))
     (let (
-        (perms (unwrap! (map-get? roles tx-sender) ERR-NOT-AUTHORIZED))
+        (perms (unwrap! (map-get? roles contract-caller) ERR-NOT-AUTHORIZED))
     )
     (asserts! (get flow-limiter perms) ERR-NOT-AUTHORIZED)
     ;; no need to check can be set to 0 to practically makes it unlimited
@@ -195,18 +175,25 @@
                 })
                 (ok true)))))
 
+
+
+;; ######################
+;; ######################
+;; ### Token Manager ####
+;; ######################
+;; ######################
+(define-constant ERR-NOT-MANAGED-TOKEN (err u3051))
+
 ;; This function gives token to a specified address from the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
 ;; @param token-manager The trait interface of the token manager
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
-;; @notice rares: give and take lock and unlock will be moved to ITS
-;; the ITS will hold all the tokens the 
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (try! (add-flow-in amount))
-        (as-contract (transfer-token-from sip-010-token tx-sender to amount))))
+        (as-contract (transfer-token-from sip-010-token (as-contract contract-caller) to amount))))
 
 ;; This function takes token from a specified address to the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -217,15 +204,18 @@
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
         (try! (add-flow-out amount))
-        (transfer-token-from sip-010-token from (as-contract tx-sender) amount)))
+        (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
 
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
-        (asserts! (is-eq tx-sender INTERCHAIN-TOKEN-SERVICE) ERR-NOT-AUTHORIZED)
         (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (contract-of sip-010-token) (unwrap-panic (var-get token-address))) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
+
+
+
 
 ;; ######################
 ;; ######################
@@ -233,26 +223,41 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u6051))
-(define-constant ERR-NOT-STARTED (err u6052))
+(define-constant ERR-STARTED (err u4051))
+(define-constant ERR-NOT-STARTED (err u4052))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
 
 (define-data-var is-started bool false)
 (define-read-only (get-is-started) (var-get is-started))
-
 ;; Constructor function
 ;; @returns (response true) or reverts
 (define-public (setup 
     (token-address_ principal)
     (token-type_ uint)
+    (its-address principal)
+    (operator-address (optional principal))
 ) 
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-address (some token-address_))
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
-        (ok true)
+        ;; #[allow(unchecked_data)]
+        (var-set interchain-token-service (some its-address))
+        ;; #[allow(unchecked_data)]
+        (map-set roles its-address {
+            operator: true,
+            flow-limiter: true,
+        })
+        (ok (match operator-address op 
+            (map-set roles op {
+                operator: true,
+                flow-limiter: true,
+            })
+            true))
     )
 )
