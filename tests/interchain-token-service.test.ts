@@ -1,10 +1,13 @@
 import {
+  boolCV,
   BufferCV,
   bufferCV,
+  bufferCVFromString,
   contractPrincipalCV,
   cvToJSON,
   falseCV,
   listCV,
+  principalCV,
   randomBytes,
   serializeCV,
   someCV,
@@ -16,28 +19,79 @@ import {
 } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  makeProofCV,
-  Signers,
-  signersToCv,
-  startContract,
-} from "./gateway.test";
-import {
+  bufferFromAscii,
   bufferFromHex,
   deserialize,
   serialize,
 } from "@stacks/transactions/dist/cl";
 import createKeccakHash from "keccak";
+import { signMessageHashForAddress, SIGNER_KEYS } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
+const operator_address = accounts.get("wallet_1")!;
+const contract_caller = accounts.get("wallet_2")!;
 
+export type Signers = {
+  signers: {
+    signer: string,
+    weight: number
+  }[],
+  threshold: number,
+  nonce: string
+}
+
+export const signersToCv = (data: Signers) => {
+  return tupleCV({
+    "signers": listCV([
+      ...data.signers.map(x => tupleCV({
+        "signer": bufferFromHex(x.signer),
+        "weight": uintCV(x.weight)
+      }))
+
+    ]),
+    "threshold": uintCV(data.threshold),
+    "nonce": bufferFromAscii(data.nonce)
+  })
+}
+
+export const makeProofCV = (data: Signers, messageHashToSign: string) => {
+  return tupleCV({
+    "signers": signersToCv(data),
+    "signatures": listCV([
+      ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+    ])
+  });
+}
+
+const getSigners = (start: number, end: number, weight: number, threshold: number, nonce: string): Signers => {
+  return {
+    signers: Object.keys(SIGNER_KEYS).slice(start, end).map(s => ({
+      signer: s,
+      weight
+    })),
+    threshold,
+    nonce
+  }
+}
+let proofSigners = getSigners(0, 10, 1, 10, "1");
+
+export const startContract = () => {
+
+  const operator = principalCV(operator_address);
+  const domainSeparator = bufferCVFromString('stacks-axelar-1');
+  const minimumRotationDelay = uintCV(0);
+  const previousSignersRetention = uintCV(15);
+
+  expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(proofSigners))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contract_caller).result).toBeOk(boolCV(true));
+}
 /*
   The test below is an example. To learn more, read the testing documentation here:
   https://docs.hiro.so/stacks/clarinet-js-sdk
 */
 
-let proofSigners: Signers;
+
 function setupService() {
   expect(
     simnet.callPublicFn(
@@ -59,7 +113,7 @@ function setupService() {
       deployer
     ).result
   ).toBeOk(trueCV());
-  proofSigners = startContract();
+  startContract();
 }
 describe("Interchain Token Service", () => {
   beforeEach(setupService);
