@@ -10,77 +10,77 @@
 (impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 
-;;   (transfer (uint principal principal (optional (buff 34))) (response bool uint))
+(define-constant ERR-NOT-AUTHORIZED (err u1051))
 
-;; token definitions
-;;
+
+;; ##########################
+;; ##########################
+;; ######  SIP-010  #########
+;; ##########################
+;; ##########################
+
+(define-constant ERR-INSUFFICIENT-BALANCE (err u2051))
+(define-constant ERR-INVALID-PARAMS (err u2052))
+(define-constant ERR-ZERO-AMOUNT (err u2053))
 
 (define-fungible-token itscoin)
-;; constants
-;;
-(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 
-(define-constant MINTER .interchain-token-service)
-(define-constant ERR-NOT-AUTHORIZED (err u1051))
-(define-constant ERR-INVALID-PARAMS (err u1052))
-(define-constant ERR-YOU-POOR (err u1053))
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2052))
-(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
-(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u2054))
-
-;; data vars
-;;
-
-;; data maps
-;;
-
-;; public functions
-;;
-(define-private (burn (from principal) (amount uint))
-    (begin
-        (asserts! (is-eq MINTER tx-sender) ERR-NOT-AUTHORIZED)
-        (asserts! (> amount u0) ERR-INVALID-PARAMS)
-        (ft-burn? itscoin amount from)
-    )
-)
-
-(define-private (mint (from principal) (amount uint))
-    (begin
-        (asserts! (is-eq MINTER tx-sender) ERR-NOT-AUTHORIZED)
-        (asserts! (> amount u0) ERR-INVALID-PARAMS)
-        (ft-mint? itscoin amount from)
-    )
-)
-
-(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
-    (begin
-        (asserts! (is-eq from tx-sender) ERR-NOT-AUTHORIZED)
-        (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
-        (asserts! (>= (ft-get-balance itscoin from) amount) ERR-YOU-POOR)
-        (print (default-to 0x memo))
-        (ft-transfer? itscoin amount from to)))
-;; read only functions
-;;
-(define-read-only (get-balance (address principal)) 
+(define-data-var decimals uint u0)
+(define-data-var token-uri (optional (string-utf8 256)) none)
+(define-data-var name (string-ascii 32) "not-initialized")
+(define-data-var symbol (string-ascii 32) "not-initialized")
+(define-read-only (get-balance (address principal))
     (ok (ft-get-balance itscoin address)))
 
 (define-read-only (get-decimals)
-    (ok u6)
+    (ok (var-get decimals))
 )
 
 (define-read-only (get-total-supply)
     (ok (ft-get-supply itscoin)))
 
 (define-read-only (get-token-uri)
-    (ok none))
+    (ok (var-get token-uri)))
 
 (define-read-only (get-name)
-    (ok "itscoin"))
+    (ok (var-get name)))
 
 (define-read-only (get-symbol)
-    (ok "ITS"))
-;; private functions
+    (ok (var-get symbol)))
+
+(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (is-eq from tx-sender) ERR-NOT-AUTHORIZED)
+        (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)
+        (print (default-to 0x memo))
+        (ft-transfer? itscoin amount from to)))
+
+;; constants
 ;;
+(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+
+(define-constant MINTER .interchain-token-service)
+
+(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
+
+
+
+;; ##########################
+;; ##########################
+;; ####  token manager  #####
+;; ##########################
+;; ##########################
+
+(define-private (burn (from principal) (amount uint))
+    (ft-burn? itscoin amount from)
+)
+
+(define-private (mint (from principal) (amount uint))
+    (ft-mint? itscoin amount from)
+)
 
 ;; Reads the managed token address
 ;; @return principal The address of the token.
@@ -95,6 +95,9 @@
 ;; subject to change
 (define-public (take-token (token <sip-010-trait>) (from principal) (amount uint))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)
         (asserts! (is-eq tx-sender MINTER) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (burn from amount))
@@ -102,33 +105,35 @@
 
 (define-public (give-token (token <sip-010-trait>) (to principal) (amount uint))
     (begin
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)
         (asserts! (is-eq tx-sender MINTER) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
-        ;; #[filter(amount)]
-        (mint to amount))
-)
-;; Flow control
-;; 6 BTC hours
-(define-constant EPOCH-TIME u36)
-(define-data-var flow-limit uint u0)
+        (mint to amount)))
+
 
 (define-map roles principal {
     operator: bool,
     flow-limiter: bool,
 })
 
+
+;; ######################
+;; ######################
+;; ##### Flow Limit #####
+;; ######################
+;; ######################
+
+;; 6 BTC hours
+(define-constant EPOCH-TIME u36)
+
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2051))
+
 (define-map flows uint {
     flow-in: uint,
     flow-out: uint,
 })
-
-
-;; Query if an address is a operator.
-;; @param addr The address to query for.
-;; @return bool Boolean value representing whether or not the address is an operator.
-(define-read-only (is-operator (address principal)) 
-    (ok (default-to false (get operator (map-get? roles address)))))
-
+(define-data-var flow-limit uint u0)
 
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
@@ -136,6 +141,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
@@ -144,13 +150,16 @@
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
 ;; @param flowLimiter the address of an existing flow limiter.
+;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
-    (begin 
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
             (ok true))))
+
 ;; Query if an address is a flow limiter.
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is a flow limiter.
@@ -168,10 +177,12 @@
 ;; Can only be called by the flow limiters.
 ;; @param flowLimit_ The maximum difference between the tokens 
 ;; flowing in and/or out at any given interval of time (6h).
+;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
     (let (
-        (perms (unwrap! (map-get? roles tx-sender) ERR-NOT-AUTHORIZED))
+        (perms (unwrap! (map-get? roles contract-caller) ERR-NOT-AUTHORIZED))
     )
+    (asserts! (var-get is-started) ERR-NOT-STARTED)
     (asserts! (get flow-limiter perms) ERR-NOT-AUTHORIZED)
     ;; no need to check can be set to 0 to practically makes it unlimited
     (var-set flow-limit limit)
@@ -232,3 +243,81 @@
                     flow-in: new-flow-in
                 })
                 (ok true)))))
+
+
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-constant ERR-STARTED (err u4051))
+(define-constant ERR-NOT-STARTED (err u4052))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
+(define-constant OWNER tx-sender)
+
+(define-data-var interchain-token-service (optional principal) none)
+(define-data-var token-type (optional uint) none)
+
+(define-data-var is-started bool false)
+(define-read-only (get-is-started) (var-get is-started))
+;; Constructor function
+;; @returns (response true) or reverts
+(define-public (setup 
+    (token-type_ uint)
+    (its-address principal)
+    (operator-address (optional principal))
+) 
+    (begin
+        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)
+        (var-set is-started true)
+        ;; #[allow(unchecked_data)]
+        (var-set token-type (some token-type_))
+        ;; #[allow(unchecked_data)]
+        (var-set interchain-token-service (some its-address))
+        ;; #[allow(unchecked_data)]
+        (map-set roles its-address {
+            operator: true,
+            flow-limiter: true,
+        })
+        (ok (match operator-address op 
+            (map-set roles op {
+                operator: true,
+                flow-limiter: true,
+            })
+            true))
+    )
+)
+
+;; ####################
+;; ####################
+;; ### Operatorship ###
+;; ####################
+;; ####################
+
+(define-constant ERR-ONLY-OPERATOR (err u5051))
+
+
+(define-read-only (is-operator-raw (address principal)) 
+    (default-to false (get operator (map-get? roles address))))
+
+(define-read-only (is-operator (address principal)) 
+    (ok (is-operator-raw address)))
+
+;; Transfers operatorship to a new account
+(define-public (transfer-operatorship (new-operator principal))
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
+        (map-delete roles contract-caller)
+        ;; #[allow(unchecked_data)]
+        (map-set roles new-operator {
+            operator: true,
+            flow-limiter: true,
+        })
+        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (ok u1)
+    )
+)
