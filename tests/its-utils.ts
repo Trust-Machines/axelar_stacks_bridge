@@ -7,13 +7,7 @@ import {
   PrincipalCV,
   TupleCV,
 } from "@stacks/transactions";
-import {
-  bufferFromHex,
-  bufferFromAscii,
-  serialize,
-} from "@stacks/transactions/dist/cl";
-
-import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
+import { bufferFromHex, serialize } from "@stacks/transactions/dist/cl";
 
 export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
 export const TOKEN_TYPE_LOCK_UNLOCK = 2;
@@ -21,6 +15,8 @@ export const TOKEN_TYPE_LOCK_UNLOCK = 2;
 const deployer = simnet.getAccounts().get("deployer")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
+import { makeProofCV, signersToCv } from "./util";
+import { Signers } from "./types";
 
 export function setupTokenManager() {
   return simnet.callPublicFn(
@@ -34,65 +30,6 @@ export function setupTokenManager() {
     ],
     deployer
   );
-}
-
-export type Signers = {
-  signers: {
-    signer: string;
-    weight: number;
-  }[];
-  threshold: number;
-  nonce: string;
-};
-
-export function signersToCv(data: Signers) {
-  return Cl.tuple({
-    signers: Cl.list([
-      ...data.signers.map((x) =>
-        Cl.tuple({
-          signer: bufferFromHex(x.signer),
-          weight: Cl.uint(x.weight),
-        })
-      ),
-    ]),
-    threshold: Cl.uint(data.threshold),
-    nonce: bufferFromAscii(data.nonce),
-  });
-}
-
-export function makeProofCV(data: Signers, messageHashToSign: string) {
-  return Cl.tuple({
-    signers: signersToCv(data),
-    signatures: Cl.list([
-      ...data.signers.map((x) =>
-        bufferFromHex(
-          signMessageHashForAddress(
-            messageHashToSign.replace("0x", ""),
-            x.signer
-          )
-        )
-      ),
-    ]),
-  });
-}
-
-export function getSigners(
-  start: number,
-  end: number,
-  weight: number,
-  threshold: number,
-  nonce: string
-): Signers {
-  return {
-    signers: Object.keys(SIGNER_KEYS)
-      .slice(start, end)
-      .map((s) => ({
-        signer: s,
-        weight,
-      })),
-    threshold,
-    nonce,
-  };
 }
 
 export function buildVerifyTokenManagerPayload({

@@ -11,11 +11,10 @@ import {
   buildVerifyTokenManagerPayload,
   deployTokenManager,
   enableTokenManager,
-  getSigners,
   getTokenId,
   setupTokenManager,
-  signersToCv,
 } from "./its-utils";
+import { getSigners, signersToCv } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
