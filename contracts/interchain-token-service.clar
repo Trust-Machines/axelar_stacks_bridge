@@ -72,7 +72,7 @@
 
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-data-var its-hub-chain (string-ascii 18) "")
+(define-data-var its-hub-chain (string-ascii 18) "axelar")
 
 ;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;; for that chain should be routed via the ITS hub.
