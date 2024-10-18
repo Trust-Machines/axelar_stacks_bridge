@@ -1,6 +1,6 @@
 (impl-trait .traits.gateway-trait)
 
-(define-constant NULL-PUB 0x03a1f11842608956458bdcb8a0517348b7a9e21b7cb5f9ccb132f69d0894e68ede)
+(define-constant NULL-PUB 0x00)
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -335,11 +335,6 @@
 (define-constant ERR-SIGNERS-THRESHOLD (err u2055))
 (define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u2056))
 
-;; A helper fn to get bytes of an account
-;; @param p; The principal
-;; @returns (buff 20)
-(define-private (principal-to-bytes (p principal)) (get hash-bytes (unwrap-panic (principal-destruct? p))))
-
 ;; Returns weight of a signer
 ;; @param signer; Signer to validate
 ;; @returns uint
@@ -356,14 +351,18 @@
 ;; @param signer; Signer to validate
 ;; @returns (response true) or reverts
 (define-private (validate-signer-order (signer {signer: (buff 33), weight: uint})) 
-    (begin 
-       ;; signers need to be in strictly increasing order
-       (asserts! (> (principal-to-bytes (unwrap-panic (principal-of? (get signer signer)))) (principal-to-bytes (unwrap-panic (principal-of? (var-get temp-pub))))) ERR-SIGNERS-ORDER)
+    (let 
+        (
+            (r (> (get signer signer) (var-get temp-pub)))
+        ) 
        ;; save this signer in order to do comparison with the next signer
        (var-set temp-pub (get signer signer))
-       (ok true)
+       (ok r)
     )
 )
+
+
+(define-private (unwrap-bool (b (response bool bool))) (unwrap-panic b))
 
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
 ;; @param new-signers; Signers to validate
@@ -375,19 +374,20 @@
         })) 
     (let
         (
-            (signers_ (get signers signers))
+            (signers- (get signers signers))
             (threshold (get threshold signers))
-            (total-weight (fold + (map get-signer-weight signers_) u0))
+            (total-weight (fold + (map get-signer-weight signers-) u0))
         )
         ;; signers list must have at least one item
-        (asserts! (> (len signers_) u0) ERR-SIGNERS-LEN)
+        (asserts! (> (len signers-) u0) ERR-SIGNERS-LEN)
         ;; threshold must be bigger than zero
         (asserts! (> threshold u0) ERR-SIGNERS-THRESHOLD)
         ;; total weight of signers must be bigger than the threshold
         (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
-        ;; signer specific validations
-        (asserts! (is-eq (len (filter not (map validate-signer-weight signers_))) u0) ERR-SIGNER-WEIGHT)
-        (map validate-signer-order signers_)
+        ;; signer weight
+        (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
+        ;; signers need to be in strictly increasing order
+        (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
         ;; reset temp var
         (var-set temp-pub NULL-PUB)
         (ok true)
@@ -485,8 +485,8 @@
 
                 ;; Reset temp principal var
                 (var-set temp-pub NULL-PUB)
-                ;; Make sure order
-                (map validate-signer-order signers-)
+                ;; Signers need to be in strictly increasing order
+                (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
                 ;; Reset temp vars
                 (var-set temp-hash 0x00)
                 (var-set temp-signers (list))
