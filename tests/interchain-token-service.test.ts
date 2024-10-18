@@ -1,31 +1,21 @@
 import {
-  boolCV,
   BufferCV,
-  bufferCV,
   bufferCVFromString,
-  contractPrincipalCV,
-  cvToJSON,
-  falseCV,
-  listCV,
-  principalCV,
   randomBytes,
-  serializeCV,
-  someCV,
-  standardPrincipalCV,
-  stringAsciiCV,
-  trueCV,
-  tupleCV,
-  uintCV,
+  Cl,
 } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
+import { deserialize } from "@stacks/transactions/dist/cl";
 import {
-  bufferFromAscii,
-  bufferFromHex,
-  deserialize,
-  serialize,
-} from "@stacks/transactions/dist/cl";
-import createKeccakHash from "keccak";
-import { signMessageHashForAddress, SIGNER_KEYS } from "./util";
+  buildOutgoingGMPMessage,
+  buildVerifyTokenManagerPayload,
+  deployTokenManager,
+  enableTokenManager,
+  getSigners,
+  getTokenId,
+  setupTokenManager,
+  signersToCv,
+} from "./its-utils";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -33,64 +23,33 @@ const deployer = accounts.get("deployer")!;
 const operator_address = accounts.get("wallet_1")!;
 const contract_caller = accounts.get("wallet_2")!;
 
-export type Signers = {
-  signers: {
-    signer: string,
-    weight: number
-  }[],
-  threshold: number,
-  nonce: string
-}
-
-export const signersToCv = (data: Signers) => {
-  return tupleCV({
-    "signers": listCV([
-      ...data.signers.map(x => tupleCV({
-        "signer": bufferFromHex(x.signer),
-        "weight": uintCV(x.weight)
-      }))
-
-    ]),
-    "threshold": uintCV(data.threshold),
-    "nonce": bufferFromAscii(data.nonce)
-  })
-}
-
-export const makeProofCV = (data: Signers, messageHashToSign: string) => {
-  return tupleCV({
-    "signers": signersToCv(data),
-    "signatures": listCV([
-      ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
-    ])
-  });
-}
-
-const getSigners = (start: number, end: number, weight: number, threshold: number, nonce: string): Signers => {
-  return {
-    signers: Object.keys(SIGNER_KEYS).slice(start, end).map(s => ({
-      signer: s,
-      weight
-    })),
-    threshold,
-    nonce
-  }
-}
-let proofSigners = getSigners(0, 10, 1, 10, "1");
+const proofSigners = getSigners(0, 10, 1, 10, "1");
 
 export const startContract = () => {
+  const operator = Cl.principal(operator_address);
+  const domainSeparator = bufferCVFromString("stacks-axelar-1");
+  const minimumRotationDelay = Cl.uint(0);
+  const previousSignersRetention = Cl.uint(15);
 
-  const operator = principalCV(operator_address);
-  const domainSeparator = bufferCVFromString('stacks-axelar-1');
-  const minimumRotationDelay = uintCV(0);
-  const previousSignersRetention = uintCV(15);
-
-  expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(proofSigners))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contract_caller).result).toBeOk(boolCV(true));
-}
+  expect(
+    simnet.callPublicFn(
+      "gateway",
+      "setup",
+      [
+        Cl.buffer(Cl.serialize(signersToCv(proofSigners))),
+        operator,
+        domainSeparator,
+        minimumRotationDelay,
+        previousSignersRetention,
+      ],
+      contract_caller
+    ).result
+  ).toBeOk(Cl.bool(true));
+};
 /*
   The test below is an example. To learn more, read the testing documentation here:
   https://docs.hiro.so/stacks/clarinet-js-sdk
 */
-
 
 function setupService() {
   expect(
@@ -98,21 +57,21 @@ function setupService() {
       "interchain-token-service",
       "setup",
       [
-        stringAsciiCV("interchain-token-service"),
-        contractPrincipalCV(deployer, "interchain-token-factory"),
-        contractPrincipalCV(deployer, "gateway"),
-        contractPrincipalCV(deployer, "gas-service"),
-        standardPrincipalCV(deployer),
-        listCV([
-          tupleCV({
-            "chain-name": stringAsciiCV("ethereum"),
-            address: stringAsciiCV("0x00"),
+        Cl.stringAscii("interchain-token-service"),
+        Cl.contractPrincipal(deployer, "interchain-token-factory"),
+        Cl.contractPrincipal(deployer, "gateway"),
+        Cl.contractPrincipal(deployer, "gas-service"),
+        Cl.standardPrincipal(deployer),
+        Cl.list([
+          Cl.tuple({
+            "chain-name": Cl.stringAscii("ethereum"),
+            address: Cl.stringAscii("0x00"),
           }),
         ]),
       ],
       deployer
     ).result
-  ).toBeOk(trueCV());
+  ).toBeOk(Cl.bool(true));
   startContract();
 }
 describe("Interchain Token Service", () => {
@@ -123,10 +82,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-paused",
-          [trueCV()],
+          [Cl.bool(true)],
           address1
         ).result
-      ).toBeErr(uintCV(1051));
+      ).toBeErr(Cl.uint(1051));
     });
 
     it("Should revert on set trusted address when not called by the owner", () => {
@@ -134,10 +93,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [stringAsciiCV("ethereum"), stringAsciiCV("0x00")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii("0x00")],
           address1
         ).result
-      ).toBeErr(uintCV(1051));
+      ).toBeErr(Cl.uint(1051));
     });
 
     it("Should set trusted address", () => {
@@ -145,10 +104,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [stringAsciiCV("ethereum"), stringAsciiCV("0x00")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii("0x00")],
           deployer
         ).result
-      ).toBeOk(trueCV());
+      ).toBeOk(Cl.bool(true));
     });
 
     it("Should revert on remove trusted address when not called by the owner", () => {
@@ -156,10 +115,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [stringAsciiCV("ethereum")],
+          [Cl.stringAscii("ethereum")],
           address1
         ).result
-      ).toBeErr(uintCV(1051));
+      ).toBeErr(Cl.uint(1051));
     });
 
     it("Should remove trusted address", () => {
@@ -167,247 +126,61 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [stringAsciiCV("ethereum")],
+          [Cl.stringAscii("ethereum")],
           deployer
         ).result
-      ).toBeOk(trueCV());
+      ).toBeOk(Cl.bool(true));
     });
   });
 
   describe("Deploy and Register Interchain Token", () => {
-    const tokenName = "sample";
-    const tokenSymbol = "SMPL";
-    const tokenDecimals = 6;
     const salt = randomBytes(32);
+    const tokenId = getTokenId(salt).result as BufferCV;
 
-    let tokenManager;
     it("Should register an existing token with its manager", () => {
-      expect(
-        simnet.callPublicFn(
-          "token-manager",
-          "setup",
-          [
-            contractPrincipalCV(deployer, "sample-sip-010"),
-            uintCV(2),
-            contractPrincipalCV(deployer, "interchain-token-service"),
-            someCV(standardPrincipalCV(deployer)),
-          ],
-          deployer
-        ).result
-      ).toBeOk(trueCV());
-      const deployTx = simnet.callPublicFn(
-        "interchain-token-service",
-        "deploy-token-manager",
-        [
-          bufferCV(salt),
-          stringAsciiCV(""),
-          uintCV(2),
-          contractPrincipalCV(deployer, "sample-sip-010"),
-          contractPrincipalCV(deployer, "token-manager"),
-          uintCV(0),
-        ],
-        deployer
-      );
-
-      expect(deployTx.result).toBeOk(trueCV());
-    });
-
-    it("Should revert when registering an interchain token as a lock/unlock for a second time", () => {
-      const tokenId = simnet.callReadOnlyFn(
-        "interchain-token-service",
-        "interchain-token-id",
-        [standardPrincipalCV(deployer), bufferCV(salt)],
-        deployer
-      ).result as BufferCV;
-
-      expect(
-        simnet.callPublicFn(
-          "token-manager",
-          "setup",
-          [
-            contractPrincipalCV(deployer, "sample-sip-010"),
-            uintCV(2),
-            contractPrincipalCV(deployer, "interchain-token-service"),
-            someCV(standardPrincipalCV(deployer)),
-          ],
-          deployer
-        ).result
-      ).toBeOk(trueCV());
-      const deployTx = simnet.callPublicFn(
-        "interchain-token-service",
-        "deploy-token-manager",
-        [
-          bufferCV(salt),
-          stringAsciiCV(""),
-          uintCV(2),
-          contractPrincipalCV(deployer, "sample-sip-010"),
-          contractPrincipalCV(deployer, "token-manager"),
-          uintCV(0),
-        ],
-        deployer
-      );
-
-      expect(deployTx.result).toBeOk(trueCV());
+      setupTokenManager();
+      const deployTx = deployTokenManager({
+        salt,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
       expect(deployTx.events[0].event).toBe("print_event");
       expect(deserialize(deployTx.events[0].data.raw_value!)).toBeTuple({
-        type: stringAsciiCV("interchain-token-id-claimed"),
+        type: Cl.stringAscii("interchain-token-id-claimed"),
         "token-id": tokenId,
-        deployer: standardPrincipalCV(deployer),
-        salt: bufferCV(salt),
+        deployer: Cl.standardPrincipal(deployer),
+        salt: Cl.buffer(salt),
       });
+      const payload = buildVerifyTokenManagerPayload({ tokenId });
 
-      const payload = tupleCV({
-        type: stringAsciiCV("verify-token-manager"),
-        "token-address": contractPrincipalCV(deployer, "sample-sip-010"),
-        "token-manager-address": contractPrincipalCV(deployer, "token-manager"),
-        "token-id": tokenId,
-        "token-type": uintCV(2),
+      const message = buildOutgoingGMPMessage({
+        payload,
+        destinationChain: "stacks",
+        destinationContractAddress: "interchain-token-service",
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
-
-      const message = {
-        type: stringAsciiCV("contract-call"),
-        sender: contractPrincipalCV(deployer, "interchain-token-service"),
-        "destination-chain": stringAsciiCV("stacks"),
-        "destination-contract-address": stringAsciiCV(
-          "interchain-token-service"
-        ),
-        payload: bufferCV(serialize(payload)),
-        "payload-hash": bufferCV(
-          createKeccakHash("keccak256")
-            .update(Buffer.from(serialize(payload)))
-            .digest()
-        ),
-      };
       expect(deployTx.events[1].event).toBe("print_event");
       expect(deserialize(deployTx.events[1].data.raw_value!)).toBeTuple(
         message
       );
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+    });
 
-      const messages = listCV([
-        tupleCV({
-          "source-chain": stringAsciiCV("stacks"),
-          "message-id": stringAsciiCV("0x00"),
-          "source-address": stringAsciiCV("interchain-token-service"),
-          "contract-address": contractPrincipalCV(
-            deployer,
-            "interchain-token-service"
-          ),
-          "payload-hash": bufferCV(
-            createKeccakHash("keccak256")
-              .update(Buffer.from(serialize(payload)))
-              .digest()
-          ),
-        }),
-      ]);
+    it("Should revert when registering an interchain token as a lock/unlock for a second time", () => {
+      setupTokenManager();
+      deployTokenManager({
+        salt,
+      });
 
-      const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn(
-          "gateway",
-          "data-hash-from-messages",
-          [messages],
-          deployer
-        );
-        return cvToJSON(result).value.replace("0x", "");
-      })();
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
 
-      expect(dataHash).toBe(
-        createKeccakHash("keccak256")
-          .update(
-            Buffer.from(
-              serialize(
-                tupleCV({
-                  data: messages,
-                  type: stringAsciiCV("approve-messages"),
-                })
-              )
-            )
-          )
-          .digest("hex")
-      );
-      const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn(
-          "gateway",
-          "get-signers-hash",
-          [signersToCv(proofSigners)],
-          deployer
-        );
-        return cvToJSON(result).value;
-      })();
-      const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn(
-          "gateway",
-          "message-hash-to-sign",
-          [bufferFromHex(signersHash), bufferFromHex(dataHash)],
-          deployer
-        );
-        return cvToJSON(result).value;
-      })();
-
-      const proof = makeProofCV(proofSigners, messageHashToSign);
-      const { result: approveResult, events: approveEvents } =
-        simnet.callPublicFn(
-          "gateway",
-          "approve-messages",
-          [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))],
-          deployer
-        );
-
-      expect(approveResult).toBeOk(trueCV());
-
-
-      const isApprovedBefore = simnet.callReadOnlyFn(
-        "gateway",
-        "is-message-approved",
-        [
-          stringAsciiCV("stacks"),
-          stringAsciiCV("0x00"),
-          stringAsciiCV("interchain-token-service"),
-          contractPrincipalCV(deployer, "interchain-token-service"),
-          bufferCV(
-            createKeccakHash("keccak256")
-              .update(Buffer.from(serialize(payload)))
-              .digest()
-          ),
-        ],
-        deployer
-      ).result;
-      expect(isApprovedBefore).toBeOk(trueCV());
-
-      const isExecutedBefore = simnet.callReadOnlyFn(
-        "gateway",
-        "is-message-executed",
-        [stringAsciiCV("stacks"), stringAsciiCV("0x00")],
-        deployer
-      ).result;
-      expect(isExecutedBefore).toBeOk(falseCV());
-
-      const enableTokenTx = simnet.callPublicFn(
-        "interchain-token-service",
-        "execute-enable-token",
-        [stringAsciiCV("0x00"), stringAsciiCV("stacks"), stringAsciiCV("interchain-token-service"), bufferCV(serializeCV(payload))],
-        deployer
-      );
-      expect(enableTokenTx.result).toBeOk(trueCV());
-      expect(simnet.callReadOnlyFn(
-        "gateway",
-        "is-message-executed",
-        [stringAsciiCV("stacks"), stringAsciiCV("0x00")],
-        deployer
-      ).result).toBeOk(trueCV());
-      const secondDeployTx = simnet.callPublicFn(
-        "interchain-token-service",
-        "deploy-token-manager",
-        [
-          bufferCV(salt),
-          stringAsciiCV(""),
-          uintCV(2),
-          contractPrincipalCV(deployer, "sample-sip-010"),
-          contractPrincipalCV(deployer, "token-manager"),
-          uintCV(0),
-        ],
-        deployer
-      );
-      expect(secondDeployTx.result).toBeErr(uintCV(2054));
+      const secondDeployTx = deployTokenManager({ salt });
+      expect(secondDeployTx.result).toBeErr(Cl.uint(2054));
     });
 
     it("Should revert when registering an interchain token when service is paused", () => {});

@@ -1,0 +1,315 @@
+import {
+  BufferCV,
+  Cl,
+  ContractPrincipalCV,
+  cvToJSON,
+  ListCV,
+  PrincipalCV,
+  TupleCV,
+} from "@stacks/transactions";
+import {
+  bufferFromHex,
+  bufferFromAscii,
+  serialize,
+} from "@stacks/transactions/dist/cl";
+
+import { SIGNER_KEYS, signMessageHashForAddress } from "./util";
+
+export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
+export const TOKEN_TYPE_LOCK_UNLOCK = 2;
+
+const deployer = simnet.getAccounts().get("deployer")!;
+import createKeccakHash from "keccak";
+import { expect } from "vitest";
+
+export function setupTokenManager() {
+  return simnet.callPublicFn(
+    "token-manager",
+    "setup",
+    [
+      Cl.contractPrincipal(deployer, "sample-sip-010"),
+      Cl.uint(2),
+      Cl.contractPrincipal(deployer, "interchain-token-service"),
+      Cl.some(Cl.standardPrincipal(deployer)),
+    ],
+    deployer
+  );
+}
+
+export type Signers = {
+  signers: {
+    signer: string;
+    weight: number;
+  }[];
+  threshold: number;
+  nonce: string;
+};
+
+export function signersToCv(data: Signers) {
+  return Cl.tuple({
+    signers: Cl.list([
+      ...data.signers.map((x) =>
+        Cl.tuple({
+          signer: bufferFromHex(x.signer),
+          weight: Cl.uint(x.weight),
+        })
+      ),
+    ]),
+    threshold: Cl.uint(data.threshold),
+    nonce: bufferFromAscii(data.nonce),
+  });
+}
+
+export function makeProofCV(data: Signers, messageHashToSign: string) {
+  return Cl.tuple({
+    signers: signersToCv(data),
+    signatures: Cl.list([
+      ...data.signers.map((x) =>
+        bufferFromHex(
+          signMessageHashForAddress(
+            messageHashToSign.replace("0x", ""),
+            x.signer
+          )
+        )
+      ),
+    ]),
+  });
+}
+
+export function getSigners(
+  start: number,
+  end: number,
+  weight: number,
+  threshold: number,
+  nonce: string
+): Signers {
+  return {
+    signers: Object.keys(SIGNER_KEYS)
+      .slice(start, end)
+      .map((s) => ({
+        signer: s,
+        weight,
+      })),
+    threshold,
+    nonce,
+  };
+}
+
+export function buildVerifyTokenManagerPayload({
+  tokenId,
+}: {
+  tokenId: BufferCV;
+}) {
+  return Cl.tuple({
+    type: Cl.stringAscii("verify-token-manager"),
+    "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
+    "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
+    "token-id": tokenId,
+    "token-type": Cl.uint(2),
+  });
+}
+
+export function deployTokenManager({
+  salt,
+  destinationChain = "",
+  tokenType = TOKEN_TYPE_LOCK_UNLOCK,
+  tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010"),
+  tokenManagerAddress = Cl.contractPrincipal(deployer, "token-manager"),
+  gas = 0,
+}: {
+  salt: Buffer | Uint8Array;
+  destinationChain?: string;
+  tokenType?: 0 | 2;
+  tokenAddress?: ContractPrincipalCV;
+  tokenManagerAddress?: ContractPrincipalCV;
+  gas?: number;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "deploy-token-manager",
+    [
+      Cl.buffer(salt),
+      Cl.stringAscii(destinationChain),
+      Cl.uint(tokenType),
+      tokenAddress,
+      tokenManagerAddress,
+      Cl.uint(gas),
+    ],
+    deployer
+  );
+}
+
+export function enableTokenManager({
+  tokenId,
+  proofSigners,
+}: {
+  tokenId: BufferCV;
+  proofSigners: Signers;
+}) {
+  const payload = buildVerifyTokenManagerPayload({ tokenId });
+
+  const messages = Cl.list([
+    Cl.tuple(
+      buildIncomingGMPMessage({
+        contractAddress: "interchain-token-service",
+        messageId: "0x00",
+        payload,
+        sourceAddress: "interchain-token-service",
+        sourceChain: "stacks",
+      })
+    ),
+  ]);
+  signAndApproveMessages({
+    messages,
+    proofSigners,
+  });
+
+  const enableTokenTx = simnet.callPublicFn(
+    "interchain-token-service",
+    "execute-enable-token",
+    [
+      Cl.stringAscii("0x00"),
+      Cl.stringAscii("stacks"),
+      Cl.stringAscii("interchain-token-service"),
+      Cl.buffer(Cl.serialize(payload)),
+    ],
+    deployer
+  );
+  expect(enableTokenTx.result).toBeOk(Cl.bool(true));
+  expect(
+    simnet.callReadOnlyFn(
+      "gateway",
+      "is-message-executed",
+      [Cl.stringAscii("stacks"), Cl.stringAscii("0x00")],
+      deployer
+    ).result
+  ).toBeOk(Cl.bool(true));
+}
+
+export function getTokenId(salt: Uint8Array | Buffer) {
+  return simnet.callReadOnlyFn(
+    "interchain-token-service",
+    "interchain-token-id",
+    [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
+    deployer
+  );
+}
+
+export function buildOutgoingGMPMessage({
+  payload,
+  destinationChain,
+  destinationContractAddress,
+  sender,
+}: {
+  payload: TupleCV;
+  destinationChain: string;
+  destinationContractAddress: string;
+  sender: PrincipalCV;
+}) {
+  return {
+    type: Cl.stringAscii("contract-call"),
+    sender,
+    "destination-chain": Cl.stringAscii(destinationChain),
+    "destination-contract-address": Cl.stringAscii(destinationContractAddress),
+    payload: Cl.buffer(serialize(payload)),
+    "payload-hash": Cl.buffer(
+      createKeccakHash("keccak256")
+        .update(Buffer.from(serialize(payload)))
+        .digest()
+    ),
+  };
+}
+
+export function buildIncomingGMPMessage({
+  payload,
+  sourceAddress,
+  sourceChain,
+  contractAddress,
+  messageId,
+}: {
+  sourceChain: string;
+  messageId: string;
+  sourceAddress: string;
+  contractAddress: string;
+  payload: TupleCV;
+}) {
+  return {
+    "source-chain": Cl.stringAscii(sourceChain),
+    "message-id": Cl.stringAscii(messageId),
+    "source-address": Cl.stringAscii(sourceAddress),
+    "contract-address": Cl.contractPrincipal(deployer, contractAddress),
+    "payload-hash": Cl.buffer(
+      createKeccakHash("keccak256")
+        .update(Buffer.from(serialize(payload)))
+        .digest()
+    ),
+  };
+}
+export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
+  const { result } = simnet.callReadOnlyFn(
+    "gateway",
+    "data-hash-from-messages",
+    [messages],
+    deployer
+  );
+  return cvToJSON(result).value.replace("0x", "");
+}
+export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
+  const { result } = simnet.callReadOnlyFn(
+    "gateway",
+    "get-signers-hash",
+    [signersToCv(proofSigners)],
+    deployer
+  );
+  return cvToJSON(result).value;
+}
+
+export const getMessageHashToSign = ({
+  signersHash,
+  dataHash,
+}: {
+  signersHash: string;
+  dataHash: string;
+}) => {
+  const { result } = simnet.callReadOnlyFn(
+    "gateway",
+    "message-hash-to-sign",
+    [bufferFromHex(signersHash), bufferFromHex(dataHash)],
+    deployer
+  );
+  return cvToJSON(result).value;
+};
+
+export function signAndApproveMessages({
+  messages,
+  proofSigners,
+}: {
+  messages: ListCV;
+  proofSigners: Signers;
+}) {
+  const dataHash = getDataHashFromMessages({ messages });
+
+  const signersHash = getSignersHash({ proofSigners });
+  const messageHashToSign = (() => {
+    const { result } = simnet.callReadOnlyFn(
+      "gateway",
+      "message-hash-to-sign",
+      [bufferFromHex(signersHash), bufferFromHex(dataHash)],
+      deployer
+    );
+    return cvToJSON(result).value;
+  })();
+
+  const proof = makeProofCV(proofSigners, messageHashToSign);
+  const { result: approveResult } = simnet.callPublicFn(
+    "gateway",
+    "approve-messages",
+    [Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    deployer
+  );
+
+  return expect(approveResult).toBeOk(Cl.bool(true));
+}
+
+export type OutGoingGMPMessage = ReturnType<typeof buildOutgoingGMPMessage>;
+export type InComingGMPMessage = ReturnType<typeof buildIncomingGMPMessage>;
