@@ -613,7 +613,7 @@ describe("Gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
-      console.log(result)
+      expect(result).toBeErr(uintCV(3053));
     });
   });
 
