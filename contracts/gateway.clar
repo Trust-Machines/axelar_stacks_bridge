@@ -384,7 +384,7 @@
         (asserts! (> threshold u0) ERR-SIGNERS-THRESHOLD)
         ;; total weight of signers must be bigger than the threshold
         (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
-        ;; signer weight
+        ;; signer weights need to be > 0
         (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
         ;; signers need to be in strictly increasing order
         (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)

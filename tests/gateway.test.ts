@@ -463,6 +463,10 @@ describe("Gateway tests", () => {
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operatorAddress);
       expect(result).toBeOk(boolCV(true));
     });
+  });
+
+
+  describe("Signer validation", () => {
 
     it('should reject if there is no signer', () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
@@ -496,19 +500,19 @@ describe("Gateway tests", () => {
       const newSigners: Signers = {
         signers: [
           {
-            signer: '0277ad46cf1f82953116604c137c41d11fc095694d046417820a3d77253363b904',
+            signer: '020544a6b1e14d0563e50bfbfdde11fdae17eac04d95bee50e595e6d80ea0a932b',
             weight: 1
           },
           {
-            signer: '031244d4c729f83c9e7898a85283e7460783a711746ba2ff24767443109ae1e64f',
+            signer: '020efaddd546e33405db1fccd46610c30012f59137874d658c0315b910bf8793e5',
             weight: 0
           },
           {
-            signer: '03a59cff8eb6f7fd5972f24468e88ba23bd85960dfe0912c9434cabe92acf130d7',
+            signer: '0215049277b2681c5a10f0dc93c67203ac3b865adfaf8d8d6d75df65082f3676e9',
             weight: 1
           },
           {
-            signer: '0319ea093014a1cc7f4aa0219506c20bc1de1480ea157b9b28a088d5f8a70e63cb',
+            signer: '0220ceccbc486f0bf0722150d02bbde9a4d688707148d911b85decac66b88fd374',
             weight: 1
           }
         ],
@@ -536,6 +540,54 @@ describe("Gateway tests", () => {
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2053));
     });
+
+    it('should reject if signers are not ordered', () => {
+      const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
+
+      const newSigners: Signers = {
+        signers: [
+          {
+            signer: '020544a6b1e14d0563e50bfbfdde11fdae17eac04d95bee50e595e6d80ea0a932b',
+            weight: 1
+          },
+          {
+            signer: '0215049277b2681c5a10f0dc93c67203ac3b865adfaf8d8d6d75df65082f3676e9',
+            weight: 1
+          },
+          {
+            signer: '020efaddd546e33405db1fccd46610c30012f59137874d658c0315b910bf8793e5',
+            weight: 1
+          },
+          {
+            signer: '0220ceccbc486f0bf0722150d02bbde9a4d688707148d911b85decac66b88fd374',
+            weight: 1
+          }
+        ],
+        threshold: 3,
+        nonce: '1'
+      }
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      expect(result).toBeErr(uintCV(2054));
+    });
+
   });
 
 
@@ -557,7 +609,7 @@ describe("Gateway tests", () => {
     });
 
 
-    it('should reject if there is signature with no match', () => {
+    it('should reject if signers are not in strictly increasing order', () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const newSigners = getSigners(25, 30, 1, 3, "1");
