@@ -449,7 +449,7 @@
 ;; @param minter The minter address for the token.
 ;; @param destinationChain The destination chain where the token will be deployed.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-public (deploy-interchain-token
+(define-public (deploy-remote-interchain-token
         (salt (buff 32))
         (destination-chain (string-ascii 18))
         (name (string-ascii 32))
@@ -487,6 +487,26 @@
     })
     ;; #[allow(unchecked_data)]
     (call-contract destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+
+(define-public (deploy-interchain-token
+        (salt (buff 32))
+        (token <token-manager-trait>)
+        (minter (optional principal)))
+    (let (
+            (token-id (interchain-token-id contract-caller salt)))
+        (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+        (contract-call? .gateway call-contract
+            CHAIN-NAME
+            (var-get its-contract-name)
+            (unwrap-panic (to-consensus-buff? {
+                type: "verify-interchain-token",
+                token-address: (contract-of token),
+                token-manager-address: (contract-of token),
+                token-id: token-id,
+                token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
+                minter: (default-to NULL-ADDRESS minter),
+            })))))
+
 
 (define-read-only (valid-token-address (token-id (buff 32)))
     (ok (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND)))

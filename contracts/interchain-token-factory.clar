@@ -124,6 +124,6 @@
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
             (token (try! (contract-call? .interchain-token-service valid-token-address token-id)))
         )
-        (contract-call? .interchain-token-service deploy-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
+        (contract-call? .interchain-token-service deploy-remote-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
     )
 )
