@@ -361,7 +361,9 @@
     )
 )
 
-
+;; A helper fn to unwrap a response boolean
+;; @param b;
+;; @returns bool
 (define-private (unwrap-bool (b (response bool bool))) (unwrap-panic b))
 
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
