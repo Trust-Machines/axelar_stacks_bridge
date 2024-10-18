@@ -8,7 +8,7 @@ import {
     uintCV,
 } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
-import { Signers } from "./types";
+import { ContractCallEvent, MessageApprovedEvent, MessageExecutedEvent, Signers, SignersRotatedEvent } from "./types";
 
 // following code to generate
 // pubkey => priv
@@ -130,13 +130,49 @@ export const getSigners = (start: number, end: number, weight: number, threshold
     }
 }
 
+export const contractCallEventToObj = (rawHex: string): ContractCallEvent => {
+    const json = cvToJSON(hexToCV(rawHex));
 
+    return {
+        type: json.value['type'].value,
+        sender: json.value.sender.value,
+        destinationChain: json.value['destination-chain'].value,
+        destinationContractAddress: json.value['destination-contract-address'].value,
+        payload: Buffer.from(bufferFromHex(json.value.payload.value).buffer).toString('ascii'),
+        payloadHash: json.value['payload-hash'].value
+    }
+}
 
-export const signersRotatedEventsToObj = (rawHex: string): { type: string, epoch: number, signersHash: string, signers: Signers } => {
+export const messageApprovedEventToObj = (rawHex: string): MessageApprovedEvent => {
+    const json = cvToJSON(hexToCV(rawHex));
+
+    return {
+        type: json.value['type'].value,
+        commandId: json.value['command-id'].value,
+        sourceChain: json.value['source-chain'].value,
+        messageId: json.value['message-id'].value,
+        sourceAddress: json.value['source-address'].value,
+        contractAddress: json.value['contract-address'].value,
+        payloadHash: json.value['payload-hash'].value
+    }
+}
+
+export const messageExecutedEventToObj = (rawHex: string): MessageExecutedEvent => {
+    const json = cvToJSON(hexToCV(rawHex));
+
+    return {
+        type: json.value['type'].value,
+        commandId: json.value['command-id'].value,
+        sourceChain: json.value['source-chain'].value,
+        messageId: json.value['message-id'].value,
+    }
+}
+
+export const signersRotatedEventToObj = (rawHex: string): SignersRotatedEvent => {
     const json = cvToJSON(hexToCV(rawHex));
 
     const signers: Signers = {
-        signers: json.value['signers'].value.signers.value.map((s: any) => ({ signer: s.value.signer.value, weight: Number(s.value.weight.value) })),
+        signers: json.value['signers'].value.signers.value.map((s: any) => ({ signer: s.value.signer.value.replace('0x', ''), weight: Number(s.value.weight.value) })),
         threshold: Number(json.value['signers'].value.threshold.value),
         nonce: Buffer.from(bufferFromHex(json.value['signers'].value.nonce.value).buffer).toString('ascii')
     }
@@ -148,5 +184,3 @@ export const signersRotatedEventsToObj = (rawHex: string): { type: string, epoch
         signers: signers
     }
 }
-
-

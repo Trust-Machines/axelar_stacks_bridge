@@ -1,8 +1,8 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex, deserialize } from "@stacks/transactions/dist/cl";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { beforeEach, describe, expect, it } from "vitest";
-import { getSigners, makeProofCV, SIGNER_KEYS, signersToCv, signMessageHashForAddress } from "./util";
+import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress } from "./util";
 import { Signers } from "./types";
 
 const accounts = simnet.getAccounts();
@@ -88,14 +88,14 @@ describe("Gateway tests", () => {
 
     const { result, events } = simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contract_caller)
     expect(result).toBeOk(boolCV(true));
-    expect(events.length).toBe(1);
-    const { value: js } = cvToJSON(deserialize(events[0].data.raw_value!));
-
-    expect(js.sender.value).toBe(contract_caller);
-    expect(js['destination-chain'].value).toBe(destinationChain);
-    expect(js['destination-contract-address'].value).toBe(destinationAddress);
-    expect(Buffer.from(bufferFromHex(js.payload.value).buffer).toString('ascii')).toBe(operator_address);
-    expect(js['payload-hash'].value).toBe('0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e');
+    expect(contractCallEventToObj(events[0].data.raw_value!)).toStrictEqual({
+      type: 'contract-call',
+      sender: contract_caller,
+      destinationChain,
+      destinationContractAddress: destinationAddress,
+      payload: operator_address,
+      payloadHash: '0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e'
+    });
   });
 
   describe("message validation", () => {
@@ -136,9 +136,16 @@ describe("Gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contract_caller);
-
       expect(approveResult).toBeOk(boolCV(true));
-      expect(approveEvents).toMatchSnapshot();
+      expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
+        type: 'message-approved',
+        commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+        sourceChain: cvToValue(sourceChain),
+        messageId: cvToValue(messageId),
+        sourceAddress: cvToValue(sourceAddress),
+        contractAddress: cvToValue(contractAddress),
+        payloadHash: cvToValue(payloadHash)
+      });
 
       const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
@@ -147,9 +154,13 @@ describe("Gateway tests", () => {
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contract_caller);
-
       expect(validateResult).toBeOk(boolCV(true));
-      expect(validateEvents).toMatchSnapshot();
+      expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
+        type: 'message-executed',
+        commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+        sourceChain: cvToValue(sourceChain),
+        messageId: cvToValue(messageId),
+      });
 
       const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
@@ -161,6 +172,7 @@ describe("Gateway tests", () => {
       const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contract_caller);
       expect(validateResult2).toBeErr(uintCV(9052));
     });
+
 
     it("reject re-approving a message", () => {
       const proofSigners = startContract(getSigners(0, 10, 1, 10, "1"));
@@ -184,7 +196,15 @@ describe("Gateway tests", () => {
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contract_caller);
       expect(approveResult).toBeOk(boolCV(true));
-      expect(approveEvents).toMatchSnapshot();
+      expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
+        type: 'message-approved',
+        commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+        sourceChain: cvToValue(sourceChain),
+        messageId: cvToValue(messageId),
+        sourceAddress: cvToValue(sourceAddress),
+        contractAddress: cvToValue(contractAddress),
+        payloadHash: cvToValue(payloadHash)
+      });
 
       const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
@@ -195,7 +215,7 @@ describe("Gateway tests", () => {
       // re-approval should be a no-op
       const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contract_caller);
       expect(approveResult2).toBeOk(boolCV(true));
-      expect(approveEvents2).toMatchSnapshot();
+      expect(approveEvents2.length).toBe(0);
 
       const isApprovedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedBefore2).toBeOk(boolCV(true));
@@ -206,7 +226,12 @@ describe("Gateway tests", () => {
       // execute message
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contract_caller);
       expect(validateResult).toBeOk(boolCV(true));
-      expect(validateEvents).toMatchSnapshot();
+      expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
+        type: 'message-executed',
+        commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+        sourceChain: cvToValue(sourceChain),
+        messageId: cvToValue(messageId),
+      });
 
       const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
@@ -217,7 +242,7 @@ describe("Gateway tests", () => {
       // re-approving same message after execution should be a no-op as well
       const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contract_caller);
       expect(approveResult3).toBeOk(boolCV(true));
-      expect(approveEvents3).toMatchSnapshot();
+      expect(approveEvents3.length).toBe(0);
 
       const isApprovedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contract_caller).result;
       expect(isApprovedAfter2).toBeOk(boolCV(false));
@@ -225,7 +250,9 @@ describe("Gateway tests", () => {
       const isExecutedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contract_caller).result;
       expect(isExecutedAfter2).toBeOk(boolCV(true));
     });
+
   });
+
 
   describe("signer rotation", () => {
     it("should rotate signers", () => {
@@ -252,7 +279,12 @@ describe("Gateway tests", () => {
 
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contract_caller);
       expect(result).toBeOk(boolCV(true));
-      expect(events).toMatchSnapshot();
+      expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
+        type: 'signers-rotated',
+        epoch: 2,
+        signersHash: '0x7146e0383fc88d294cdfde2685895a88f56d34c46f3e2296c4b5293b22481d57',
+        signers: newSigners
+      });
     });
 
     it("reject rotating to the same signers", () => {
