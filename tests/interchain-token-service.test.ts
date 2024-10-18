@@ -12,6 +12,7 @@ import {
   deployTokenManager,
   enableTokenManager,
   getTokenId,
+  setPaused,
   setupTokenManager,
 } from "./its-utils";
 import { getSigners, signersToCv } from "./util";
@@ -182,7 +183,15 @@ describe("Interchain Token Service", () => {
       expect(secondDeployTx.result).toBeErr(Cl.uint(2054));
     });
 
-    it("Should revert when registering an interchain token when service is paused", () => {});
+    it("Should revert when registering an interchain token when service is paused", () => {
+      setupTokenManager();
+      expect(setPaused({ paused: true }).result).toBeOk(Cl.bool(true));
+      expect(
+        deployTokenManager({
+          salt,
+        }).result
+      ).toBeErr(Cl.uint(1052));
+    });
   });
 
   describe("Deploy and Register remote Interchain Token", () => {

@@ -249,5 +249,18 @@ export function signAndApproveMessages({
   return expect(approveResult).toBeOk(Cl.bool(true));
 }
 
+export function setPaused({ paused }: { paused: boolean }) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "set-paused",
+    [Cl.bool(paused)],
+    deployer
+  );
+}
+
+export function deployInterchainToken() {
+  return simnet.callPublicFn("interchain-token", "deploy", [], deployer);
+}
+
 export type OutGoingGMPMessage = ReturnType<typeof buildOutgoingGMPMessage>;
 export type InComingGMPMessage = ReturnType<typeof buildIncomingGMPMessage>;
