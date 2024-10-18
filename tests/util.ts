@@ -13,7 +13,7 @@ import {
     uintCV,
 } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
-import { ContractCallEvent, MessageApprovedEvent, MessageExecutedEvent, Signers, SignersRotatedEvent } from "./types";
+import { ContractCallEvent, MessageApprovedEvent, MessageExecutedEvent, Signers, SignersRotatedEvent, TransferOperatorshipEvent } from "./types";
 import { expect } from "vitest";
 
 // following code to generate
@@ -197,6 +197,15 @@ export const signersRotatedEventToObj = (rawHex: string): SignersRotatedEvent =>
         epoch: Number(json.value['epoch'].value),
         signersHash: Buffer.from(json.value['signers-hash'].value).toString('ascii'),
         signers: signers
+    }
+}
+
+export const transferOperatorshipEventToObj = (rawHex: string): TransferOperatorshipEvent => {
+    const json = cvToJSON(hexToCV(rawHex));
+
+    return {
+        type: json.value['type'].value,
+        newOperator: json.value['new-operator'].value
     }
 }
 

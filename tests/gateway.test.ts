@@ -2,7 +2,7 @@
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { beforeEach, describe, expect, it } from "vitest";
-import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller } from "./util";
+import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj } from "./util";
 import { Signers } from "./types";
 
 describe("gateway tests", () => {
@@ -884,8 +884,12 @@ describe("gateway tests", () => {
   describe("operatorship", () => {
     it("should allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
-      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(contractCaller)], operatorAddress);
+      const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
+      expect(transferOperatorshipEventToObj(events[0].data.raw_value!)).toStrictEqual({
+        type: 'transfer-operatorship',
+        newOperator: contractCaller
+      });
     });
 
     it("should not allow transferring operatorship", () => {
