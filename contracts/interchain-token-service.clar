@@ -93,6 +93,9 @@
         token-type: uint,
     })
 
+(define-read-only (get-token-info (token-id (buff 32))) 
+    (ok (map-get? token-managers token-id)))
+
 (define-public (set-paused (status bool))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
@@ -304,6 +307,7 @@
         (begin
             (asserts! (var-get is-started) ERR-NOT-STARTED)
             (try! (require-not-paused))
+            ;; TODO: implement _deployRemoteTokenManager if the destination chain is not empty
             (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
             (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
             (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
@@ -431,7 +435,10 @@
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
-    (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
+    (asserts! (or 
+            (is-eq destination-chain CHAIN-NAME)
+            (> (len destination-chain) u0)) 
+        ERR-INVALID-DESTINATION-CHAIN)
     (print {
         type:"interchain-token-deployment-started",
         token-id: token-id,
@@ -588,10 +595,10 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (if (is-eq CHAIN-NAME source-address)
-            ;; #[filter(message-id, source-chain, payload)]
+        (if (is-eq CHAIN-NAME source-chain)
+            ;; #[filter(message-id, source-chain, payload, source-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload)
-            ;; #[filter(message-id, source-chain, payload, token-address)]
+            ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
             (process-deploy-interchain-from-external-chain message-id source-chain source-address token-address payload))))
 
 (define-private (process-deploy-interchain-from-external-chain
@@ -612,7 +619,7 @@
         } payload) ERR-INVALID-PAYLOAD))
     )
     (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
-            source-chain message-id source-address token-address (keccak256 payload)))
+            source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
     (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
     (as-contract
@@ -630,6 +637,11 @@
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
             }))))
     ))
+
+;; A user deploys a native interchain token on their own on stacks
+;; They want to register it on stacks
+;; User calls the ITS to verify the contract through sending a gateway message
+
 
 (define-private (process-deploy-interchain-from-stacks
         (message-id (string-ascii 71))
@@ -649,10 +661,7 @@
                 token-type: uint,
             } payload) ERR-INVALID-PAYLOAD))
         (token-id (get token-id data))
-        (token-address (get token-address data))
-        (token-manager-address (get token-address data))
         (token-type (get token-type data))
-        (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
     )
         (try! (require-not-paused))
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
@@ -665,18 +674,18 @@
             (as-contract (contract-call? .gateway validate-message
                 (get source-chain data)
                 (get message-id data)
-                (var-get its-contract-name)
-                (keccak256 payload))))
+                (get source-address data)
+                (keccak256 (get payload data)))))
         (asserts! (map-insert token-managers token-id {
-            token-address: token-address,
-            manager-address: token-manager-address,
+            token-address: (get token-address data),
+            manager-address: (get token-address data),
             token-type: token-type,
         }) ERR-TOKEN-EXISTS)
         (print {
             type: "token-manager-deployed",
             token-id: token-id,
-            token-manager: token-manager-address,
-            token-type: (get token-type token-info),
+            token-manager: (get token-address data),
+            token-type: token-type,
         })
         (ok true)
     ))
@@ -686,8 +695,8 @@
         (source-chain (string-ascii 18))
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
-        (destination-contract <interchain-token-executable-trait>)
         (payload (buff 1024))
+        (destination-contract (optional <interchain-token-executable-trait>))
     )
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
@@ -721,11 +730,15 @@
         amount: amount,
         data: (if data-is-empty (keccak256 data) EMPTY-32-BYTES),
     })
-    (asserts! (is-eq (contract-of destination-contract) recipient) ERR-INVALID-DESTINATION-ADDRESS)
     (if data-is-empty
         (ok 0x)
-        (contract-call? destination-contract execute-with-interchain-token 
-            message-id source-chain source-address data token-id (contract-of token) amount))))
+        (let (
+            (destination-contract-unwrapped (unwrap! destination-contract ERR-INVALID-DESTINATION-ADDRESS))
+        ) 
+            (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
+            (as-contract 
+                (contract-call? destination-contract-unwrapped execute-with-interchain-token 
+                    message-id source-chain source-address data token-id (contract-of token) amount))))))
 
 
 ;; ######################
@@ -775,3 +788,14 @@
         (ok true)
     )
 )
+
+(define-public (set-flow-limit (token-id (buff 32)) (token-manager <token-manager-trait>) (limit uint)) 
+    (let
+        (
+            (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
+        )
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (asserts! (is-eq (get-operator) contract-caller) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
+        (contract-call? token-manager set-flow-limit limit)))
