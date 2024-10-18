@@ -12,25 +12,24 @@
 ;; Public function for native gas payment for contract call
 (define-public (pay-native-gas-for-contract-call 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (destination-chain (string-ascii 32))
     (destination-address (string-ascii 40))
-    (payload (buff 1024)))
+    (payload (buff 1024))
+    (refund-address principal))
     (begin
-        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
-        ;; Transfer STX from the contract to the refund address
-        (try! (as-contract (stx-transfer? amount tx-sender refund-address)))        
-            (print {
-                type: "native-gas-paid-for-contract-call", 
-                sender: tx-sender, 
-                amount: amount, 
-                refund-address: refund-address,
-                destination-chain: destination-chain,
-                destination-address: destination-address,
-                payload-hash: (sha256 payload)
-            })
+        ;; Transfer STX from the caller to the contract
+        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+        (print {
+            type: "native-gas-paid-for-contract-call", 
+            sender: sender, 
+            amount: amount, 
+            refund-address: refund-address,
+            destination-chain: destination-chain,
+            destination-address: destination-address,
+            payload-hash: (sha256 payload)
+        })
         (ok true)
     )
 )
@@ -38,17 +37,17 @@
 ;; Public function to add native gas (deduct from contract balance)
 (define-public (add-native-gas 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (tx-hash (buff 32))
-    (log-index uint))
+    (log-index uint)
+    (refund-address principal))
     (begin
-        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
-        (try! (as-contract (stx-transfer? amount tx-sender refund-address)))
+        ;; Transfer STX from the caller to the contract
+        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
             type: "native-gas-added", 
-            sender: tx-sender, 
+            sender: sender, 
             amount: amount, 
             refund-address: refund-address,
             tx-hash: tx-hash,
@@ -58,18 +57,23 @@
     )
 )
 
-;; Function to refund gas (add to contract balance)
-(define-public (refund (amount uint) (tx-hash (optional (buff 32))) (log-index (optional uint)))
+;; Function to refund gas (transfer from contract balance to receiver)
+(define-public (refund 
+    (tx-hash (buff 32))
+    (log-index uint)
+    (receiver principal)
+    (amount uint))
     (begin
+        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
         (asserts! (> amount u0) err-invalid-amount)
-        ;; Transfer STX from the caller to the contract
-        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
+        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
         (print {
             type: "refunded", 
-            sender: tx-sender, 
-            amount: amount,
             tx-hash: tx-hash,
-            log-index: log-index
+            log-index: log-index,
+            receiver: receiver, 
+            amount: amount
         })
         (ok true)
     )
@@ -78,39 +82,43 @@
 ;; Placeholder for future implementation: pay gas for contract call
 (define-public (pay-gas-for-contract-call 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (destination-chain (string-ascii 32))
     (destination-address (string-ascii 40))
-    (payload (buff 1024)))
-    (err err-not-implemented) ;; Not implemented
+    (payload (buff 1024))
+    (refund-address principal))
+    (err err-not-implemented)
 )
 
 ;; Placeholder for future implementation: add gas
 (define-public (add-gas 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (tx-hash (buff 32))
-    (log-index uint))
-    (err err-not-implemented) ;; Not implemented
+    (log-index uint)
+    (refund-address principal))
+    (err err-not-implemented)
 )
 
 ;; Placeholder for future implementation: pay native gas for express call
 (define-public (pay-native-gas-for-express-call 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (destination-chain (string-ascii 32))
     (destination-address (string-ascii 40))
-    (payload (buff 1024)))
-    (err err-not-implemented) ;; Not implemented
+    (payload (buff 1024))
+    (refund-address principal))
+    (err err-not-implemented)
 )
 
 ;; Placeholder for future implementation: add native express gas
 (define-public (add-native-express-gas 
     (amount uint)
-    (refund-address principal)
+    (sender principal)
     (tx-hash (buff 32))
-    (log-index uint))
-    (err err-not-implemented) ;; Not implemented
+    (log-index uint)
+    (refund-address principal))
+    (err err-not-implemented)
 )
 
 ;; Public function to transfer ownership
@@ -125,9 +133,7 @@
 
 ;; Read-only function to get the current balance
 (define-read-only (get-balance)
-    (begin
-        (ok (stx-get-balance (as-contract tx-sender)))
-    )
+    (ok (stx-get-balance (as-contract tx-sender)))
 )
 
 ;; Read-only function to check if the caller is the contract owner

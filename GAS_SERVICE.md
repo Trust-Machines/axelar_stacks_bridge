@@ -1,20 +1,68 @@
+# Gas Service Contract
+
+## Overview
+
+The Gas Service Contract manages gas payments and refunds for cross-chain communication on the Stacks network. It allows users to pay for gas for cross-chain calls and provides functionality for refunding and managing the contract's balance.
+
 ## Function Descriptions
 
-### native-gas-paid-for-contract-call
+### pay-native-gas-for-contract-call
 
-This function is called by the contract owner to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the contract balance.
+This function allows anyone to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
 
-### native-gas-added
+Parameters:
 
-This function is called by the contract owner to add additional native gas payment for an existing transaction. It deducts the specified amount from the contract balance.
+- `amount`: The amount of STX to pay for gas
+- `sender`: The address initiating the cross-chain call
+- `destination-chain`: The target chain for the cross-chain call
+- `destination-address`: The target address on the destination chain
+- `payload`: Data payload for the contract call
+- `refund-address`: The address where refunds, if any, should be sent
 
-### refunded
+### add-native-gas
 
-This function can be called by anyone to add STX to the contract balance, effectively refunding or topping up the contract.
+This function allows anyone to add additional native gas payment for an existing transaction. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
 
-### ownership-transferred
+Parameters:
+
+- `amount`: The amount of STX to add as gas
+- `sender`: The address that initiated the cross-chain call
+- `tx-hash`: The transaction hash of the cross-chain call
+- `log-index`: The log index for the cross-chain call
+- `refund-address`: The address where refunds, if any, should be sent
+
+### refund
+
+This function can only be called by the contract owner to refund gas payment to a specified receiver. It transfers the specified amount from the contract's balance to the receiver.
+
+Parameters:
+
+- `tx-hash`: The transaction hash of the cross-chain call
+- `log-index`: The log index for the cross-chain call
+- `receiver`: The address to receive the refund
+- `amount`: The amount of STX to refund
+
+### transfer-ownership
 
 This function allows the current owner to transfer ownership of the contract to a new address.
+
+Parameters:
+
+- `new-owner`: The address of the new owner
+
+## Read-Only Functions
+
+### get-balance
+
+Returns the current balance of the contract.
+
+### is-owner
+
+Checks if the caller is the current owner of the contract.
+
+### get-owner
+
+Returns the current owner of the contract.
 
 ## Events
 
