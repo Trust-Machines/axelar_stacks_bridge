@@ -58,9 +58,12 @@ describe("gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
     expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller).result).toBeBool(true);
     expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
+  });
 
-    // already initialized
-    // expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signers)), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], operatorAddress).result).toBeErr(uintCV(6051));
+  it("should not run setup func again", () => {
+    deployGateway(getSigners(0, 10, 1, 10, "1"));
+    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
+    expect(result).toBeErr(uintCV(6051));
   });
 
   it("call contract", () => {
@@ -876,7 +879,7 @@ describe("gateway tests", () => {
       const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeErr(uintCV(4051));
     });
-  })
+  });
 
   describe("operatorship", () => {
     beforeEach(() => {
