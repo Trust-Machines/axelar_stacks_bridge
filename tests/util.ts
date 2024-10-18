@@ -1,7 +1,14 @@
 import {
     createStacksPrivateKey,
+    cvToJSON,
+    hexToCV,
+    listCV,
     signMessageHashRsv,
+    tupleCV,
+    uintCV,
 } from "@stacks/transactions";
+import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
+import { Signers } from "./types";
 
 // following code to generate
 // pubkey => priv
@@ -88,3 +95,58 @@ export const signMessageHashForAddress = (messageHash: string, address: string) 
         ),
     }).data;
 }
+
+export const signersToCv = (data: Signers) => {
+    return tupleCV({
+        "signers": listCV([
+            ...data.signers.map(x => tupleCV({
+                "signer": bufferFromHex(x.signer),
+                "weight": uintCV(x.weight)
+            }))
+
+        ]),
+        "threshold": uintCV(data.threshold),
+        "nonce": bufferFromAscii(data.nonce)
+    })
+}
+
+export const makeProofCV = (data: Signers, messageHashToSign: string) => {
+    return tupleCV({
+        "signers": signersToCv(data),
+        "signatures": listCV([
+            ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+        ])
+    });
+}
+
+export const getSigners = (start: number, end: number, weight: number, threshold: number, nonce: string): Signers => {
+    return {
+        signers: Object.keys(SIGNER_KEYS).slice(start, end).map(s => ({
+            signer: s,
+            weight
+        })),
+        threshold,
+        nonce
+    }
+}
+
+
+
+export const signersRotatedEventsToObj = (rawHex: string): { type: string, epoch: number, signersHash: string, signers: Signers } => {
+    const json = cvToJSON(hexToCV(rawHex));
+
+    const signers: Signers = {
+        signers: json.value['signers'].value.signers.value.map((s: any) => ({ signer: s.value.signer.value, weight: Number(s.value.weight.value) })),
+        threshold: Number(json.value['signers'].value.threshold.value),
+        nonce: Buffer.from(bufferFromHex(json.value['signers'].value.nonce.value).buffer).toString('ascii')
+    }
+
+    return {
+        type: json.value['type'].value,
+        epoch: Number(json.value['epoch'].value),
+        signersHash: Buffer.from(json.value['signers-hash'].value).toString('ascii'),
+        signers: signers
+    }
+}
+
+
