@@ -204,11 +204,12 @@ const accounts = simnet.getAccounts();
 export const operatorAddress = accounts.get("wallet_1")!;
 export const contractCaller = accounts.get("wallet_2")!;
 
-export const deployGateway = (signers: Signers, minimumRotationDelay_: number = 0) => {
+
+export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: number, previousSignersRetention?: number, domainSeparator?: string }) => {
     const operator = principalCV(operatorAddress);
-    const domainSeparator = bufferCVFromString('stacks-axelar-1');
-    const minimumRotationDelay = uintCV(minimumRotationDelay_);
-    const previousSignersRetention = uintCV(15);
+    const domainSeparator = bufferCVFromString(conf?.domainSeparator || 'stacks-axelar-1');
+    const minimumRotationDelay = uintCV(conf?.minimumRotationDelay ?? 0);
+    const previousSignersRetention = uintCV(conf?.previousSignersRetention ?? 15);
 
     expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contractCaller).result).toBeOk(boolCV(true));
 
