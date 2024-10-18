@@ -41,15 +41,14 @@
 ;; Compute the command-id for a message.
 ;; @param source-chain The name of the source chain as registered on Axelar.
 ;; @param message-id The unique message id for the message.
-;; @return The commandId for the message.
-;; 64
+;; @returns (buff 32) the command-id.
 (define-read-only (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 71))) 
     ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
 
 ;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
-;; @return bytes32 the message hash
+;; @returns (buff 32) the message hash
 (define-private (get-message-hash (message {
         message-id: (string-ascii 71),
         source-chain: (string-ascii 32),
@@ -104,7 +103,7 @@
 ;; @notice Approves an array of messages, signed by the Axelar signers.
 ;; @param messages; The list of messages to verify.
 ;; @param proof; The proof signed by the Axelar signers for this command.
-;; @returns (response true) or reverts
+;; @returns (response true) or err
 (define-public (approve-messages 
     (messages (buff 4096)) 
     (proof (buff 7168))) 
@@ -412,7 +411,7 @@
 
 ;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
 ;; @param signature;
-;; @returns (response {signer: (buff 33), weight: uint}) or (err u3056)
+;; @returns (response {signer: (buff 33), weight: uint}) or (err u0) or (err u1)
 (define-private (signature-to-signer (signature (buff 65))) 
     (let 
        (
