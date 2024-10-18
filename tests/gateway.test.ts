@@ -688,6 +688,38 @@ describe("Gateway tests", () => {
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3053));
     });
+
+    it('should reject if not enough weight provided ', () => {
+      const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
+
+      const newSigners = getSigners(25, 30, 1, 3, "1");
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = tupleCV({
+        "signers": signersToCv(proofSigners),
+        "signatures": listCV([
+          ...proofSigners.signers.slice(0,9).map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+        ])
+      });
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      expect(result).toBeErr(uintCV(3055));
+    });
+
   });
 
   describe("operatorship", () => {

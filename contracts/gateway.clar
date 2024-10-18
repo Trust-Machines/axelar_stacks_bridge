@@ -402,8 +402,7 @@
 
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
 (define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
-(define-constant ERR-MALFORMED-SIGNATURES (err u3055))
-(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3058))
+(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
 
 ;; Returns true if the address of the signer provided equals to the value stored in temp-account
 ;; @param signer;
@@ -425,8 +424,6 @@
                 (signers (filter is-the-signer (var-get temp-signers)))
                 (signer (unwrap! (element-at? signers u0) (err u1)))   
             )
-            ;; there must be only one match
-            (asserts! (is-eq (len signers) u1) (err u2))
             (ok signer)
        )
     )
@@ -476,7 +473,7 @@
                 (signers-raw (map signature-to-signer signatures))
                 (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
             )
-            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH ERR-MALFORMED-SIGNATURES) (unwrap-err-panic (unwrap-panic signer-err)))))
+            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH) (unwrap-err-panic (unwrap-panic signer-err)))))
             (let 
                 (
                     ;; Convert signatures to signers
