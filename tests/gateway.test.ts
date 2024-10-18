@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller } from "./util";
 import { Signers } from "./types";
 
-describe("Gateway tests", () => {
+describe("gateway tests", () => {
 
   it("should revert all public functions before initialization", () => {
     const newSigners = getSigners(0, 1, 1, 2, "1");
@@ -466,7 +466,7 @@ describe("Gateway tests", () => {
   });
 
 
-  describe("Signer validation", () => {
+  describe("signer validation", () => {
 
     it('should reject if there is no signer', () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
@@ -640,7 +640,7 @@ describe("Gateway tests", () => {
   });
 
 
-  describe("Signature validation", () => {
+  describe("signature validation", () => {
     it('should reject invalid signatures ', () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
