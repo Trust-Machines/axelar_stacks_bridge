@@ -588,6 +588,31 @@ describe("Gateway tests", () => {
       expect(result).toBeErr(uintCV(2054));
     });
 
+    it('should reject if threshold is 0', () => {
+      const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
+      const newSigners = getSigners(10, 15, 1, 0, "1");
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = makeProofCV(proofSigners, messageHashToSign);
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      expect(result).toBeErr(uintCV(2055));
+    });
+
   });
 
 
