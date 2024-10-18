@@ -282,7 +282,7 @@ describe("Gateway tests", () => {
       expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'signers-rotated',
         epoch: 2,
-        signersHash: '0x7146e0383fc88d294cdfde2685895a88f56d34c46f3e2296c4b5293b22481d57',
+        signersHash: '0x3f89f80b758e2c80e86ec29e0cec2007286d0269cc85007a34e1dcf404197f53',
         signers: newSigners
       });
     });
