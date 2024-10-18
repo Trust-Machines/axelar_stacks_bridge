@@ -127,3 +127,27 @@
         (contract-call? .interchain-token-service deploy-remote-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
     )
 )
+
+
+(define-public (deploy-interchain-token (salt (buff 32)) (token <token-manager-trait>) (minter (optional principal)))
+    (contract-call? .interchain-token-service deploy-interchain-token salt token minter))
+
+;; deployRemoteInterchainToken
+(define-public (deploy-remote-interchain-token 
+    (salt (buff 32))
+    (destination-chain (string-ascii 18))
+    (name (string-ascii 32))
+    (symbol (string-ascii 32))
+    (decimals uint)
+    (minter (buff 64))
+    (gas-value uint)
+)
+    (contract-call? .interchain-token-service deploy-remote-interchain-token 
+        salt
+        destination-chain
+        name
+        symbol
+        decimals
+        minter
+        gas-value
+    ))
