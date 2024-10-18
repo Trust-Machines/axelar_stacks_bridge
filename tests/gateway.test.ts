@@ -712,12 +712,68 @@ describe("Gateway tests", () => {
       const proof = tupleCV({
         "signers": signersToCv(proofSigners),
         "signatures": listCV([
-          ...proofSigners.signers.slice(0,9).map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+          ...proofSigners.signers.slice(0, 9).map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
         ])
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3055));
+    });
+
+    it('should reject if same signature provided more than once', () => {
+      const proofSigners: Signers = {
+        signers: [
+          {
+            signer: '020544a6b1e14d0563e50bfbfdde11fdae17eac04d95bee50e595e6d80ea0a932b',
+            weight: 1
+          },
+          {
+            signer: '020efaddd546e33405db1fccd46610c30012f59137874d658c0315b910bf8793e5',
+            weight: 1
+          },
+          {
+            signer: '0215049277b2681c5a10f0dc93c67203ac3b865adfaf8d8d6d75df65082f3676e9',
+            weight: 1
+          },
+          {
+            signer: '0220ceccbc486f0bf0722150d02bbde9a4d688707148d911b85decac66b88fd374',
+            weight: 1
+          }
+        ],
+        threshold: 3,
+        nonce: '2'
+      }
+
+      deployGateway(proofSigners);
+
+      const newSigners = getSigners(10, 20, 1, 6, "2");
+
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        return cvToJSON(result).value
+      })();
+
+      const proof = tupleCV({
+        "signers": signersToCv(proofSigners),
+        "signatures": listCV([
+          bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), proofSigners.signers[0].signer)),
+          bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), proofSigners.signers[1].signer)),
+          bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), proofSigners.signers[1].signer))
+        ])
+      });
+
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      expect(result).toBeErr(uintCV(2054));
     });
 
   });
