@@ -100,9 +100,10 @@
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address)) 
                 "" 
                 TOKEN-TYPE-LOCK-UNLOCK 
-                token-address 
-                token-manager-address
-                u0)
+                u0
+                0x
+                (some token-address)
+                (some token-manager-address))
     ))
 
 

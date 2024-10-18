@@ -10,7 +10,7 @@
         - validators check the message sender is the ITS contract
         - validators send proof to gateway
         - they check the token manager contract is valid
-        - relay calls the ITS contract function to execute-enable-token (source-chain) (message-id) (source-address) (payload-hash)
+        - relay calls the ITS contract function to process-deploy-token-manager-from-stacks (source-chain) (message-id) (source-address) (payload-hash)
           - calls validate message on the gateway to check the token manager contract is valid
     - deploy remote canonical interchain token for remote chain
       - pay gas
@@ -19,7 +19,7 @@
   - interchain transfer on the ITS (same transaction)
     - lock the token on the token manager contract
     - pay gas
-    - send the gateway message (_transmitInterchainTransfer)
+    - send the gateway message (\_transmitInterchainTransfer)
   - Interchain token deploy from different chain to stacks
     - relayer would receive the message and deploy the token and send a call to the ITS (execute-deploy-interchain-token) with the token contract address and the ITS Hub payload
       - if from different chain to stacks
@@ -29,10 +29,10 @@
         - you have the original its payload which has the token-id just validate and store in the token-managers
         - validate the initial message and the verify message
     - relayer would receive a message that the validators have finished the "verify-interchain-token" process and would call (execute-deploy-interchain-token) with source chain as stacks
-  - Interchain token transfer from another chain to stacks (_processInterchainTransferPayload)
+  - Interchain token transfer from another chain to stacks (\_processInterchainTransferPayload)
     - type interchain transfer u0
     - the message is validated first
     - the tokens are sent to the recipient
   - create a interchain token executable trait (IInterchainTokenExecutable)
-  - call contract with token on stacks from a different chain (execute-call-contract-with-interchain-token) (_processInterchainTransferPayload)
+  - call contract with token on stacks from a different chain (execute-call-contract-with-interchain-token) (\_processInterchainTransferPayload)
   - callContractWithInterchainToken

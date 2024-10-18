@@ -131,9 +131,10 @@ export function deployTokenManager({
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
-      tokenAddress,
-      tokenManagerAddress,
       Cl.uint(gas),
+      Cl.buffer(Buffer.from([])),
+      Cl.some(tokenAddress),
+      Cl.some(tokenManagerAddress),
     ],
     deployer
   );
@@ -166,7 +167,7 @@ export function enableTokenManager({
 
   const enableTokenTx = simnet.callPublicFn(
     "interchain-token-service",
-    "execute-enable-token",
+    "process-deploy-token-manager-from-stacks",
     [
       Cl.stringAscii("0x00"),
       Cl.stringAscii("stacks"),

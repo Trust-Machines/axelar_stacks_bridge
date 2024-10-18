@@ -3,36 +3,46 @@
 ## Public Functions
 
 ### 1. `set-paused`
+
 Sets the paused status of the contract.
+
 ```clarity
-(define-public (set-paused 
+(define-public (set-paused
     (status bool)))
 ```
 
 ### 2. `transfer-operatorship`
+
 Transfers operatorship to a new account.
+
 ```clarity
 (define-public (transfer-operatorship
     (new-operator principal)))
 ```
 
 ### 3. `set-trusted-address`
+
 Sets the trusted address for a given chain.
+
 ```clarity
-(define-public (set-trusted-address 
+(define-public (set-trusted-address
     (chain-name (string-ascii 18))
     (address (string-ascii 48))))
 ```
 
 ### 4. `remove-trusted-address`
+
 Removes the trusted address for a given chain.
+
 ```clarity
-(define-public (remove-trusted-address  
+(define-public (remove-trusted-address
     (chain-name (string-ascii 18))))
 ```
 
 ### 5. `deploy-token-manager`
+
 Deploys a token manager on a destination chain.
+
 ```clarity
 (define-public (deploy-token-manager
             (salt (buff 32))
@@ -43,10 +53,12 @@ Deploys a token manager on a destination chain.
             (gas-value uint)))
 ```
 
-### 6. `execute-enable-token`
+### 6. `process-deploy-token-manager-from-stacks`
+
 Executes the enable token process.
+
 ```clarity
-(define-public (execute-enable-token
+(define-public (process-deploy-token-manager-from-stacks
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
@@ -54,7 +66,9 @@ Executes the enable token process.
 ```
 
 ### 7. `deploy-interchain-token`
+
 Deploys an interchain token on a destination chain.
+
 ```clarity
 (define-public (deploy-interchain-token
         (salt (buff 32))
@@ -67,7 +81,9 @@ Deploys an interchain token on a destination chain.
 ```
 
 ### 8. `interchain-transfer`
+
 Initiates an interchain transfer of a specified token to a destination chain.
+
 ```clarity
 (define-public (interchain-transfer
         (token-manager <token-manager-trait>)
@@ -84,7 +100,9 @@ Initiates an interchain transfer of a specified token to a destination chain.
 ```
 
 ### 9. `call-contract-with-interchain-token`
+
 Calls a contract on a destination chain with an interchain token.
+
 ```clarity
 (define-public (call-contract-with-interchain-token
         (token-manager <token-manager-trait>)
@@ -101,7 +119,9 @@ Calls a contract on a destination chain with an interchain token.
 ```
 
 ### 10. `execute-deploy-interchain-token`
+
 Executes the deployment of an interchain token.
+
 ```clarity
 (define-public (execute-deploy-interchain-token
         (message-id (string-ascii 71))
@@ -112,7 +132,9 @@ Executes the deployment of an interchain token.
 ```
 
 ### 11. `execute-receive-interchain-token`
+
 Executes the receipt of an interchain token.
+
 ```clarity
 (define-public (execute-receive-interchain-token
         (message-id (string-ascii 71))
@@ -124,8 +146,10 @@ Executes the receipt of an interchain token.
 ```
 
 ### 12. `setup`
+
 Sets up the interchain token service contract.
-```clarity
+
+````clarity
 (define-public (setup
     (its-contract-address-name (string-ascii 48))
     (interchain-token-factory-address principal)
@@ -141,13 +165,15 @@ Sets up the interchain token service contract.
 Emitted when operatorship is transferred to a new account.
 ```clarity
 {
-    action: "transfer-operatorship", 
+    action: "transfer-operatorship",
     new-operator: new-operator
 }
-```
+````
 
 ### 2. `trusted-address-set`
+
 Emitted when a trusted address is set for a chain.
+
 ```clarity
 {
     type: "trusted-address-set",
@@ -157,7 +183,9 @@ Emitted when a trusted address is set for a chain.
 ```
 
 ### 3. `trusted-address-removed`
+
 Emitted when a trusted address is removed for a chain.
+
 ```clarity
 {
     type: "trusted-address-removed",
@@ -166,7 +194,9 @@ Emitted when a trusted address is removed for a chain.
 ```
 
 ### 4. `interchain-token-id-claimed`
+
 Emitted when an interchain token ID is claimed.
+
 ```clarity
 {
     type: "interchain-token-id-claimed",
@@ -177,7 +207,9 @@ Emitted when an interchain token ID is claimed.
 ```
 
 ### 5. `token-manager-deployed`
+
 Emitted when a token manager is deployed.
+
 ```clarity
 {
     type: "token-manager-deployed",
@@ -188,7 +220,9 @@ Emitted when a token manager is deployed.
 ```
 
 ### 6. `interchain-token-deployment-started`
+
 Emitted when an interchain token deployment is started.
+
 ```clarity
 {
     type:"interchain-token-deployment-started",
@@ -202,7 +236,9 @@ Emitted when an interchain token deployment is started.
 ```
 
 ### 7. `interchain-transfer`
+
 Emitted when an interchain transfer is initiated.
+
 ```clarity
 {
     type: "interchain-transfer",
@@ -216,7 +252,9 @@ Emitted when an interchain transfer is initiated.
 ```
 
 ### 8. `token-manager-deployed`
+
 Emitted when a token manager is deployed.
+
 ```clarity
 {
     type: "token-manager-deployed",
@@ -227,7 +265,9 @@ Emitted when a token manager is deployed.
 ```
 
 ### 9. `interchain-transfer-received`
+
 Emitted when an interchain transfer is received.
+
 ```clarity
 {
     type: "interchain-transfer-received",

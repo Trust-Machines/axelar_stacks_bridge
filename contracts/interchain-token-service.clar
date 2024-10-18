@@ -40,6 +40,9 @@
 (define-constant ERR-EMPTY-DATA (err u2069))
 (define-constant ERR-TOKEN-DEPLOYMENT-NOT-APPROVED (err u2070))
 (define-constant ERR-INVALID-MESSAGE-TYPE (err u2071))
+(define-constant ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF (err u2072))
+(define-constant ERR-TOKEN-REQUIRED (err u2073))
+(define-constant ERR-TOKEN-MANAGER-REQUIRED (err u2074))
 
 
 
@@ -78,7 +81,7 @@
 
 (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
 (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
-;; (define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
+(define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 ;; (define-constant MESSAGE-TYPE-RECEIVE-FROM-HUB u4)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
@@ -298,24 +301,64 @@
 )
 
 (define-public (deploy-token-manager
-            (salt (buff 32))
-            (destination-chain (string-ascii 18))
-            (token-manager-type uint)
-            (token <sip-010-trait>)
-            (token-manager <token-manager-trait>)
-            (gas-value uint))
-        (begin
-            (asserts! (var-get is-started) ERR-NOT-STARTED)
-            (try! (require-not-paused))
-            ;; TODO: implement _deployRemoteTokenManager if the destination chain is not empty
-            (asserts! (is-eq (len destination-chain) u0) ERR-UNSUPPORTED)
-            (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
-            (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
-            ;; #[filter(token, token-manager)]
-            (deploy-canonical-token-manager salt destination-chain token-manager-type token token-manager)
-        )
+        (salt (buff 32))
+        (destination-chain (string-ascii 18))
+        (token-manager-type uint)
+        (gas-value uint)
+        (params (buff 1024))
+        (token (optional <sip-010-trait>))
+        (token-manager (optional <token-manager-trait>))
     )
+    (let (
+            (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
+            (token-id (interchain-token-id deployer salt))
+        )
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
+        (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
+        (print {
+            type: "interchain-token-id-claimed",
+            token-id: token-id,
+            deployer: deployer,
+            salt: salt,
+        })
+        (if (is-eq (len destination-chain) u0) 
+            (process-deploy-token-manager-from-external-chain 
+                token-id
+                destination-chain
+                token-manager-type
+                ;; #[filter(token, token-manager, params)]
+                params
+                (unwrap! token ERR-TOKEN-REQUIRED)
+                (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED))
+            ;; #[filter(token, token-manager, params, gas-value)]
+            (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value)
+        )))
 
+(define-private (process-deploy-remote-token-manager
+        (token-id (buff 32))
+        (destination-chain (string-ascii 18))
+        (token-manager-type uint)
+        (params (buff 1024))
+        (gas-value uint))
+        (let (
+            (payload (unwrap-panic (to-consensus-buff? {
+                type: MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER,
+                token-id: token-id,
+                token-manager-type: token-manager-type,
+                params: params,
+            })))
+        )
+            (asserts! (not (is-eq destination-chain CHAIN-NAME)) ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF)
+            (print {
+                type: "token-manager-deployment-started",
+                token-id: token-id,
+                destination-chain: destination-chain,
+                token-manager-type: token-manager-type,
+                params: params,
+            })
+            (call-contract destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 ;; Used to deploy remote custom TokenManagers.
 ;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
 ;; part of a multicall involving multiple functions that could make remote contract calls.
@@ -325,23 +368,17 @@
 ;; @param params The params that will be used to initialize the TokenManager.
 ;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
-(define-private (deploy-canonical-token-manager
-        (salt (buff 32))
+(define-private (process-deploy-token-manager-from-external-chain
+        (token-id (buff 32))
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
+        (params (buff 1024))
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
     (let (
-        (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
-        (token-id (interchain-token-id deployer salt))
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
     )
-    (print {
-        type: "interchain-token-id-claimed",
-        token-id: token-id,
-        deployer: deployer,
-        salt: salt,
-    })
+    
     (asserts! (is-eq
         (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
         token-manager-type
@@ -363,7 +400,7 @@
             }))))))
 
 
-(define-public (execute-enable-token
+(define-public (process-deploy-token-manager-from-stacks
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
