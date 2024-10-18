@@ -643,6 +643,37 @@
         (call-contract destination-chain payload metadata-version gas-value)
     ))
 
+(define-public (execute-deploy-token-manager
+        (message-id (string-ascii 71))
+        (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
+        (payload (buff 1024))
+        (token (optional <sip-010-trait>))
+        (token-manager (optional <token-manager-trait>)))
+    (let
+        (
+            (payload-decoded (unwrap! (from-consensus-buff? {
+                type: uint,
+                token-id: (buff 32),
+                token-manager-type: uint,
+                params: (buff 512)
+            } payload) ERR-INVALID-PAYLOAD))
+            (token-id (get token-id payload-decoded))
+            (token-manager-type (get token-manager-type payload-decoded))
+            (params (get params payload-decoded))
+        )
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (if (is-eq CHAIN-NAME source-chain)
+            (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
+            (process-deploy-token-manager-from-external-chain
+                token-id
+                CHAIN-NAME
+                token-manager-type
+                params
+                (unwrap! token ERR-TOKEN-REQUIRED)
+                (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED)))))
+
 (define-public (execute-deploy-interchain-token
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
