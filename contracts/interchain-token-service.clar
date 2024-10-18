@@ -368,7 +368,7 @@
 ;; @param params The params that will be used to initialize the TokenManager.
 ;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
-(define-private (process-deploy-token-manager-from-external-chain
+(define-public (process-deploy-token-manager-from-external-chain
         (token-id (buff 32))
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
