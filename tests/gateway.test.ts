@@ -882,16 +882,14 @@ describe("gateway tests", () => {
   });
 
   describe("operatorship", () => {
-    beforeEach(() => {
-      deployGateway(getSigners(0, 10, 1, 10, "1"));
-    })
-
     it("should allow transferring operatorship", () => {
+      deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
     });
 
     it("should not allow transferring operatorship", () => {
+      deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller);
       expect(result).toBeErr(uintCV(1051));
     });
