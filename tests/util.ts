@@ -1,14 +1,20 @@
 import {
+    boolCV,
+    bufferCV,
+    bufferCVFromString,
     createStacksPrivateKey,
     cvToJSON,
     hexToCV,
     listCV,
+    principalCV,
+    serializeCV,
     signMessageHashRsv,
     tupleCV,
     uintCV,
 } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { ContractCallEvent, MessageApprovedEvent, MessageExecutedEvent, Signers, SignersRotatedEvent } from "./types";
+import { expect } from "vitest";
 
 // following code to generate
 // pubkey => priv
@@ -63,7 +69,7 @@ export const SIGNER_KEYS: Record<string, string> = {
     '03c1b0ddbf99857ca9da5cbdf26e0eea8d2b02c2873cea8fc493fa6bc3383bc447': '8bd8a44a5fabbaa633d47de96c775f3c0681a3080cabaf6de819e37106d3d57c',
     '03ee6deb63469adde30a310f241ce07c8be6bc2f4e33651f58c3b11aadb9117e75': 'c79359c02cf0c96fb023ee2bf2b541e4d580a31c4083c601968cb9ec2ca5115a',
     '03f69590f15ffff3475237a2bef8c49088aaffb0877b3a2b453ecf89bcdb1a70a2': '180e35a5bfb78db55444344aebb81bfa520ecc7ac6939114b2954c06f8315b55'
-  }
+}
 
 /*
 
@@ -192,4 +198,19 @@ export const signersRotatedEventToObj = (rawHex: string): SignersRotatedEvent =>
         signersHash: Buffer.from(json.value['signers-hash'].value).toString('ascii'),
         signers: signers
     }
+}
+
+const accounts = simnet.getAccounts();
+export const operatorAddress = accounts.get("wallet_1")!;
+export const contractCaller = accounts.get("wallet_2")!;
+
+export const deployGateway = (signers: Signers, minimumRotationDelay_: number = 0) => {
+    const operator = principalCV(operatorAddress);
+    const domainSeparator = bufferCVFromString('stacks-axelar-1');
+    const minimumRotationDelay = uintCV(minimumRotationDelay_);
+    const previousSignersRetention = uintCV(15);
+
+    expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contractCaller).result).toBeOk(boolCV(true));
+
+    return signers;
 }
