@@ -1,6 +1,6 @@
 import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
-import { deserialize } from "@stacks/transactions/dist/cl";
+
 import {
   buildOutgoingGMPMessage,
   buildVerifyTokenManagerPayload,
@@ -117,7 +117,7 @@ describe("Interchain Token Service", () => {
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
       expect(deployTx.events[0].event).toBe("print_event");
-      expect(deserialize(deployTx.events[0].data.raw_value!)).toBeTuple({
+      expect(Cl.deserialize(deployTx.events[0].data.raw_value!)).toBeTuple({
         type: Cl.stringAscii("interchain-token-id-claimed"),
         "token-id": tokenId,
         deployer: Cl.standardPrincipal(address1),
@@ -132,7 +132,7 @@ describe("Interchain Token Service", () => {
         sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
       expect(deployTx.events[1].event).toBe("print_event");
-      expect(deserialize(deployTx.events[1].data.raw_value!)).toBeTuple(
+      expect(Cl.deserialize(deployTx.events[1].data.raw_value!)).toBeTuple(
         message
       );
       enableTokenManager({

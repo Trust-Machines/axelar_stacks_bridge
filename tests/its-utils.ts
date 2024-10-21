@@ -7,7 +7,6 @@ import {
   PrincipalCV,
   TupleCV,
 } from "@stacks/transactions";
-import { bufferFromHex, serialize } from "@stacks/transactions/dist/cl";
 
 export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
 export const TOKEN_TYPE_LOCK_UNLOCK = 2;
@@ -150,10 +149,10 @@ export function buildOutgoingGMPMessage({
     sender,
     "destination-chain": Cl.stringAscii(destinationChain),
     "destination-contract-address": Cl.stringAscii(destinationContractAddress),
-    payload: Cl.buffer(serialize(payload)),
+    payload: Cl.buffer(Cl.serialize(payload)),
     "payload-hash": Cl.buffer(
       createKeccakHash("keccak256")
-        .update(Buffer.from(serialize(payload)))
+        .update(Buffer.from(Cl.serialize(payload)))
         .digest()
     ),
   };
@@ -179,7 +178,7 @@ export function buildIncomingGMPMessage({
     "contract-address": Cl.contractPrincipal(deployer, contractAddress),
     "payload-hash": Cl.buffer(
       createKeccakHash("keccak256")
-        .update(Buffer.from(serialize(payload)))
+        .update(Buffer.from(Cl.serialize(payload)))
         .digest()
     ),
   };
@@ -213,7 +212,7 @@ export const getMessageHashToSign = ({
   const { result } = simnet.callReadOnlyFn(
     "gateway",
     "message-hash-to-sign",
-    [bufferFromHex(signersHash), bufferFromHex(dataHash)],
+    [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
     address1
   );
   return cvToJSON(result).value;
@@ -233,7 +232,7 @@ export function signAndApproveMessages({
     const { result } = simnet.callReadOnlyFn(
       "gateway",
       "message-hash-to-sign",
-      [bufferFromHex(signersHash), bufferFromHex(dataHash)],
+      [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
       address1
     );
     return cvToJSON(result).value;
