@@ -32,6 +32,7 @@
 
 (define-constant ERR-TOKEN-NOT-ENABLED (err u1051))
 (define-constant ERR-INVALID-MINTER (err u1052))
+(define-constant ERR-NOT-MINTER (err u1053))
 
 
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
@@ -152,22 +153,39 @@
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token salt token (some minter))))
 
-;; deployRemoteInterchainToken
+;; This will only be a risk if the user deploying the token remotely 
+;; is deploying an existing malicious token on stacks
+;; basically getting themself rekt
+;; #[allow(unchecked_data)]
 (define-public (deploy-remote-interchain-token 
-    (salt (buff 32))
+    (salt_ (buff 32))
+    (minter_ (buff 200))
     (destination-chain (string-ascii 18))
-    (name (string-ascii 32))
-    (symbol (string-ascii 32))
-    (decimals uint)
-    (minter (buff 64))
     (gas-value uint)
+    (token <sip-010-trait>)
+    (token-manager <token-manager-trait>)
 )
-    (contract-call? .interchain-token-service deploy-remote-interchain-token 
-        salt
-        destination-chain
-        name
-        symbol
-        decimals
-        minter
-        gas-value
-    ))
+    (let (
+        (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
+        (name (unwrap-panic (contract-call? token get-name)))
+        (symbol (unwrap-panic (contract-call? token get-symbol)))
+        (decimals (unwrap-panic  (contract-call? token get-decimals)))
+        (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+        (minter 
+            (if 
+                (not (is-eq NULL-BYTES minter_))
+                (begin
+                    (asserts! (unwrap-panic (contract-call? token-manager is-minter contract-caller)) ERR-NOT-MINTER)
+                    minter_)
+                NULL-BYTES
+        ))
+    )
+        (contract-call? .interchain-token-service deploy-remote-interchain-token 
+            salt
+            destination-chain
+            name
+            symbol
+            decimals
+            minter_
+            gas-value
+        )))

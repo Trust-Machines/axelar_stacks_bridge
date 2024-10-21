@@ -455,7 +455,7 @@
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
-        (minter (buff 64))
+        (minter (buff 200))
         (gas-value uint))
     (let (
         (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
@@ -703,7 +703,7 @@
             name: (string-ascii 32),
             symbol: (string-ascii 32),
             decimals: uint,
-            minter-bytes: (buff 64),
+            minter-bytes: (buff 200),
         } payload) ERR-INVALID-PAYLOAD))
     )
     (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
@@ -791,7 +791,7 @@
             type: uint,
             token-id: (buff 32),
             source-address: (string-ascii 48),
-            destination-address: (buff 64),
+            destination-address: (buff 200),
             amount: uint,
             data: (buff 256),
         } payload) ERR-INVALID-PAYLOAD))

@@ -111,6 +111,8 @@
         (try! (add-flow-in amount))
         (mint to amount)))
 
+(define-read-only (is-minter (address principal)) 
+    (ok (is-eq tx-sender MINTER)))
 
 (define-map roles principal {
     operator: bool,

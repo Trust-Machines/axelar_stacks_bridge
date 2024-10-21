@@ -213,7 +213,8 @@
         (asserts! (is-eq (contract-of sip-010-token) (unwrap-panic (var-get token-address))) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
 
-
+(define-read-only (is-minter (address principal)) 
+    (ok false))
 
 
 ;; ######################
