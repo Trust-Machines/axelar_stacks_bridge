@@ -219,7 +219,30 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
     });
 
-    it("Should revert on remote interchain token deployment if paused", () => {});
+    it("Should revert on remote interchain token deployment if paused", () => {
+      setupTokenManager();
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+
+      setPaused({ paused: true });
+
+      expect(
+        deployRemoteInterchainToken({
+          salt,
+          decimals: 6,
+          destinationChain: "ethereum",
+          gasValue: 10_000_000,
+          name: "sample",
+          minter: Buffer.from([0]),
+          symbol: "sample",
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
   });
 
   describe("Receive Remote Interchain Token Deployment", () => {
