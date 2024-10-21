@@ -32,7 +32,7 @@
     (source-chain (string-ascii 32))
     (message-id (string-ascii 71))
     (source-address (string-ascii 48)) 
-    (contract-address (buff 32)) 
+    (contract-address principal) 
     (payload-hash (buff 32))
 )
 ```
