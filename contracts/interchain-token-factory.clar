@@ -31,6 +31,7 @@
 (define-constant TOKEN-TYPE-MINT-BURN u4)
 
 (define-constant ERR-TOKEN-NOT-ENABLED (err u1051))
+(define-constant ERR-INVALID-MINTER (err u1052))
 
 
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
@@ -129,8 +130,27 @@
 )
 
 
-(define-public (deploy-interchain-token (salt (buff 32)) (token <token-manager-trait>) (minter (optional principal)))
-    (contract-call? .interchain-token-service deploy-interchain-token salt token minter))
+(define-public (deploy-interchain-token
+    (salt_ (buff 32)) 
+    (token <token-manager-trait>)
+    (initial-supply uint)
+    (minter_ principal))
+(let
+        (
+            (sender contract-caller)
+            (salt (get-interchain-token-salt CHAIN-NAME-HASH sender salt_))
+            (minter
+                (if 
+                    (> initial-supply u0)
+                    (as-contract tx-sender)
+                    (if 
+                        (not (is-eq NULL-ADDRESS minter_))
+                            minter_
+                            NULL-ADDRESS)))
+            (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+        )
+        (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
+    (contract-call? .interchain-token-service deploy-interchain-token salt token (some minter))))
 
 ;; deployRemoteInterchainToken
 (define-public (deploy-remote-interchain-token 
