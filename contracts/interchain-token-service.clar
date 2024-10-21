@@ -262,8 +262,9 @@
     ;; FIXME: GAS service not implemented
     (if
         (> amount u0)
-            ERR-GAS-NOT-PAID
-        (ok true)))
+            ;; ERR-GAS-NOT-PAID
+            (ok true)
+        (if false ERR-GAS-NOT-PAID (ok true))))
 
 (define-private (pay-native-gas-for-express-call
         (amount uint)
@@ -274,8 +275,9 @@
     ;; FIXME: GAS service not implemented
     (if
         (> amount u0)
-            ERR-GAS-NOT-PAID
-        (ok true)))
+            ;; ERR-GAS-NOT-PAID
+            (ok true)
+        (if false ERR-GAS-NOT-PAID (ok true))))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.

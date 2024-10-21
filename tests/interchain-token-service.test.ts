@@ -9,43 +9,24 @@ import { deserialize } from "@stacks/transactions/dist/cl";
 import {
   buildOutgoingGMPMessage,
   buildVerifyTokenManagerPayload,
+  deployRemoteInterchainToken,
   deployTokenManager,
   enableTokenManager,
   getTokenId,
   setPaused,
   setupTokenManager,
 } from "./its-utils";
-import { getSigners, signersToCv } from "./util";
+import { deployGateway, getSigners, signersToCv } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
+
 const operator_address = accounts.get("wallet_1")!;
 const contract_caller = accounts.get("wallet_2")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
-export const startContract = () => {
-  const operator = Cl.principal(operator_address);
-  const domainSeparator = bufferCVFromString("stacks-axelar-1");
-  const minimumRotationDelay = Cl.uint(0);
-  const previousSignersRetention = Cl.uint(15);
-
-  expect(
-    simnet.callPublicFn(
-      "gateway",
-      "setup",
-      [
-        Cl.buffer(Cl.serialize(signersToCv(proofSigners))),
-        operator,
-        domainSeparator,
-        minimumRotationDelay,
-        previousSignersRetention,
-      ],
-      contract_caller
-    ).result
-  ).toBeOk(Cl.bool(true));
-};
 /*
   The test below is an example. To learn more, read the testing documentation here:
   https://docs.hiro.so/stacks/clarinet-js-sdk
@@ -72,7 +53,7 @@ function setupService() {
       deployer
     ).result
   ).toBeOk(Cl.bool(true));
-  startContract();
+  deployGateway(proofSigners);
 }
 describe("Interchain Token Service", () => {
   beforeEach(setupService);
@@ -147,7 +128,7 @@ describe("Interchain Token Service", () => {
       expect(deserialize(deployTx.events[0].data.raw_value!)).toBeTuple({
         type: Cl.stringAscii("interchain-token-id-claimed"),
         "token-id": tokenId,
-        deployer: Cl.standardPrincipal(deployer),
+        deployer: Cl.standardPrincipal(address1),
         salt: Cl.buffer(salt),
       });
       const payload = buildVerifyTokenManagerPayload({ tokenId });
@@ -195,7 +176,30 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Deploy and Register remote Interchain Token", () => {
-    it("Should initialize a remote interchain token deployment", () => {});
+    const salt = randomBytes(32);
+    const tokenId = getTokenId(salt).result as BufferCV;
+    it("Should initialize a remote interchain token deployment", () => {
+      setupTokenManager();
+      deployTokenManager({
+        salt,
+      });
+
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        deployRemoteInterchainToken({
+          salt,
+          decimals: 6,
+          destinationChain: "ethereum",
+          gasValue: 10_000_000,
+          name: "sample",
+          minter: Buffer.from([0]),
+          symbol: "sample",
+        }).result
+      ).toBeOk(Cl.bool(true));
+    });
 
     it("Should revert on remote interchain token deployment if destination chain is not trusted", () => {});
 

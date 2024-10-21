@@ -11,8 +11,9 @@ import { bufferFromHex, serialize } from "@stacks/transactions/dist/cl";
 
 export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
 export const TOKEN_TYPE_LOCK_UNLOCK = 2;
-
-const deployer = simnet.getAccounts().get("deployer")!;
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
 import { makeProofCV, signersToCv } from "./util";
@@ -26,7 +27,7 @@ export function setupTokenManager() {
       Cl.contractPrincipal(deployer, "sample-sip-010"),
       Cl.uint(2),
       Cl.contractPrincipal(deployer, "interchain-token-service"),
-      Cl.some(Cl.standardPrincipal(deployer)),
+      Cl.some(Cl.standardPrincipal(address1)),
     ],
     deployer
   );
@@ -73,7 +74,7 @@ export function deployTokenManager({
       Cl.some(tokenAddress),
       Cl.some(tokenManagerAddress),
     ],
-    deployer
+    address1
   );
 }
 
@@ -111,7 +112,7 @@ export function enableTokenManager({
       Cl.stringAscii("interchain-token-service"),
       Cl.buffer(Cl.serialize(payload)),
     ],
-    deployer
+    address1
   );
   expect(enableTokenTx.result).toBeOk(Cl.bool(true));
   expect(
@@ -119,7 +120,7 @@ export function enableTokenManager({
       "gateway",
       "is-message-executed",
       [Cl.stringAscii("stacks"), Cl.stringAscii("0x00")],
-      deployer
+      address1
     ).result
   ).toBeOk(Cl.bool(true));
 }
@@ -128,8 +129,8 @@ export function getTokenId(salt: Uint8Array | Buffer) {
   return simnet.callReadOnlyFn(
     "interchain-token-service",
     "interchain-token-id",
-    [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
-    deployer
+    [Cl.standardPrincipal(address1), Cl.buffer(salt)],
+    address1
   );
 }
 
@@ -188,7 +189,7 @@ export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
     "gateway",
     "data-hash-from-messages",
     [messages],
-    deployer
+    address1
   );
   return cvToJSON(result).value.replace("0x", "");
 }
@@ -197,7 +198,7 @@ export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
     "gateway",
     "get-signers-hash",
     [signersToCv(proofSigners)],
-    deployer
+    address1
   );
   return cvToJSON(result).value;
 }
@@ -213,7 +214,7 @@ export const getMessageHashToSign = ({
     "gateway",
     "message-hash-to-sign",
     [bufferFromHex(signersHash), bufferFromHex(dataHash)],
-    deployer
+    address1
   );
   return cvToJSON(result).value;
 };
@@ -233,7 +234,7 @@ export function signAndApproveMessages({
       "gateway",
       "message-hash-to-sign",
       [bufferFromHex(signersHash), bufferFromHex(dataHash)],
-      deployer
+      address1
     );
     return cvToJSON(result).value;
   })();
@@ -243,7 +244,7 @@ export function signAndApproveMessages({
     "gateway",
     "approve-messages",
     [Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
-    deployer
+    address1
   );
 
   return expect(approveResult).toBeOk(Cl.bool(true));
@@ -258,9 +259,38 @@ export function setPaused({ paused }: { paused: boolean }) {
   );
 }
 
-export function deployInterchainToken() {
-  return simnet.callPublicFn("interchain-token", "deploy", [], deployer);
-}
-
 export type OutGoingGMPMessage = ReturnType<typeof buildOutgoingGMPMessage>;
 export type InComingGMPMessage = ReturnType<typeof buildIncomingGMPMessage>;
+
+export function deployRemoteInterchainToken({
+  salt,
+  destinationChain,
+  name,
+  symbol,
+  decimals,
+  minter,
+  gasValue,
+}: {
+  salt: Buffer | Uint8Array;
+  destinationChain: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  minter: Buffer | Uint8Array;
+  gasValue: number;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "deploy-remote-interchain-token",
+    [
+      Cl.buffer(salt),
+      Cl.stringAscii(destinationChain),
+      Cl.stringAscii(name),
+      Cl.stringAscii(symbol),
+      Cl.uint(decimals),
+      Cl.buffer(minter),
+      Cl.uint(gasValue),
+    ],
+    address1
+  );
+}
