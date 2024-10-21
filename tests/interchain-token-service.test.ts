@@ -7,6 +7,7 @@ import {
   deployRemoteInterchainToken,
   deployTokenManager,
   enableTokenManager,
+  executeDeployInterchainToken,
   getTokenId,
   setPaused,
   setupTokenManager,
@@ -246,7 +247,26 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Interchain Token Deployment", () => {
-    it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {});
+    it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
+      expect(
+        executeDeployInterchainToken({
+          messageId: "unapproved-message",
+          payload: Cl.serialize(
+            Cl.tuple({
+              type: Cl.uint(2),
+              "token-id": Cl.buffer(randomBytes(32)),
+              name: Cl.stringAscii("unapproved-token"),
+              symbol: Cl.stringAscii("unapproved-token"),
+              decimals: Cl.uint(6),
+              "minter-bytes": Cl.bufferFromHex("0x00"),
+            })
+          ),
+          sourceAddress: "0x00",
+          sourceChain: "ethereum",
+          tokenAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-TOKEN-DEPLOYMENT-NOT-APPROVED"]);
+    });
 
     it("Should be able to receive a remote interchain token deployment with a mint/burn token manager with empty minter and operator", () => {});
   });

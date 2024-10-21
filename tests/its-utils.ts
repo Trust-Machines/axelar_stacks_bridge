@@ -293,3 +293,30 @@ export function deployRemoteInterchainToken({
     address1
   );
 }
+
+export function executeDeployInterchainToken({
+  messageId,
+  payload,
+  sourceAddress,
+  sourceChain,
+  tokenAddress,
+}: {
+  messageId: string;
+  sourceChain: string;
+  sourceAddress: string;
+  tokenAddress: `${string}.${string}`;
+  payload: Buffer | Uint8Array;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "execute-deploy-interchain-token",
+    [
+      Cl.stringAscii(messageId),
+      Cl.stringAscii(sourceAddress),
+      Cl.stringAscii(sourceChain),
+      Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
+      Cl.buffer(payload),
+    ],
+    address1
+  );
+}
