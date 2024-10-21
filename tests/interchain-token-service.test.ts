@@ -1,9 +1,4 @@
-import {
-  BufferCV,
-  bufferCVFromString,
-  randomBytes,
-  Cl,
-} from "@stacks/transactions";
+import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 import { deserialize } from "@stacks/transactions/dist/cl";
 import {
@@ -16,14 +11,11 @@ import {
   setPaused,
   setupTokenManager,
 } from "./its-utils";
-import { deployGateway, getSigners, signersToCv } from "./util";
+import { deployGateway, getSigners } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
-
-const operator_address = accounts.get("wallet_1")!;
-const contract_caller = accounts.get("wallet_2")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
