@@ -131,11 +131,11 @@
 
 
 (define-public (deploy-interchain-token
-    (salt_ (buff 32)) 
-    (token <token-manager-trait>)
-    (initial-supply uint)
-    (minter_ principal))
-(let
+        (salt_ (buff 32)) 
+        (token <token-manager-trait>)
+        (initial-supply uint)
+        (minter_ principal))
+    (let
         (
             (sender contract-caller)
             (salt (get-interchain-token-salt CHAIN-NAME-HASH sender salt_))
