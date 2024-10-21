@@ -149,7 +149,7 @@ Executes the receipt of an interchain token.
 
 Sets up the interchain token service contract.
 
-````clarity
+```clarity
 (define-public (setup
     (its-contract-address-name (string-ascii 48))
     (interchain-token-factory-address principal)
@@ -158,17 +158,20 @@ Sets up the interchain token service contract.
     (operator-address principal)
     (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 18), address: (string-ascii 48)}))
 ))
+```
 
 ## Events
 
 ### 1. `transfer-operatorship`
+
 Emitted when operatorship is transferred to a new account.
+
 ```clarity
 {
     action: "transfer-operatorship",
     new-operator: new-operator
 }
-````
+```
 
 ### 2. `trusted-address-set`
 
@@ -278,4 +281,81 @@ Emitted when an interchain transfer is received.
     amount: uint,
     data: (buff 32),
 }
+```
+
+### 10 ITS Hub events
+
+```clarity
+{
+    destination-address: destination-address,
+    destination-chain: (var-get its-hub-chain),
+    payload: (unwrap-panic (to-consensus-buff? {
+        type: MESSAGE-TYPE-SEND-TO-HUB,
+        destination-chain: destination-chain,
+        payload: payload,
+    })),
+}
+```
+
+Deserialization example:
+
+_with below contract call parameters:_
+
+<!-- But with sender being a mock its principal,
+destination chain axelar, destination contract address a mock cosmwasm its address,
+and payload with the 3 different payloads encoded in the Clarity ITS contract -->
+
+```clarity
+{
+    type: "contract-call",
+    destination-chain: "axelar",
+    destination-contract-address: "cosmwasm",
+    payload-hash: 0x7453579e65ea51addefcc1bdf51615212aea8a631c0f4d56fc810c16b99f1a3f,
+    ;; translates to
+    ;; {
+    ;;     decimals: u6,
+    ;;     minter: 0x00,
+    ;;     name: "sample",
+    ;;     symbol: "sample",
+    ;;     token-id: 0x42fad3435446674f88b47510fe7d2d144c8867c405d4933007705db85f37ded5,
+    ;;     type: u1
+    ;; }
+    payload: 0x0c0000000608646563696d616c730100000000000000000000000000000006066d696e746572020000000100046e616d650d0000000673616d706c650673796d626f6c0d0000000673616d706c6508746f6b656e2d6964020000002042fad3435446674f88b47510fe7d2d144c8867c405d4933007705db85f37ded504747970650100000000000000000000000000000001,
+    sender: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service,
+}
+```
+
+```ts
+import { cvToJSON, hexToCV, Cl } from "@stacks/transactions";
+
+const hex =
+  "0x0c000000061164657374696e6174696f6e2d636861696e0d000000066178656c61721c64657374696e6174696f6e2d636f6e74726163742d616464726573730d0000000430783030077061796c6f616402000000920c0000000608646563696d616c730100000000000000000000000000000006066d696e746572020000000100046e616d650d0000000673616d706c650673796d626f6c0d0000000673616d706c6508746f6b656e2d6964020000002042fad3435446674f88b47510fe7d2d144c8867c405d4933007705db85f37ded5047479706501000000000000000000000000000000010c7061796c6f61642d6861736802000000207453579e65ea51addefcc1bdf51615212aea8a631c0f4d56fc810c16b99f1a3f0673656e646572061a6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce18696e746572636861696e2d746f6b656e2d7365727669636504747970650d0000000d636f6e74726163742d63616c6c";
+
+const json = cvToJSON(hexToCV(hex));
+
+console.log("type:", json.value["type"].value);
+console.log("destination-chain:", json.value["destination-chain"].value);
+console.log(
+  "destination-contract-address:",
+  json.value["destination-contract-address"].value
+);
+console.log("payload:", json.value["payload"].value);
+console.log("payload-hash:", json.value["payload-hash"].value);
+console.log("sender:", json.value["sender"].value);
+console.log(
+  "decoded-wrapped-payload,",
+  Cl.prettyPrint(hexToCV(json.value["payload"].value))
+);
+```
+
+Output:
+
+```
+'type:' 'contract-call'
+'destination-chain:' 'axelar'
+'destination-contract-address:' '0x00'
+'payload:' '0x0c0000000608646563696d616c730100000000000000000000000000000006066d696e746572020000000100046e616d650d0000000673616d706c650673796d626f6c0d0000000673616d706c6508746f6b656e2d6964020000002042fad3435446674f88b47510fe7d2d144c8867c405d4933007705db85f37ded504747970650100000000000000000000000000000001'
+'payload-hash:' '0x7453579e65ea51addefcc1bdf51615212aea8a631c0f4d56fc810c16b99f1a3f'
+'sender:' 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service'
+'decoded-wrapped-payload,' '{ decimals: u6, minter: 0x00, name: "sample", symbol: "sample", token-id: 0x42fad3435446674f88b47510fe7d2d144c8867c405d4933007705db85f37ded5, type: u1 }'
 ```
