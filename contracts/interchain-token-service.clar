@@ -623,7 +623,7 @@
             (payload (unwrap-panic (to-consensus-buff? {
                 type: MESSAGE-TYPE-INTERCHAIN-TRANSFER,
                 token-id: token-id,
-                source-address: (unwrap-panic (to-consensus-buff? source-address)),
+                source-address: source-address,
                 destination-chain: destination-chain,
                 destination-address: destination-address,
                 amount: amount,
