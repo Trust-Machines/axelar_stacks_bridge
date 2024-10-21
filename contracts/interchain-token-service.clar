@@ -234,7 +234,7 @@
         (ok (map-delete trusted-chain-address chain-name))))
 
 
-(define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 10240)))
+(define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 4096)))
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
@@ -285,7 +285,7 @@
 ;; @param destinationChain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 10240)) (metadata-version uint) (gas-value uint))
+(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 4096)) (metadata-version uint) (gas-value uint))
     (let
         (
             (params (try! (get-call-params destination-chain payload)))
@@ -295,10 +295,10 @@
         )
         (try!
             (if (is-eq (get express-call METADATA-VERSION) metadata-version)
-                (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload)
-                (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload)
+                (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload_)
+                (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_)
             ))
-        (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload))
+        (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload_))
     )
 )
 
