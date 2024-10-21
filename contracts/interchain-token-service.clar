@@ -567,7 +567,7 @@
         (try! (require-not-paused))
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
-        (asserts! (> u0 (len (get data metadata))) ERR-EMPTY-DATA)
+        (asserts! (> (len (get data metadata)) u0) ERR-EMPTY-DATA)
         (try! (contract-call? token-manager take-token token contract-caller amount))
         (transmit-interchain-transfer
             token-id
@@ -600,8 +600,8 @@
         (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) ERR-INVALID-METADATA-VERSION)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-        (asserts! (> u0 (len destination-chain)) ERR-INVALID-DESTINATION-CHAIN)
-        (asserts! (> u0 (len destination-address)) ERR-INVALID-DESTINATION-ADDRESS)
+        (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
+        (asserts! (> (len destination-address) u0) ERR-INVALID-DESTINATION-ADDRESS)
         (ok true)))
 ;; Transmit a callContractWithInterchainToken for the given tokenId.
 ;; @param tokenId The tokenId of the TokenManager (which must be the msg.sender).

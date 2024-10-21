@@ -140,11 +140,11 @@
             (current-flow-in  (unwrap-panic (get-flow-in-amount)))
             (new-flow-out (+ current-flow-out flow-amount))
         )
-        (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
-        (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if (is-eq limit u0)
             (ok true)
             (begin
+                (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: new-flow-out,
                     flow-in: current-flow-in
@@ -160,11 +160,11 @@
             (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
             (current-flow-in (unwrap-panic (get-flow-in-amount)))
             (new-flow-in (+ current-flow-in flow-amount)))
-        (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
-        (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if  (is-eq limit u0)
             (ok true)
             (begin
+                (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: current-flow-out,
                     flow-in: new-flow-in
