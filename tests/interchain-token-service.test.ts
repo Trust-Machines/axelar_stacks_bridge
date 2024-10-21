@@ -8,11 +8,11 @@ import {
   deployTokenManager,
   enableTokenManager,
   getTokenId,
-  ITS_ERROR_CODES,
   setPaused,
   setupTokenManager,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
+import { ITS_ERROR_CODES } from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
