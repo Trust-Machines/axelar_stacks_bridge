@@ -150,7 +150,7 @@
 ;; ####################
 ;; ####################
 
-(define-constant ERR-ONLY-OPERATOR (err u2051))
+(define-constant ERR-ONLY-OPERATOR (err u3051))
 
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-operator) (var-get operator))
@@ -288,7 +288,7 @@
 (define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 10240)) (metadata-version uint) (gas-value uint))
     (let
         (
-            (params (unwrap-panic (get-call-params destination-chain payload)))
+            (params (try! (get-call-params destination-chain payload)))
             (destination-chain_ (get destination-chain params))
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
@@ -837,8 +837,8 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u6051))
-(define-constant ERR-NOT-STARTED (err u6052))
+(define-constant ERR-STARTED (err u4051))
+(define-constant ERR-NOT-STARTED (err u4052))
 
 (define-data-var interchain-token-factory principal NULL-ADDRESS)
 (define-data-var gas-service principal NULL-ADDRESS)

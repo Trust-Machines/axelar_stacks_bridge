@@ -8,6 +8,7 @@ import {
   deployTokenManager,
   enableTokenManager,
   getTokenId,
+  ITS_ERROR_CODES,
   setPaused,
   setupTokenManager,
 } from "./its-utils";
@@ -58,7 +59,7 @@ describe("Interchain Token Service", () => {
           [Cl.bool(true)],
           address1
         ).result
-      ).toBeErr(Cl.uint(1051));
+      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should revert on set trusted address when not called by the owner", () => {
@@ -69,7 +70,7 @@ describe("Interchain Token Service", () => {
           [Cl.stringAscii("ethereum"), Cl.stringAscii("0x00")],
           address1
         ).result
-      ).toBeErr(Cl.uint(1051));
+      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should set trusted address", () => {
@@ -91,7 +92,7 @@ describe("Interchain Token Service", () => {
           [Cl.stringAscii("ethereum")],
           address1
         ).result
-      ).toBeErr(Cl.uint(1051));
+      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should remove trusted address", () => {
@@ -153,7 +154,9 @@ describe("Interchain Token Service", () => {
       });
 
       const secondDeployTx = deployTokenManager({ salt });
-      expect(secondDeployTx.result).toBeErr(Cl.uint(2054));
+      expect(secondDeployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"]
+      );
     });
 
     it("Should revert when registering an interchain token when service is paused", () => {
@@ -163,7 +166,7 @@ describe("Interchain Token Service", () => {
         deployTokenManager({
           salt,
         }).result
-      ).toBeErr(Cl.uint(1052));
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
   });
 
@@ -193,7 +196,28 @@ describe("Interchain Token Service", () => {
       ).toBeOk(Cl.bool(true));
     });
 
-    it("Should revert on remote interchain token deployment if destination chain is not trusted", () => {});
+    it("Should revert on remote interchain token deployment if destination chain is not trusted", () => {
+      setupTokenManager();
+      deployTokenManager({
+        salt,
+      });
+
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        deployRemoteInterchainToken({
+          salt,
+          decimals: 6,
+          destinationChain: "OneCoin",
+          gasValue: 10_000_000,
+          name: "sample",
+          minter: Buffer.from([0]),
+          symbol: "sample",
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+    });
 
     it("Should revert on remote interchain token deployment if paused", () => {});
   });
