@@ -182,4 +182,50 @@ describe('gas-service contract test suite', () => {
         expect(payExpressTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
         expect(addExpressGasTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
     });
+
+    it('allows owner to collect fees', () => {
+        const amount = 1000n;
+        const receiver = wallet2;
+
+        // First, add some STX to the contract
+        simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
+            Cl.uint(amount),
+            Cl.principal(wallet1),
+            Cl.stringAscii('ethereum'),
+            Cl.stringAscii('1234567890123456789012345678901234567890'),
+            Cl.buffer(Buffer.from('test payload')),
+            Cl.principal(wallet1)
+        ], wallet1);
+
+        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+            Cl.principal(receiver),
+            Cl.uint(amount)
+        ], deployer);
+
+        expect(collectFeesTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it('prevents non-owner from collecting fees', () => {
+        const amount = 1000n;
+        const receiver = wallet2;
+
+        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+            Cl.principal(receiver),
+            Cl.uint(amount)
+        ], wallet1);
+
+        expect(collectFeesTx.result).toBeErr(Cl.uint(100)); // err-owner-only
+    });
+
+    it('prevents collecting fees with insufficient balance', () => {
+        const amount = 1000n;
+        const receiver = wallet2;
+
+        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+            Cl.principal(receiver),
+            Cl.uint(amount)
+        ], deployer);
+
+        expect(collectFeesTx.result).toBeErr(Cl.uint(101)); // err-insufficient-balance
+    });
 });

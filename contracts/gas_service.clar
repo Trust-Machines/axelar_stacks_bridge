@@ -47,7 +47,6 @@
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
             type: "native-gas-added", 
-            sender: sender, 
             amount: amount, 
             refund-address: refund-address,
             tx-hash: tx-hash,
@@ -75,6 +74,34 @@
             receiver: receiver, 
             amount: amount
         })
+        (ok true)
+    )
+)
+
+;; Public function to collect fees (transfer STX from contract to receiver)
+(define-public (collect-fees 
+    (receiver principal)
+    (amount uint))
+    (begin
+        ;; Ensure only the owner can call this function
+        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
+        
+        ;; Ensure the amount is greater than zero
+        (asserts! (> amount u0) err-invalid-amount)
+        
+        ;; Ensure the contract has sufficient balance
+        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
+        
+        ;; Transfer STX from the contract to the receiver
+        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
+        
+        ;; Log the fee collection
+        (print {
+            type: "fees-collected", 
+            receiver: receiver, 
+            amount: amount
+        })
+        
         (ok true)
     )
 )

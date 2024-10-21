@@ -50,6 +50,15 @@ Parameters:
 
 - `new-owner`: The address of the new owner
 
+### collect-fees
+
+This function can only be called by the contract owner to collect accumulated fees from the contract.
+
+Parameters:
+
+- `receiver`: The address to receive the collected fees
+- `amount`: The amount of STX to collect
+
 ## Read-Only Functions
 
 ### get-balance
@@ -84,7 +93,6 @@ payload-hash: (buff 32)
 clarity
 {
 type: "native-gas-added",
-sender: principal,
 amount: uint,
 refund-address: principal,
 tx-hash: (buff 32),
@@ -107,4 +115,13 @@ clarity
 {
 type: "ownership-transferred",
 new-owner: principal
+}
+
+### fees-collected
+
+clarity
+{
+type: "fees-collected",
+receiver: principal,
+amount: uint
 }
