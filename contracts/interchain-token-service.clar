@@ -626,7 +626,6 @@
                 type: MESSAGE-TYPE-INTERCHAIN-TRANSFER,
                 token-id: token-id,
                 source-address: source-address,
-                destination-chain: destination-chain,
                 destination-address: destination-address,
                 amount: amount,
                 data: data
