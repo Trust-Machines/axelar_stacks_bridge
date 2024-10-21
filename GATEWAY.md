@@ -210,7 +210,7 @@ Deserialization function: [contractCallEventToObj](./tests/util.ts#L148)
 }
 ```
 
-Deserialization function: [messageApprovedEventToObj](./tests/util.ts#161)
+Deserialization function: [messageApprovedEventToObj](./tests/util.ts#L161)
 
 ### message-executed
 ```clarity
@@ -222,7 +222,7 @@ Deserialization function: [messageApprovedEventToObj](./tests/util.ts#161)
 }
 ```
 
-Deserialization function: [messageExecutedEventToObj](./tests/util.ts#175)
+Deserialization function: [messageExecutedEventToObj](./tests/util.ts#L175)
 
 ### signers-rotated
 ```clarity
@@ -235,4 +235,4 @@ Deserialization function: [messageExecutedEventToObj](./tests/util.ts#175)
 ```
 
 
-Deserialization function: [signersRotatedEventToObj](./tests/util.ts#186)
+Deserialization function: [signersRotatedEventToObj](./tests/util.ts#L186)
