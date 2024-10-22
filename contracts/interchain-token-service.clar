@@ -44,6 +44,7 @@
 (define-constant ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF (err u2072))
 (define-constant ERR-TOKEN-REQUIRED (err u2073))
 (define-constant ERR-TOKEN-MANAGER-REQUIRED (err u2074))
+(define-constant ERR-TOKEN-METADATA-INVALID (err u2074))
 
 
 
@@ -752,7 +753,7 @@
         (deployed-token <native-interchain-token-trait>))
     (let (
         ;; #[filter(token-id)]
-        ;; TODO: check all of these from the token interface match the interface from the token
+        ;; TODO: ask rares if this checks all of these from the token interface match the interface from the token
         (data (unwrap! (from-consensus-buff? {
                 type: (string-ascii 100),
                 token-address: principal,
@@ -774,6 +775,20 @@
         (token-type (get token-type data))
     )
         (try! (require-not-paused))
+        (asserts! (is-eq (contract-of deployed-token) (get token-address data)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (is-eq 
+            (get name data)
+            (unwrap! (contract-call? deployed-token get-name) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (is-eq 
+            (get symbol data) 
+            (unwrap! (contract-call? deployed-token get-symbol) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (is-eq
+            (get decimals data)
+            (unwrap! (contract-call? deployed-token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (unwrap! 
+            (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
+        ;;         token-id: (buff 32),
+        ;;         minter: principal,
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!

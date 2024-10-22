@@ -35,5 +35,7 @@
     (get-token-address () (response principal uint))
     (get-token-type () (response uint uint))
     (is-minter (principal) (response bool uint))
+    (get-operators () (response (list 2 principal) principal))
+    (is-operator (principal) (response bool uint))
   )
 )
