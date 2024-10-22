@@ -2,6 +2,7 @@ import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  approveRemoteInterchainToken,
   buildOutgoingGMPMessage,
   buildVerifyTokenManagerPayload,
   deployRemoteInterchainToken,
@@ -50,6 +51,7 @@ function setupService() {
   deployGateway(proofSigners);
 }
 describe("Interchain Token Service", () => {
+  const salt = randomBytes(32);
   beforeEach(setupService);
   describe("Owner functions", () => {
     it("Should revert on set pause status when not called by the owner", () => {
@@ -109,7 +111,6 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Deploy and Register Interchain Token", () => {
-    const salt = randomBytes(32);
     const tokenId = getTokenId(salt).result as BufferCV;
 
     it("Should register an existing token with its manager", () => {
@@ -172,7 +173,6 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Deploy and Register remote Interchain Token", () => {
-    const salt = randomBytes(32);
     const tokenId = getTokenId(salt).result as BufferCV;
     it("Should initialize a remote interchain token deployment", () => {
       setupTokenManager();
@@ -247,6 +247,7 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Interchain Token Deployment", () => {
+    const tokenId = getTokenId(salt).result as BufferCV;
     it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
       expect(
         executeDeployInterchainToken({
@@ -268,19 +269,33 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-TOKEN-DEPLOYMENT-NOT-APPROVED"]);
     });
 
-    it("Should be able to receive a remote interchain token deployment with a mint/burn token manager with empty minter and operator", () => {});
+    it("Should be able to receive a remote interchain token deployment with a mint/burn token manager with empty minter and operator", () => {
+      const { payload } = approveRemoteInterchainToken({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-interchain-token-deployment-message",
+          payload: Cl.serialize(payload),
+          sourceAddress: "0x00",
+          sourceChain: "ethereum",
+          tokenAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+    });
   });
 
   describe("Custom Token Manager Deployment", () => {
-    it("Should revert on deploying an invalid token manager", () => {});
-
-    it("Should revert on deploying a local token manager with interchain token manager type", () => {});
-
-    it("Should revert on deploying a remote token manager with interchain token manager type", () => {});
-
-    it("Should revert on deploying a token manager if token handler post deploy fails", () => {});
-
-    it("Should deploy a lock/unlock token manager", () => {});
+    it("Should revert on deploying a local token manager with interchain token manager type", () => {
+      setupTokenManager();
+      expect(
+        deployTokenManager({
+          salt,
+          tokenType: 0,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]);
+    });
 
     it("Should revert when deploying a custom token manager twice", () => {});
 

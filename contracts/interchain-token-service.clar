@@ -680,7 +680,7 @@
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        (token-address principal)
+        (token-address (optional principal))
         (payload (buff 1024)))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
@@ -688,8 +688,13 @@
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload)
+            (process-deploy-interchain-from-external-chain 
             ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
-            (process-deploy-interchain-from-external-chain message-id source-chain source-address token-address payload))))
+                message-id
+                source-chain
+                source-address 
+                (unwrap! token-address ERR-TOKEN-REQUIRED)
+                payload))))
 
 (define-private (process-deploy-interchain-from-external-chain
         (message-id (string-ascii 71))

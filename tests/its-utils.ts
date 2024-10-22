@@ -304,7 +304,7 @@ export function executeDeployInterchainToken({
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
-  tokenAddress: `${string}.${string}`;
+  tokenAddress?: `${string}.${string}`;
   payload: Buffer | Uint8Array;
 }) {
   return simnet.callPublicFn(
@@ -312,11 +312,86 @@ export function executeDeployInterchainToken({
     "execute-deploy-interchain-token",
     [
       Cl.stringAscii(messageId),
-      Cl.stringAscii(sourceAddress),
       Cl.stringAscii(sourceChain),
-      Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
+      Cl.stringAscii(sourceAddress),
+      tokenAddress
+        ? Cl.some(
+            Cl.contractPrincipal(
+              ...(tokenAddress.split(".") as [string, string])
+            )
+          )
+        : Cl.none(),
       Cl.buffer(payload),
     ],
+    address1
+  );
+}
+export function buildVerifyInterchainTokenPayload({
+  tokenId,
+}: {
+  tokenId: BufferCV;
+}) {
+  return Cl.tuple({
+    type: Cl.stringAscii("verify-token-manager"),
+    "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
+    "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
+    "token-id": tokenId,
+    "token-type": Cl.uint(2),
+  });
+}
+
+export function buildIncomingDeployInterchainTokenPayload({
+  tokenId,
+}: {
+  tokenId: BufferCV;
+}) {
+  return Cl.tuple({
+    // (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
+    type: Cl.uint(1),
+    "token-id": tokenId,
+    name: Cl.stringAscii("native-interchain-token"),
+    symbol: Cl.stringAscii("ITT"),
+    decimals: Cl.uint(18),
+    "minter-bytes": Cl.buffer(Buffer.from([0])),
+  });
+}
+
+export function approveRemoteInterchainToken({
+  tokenId,
+  proofSigners,
+}: {
+  tokenId: BufferCV;
+  proofSigners: Signers;
+}) {
+  const payload = buildIncomingDeployInterchainTokenPayload({
+    tokenId,
+  });
+  const messages = Cl.list([
+    Cl.tuple(
+      buildIncomingGMPMessage({
+        contractAddress: "interchain-token-service",
+        messageId: "approved-interchain-token-deployment-message",
+        payload,
+        sourceAddress: "0x00",
+        sourceChain: "ethereum",
+      })
+    ),
+  ]);
+  signAndApproveMessages({
+    messages,
+    proofSigners,
+  });
+
+  return {
+    payload,
+  };
+}
+
+export function deployInterchainToken() {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "deploy-interchain-token",
+    [],
     address1
   );
 }
