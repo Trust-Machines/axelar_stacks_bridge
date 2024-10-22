@@ -26,14 +26,13 @@
 (define-data-var interchain-token-service (optional principal) none)
 
 (define-map roles principal {
-    operator: bool,
     flow-limiter: bool,
 })
 
 
 ;; Checks that the sender is the interchain-token-service contract
 (define-read-only (is-its-sender) 
-    (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))))
+    (is-eq contract-caller (default-to NULL-ADDRESS (var-get interchain-token-service))))
 
 ;; Getter for the contract id.
 ;; @return (buff 32) The contract id.
@@ -72,9 +71,7 @@
 (define-public (add-flow-limiter (address principal))
     (begin
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
-        (match (map-get? roles address) 
-            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
-            (ok (map-set roles address  {flow-limiter: true, operator: false})))))
+        (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
@@ -231,6 +228,7 @@
 (define-read-only (get-is-started) (var-get is-started))
 ;; Constructor function
 ;; @returns (response true) or reverts
+;; #[allow(unchecked_data)]
 (define-public (setup 
     (token-address_ principal)
     (token-type_ uint)
@@ -250,15 +248,15 @@
         (var-set interchain-token-service (some its-address))
         ;; #[allow(unchecked_data)]
         (map-set roles its-address {
-            operator: true,
             flow-limiter: true,
         })
-        (ok (match operator-address op 
+        (var-set operator (default-to NULL-ADDRESS operator-address))
+        (match operator-address op 
             (map-set roles op {
-                operator: true,
                 flow-limiter: true,
             })
-            true))
+            true)
+        (ok true)
     )
 )
 
@@ -267,26 +265,30 @@
 ;; ### Operatorship ###
 ;; ####################
 ;; ####################
-
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant ERR-ONLY-OPERATOR (err u5051))
-
+(define-data-var operator principal NULL-ADDRESS)
 
 (define-read-only (is-operator-raw (address principal)) 
-    (default-to false (get operator (map-get? roles address))))
+    (or
+        (is-eq address (var-get operator))
+        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))
+    ))
 
 (define-read-only (is-operator (address principal)) 
     (ok (is-operator-raw address)))
+
+(define-read-only (get-operators) 
+    (ok (list 
+            (default-to NULL-ADDRESS (var-get interchain-token-service))
+            (var-get operator))))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
         (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
-        (map-delete roles contract-caller)
         ;; #[allow(unchecked_data)]
-        (map-set roles new-operator {
-            operator: true,
-            flow-limiter: true,
-        })
+        (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
         (ok u1)
     )

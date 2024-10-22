@@ -389,8 +389,6 @@
     ) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
-    ;; TODO: switch to a single operator variable in the token manager and NIT
-    ;; and send it here with the payload for checking by the validators
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME

@@ -114,7 +114,6 @@
     (ok (is-eq tx-sender MINTER)))
 
 (define-map roles principal {
-    operator: bool,
     flow-limiter: bool,
 })
 
@@ -142,11 +141,8 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
-        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
-        (match (map-get? roles address) 
-            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: true})))
-            (ok (map-set roles address  {flow-limiter: true, operator: false})))))
+        (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
@@ -285,15 +281,14 @@
         (var-set interchain-token-service (some its-address))
         ;; #[allow(unchecked_data)]
         (map-set roles its-address {
-            operator: true,
             flow-limiter: true,
         })
         (match operator-address op 
             (map-set roles op {
-                operator: true,
                 flow-limiter: true,
             })
             true)
+        (var-set operator (default-to NULL-ADDRESS operator-address))
         (var-set decimals decimals_)
         (var-set name name_)
         (var-set symbol symbol_)
@@ -301,33 +296,30 @@
         (ok true)
     )
 )
-
-;; ####################
-;; ####################
-;; ### Operatorship ###
-;; ####################
-;; ####################
-
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant ERR-ONLY-OPERATOR (err u5051))
-
+(define-data-var operator principal NULL-ADDRESS)
 
 (define-read-only (is-operator-raw (address principal)) 
-    (default-to false (get operator (map-get? roles address))))
+    (or
+        (is-eq address (var-get operator))
+        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))
+    ))
 
 (define-read-only (is-operator (address principal)) 
     (ok (is-operator-raw address)))
 
+(define-read-only (get-operators) 
+    (ok (list 
+            (default-to NULL-ADDRESS (var-get interchain-token-service))
+            (var-get operator))))
+
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
-        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
-        (map-delete roles contract-caller)
         ;; #[allow(unchecked_data)]
-        (map-set roles new-operator {
-            operator: true,
-            flow-limiter: true,
-        })
+        (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
         (ok u1)
     )

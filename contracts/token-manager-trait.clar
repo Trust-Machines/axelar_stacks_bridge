@@ -22,5 +22,5 @@
     (get-token-address () (response principal uint))
     (get-token-type () (response uint uint))
     (is-minter (principal) (response bool uint))
-    ;; TODO: add burn and mint functions and mark as unsupported in lock/unlock
+    (get-operators () (response (list 2 principal) principal))
 ))
