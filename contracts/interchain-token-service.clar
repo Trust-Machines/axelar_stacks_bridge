@@ -72,6 +72,8 @@
 
 (define-constant EMPTY-32-BYTES 0x0000000000000000000000000000000000000000000000000000000000000000)
 
+
+(define-constant CA (as-contract tx-sender))
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
 (define-data-var its-hub-chain (string-ascii 18) "axelar")
@@ -399,7 +401,7 @@
                 token-manager-address: (contract-of token-manager),
                 token-id: token-id,
                 token-type: token-manager-type,
-                operator: (get operator data)
+                operator: (get operator data),
             }))))))
 
 
@@ -787,10 +789,13 @@
             (unwrap! (contract-call? deployed-token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
         (asserts! (unwrap! 
             (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
         ;;         token-id: (buff 32),
         ;;         minter: principal,
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
+        (asserts! (is-eq u0 (unwrap-panic (contract-call? deployed-token get-total-supply))) ERR-TOKEN-METADATA-INVALID)
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)

@@ -28,6 +28,7 @@
 (define-data-var token-uri (optional (string-utf8 256)) none)
 (define-data-var name (string-ascii 32) "not-initialized")
 (define-data-var symbol (string-ascii 32) "not-initialized")
+(define-data-var token-id (buff 32) 0x)
 (define-read-only (get-balance (address principal))
     (ok (ft-get-balance itscoin address)))
 
@@ -72,6 +73,9 @@
 ;; ####  token manager  #####
 ;; ##########################
 ;; ##########################
+
+(define-read-only (get-token-id) 
+    (ok (var-get token-id)))
 
 (define-private (burn (from principal) (amount uint))
     (ft-burn? itscoin amount from)
@@ -258,10 +262,9 @@
 
 (define-data-var is-started bool false)
 (define-read-only (get-is-started) (var-get is-started))
-;; Constructor function
-;; @returns (response true) or reverts
-;; #[allow(unchecked_data)]
-(define-public (setup 
+
+(define-public (setup
+    (token-id_ (buff 32))
     (token-type_ uint)
     (its-address principal)
     (operator-address (optional principal))
@@ -274,6 +277,9 @@
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)
+        (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
+        (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
+        (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
@@ -288,11 +294,15 @@
                 flow-limiter: true,
             })
             true)
+        ;; #[allow(unchecked_data)]
         (var-set operator (default-to NULL-ADDRESS operator-address))
+        ;; #[allow(unchecked_data)]
         (var-set decimals decimals_)
         (var-set name name_)
         (var-set symbol symbol_)
+        ;; #[allow(unchecked_data)]
         (var-set token-uri token-uri_)
+        (var-set token-id token-id_)
         (ok true)
     )
 )
