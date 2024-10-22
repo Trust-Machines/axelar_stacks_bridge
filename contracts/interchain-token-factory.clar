@@ -9,6 +9,7 @@
 ;;
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (use-trait token-manager-trait .token-manager-trait.token-manager-trait)
+(use-trait native-interchain-token-trait .native-interchain-token-trait.native-interchain-token-trait)
 ;; token definitions
 ;;
 
@@ -104,7 +105,6 @@
                 TOKEN-TYPE-LOCK-UNLOCK 
                 u0
                 0x
-                (some token-address)
                 (some token-manager-address))
     ))
 
@@ -133,7 +133,7 @@
 
 (define-public (deploy-interchain-token
         (salt_ (buff 32)) 
-        (token <token-manager-trait>)
+        (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter_ principal))
     (let

@@ -9,6 +9,7 @@
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 (use-trait token-manager-trait .token-manager-trait.token-manager-trait)
 (use-trait interchain-token-executable-trait .interchain-token-executable-trait.interchain-token-executable-trait)
+(use-trait native-interchain-token-trait .native-interchain-token-trait.native-interchain-token-trait)
 
 ;; token definitions
 ;;
@@ -91,7 +92,6 @@
 
 (define-map token-managers (buff 32)
     {
-        token-address: principal,
         manager-address: principal,
         token-type: uint,
     })
@@ -309,7 +309,6 @@
         (token-manager-type uint)
         (gas-value uint)
         (params (buff 1024))
-        (token (optional <sip-010-trait>))
         (token-manager (optional <token-manager-trait>))
     )
     (let (
@@ -331,9 +330,8 @@
                 token-id
                 destination-chain
                 token-manager-type
-                ;; #[filter(token, token-manager, params)]
+                ;; #[filter(token-manager, params)]
                 params
-                (unwrap! token ERR-TOKEN-REQUIRED)
                 (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED))
             ;; #[filter(token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value)
@@ -376,30 +374,33 @@
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
         (params (buff 1024))
-        (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
     (let (
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
+        (data (unwrap-panic (from-consensus-buff? {
+            operator: principal,
+            token-address: principal
+        } params)))
     )
     
     (asserts! (is-eq
         (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
         token-manager-type
     ) ERR-TOKEN-MANAGER-MISMATCH)
-    (asserts! (is-ok (contract-call? token get-name)) ERR-TOKEN-NOT-DEPLOYED)
-    (asserts! (is-eq managed-token (contract-of token)) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+    ;; TODO: switch to a single operator variable in the token manager and NIT
+    ;; and send it here with the payload for checking by the validators
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
             (var-get its-contract-name)
             (unwrap-panic (to-consensus-buff? {
                 type: "verify-token-manager",
-                token-address: (contract-of token),
                 token-manager-address: (contract-of token-manager),
                 token-id: token-id,
                 token-type: token-manager-type,
+                operator: (get operator data)
             }))))))
 
 
@@ -412,13 +413,11 @@
         ;; #[filter(token-id)]
         (data (unwrap! (from-consensus-buff? {
                 type: (string-ascii 100),
-                token-address: principal,
                 token-manager-address: principal,
                 token-id: (buff 32),
                 token-type: uint,
             } payload) ERR-INVALID-PAYLOAD))
         (token-id (get token-id data))
-        (token-address (get token-address data))
         (token-manager-address (get token-manager-address data))
         (token-type (get token-type data))
     )
@@ -431,7 +430,6 @@
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (asserts! (map-insert token-managers token-id {
-            token-address: token-address,
             manager-address: token-manager-address,
             token-type: token-type,
         }) ERR-TOKEN-EXISTS)
@@ -493,7 +491,7 @@
 
 (define-public (deploy-interchain-token
         (salt (buff 32))
-        (token <token-manager-trait>)
+        (token <native-interchain-token-trait>)
         (minter (optional principal)))
     (let (
             (token-id (interchain-token-id contract-caller salt)))
@@ -504,10 +502,14 @@
             (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
                 token-address: (contract-of token),
-                token-manager-address: (contract-of token),
                 token-id: token-id,
-                token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 minter: (default-to NULL-ADDRESS minter),
+                name: (unwrap-panic (contract-call? token get-name)),
+                symbol: (unwrap-panic (contract-call? token get-symbol)),
+                decimals: (unwrap-panic (contract-call? token get-decimals)),
+                token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
+                operator: (default-to NULL-ADDRESS minter),
+                wrapped-payload: none,
             })))))
 
 
@@ -598,7 +600,6 @@
     )
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (is-eq (contract-of token-manager) (get manager-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (is-eq (contract-of token) (get token-address token-info)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (<= (get version metadata) LATEST-METADATA-VERSION) ERR-INVALID-METADATA-VERSION)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
         (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
@@ -645,6 +646,7 @@
         (call-contract destination-chain payload metadata-version gas-value)
     ))
 
+;; TODO: make sure that this follows the same flow as the NITs verification
 (define-public (execute-deploy-token-manager
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
@@ -673,34 +675,33 @@
                 CHAIN-NAME
                 token-manager-type
                 params
-                (unwrap! token ERR-TOKEN-REQUIRED)
                 (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED)))))
 
 (define-public (execute-deploy-interchain-token
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        (token-address (optional principal))
+        (token-address <native-interchain-token-trait>)
         (payload (buff 1024)))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address)]
-            (process-deploy-interchain-from-stacks message-id source-chain source-address payload)
+            (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
             (process-deploy-interchain-from-external-chain 
             ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
                 message-id
                 source-chain
                 source-address 
-                (unwrap! token-address ERR-TOKEN-REQUIRED)
+                token-address
                 payload))))
 
 (define-private (process-deploy-interchain-from-external-chain
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        (token-address principal)
+        (token-address <native-interchain-token-trait>)
         (payload (buff 1024))
     )
     (let (
@@ -723,13 +724,20 @@
             (var-get its-contract-name)
             (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
-                source-chain: source-chain,
-                source-address: source-address,
-                message-id: message-id,
-                payload: payload,
-                token-address: token-address,
+                wrapped-payload: (some {
+                    source-chain: source-chain,
+                    source-address: source-address,
+                    message-id: message-id,
+                    payload: payload,
+                }),
+                token-address: (contract-of token-address),
                 token-id: (get token-id payload-decoded),
+                minter: NULL-ADDRESS,
+                name: (get name payload-decoded),
+                symbol: (get symbol payload-decoded),
+                decimals: (get decimals payload-decoded),
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
+                operator: NULL-ADDRESS,
             }))))
     ))
 
@@ -742,18 +750,27 @@
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        (payload (buff 1024)))
+        (payload (buff 1024))
+        (deployed-token <native-interchain-token-trait>))
     (let (
         ;; #[filter(token-id)]
+        ;; TODO: check all of these from the token interface match the interface from the token
         (data (unwrap! (from-consensus-buff? {
                 type: (string-ascii 100),
-                source-chain: (string-ascii 18),
-                source-address: (string-ascii 48),
-                message-id: (string-ascii 71),
-                payload: (buff 256),
                 token-address: principal,
                 token-id: (buff 32),
                 token-type: uint,
+                minter: principal,
+                name: (string-ascii 32),
+                symbol: (string-ascii 32),
+                decimals: uint,
+                operator: principal,
+                wrapped-payload: (optional {
+                    source-chain: (string-ascii 18),
+                    source-address: (string-ascii 48),
+                    message-id: (string-ascii 71),
+                    payload: (buff 1024),
+                }),
             } payload) ERR-INVALID-PAYLOAD))
         (token-id (get token-id data))
         (token-type (get token-type data))
@@ -765,14 +782,14 @@
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
-        (try!
+        (try! (match (get wrapped-payload data) wrapped-payload  
             (as-contract (contract-call? .gateway validate-message
-                (get source-chain data)
-                (get message-id data)
-                (get source-address data)
-                (keccak256 (get payload data)))))
+                (get source-chain wrapped-payload)
+                (get message-id wrapped-payload)
+                (get source-address wrapped-payload)
+                (keccak256 (get payload wrapped-payload))))
+            (ok true)))
         (asserts! (map-insert token-managers token-id {
-            token-address: (get token-address data),
             manager-address: (get token-address data),
             token-type: token-type,
         }) ERR-TOKEN-EXISTS)

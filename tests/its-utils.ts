@@ -39,10 +39,11 @@ export function buildVerifyTokenManagerPayload({
 }) {
   return Cl.tuple({
     type: Cl.stringAscii("verify-token-manager"),
-    "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
+    // "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
     "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
     "token-id": tokenId,
     "token-type": Cl.uint(2),
+    operator: Cl.address(address1),
   });
 }
 
@@ -69,8 +70,14 @@ export function deployTokenManager({
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
       Cl.uint(gas),
-      Cl.buffer(Buffer.from([])),
-      Cl.some(tokenAddress),
+      Cl.buffer(
+        Cl.serialize(
+          Cl.tuple({
+            operator: Cl.address(address1),
+            "token-address": tokenAddress,
+          })
+        )
+      ),
       Cl.some(tokenManagerAddress),
     ],
     address1
@@ -304,7 +311,7 @@ export function executeDeployInterchainToken({
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
-  tokenAddress?: `${string}.${string}`;
+  tokenAddress: `${string}.${string}`;
   payload: Buffer | Uint8Array;
 }) {
   return simnet.callPublicFn(
@@ -314,13 +321,7 @@ export function executeDeployInterchainToken({
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(sourceAddress),
-      tokenAddress
-        ? Cl.some(
-            Cl.contractPrincipal(
-              ...(tokenAddress.split(".") as [string, string])
-            )
-          )
-        : Cl.none(),
+      Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
       Cl.buffer(payload),
     ],
     address1
@@ -337,6 +338,7 @@ export function buildVerifyInterchainTokenPayload({
     "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
     "token-id": tokenId,
     "token-type": Cl.uint(2),
+    operator: Cl.address(address1),
   });
 }
 

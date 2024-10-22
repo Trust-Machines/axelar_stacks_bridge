@@ -264,7 +264,6 @@
 (define-read-only (get-is-started) (var-get is-started))
 ;; Constructor function
 ;; @returns (response true) or reverts
-;; TODO: add the sip-010 param variables
 ;; #[allow(unchecked_data)]
 (define-public (setup 
     (token-type_ uint)
