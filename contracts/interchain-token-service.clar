@@ -266,18 +266,18 @@
             (ok true)
         (if false ERR-GAS-NOT-PAID (ok true))))
 
-(define-private (pay-native-gas-for-express-call
-        (amount uint)
-        (refund-address principal)
-        (destination-chain (string-ascii 32))
-        (destination-address (string-ascii 48))
-        (payload (buff 10240)))
-    ;; FIXME: GAS service not implemented
-    (if
-        (> amount u0)
-            ;; ERR-GAS-NOT-PAID
-            (ok true)
-        (if false ERR-GAS-NOT-PAID (ok true))))
+;; (define-private (pay-native-gas-for-express-call
+;;         (amount uint)
+;;         (refund-address principal)
+;;         (destination-chain (string-ascii 32))
+;;         (destination-address (string-ascii 48))
+;;         (payload (buff 10240)))
+;;     ;; FIXME: GAS service not implemented
+;;     (if
+;;         (> amount u0)
+;;             ;; ERR-GAS-NOT-PAID
+;;             (ok true)
+;;         (if false ERR-GAS-NOT-PAID (ok true))))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
@@ -293,11 +293,12 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        (try!
-            (if (is-eq (get express-call METADATA-VERSION) metadata-version)
-                (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-                (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-            ))
+        ;; (try!
+        ;;     (if (is-eq (get express-call METADATA-VERSION) metadata-version)
+        ;;         (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload_)
+        ;;         (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_)
+        ;;     ))
+        (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload_))
     )
 )

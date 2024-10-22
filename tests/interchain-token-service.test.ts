@@ -40,7 +40,7 @@ function setupService() {
         Cl.list([
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
-            address: Cl.stringAscii("0x00"),
+            address: Cl.stringAscii("cosmwasm"),
           }),
         ]),
       ],
@@ -68,7 +68,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("0x00")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii("cosmwasm")],
           address1
         ).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -79,7 +79,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("0x00")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii("cosmwasm")],
           deployer
         ).result
       ).toBeOk(Cl.bool(true));
