@@ -6,8 +6,7 @@
 
 ;; traits
 ;;
-(impl-trait .token-manager-trait.token-manager-trait)
-(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(impl-trait .native-interchain-token-trait.native-interchain-token-trait)
 (use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
@@ -266,10 +265,15 @@
 ;; Constructor function
 ;; @returns (response true) or reverts
 ;; TODO: add the sip-010 param variables
+;; #[allow(unchecked_data)]
 (define-public (setup 
     (token-type_ uint)
     (its-address principal)
     (operator-address (optional principal))
+    (name_ (string-ascii 32))
+    (symbol_ (string-ascii 32))
+    (decimals_ uint)
+    (token-uri_ (optional (string-utf8 256)))
 ) 
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
@@ -285,12 +289,17 @@
             operator: true,
             flow-limiter: true,
         })
-        (ok (match operator-address op 
+        (match operator-address op 
             (map-set roles op {
                 operator: true,
                 flow-limiter: true,
             })
-            true))
+            true)
+        (var-set decimals decimals_)
+        (var-set name name_)
+        (var-set symbol symbol_)
+        (var-set token-uri token-uri_)
+        (ok true)
     )
 )
 
