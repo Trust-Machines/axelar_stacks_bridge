@@ -22,4 +22,9 @@ plan:
             path: contracts/gateway.clar
             anchor-block-only: true
             clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: gas_service
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas_service.clar
+            clarity-version: 2
       epoch: "2.5"
