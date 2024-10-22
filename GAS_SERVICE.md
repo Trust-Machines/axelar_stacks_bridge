@@ -13,7 +13,7 @@ This function allows users to pay for gas using native currency (STX) for a cont
 Parameters:
 
 - `amount`: The amount of STX to pay for gas
-- `sender`: The address initiating the cross-chain call (must be the same as tx-sender)
+- `sender`: The address that will be recorded as initiating the cross-chain call (can be different from tx-sender)
 - `destination-chain`: The target chain for the cross-chain call
 - `destination-address`: The target address on the destination chain
 - `payload`: Data payload for the contract call
@@ -22,7 +22,6 @@ Parameters:
 Error conditions:
 
 - Returns `err-invalid-amount` if the amount is not greater than 0
-- Returns `err-invalid-sender` if the sender is not the same as tx-sender
 - Returns `err-insufficient-balance` if the caller has insufficient balance
 
 ### add-native-gas

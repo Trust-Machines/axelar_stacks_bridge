@@ -23,7 +23,7 @@ describe('gas-service contract test suite', () => {
 
     it('allows paying native gas for contract call', () => {
         const amount = 1000n;
-        const sender = wallet1;
+        const sender = wallet2;  // Can be different from tx-sender now
         const destinationChain = 'ethereum';
         const destinationAddress = '1234567890123456789012345678901234567890';
         const payload = Buffer.from('test payload');
@@ -36,29 +36,9 @@ describe('gas-service contract test suite', () => {
             Cl.stringAscii(destinationAddress),
             Cl.buffer(payload),
             Cl.principal(refundAddress)
-        ], wallet1);
+        ], wallet1);  // wallet1 is paying for wallet2's transaction
 
         expect(payTx.result).toBeOk(Cl.bool(true));
-    });
-
-    it('prevents paying native gas for contract call with invalid sender', () => {
-        const amount = 1000n;
-        const sender = wallet2;  // Different from tx-sender
-        const destinationChain = 'ethereum';
-        const destinationAddress = '1234567890123456789012345678901234567890';
-        const payload = Buffer.from('test payload');
-        const refundAddress = wallet2;
-
-        const payTx = simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.stringAscii(destinationChain),
-            Cl.stringAscii(destinationAddress),
-            Cl.buffer(payload),
-            Cl.principal(refundAddress)
-        ], wallet1);
-
-        expect(payTx.result).toBeErr(Cl.uint(104)); // err-invalid-sender
     });
 
     it('allows adding native gas', () => {

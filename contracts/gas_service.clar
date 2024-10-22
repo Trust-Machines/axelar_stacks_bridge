@@ -20,7 +20,6 @@
     (refund-address principal))
     (begin
         (asserts! (> amount u0) err-invalid-amount)
-        (asserts! (is-eq tx-sender sender) err-invalid-sender)
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
