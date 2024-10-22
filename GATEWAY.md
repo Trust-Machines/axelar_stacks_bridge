@@ -195,7 +195,23 @@ const proof = bufferCV(
 }
 ```
 
-Deserialization function: [contractCallEventToObj](./tests/util.ts#L148)
+With the following hex value:
+
+```0x0c000000061164657374696e6174696f6e2d636861696e0d0000000b44657374696e6174696f6e1c64657374696e6174696f6e2d636f6e74726163742d616464726573730d000000083078313233616263077061796c6f61640200000029535431534a3344544535444e375835345944483544363452334243423641324147325a5138595044350c7061796c6f61642d6861736802000000209ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e0673656e646572051a99e2ec69ac5b6e67b4e26edd0e2c1c1a6b9bbd2304747970650d0000000d636f6e74726163742d63616c6c```
+
+The deserialization function [contractCallEventToObj](./tests/util.ts#L148) outputs following:
+
+```
+{
+  type: 'contract-call',
+  sender: 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG',
+  destinationChain: 'Destination',
+  destinationContractAddress: '0x123abc',
+  payload: 'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5',
+  payloadHash: '0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e'
+}
+```
+
 
 ### message-approved
 ```clarity
@@ -210,7 +226,23 @@ Deserialization function: [contractCallEventToObj](./tests/util.ts#L148)
 }
 ```
 
-Deserialization function: [messageApprovedEventToObj](./tests/util.ts#L161)
+With the following hex value:
+
+```0x0c000000070a636f6d6d616e642d69640200000020908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae10636f6e74726163742d61646472657373051a99e2ec69ac5b6e67b4e26edd0e2c1c1a6b9bbd230a6d6573736167652d69640d00000001310c7061796c6f61642d686173680200000020373360faa7d5fc254d927e6aafe6127ec920f30efe61612b7ec6db33e72fb9500e736f757263652d616464726573730d0000000c6164647265737330783132330c736f757263652d636861696e0d00000006536f7572636504747970650d000000106d6573736167652d617070726f766564`
+
+The deserialization function [messageApprovedEventToObj](./tests/util.ts#L161) outputs following:
+
+```
+{
+  type: 'message-approved',
+  commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+  sourceChain: 'Source',
+  messageId: '1',
+  sourceAddress: 'address0x123',
+  contractAddress: 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG',
+  payloadHash: '0x373360faa7d5fc254d927e6aafe6127ec920f30efe61612b7ec6db33e72fb950'
+}
+```
 
 ### message-executed
 ```clarity
@@ -222,7 +254,20 @@ Deserialization function: [messageApprovedEventToObj](./tests/util.ts#L161)
 }
 ```
 
-Deserialization function: [messageExecutedEventToObj](./tests/util.ts#L175)
+With the following hex value:
+
+```0x0c000000040a636f6d6d616e642d69640200000020908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae0a6d6573736167652d69640d00000001310c736f757263652d636861696e0d00000006536f7572636504747970650d000000106d6573736167652d6578656375746564``` 
+
+The deserialization function [messageExecutedEventToObj](./tests/util.ts#L175) outputs following:
+
+```
+{
+  type: 'message-executed',
+  commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
+  sourceChain: 'Source',
+  messageId: '1'
+}
+``` 
 
 ### signers-rotated
 ```clarity
@@ -234,5 +279,38 @@ Deserialization function: [messageExecutedEventToObj](./tests/util.ts#L175)
 }
 ```
 
+With the following hex value:
 
-Deserialization function: [signersRotatedEventToObj](./tests/util.ts#L186)
+```0x0c000000040565706f63680100000000000000000000000000000002077369676e6572730c00000003056e6f6e6365020000000132077369676e6572730b000000040c00000002067369676e65720200000021024f59c18b21283c9515727e9a20d330d02fbb1258ed5942971f9233a3af4883650677656967687401000000000000000000000000000000010c00000002067369676e657202000000210252e2248a7df966ad5ce768b12dd1edfe15dd43b22d4dfd71109dfdf0fef8f99b0677656967687401000000000000000000000000000000010c00000002067369676e65720200000021026b27c7ad0a3d839014ff751d41939bee79ea3ffa58c13ea4556c2b45971315500677656967687401000000000000000000000000000000010c00000002067369676e6572020000002102703d593d53307cbdfce1a84a267cd89f89e1e935e4fabed8bf076d7500068012067765696768740100000000000000000000000000000001097468726573686f6c6401000000000000000000000000000000030c7369676e6572732d6861736802000000203f89f80b758e2c80e86ec29e0cec2007286d0269cc85007a34e1dcf404197f5304747970650d0000000f7369676e6572732d726f7461746564``` 
+
+The deserialization function [signersRotatedEventToObj](./tests/util.ts#L186) outputs following:
+
+```
+{
+  "type": "signers-rotated",
+  "epoch": 2,
+  "signersHash": "0x3f89f80b758e2c80e86ec29e0cec2007286d0269cc85007a34e1dcf404197f53",
+  "signers": {
+    "signers": [
+      {
+        "signer": "024f59c18b21283c9515727e9a20d330d02fbb1258ed5942971f9233a3af488365",
+        "weight": 1
+      },
+      {
+        "signer": "0252e2248a7df966ad5ce768b12dd1edfe15dd43b22d4dfd71109dfdf0fef8f99b",
+        "weight": 1
+      },
+      {
+        "signer": "026b27c7ad0a3d839014ff751d41939bee79ea3ffa58c13ea4556c2b4597131550",
+        "weight": 1
+      },
+      {
+        "signer": "02703d593d53307cbdfce1a84a267cd89f89e1e935e4fabed8bf076d7500068012",
+        "weight": 1
+      }
+    ],
+    "threshold": 3,
+    "nonce": "2"
+  }
+}
+``` 
