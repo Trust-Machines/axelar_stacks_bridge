@@ -5,6 +5,7 @@
 (define-constant err-insufficient-balance (err u101))
 (define-constant err-invalid-amount (err u102))
 (define-constant err-not-implemented (err u103))
+(define-constant err-invalid-sender (err u104))
 
 ;; Define data variables
 (define-data-var owner principal tx-sender)
@@ -14,11 +15,12 @@
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 32))
-    (destination-address (string-ascii 40))
-    (payload (buff 1024))
+    (destination-address (string-ascii 48))
+    (payload (buff 10240))
     (refund-address principal))
     (begin
         (asserts! (> amount u0) err-invalid-amount)
+        (asserts! (is-eq tx-sender sender) err-invalid-sender)
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
@@ -37,7 +39,6 @@
 ;; Public function to add native gas (deduct from contract balance)
 (define-public (add-native-gas 
     (amount uint)
-    (sender principal)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
@@ -111,8 +112,8 @@
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 32))
-    (destination-address (string-ascii 40))
-    (payload (buff 1024))
+    (destination-address (string-ascii 48))
+    (payload (buff 10240))
     (refund-address principal))
     (err err-not-implemented)
 )
@@ -132,8 +133,8 @@
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 32))
-    (destination-address (string-ascii 40))
-    (payload (buff 1024))
+    (destination-address (string-ascii 48))
+    (payload (buff 10240))
     (refund-address principal))
     (err err-not-implemented)
 )

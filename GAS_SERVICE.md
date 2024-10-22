@@ -8,16 +8,22 @@ The Gas Service Contract manages gas payments and refunds for cross-chain commun
 
 ### pay-native-gas-for-contract-call
 
-This function allows anyone to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
+This function allows users to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
 
 Parameters:
 
 - `amount`: The amount of STX to pay for gas
-- `sender`: The address initiating the cross-chain call
+- `sender`: The address initiating the cross-chain call (must be the same as tx-sender)
 - `destination-chain`: The target chain for the cross-chain call
 - `destination-address`: The target address on the destination chain
 - `payload`: Data payload for the contract call
 - `refund-address`: The address where refunds, if any, should be sent
+
+Error conditions:
+
+- Returns `err-invalid-amount` if the amount is not greater than 0
+- Returns `err-invalid-sender` if the sender is not the same as tx-sender
+- Returns `err-insufficient-balance` if the caller has insufficient balance
 
 ### add-native-gas
 
@@ -125,3 +131,11 @@ type: "fees-collected",
 receiver: principal,
 amount: uint
 }
+
+## Error Codes
+
+- `err-owner-only (u100)`: Thrown when a function restricted to the owner is called by another address.
+- `err-insufficient-balance (u101)`: Thrown when trying to perform an operation with an amount greater than the available balance.
+- `err-invalid-amount (u102)`: Thrown when trying to pay or refund with an invalid (zero or negative) amount.
+- `err-not-implemented (u103)`: Thrown when calling functions that are not yet implemented.
+- `err-invalid-sender (u104)`: Thrown when the sender specified in pay-native-gas-for-contract-call is not the same as tx-sender.
