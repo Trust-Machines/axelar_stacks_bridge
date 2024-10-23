@@ -377,7 +377,8 @@
             token-address: principal
         } params)))
     )
-    
+    (asserts! (var-get is-started) ERR-NOT-STARTED)
+    (try! (require-not-paused))
     (asserts! (is-eq
         (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
         token-manager-type
@@ -489,6 +490,8 @@
         (minter (optional principal)))
     (let (
             (token-id (interchain-token-id contract-caller salt)))
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
         (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
         (contract-call? .gateway call-contract
             CHAIN-NAME
@@ -650,8 +653,8 @@
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
         (payload (buff 1024))
-        (token (optional <sip-010-trait>))
-        (token-manager (optional <token-manager-trait>)))
+        (token <sip-010-trait>)
+        (token-manager <token-manager-trait>))
     (let
         (
             (payload-decoded (unwrap! (from-consensus-buff? {
@@ -673,7 +676,7 @@
                 CHAIN-NAME
                 token-manager-type
                 params
-                (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED)))))
+                token-manager))))
 
 (define-public (execute-deploy-interchain-token
         (message-id (string-ascii 71))
@@ -851,6 +854,7 @@
         (data-is-empty (> (len data) u0))
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
+    (try! (require-not-paused))
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
         (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))
