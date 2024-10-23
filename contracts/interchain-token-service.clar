@@ -262,25 +262,17 @@
         (destination-chain (string-ascii 32))
         (destination-address (string-ascii 48))
         (payload (buff 10240)))
-    ;; FIXME: GAS service not implemented
     (if
         (> amount u0)
             ;; ERR-GAS-NOT-PAID
-            (ok true)
-        (if false ERR-GAS-NOT-PAID (ok true))))
-
-;; (define-private (pay-native-gas-for-express-call
-;;         (amount uint)
-;;         (refund-address principal)
-;;         (destination-chain (string-ascii 32))
-;;         (destination-address (string-ascii 48))
-;;         (payload (buff 10240)))
-;;     ;; FIXME: GAS service not implemented
-;;     (if
-;;         (> amount u0)
-;;             ;; ERR-GAS-NOT-PAID
-;;             (ok true)
-;;         (if false ERR-GAS-NOT-PAID (ok true))))
+            (contract-call? .gas_service pay-native-gas-for-contract-call
+                amount
+                tx-sender
+                destination-chain
+                destination-address
+                payload
+                refund-address)
+        (ok true)))
 
 ;; @notice Calls a contract on a specific destination chain with the given payload
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
@@ -505,8 +497,11 @@
                 token-address: (contract-of token),
                 token-id: token-id,
                 minter: (default-to NULL-ADDRESS minter),
+                ;; #[filter(token)]
                 name: (unwrap-panic (contract-call? token get-name)),
+                ;; #[filter(token)]
                 symbol: (unwrap-panic (contract-call? token get-symbol)),
+                ;; #[filter(token)]
                 decimals: (unwrap-panic (contract-call? token get-decimals)),
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 operator: (default-to NULL-ADDRESS minter),
@@ -688,7 +683,7 @@
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (if (is-eq CHAIN-NAME source-chain)
-            ;; #[filter(message-id, source-chain, payload, source-address)]
+            ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
             (process-deploy-interchain-from-external-chain 
             ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
@@ -754,8 +749,6 @@
         (payload (buff 1024))
         (deployed-token <native-interchain-token-trait>))
     (let (
-        ;; #[filter(token-id)]
-        ;; TODO: ask rares if this checks all of these from the token interface match the interface from the token
         (data (unwrap! (from-consensus-buff? {
                 type: (string-ascii 100),
                 token-address: principal,
