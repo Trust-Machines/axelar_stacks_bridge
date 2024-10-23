@@ -18,6 +18,9 @@ import { expect } from "vitest";
 import { makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 
+export enum MessageType {}
+export enum TokenType {}
+
 export function setupTokenManager() {
   return simnet.callPublicFn(
     "token-manager",

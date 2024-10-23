@@ -304,12 +304,79 @@ describe("Interchain Token Service", () => {
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
-
-    it("Should not approve on the second token manager gateway deployment", () => {});
   });
 
   describe("Initialize remote custom token manager deployment", () => {
-    it("Should initialize a remote custom token manager deployment", () => {});
+    it("Should initialize a remote custom token manager deployment", () => {
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const deployTokenManagerTx = deployTokenManager({
+        salt,
+        destinationChain: "ethereum",
+        gas: 100,
+        tokenAddress,
+      });
+      expect(deployTokenManagerTx.result).toBeOk(Cl.bool(true));
+
+      expect(deployTokenManagerTx.events.length).toBe(5);
+      const [
+        interchainTokenIdClaimed,
+        tokenManagerDeploymentStarted,
+        stxTransfer,
+        _nativeGasPaidForContractCall,
+        gatewayContractCall,
+      ] = deployTokenManagerTx.events;
+      const wrappedITSPayload = {
+        "destination-chain": Cl.stringAscii("ethereum"),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(2),
+        type: Cl.stringAscii("token-manager-deployment-started"),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      expect(interchainTokenIdClaimed.data.value).toBeTuple({
+        deployer: Cl.address(address1),
+        salt: Cl.buffer(salt),
+        "token-id": tokenId,
+        type: Cl.stringAscii("interchain-token-id-claimed"),
+      });
+      expect(tokenManagerDeploymentStarted.data.value).toBeTuple(
+        wrappedITSPayload
+      );
+
+      expect(stxTransfer.data).toStrictEqual({
+        amount: "100",
+        memo: "",
+        recipient: `${deployer}.gas_service`,
+        sender: address1,
+      });
+
+      const message = buildOutgoingGMPMessage({
+        destinationChain: "axelar",
+        destinationContractAddress: "cosmwasm",
+        payload: Cl.tuple({
+          "destination-chain": Cl.stringAscii("ethereum"),
+          type: Cl.uint(3),
+          payload: Cl.buffer(
+            Cl.serialize(
+              Cl.tuple({
+                type: Cl.uint(2),
+                "token-id": tokenId,
+                "token-manager-type": Cl.uint(2),
+                params: wrappedITSPayload.params,
+              })
+            )
+          ),
+        }),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+      });
+      expect(gatewayContractCall.data.value).toBeTuple(message);
+    });
 
     it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {});
 
