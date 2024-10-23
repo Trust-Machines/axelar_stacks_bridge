@@ -415,7 +415,9 @@ describe("Interchain Token Service", () => {
 
   describe("Receive Remote Token Manager Deployment", () => {
     it("Should be able to receive a remote lock/unlock token manager deployment", () => {
-      const messageId = "";
+      setupTokenManager();
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
       const tokenManagerAddress = Cl.contractPrincipal(
         deployer,
@@ -434,13 +436,41 @@ describe("Interchain Token Service", () => {
           )
         ),
       };
-      executeDeployTokenManager({
-        messageId,
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
         payload: payload,
         sourceChain: "ethereum",
         sourceAddress: "cosmwasm",
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+      });
+
+      const wrappedPayload = {
+        "message-id": Cl.stringAscii(wrappedMessageId),
+        "source-address": Cl.stringAscii("cosmwasm"),
+        "source-chain": Cl.stringAscii("ethereum"),
+        payload: Cl.buffer(Cl.serialize(Cl.tuple(payload))),
+      };
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      const verifyPayload = buildVerifyTokenManagerPayload({
+        tokenId,
+        wrappedPayload,
+      });
+      const message = buildOutgoingGMPMessage({
+        payload: verifyPayload,
+        destinationChain: "stacks",
+        destinationContractAddress: "interchain-token-service",
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+      });
+      expect(deployTx.events[0].event).toBe("print_event");
+      expect(Cl.deserialize(deployTx.events[0].data.raw_value!)).toBeTuple(
+        message
+      );
+      enableTokenManager({
+        messageId,
+        proofSigners,
+        tokenId,
+        wrappedPayload,
       });
     });
 

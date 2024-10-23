@@ -56,7 +56,9 @@ export function buildVerifyTokenManagerPayload({
     "token-id": tokenId,
     "token-type": Cl.uint(2),
     operator: Cl.address(address1),
-    "wrapped-payload": wrappedPayload ? Cl.tuple(wrappedPayload) : Cl.none(),
+    "wrapped-payload": wrappedPayload
+      ? Cl.some(Cl.tuple(wrappedPayload))
+      : Cl.none(),
   });
 }
 
@@ -100,20 +102,32 @@ export function deployTokenManager({
 export function enableTokenManager({
   tokenId,
   proofSigners,
+  wrappedPayload,
+  messageId = "0x00",
 }: {
   tokenId: BufferCV;
   proofSigners: Signers;
+  wrappedPayload?: {
+    "source-chain": StringAsciiCV;
+    "source-address": StringAsciiCV;
+    "message-id": StringAsciiCV;
+    payload: BufferCV;
+  };
+  messageId?: string;
 }) {
-  const payload = buildVerifyTokenManagerPayload({ tokenId });
+  const payload = buildVerifyTokenManagerPayload({ tokenId, wrappedPayload });
 
   const messages = Cl.list([
     Cl.tuple(
       buildIncomingGMPMessage({
-        contractAddress: "interchain-token-service",
-        messageId: "0x00",
+        contractAddress: Cl.contractPrincipal(
+          deployer,
+          "interchain-token-service"
+        ),
+        messageId: Cl.stringAscii(messageId),
         payload,
-        sourceAddress: "interchain-token-service",
-        sourceChain: "stacks",
+        sourceAddress: Cl.stringAscii("interchain-token-service"),
+        sourceChain: Cl.stringAscii("stacks"),
       })
     ),
   ]);
@@ -122,11 +136,32 @@ export function enableTokenManager({
     proofSigners,
   });
 
+  if (wrappedPayload) {
+    const messages = Cl.list([
+      Cl.tuple(
+        buildIncomingGMPMessage({
+          contractAddress: Cl.contractPrincipal(
+            deployer,
+            "interchain-token-service"
+          ),
+          messageId: wrappedPayload["message-id"],
+          payload: Cl.deserialize(wrappedPayload.payload.buffer),
+          sourceAddress: wrappedPayload["source-address"],
+          sourceChain: wrappedPayload["source-chain"],
+        })
+      ),
+    ]);
+    signAndApproveMessages({
+      messages,
+      proofSigners,
+    });
+  }
+
   const enableTokenTx = simnet.callPublicFn(
     "interchain-token-service",
     "process-deploy-token-manager-from-stacks",
     [
-      Cl.stringAscii("0x00"),
+      Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
       Cl.buffer(Cl.serialize(payload)),
@@ -138,7 +173,7 @@ export function enableTokenManager({
     simnet.callReadOnlyFn(
       "gateway",
       "is-message-executed",
-      [Cl.stringAscii("stacks"), Cl.stringAscii("0x00")],
+      [Cl.stringAscii("stacks"), Cl.stringAscii(messageId)],
       address1
     ).result
   ).toBeOk(Cl.bool(true));
@@ -185,17 +220,17 @@ export function buildIncomingGMPMessage({
   contractAddress,
   messageId,
 }: {
-  sourceChain: string;
-  messageId: string;
-  sourceAddress: string;
-  contractAddress: string;
+  sourceChain: StringAsciiCV;
+  messageId: StringAsciiCV;
+  sourceAddress: StringAsciiCV;
+  contractAddress: ContractPrincipalCV;
   payload: TupleCV;
 }) {
   return {
-    "source-chain": Cl.stringAscii(sourceChain),
-    "message-id": Cl.stringAscii(messageId),
-    "source-address": Cl.stringAscii(sourceAddress),
-    "contract-address": Cl.contractPrincipal(deployer, contractAddress),
+    "source-chain": sourceChain,
+    "message-id": messageId,
+    "source-address": sourceAddress,
+    "contract-address": contractAddress,
     "payload-hash": Cl.buffer(
       createKeccakHash("keccak256")
         .update(Buffer.from(Cl.serialize(payload)))
@@ -384,11 +419,16 @@ export function approveRemoteInterchainToken({
   const messages = Cl.list([
     Cl.tuple(
       buildIncomingGMPMessage({
-        contractAddress: "interchain-token-service",
-        messageId: "approved-interchain-token-deployment-message",
+        contractAddress: Cl.contractPrincipal(
+          deployer,
+          "interchain-token-service"
+        ),
+        messageId: Cl.stringAscii(
+          "approved-interchain-token-deployment-message"
+        ),
         payload,
-        sourceAddress: "0x00",
-        sourceChain: "ethereum",
+        sourceAddress: Cl.stringAscii("0x00"),
+        sourceChain: Cl.stringAscii("ethereum"),
       })
     ),
   ]);
@@ -426,12 +466,6 @@ export function deployInterchainToken({
   );
 }
 
-// (message-id (string-ascii 71))
-// (source-chain (string-ascii 18))
-// (source-address (string-ascii 48))
-// (payload (buff 1024))
-// (token <sip-010-trait>)
-// (token-manager <token-manager-trait>)
 export function executeDeployTokenManager({
   messageId,
   payload,
@@ -444,13 +478,9 @@ export function executeDeployTokenManager({
   sourceChain: string;
   sourceAddress: string;
   payload: {
-    // type: uint,
     type: UIntCV;
-    // token-id: (buff 32),
     "token-id": BufferCV;
-    // token-manager-type: uint,
     "token-manager-type": UIntCV;
-    // params: (buff 512)
     params: BufferCV;
   };
   token: ContractPrincipalCV;
