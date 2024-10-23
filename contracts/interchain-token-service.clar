@@ -791,8 +791,12 @@
             (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
-        ;;         token-id: (buff 32),
-        ;;         minter: principal,
+        (asserts! (unwrap! (contract-call? deployed-token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
+        (asserts! 
+            (is-eq 
+                (get token-id data)
+                (unwrap! (contract-call? deployed-token get-token-id) ERR-TOKEN-NOT-DEPLOYED))
+                ERR-TOKEN-METADATA-INVALID)
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (asserts! (is-eq u0 (unwrap-panic (contract-call? deployed-token get-total-supply))) ERR-TOKEN-METADATA-INVALID)

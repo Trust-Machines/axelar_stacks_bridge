@@ -37,5 +37,6 @@
     (is-minter (principal) (response bool uint))
     (get-operators () (response (list 2 principal) principal))
     (is-operator (principal) (response bool uint))
+    (get-token-id () (response (buff 32) uint))
   )
 )
