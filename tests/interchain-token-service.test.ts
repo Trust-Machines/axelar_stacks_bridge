@@ -118,7 +118,7 @@ describe("Interchain Token Service", () => {
 
   describe("Deploy and Register Interchain Token", () => {
     it("Should register an existing token with its manager", () => {
-      setupTokenManager();
+      setupTokenManager({});
       const deployTx = deployTokenManager({
         salt,
       });
@@ -159,7 +159,7 @@ describe("Interchain Token Service", () => {
   describe("Deploy and Register remote Interchain Token", () => {
     const tokenId = getTokenId(salt).result as BufferCV;
     it("Should initialize a remote interchain token deployment", () => {
-      setupTokenManager();
+      setupTokenManager({});
       deployTokenManager({
         salt,
       });
@@ -182,7 +182,7 @@ describe("Interchain Token Service", () => {
     });
 
     it("Should revert on remote interchain token deployment if destination chain is not trusted", () => {
-      setupTokenManager();
+      setupTokenManager({});
       deployTokenManager({
         salt,
       });
@@ -205,7 +205,7 @@ describe("Interchain Token Service", () => {
     });
 
     it("Should revert on remote interchain token deployment if paused", () => {
-      setupTokenManager();
+      setupTokenManager({});
       deployTokenManager({
         salt,
       });
@@ -272,7 +272,7 @@ describe("Interchain Token Service", () => {
 
   describe("Custom Token Manager Deployment", () => {
     it("Should revert on deploying a local token manager with interchain token manager type", () => {
-      setupTokenManager();
+      setupTokenManager({});
       expect(
         deployTokenManager({
           salt,
@@ -282,7 +282,7 @@ describe("Interchain Token Service", () => {
     });
 
     it("Should revert when deploying a custom token manager twice", () => {
-      setupTokenManager();
+      setupTokenManager({});
       deployTokenManager({
         salt,
       });
@@ -299,7 +299,7 @@ describe("Interchain Token Service", () => {
     });
 
     it("Should revert when deploying a custom token manager if paused", () => {
-      setupTokenManager();
+      setupTokenManager({});
       expect(setPaused({ paused: true }).result).toBeOk(Cl.bool(true));
       expect(
         deployTokenManager({
@@ -311,7 +311,7 @@ describe("Interchain Token Service", () => {
 
   describe("Initialize remote custom token manager deployment", () => {
     it("Should initialize a remote custom token manager deployment", () => {
-      setupTokenManager();
+      setupTokenManager({});
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
       const deployTokenManagerTx = deployTokenManager({
         salt,
@@ -401,7 +401,7 @@ describe("Interchain Token Service", () => {
 
     it("Should revert on remote custom token manager deployment if paused", () => {
       setPaused({ paused: true });
-      setupTokenManager();
+      setupTokenManager({});
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
       const deployTokenManagerTx = deployTokenManager({
         salt,
@@ -417,7 +417,7 @@ describe("Interchain Token Service", () => {
 
   describe("Receive Remote Token Manager Deployment", () => {
     it("Should be able to receive a remote lock/unlock token manager deployment", () => {
-      setupTokenManager();
+      setupTokenManager({});
       const messageId = "remote-token-manager-deployment";
       const wrappedMessageId = "wrapped-" + messageId;
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
@@ -476,9 +476,79 @@ describe("Interchain Token Service", () => {
       });
     });
 
-    it("Should be able to receive a remote mint/burn token manager deployment", () => {});
+    it("Should not be able to receive a remote mint/burn token manager deployment", () => {
+      setupTokenManager({
+        tokenType: TokenType.MINT_BURN,
+      });
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager"
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(TokenType.MINT_BURN),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
+        payload: payload,
+        sourceChain: "ethereum",
+        sourceAddress: "cosmwasm",
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+      });
+      expect(deployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]
+      );
+    });
 
-    it("Should not be able to receive a remote interchain token manager deployment", () => {});
+    it("Should not be able to receive a remote interchain token manager deployment", () => {
+      setupTokenManager({
+        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
+      });
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager"
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
+        payload: payload,
+        sourceChain: "ethereum",
+        sourceAddress: "cosmwasm",
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+      });
+      expect(deployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]
+      );
+    });
   });
 
   describe("Send Token", () => {

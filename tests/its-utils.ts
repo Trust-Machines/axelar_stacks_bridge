@@ -34,13 +34,17 @@ export enum TokenType {
   GATEWAY, // The token will be sent through the gateway via callContractWithToken
 }
 
-export function setupTokenManager() {
+export function setupTokenManager({
+  tokenType = TokenType.LOCK_UNLOCK,
+}: {
+  tokenType?: TokenType;
+}) {
   return simnet.callPublicFn(
     "token-manager",
     "setup",
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
-      Cl.uint(TokenType.LOCK_UNLOCK),
+      Cl.uint(tokenType),
       Cl.contractPrincipal(deployer, "interchain-token-service"),
       Cl.some(Cl.standardPrincipal(address1)),
     ],
