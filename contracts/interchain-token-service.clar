@@ -798,11 +798,15 @@
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload data) wrapped-payload  
-            (as-contract (contract-call? .gateway validate-message
-                (get source-chain wrapped-payload)
-                (get message-id wrapped-payload)
-                (get source-address wrapped-payload)
-                (keccak256 (get payload wrapped-payload))))
+            (begin
+                (asserts! (is-eq u0 
+                    (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
+                ) ERR-TOKEN-METADATA-INVALID)
+                (as-contract (contract-call? .gateway validate-message
+                    (get source-chain wrapped-payload)
+                    (get message-id wrapped-payload)
+                    (get source-address wrapped-payload)
+                    (keccak256 (get payload wrapped-payload)))))
             (ok true)))
         (asserts! (map-insert token-managers token-id {
             manager-address: (get token-address data),
