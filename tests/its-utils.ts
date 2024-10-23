@@ -5,7 +5,9 @@ import {
   cvToJSON,
   ListCV,
   PrincipalCV,
+  StringAsciiCV,
   TupleCV,
+  UIntCV,
 } from "@stacks/transactions";
 
 export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
@@ -37,8 +39,15 @@ export function setupTokenManager() {
 
 export function buildVerifyTokenManagerPayload({
   tokenId,
+  wrappedPayload,
 }: {
   tokenId: BufferCV;
+  wrappedPayload?: {
+    "source-chain": StringAsciiCV;
+    "source-address": StringAsciiCV;
+    "message-id": StringAsciiCV;
+    payload: BufferCV;
+  };
 }) {
   return Cl.tuple({
     type: Cl.stringAscii("verify-token-manager"),
@@ -47,6 +56,7 @@ export function buildVerifyTokenManagerPayload({
     "token-id": tokenId,
     "token-type": Cl.uint(2),
     operator: Cl.address(address1),
+    "wrapped-payload": wrappedPayload ? Cl.tuple(wrappedPayload) : Cl.none(),
   });
 }
 
@@ -411,6 +421,51 @@ export function deployInterchainToken({
       token,
       Cl.uint(supply),
       minter ? Cl.some(minter) : Cl.none(),
+    ],
+    address1
+  );
+}
+
+// (message-id (string-ascii 71))
+// (source-chain (string-ascii 18))
+// (source-address (string-ascii 48))
+// (payload (buff 1024))
+// (token <sip-010-trait>)
+// (token-manager <token-manager-trait>)
+export function executeDeployTokenManager({
+  messageId,
+  payload,
+  sourceAddress,
+  sourceChain,
+  token,
+  tokenManager,
+}: {
+  messageId: string;
+  sourceChain: string;
+  sourceAddress: string;
+  payload: {
+    // type: uint,
+    type: UIntCV;
+    // token-id: (buff 32),
+    "token-id": BufferCV;
+    // token-manager-type: uint,
+    "token-manager-type": UIntCV;
+    // params: (buff 512)
+    params: BufferCV;
+  };
+  token: ContractPrincipalCV;
+  tokenManager: ContractPrincipalCV;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "execute-deploy-token-manager",
+    [
+      Cl.stringAscii(messageId),
+      Cl.stringAscii(sourceChain),
+      Cl.stringAscii(sourceAddress),
+      Cl.buffer(Cl.serialize(Cl.tuple(payload))),
+      token,
+      tokenManager,
     ],
     address1
   );

@@ -10,6 +10,7 @@ import {
   deployTokenManager,
   enableTokenManager,
   executeDeployInterchainToken,
+  executeDeployTokenManager,
   getTokenId,
   setPaused,
   setupTokenManager,
@@ -413,7 +414,35 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Token Manager Deployment", () => {
-    it("Should be able to receive a remote lock/unlock token manager deployment", () => {});
+    it("Should be able to receive a remote lock/unlock token manager deployment", () => {
+      const messageId = "";
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager"
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(2),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      executeDeployTokenManager({
+        messageId,
+        payload: payload,
+        sourceChain: "ethereum",
+        sourceAddress: "cosmwasm",
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+      });
+    });
 
     it("Should be able to receive a remote mint/burn token manager deployment", () => {});
 

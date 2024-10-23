@@ -327,7 +327,8 @@
                 token-manager-type
                 ;; #[filter(token-manager, params)]
                 params
-                token-manager)
+                token-manager
+                none)
             ;; #[filter(token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value token-manager)
         )))
@@ -371,7 +372,13 @@
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
         (params (buff 1024))
-        (token-manager <token-manager-trait>))
+        (token-manager <token-manager-trait>)
+        (wrapped-payload  (optional {
+            source-chain: (string-ascii 18),
+            source-address: (string-ascii 48),
+            message-id: (string-ascii 71),
+            payload: (buff 1024),
+        })))
     (let (
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
         (data (unwrap-panic (from-consensus-buff? {
@@ -397,6 +404,7 @@
                 token-id: token-id,
                 token-type: token-manager-type,
                 operator: (get operator data),
+                wrapped-payload: wrapped-payload,
             }))))))
 
 
@@ -404,7 +412,7 @@
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
         (source-address (string-ascii 48))
-        (payload (buff 1024)))
+        (payload (buff 4096)))
     (let (
         ;; #[filter(token-id)]
         (data (unwrap! (from-consensus-buff? {
@@ -412,6 +420,12 @@
                 token-manager-address: principal,
                 token-id: (buff 32),
                 token-type: uint,
+                wrapped-payload: (optional {
+                    source-chain: (string-ascii 18),
+                    source-address: (string-ascii 48),
+                    message-id: (string-ascii 71),
+                    payload: (buff 1024),
+                }),
             } payload) ERR-INVALID-PAYLOAD))
         (token-id (get token-id data))
         (token-manager-address (get token-manager-address data))
@@ -425,6 +439,13 @@
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
+        (try! (match (get wrapped-payload data) wrapped-payload  
+            (as-contract (contract-call? .gateway validate-message
+                (get source-chain wrapped-payload)
+                (get message-id wrapped-payload)
+                (get source-address wrapped-payload)
+                (keccak256 (get payload wrapped-payload))))
+            (ok true)))
         (asserts! (map-insert token-managers token-id {
             manager-address: token-manager-address,
             token-type: token-type,
@@ -678,7 +699,13 @@
                 CHAIN-NAME
                 token-manager-type
                 params
-                token-manager))))
+                token-manager
+                (some {
+                    source-chain: source-chain,
+                    source-address: source-address,
+                    message-id: message-id,
+                    payload: payload,
+                })))))
 
 (define-public (execute-deploy-interchain-token
         (message-id (string-ascii 71))
