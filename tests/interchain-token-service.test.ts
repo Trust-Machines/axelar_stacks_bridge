@@ -12,8 +12,10 @@ import {
   executeDeployInterchainToken,
   executeDeployTokenManager,
   getTokenId,
+  MessageType,
   setPaused,
   setupTokenManager,
+  TokenType,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
 import { ITS_ERROR_CODES } from "./constants";
@@ -236,7 +238,7 @@ describe("Interchain Token Service", () => {
           messageId: "unapproved-message",
           payload: Cl.serialize(
             Cl.tuple({
-              type: Cl.uint(2),
+              type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
               "token-id": Cl.buffer(randomBytes(32)),
               name: Cl.stringAscii("unapproved-token"),
               symbol: Cl.stringAscii("unapproved-token"),
@@ -330,7 +332,7 @@ describe("Interchain Token Service", () => {
       const wrappedITSPayload = {
         "destination-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
-        "token-manager-type": Cl.uint(2),
+        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
         type: Cl.stringAscii("token-manager-deployment-started"),
         params: Cl.buffer(
           Cl.serialize(
@@ -367,9 +369,9 @@ describe("Interchain Token Service", () => {
           payload: Cl.buffer(
             Cl.serialize(
               Cl.tuple({
-                type: Cl.uint(2),
+                type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
                 "token-id": tokenId,
-                "token-manager-type": Cl.uint(2),
+                "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
                 params: wrappedITSPayload.params,
               })
             )
@@ -426,7 +428,7 @@ describe("Interchain Token Service", () => {
       const payload = {
         type: Cl.uint(3),
         "token-id": tokenId,
-        "token-manager-type": Cl.uint(2),
+        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({

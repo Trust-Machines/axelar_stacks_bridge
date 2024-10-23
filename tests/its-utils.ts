@@ -10,8 +10,6 @@ import {
   UIntCV,
 } from "@stacks/transactions";
 
-export const TOKEN_TYPE_NATIVE_INTERCHAIN_TOKEN = 0;
-export const TOKEN_TYPE_LOCK_UNLOCK = 2;
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
@@ -20,8 +18,21 @@ import { expect } from "vitest";
 import { makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 
-export enum MessageType {}
-export enum TokenType {}
+export enum MessageType {
+  INTERCHAIN_TRANSFER,
+  DEPLOY_INTERCHAIN_TOKEN,
+  DEPLOY_TOKEN_MANAGER,
+  SEND_TO_HUB,
+  RECEIVE_FROM_HUB,
+}
+export enum TokenType {
+  NATIVE_INTERCHAIN_TOKEN, // This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+  MINT_BURN_FROM, // The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
+  LOCK_UNLOCK, // The token will be locked/unlocked at the token manager.
+  LOCK_UNLOCK_FEE, // The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
+  MINT_BURN, // The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
+  GATEWAY, // The token will be sent through the gateway via callContractWithToken
+}
 
 export function setupTokenManager() {
   return simnet.callPublicFn(
@@ -29,7 +40,7 @@ export function setupTokenManager() {
     "setup",
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
-      Cl.uint(2),
+      Cl.uint(TokenType.LOCK_UNLOCK),
       Cl.contractPrincipal(deployer, "interchain-token-service"),
       Cl.some(Cl.standardPrincipal(address1)),
     ],
@@ -54,7 +65,7 @@ export function buildVerifyTokenManagerPayload({
     // "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
     "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
     "token-id": tokenId,
-    "token-type": Cl.uint(2),
+    "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
     operator: Cl.address(address1),
     "wrapped-payload": wrappedPayload
       ? Cl.some(Cl.tuple(wrappedPayload))
@@ -65,7 +76,7 @@ export function buildVerifyTokenManagerPayload({
 export function deployTokenManager({
   salt,
   destinationChain = "",
-  tokenType = TOKEN_TYPE_LOCK_UNLOCK,
+  tokenType = TokenType.LOCK_UNLOCK,
   tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010"),
   tokenManagerAddress = Cl.contractPrincipal(deployer, "token-manager"),
   gas = 0,
@@ -385,7 +396,7 @@ export function buildVerifyInterchainTokenPayload({
     "token-address": Cl.contractPrincipal(deployer, "sample-sip-010"),
     "token-manager-address": Cl.contractPrincipal(deployer, "token-manager"),
     "token-id": tokenId,
-    "token-type": Cl.uint(2),
+    "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
     operator: Cl.address(address1),
   });
 }
@@ -397,7 +408,7 @@ export function buildIncomingDeployInterchainTokenPayload({
 }) {
   return Cl.tuple({
     // (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
-    type: Cl.uint(1),
+    type: Cl.uint(MessageType.DEPLOY_INTERCHAIN_TOKEN),
     "token-id": tokenId,
     name: Cl.stringAscii("native-interchain-token"),
     symbol: Cl.stringAscii("ITT"),
