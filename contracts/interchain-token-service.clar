@@ -304,7 +304,7 @@
         (token-manager-type uint)
         (gas-value uint)
         (params (buff 1024))
-        (token-manager (optional <token-manager-trait>))
+        (token-manager <token-manager-trait>)
     )
     (let (
             (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
@@ -327,9 +327,9 @@
                 token-manager-type
                 ;; #[filter(token-manager, params)]
                 params
-                (unwrap! token-manager ERR-TOKEN-MANAGER-REQUIRED))
+                token-manager)
             ;; #[filter(token, token-manager, params, gas-value)]
-            (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value)
+            (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value token-manager)
         )))
 
 (define-private (process-deploy-remote-token-manager
@@ -337,8 +337,10 @@
         (destination-chain (string-ascii 18))
         (token-manager-type uint)
         (params (buff 1024))
-        (gas-value uint))
+        (gas-value uint)
+        (token-manager <token-manager-trait>))
         (let (
+            (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
             (payload (unwrap-panic (to-consensus-buff? {
                 type: MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER,
                 token-id: token-id,

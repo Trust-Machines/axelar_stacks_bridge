@@ -308,6 +308,7 @@ describe("Interchain Token Service", () => {
 
   describe("Initialize remote custom token manager deployment", () => {
     it("Should initialize a remote custom token manager deployment", () => {
+      setupTokenManager();
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
       const deployTokenManagerTx = deployTokenManager({
         salt,
@@ -378,9 +379,37 @@ describe("Interchain Token Service", () => {
       expect(gatewayContractCall.data.value).toBeTuple(message);
     });
 
-    it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {});
+    it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {
+      // will always fail since the VM won't be able to read the interface of a contract that doesn't exist
+      // const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      // expect(
+      //   deployTokenManager({
+      //     salt,
+      //     destinationChain: "ethereum",
+      //     gas: 100,
+      //     tokenAddress,
+      //     tokenManagerAddress: Cl.contractPrincipal(
+      //       deployer,
+      //       "nonexistent-token-manager"
+      //     ),
+      //   })
+      // );
+    });
 
-    it("Should revert on remote custom token manager deployment if paused", () => {});
+    it("Should revert on remote custom token manager deployment if paused", () => {
+      setPaused({ paused: true });
+      setupTokenManager();
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const deployTokenManagerTx = deployTokenManager({
+        salt,
+        destinationChain: "ethereum",
+        gas: 100,
+        tokenAddress,
+      });
+      expect(deployTokenManagerTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-PAUSED"]
+      );
+    });
   });
 
   describe("Receive Remote Token Manager Deployment", () => {

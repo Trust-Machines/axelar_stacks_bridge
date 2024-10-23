@@ -81,7 +81,7 @@ export function deployTokenManager({
           })
         )
       ),
-      Cl.some(tokenManagerAddress),
+      tokenManagerAddress,
     ],
     address1
   );

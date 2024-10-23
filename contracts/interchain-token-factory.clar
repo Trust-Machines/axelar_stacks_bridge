@@ -105,7 +105,7 @@
                 TOKEN-TYPE-LOCK-UNLOCK 
                 u0
                 0x
-                (some token-manager-address))
+                token-manager-address)
     ))
 
 
