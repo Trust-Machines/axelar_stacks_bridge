@@ -389,11 +389,26 @@ export function approveRemoteInterchainToken({
   };
 }
 
-export function deployInterchainToken() {
+export function deployInterchainToken({
+  salt,
+  token = Cl.contractPrincipal(deployer, "native-interchain-token"),
+  supply = 0,
+  minter,
+}: {
+  salt: Uint8Array | Buffer;
+  token?: ContractPrincipalCV;
+  supply?: number;
+  minter?: PrincipalCV;
+}) {
   return simnet.callPublicFn(
     "interchain-token-service",
     "deploy-interchain-token",
-    [],
+    [
+      Cl.buffer(salt),
+      token,
+      Cl.uint(supply),
+      minter ? Cl.some(minter) : Cl.none(),
+    ],
     address1
   );
 }

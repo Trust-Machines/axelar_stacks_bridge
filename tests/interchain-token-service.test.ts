@@ -5,6 +5,7 @@ import {
   approveRemoteInterchainToken,
   buildOutgoingGMPMessage,
   buildVerifyTokenManagerPayload,
+  deployInterchainToken,
   deployRemoteInterchainToken,
   deployTokenManager,
   enableTokenManager,
@@ -52,6 +53,8 @@ function setupService() {
 }
 describe("Interchain Token Service", () => {
   const salt = randomBytes(32);
+  const tokenId = getTokenId(salt).result as BufferCV;
+
   beforeEach(setupService);
   describe("Owner functions", () => {
     it("Should revert on set pause status when not called by the owner", () => {
@@ -111,8 +114,6 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Deploy and Register Interchain Token", () => {
-    const tokenId = getTokenId(salt).result as BufferCV;
-
     it("Should register an existing token with its manager", () => {
       setupTokenManager();
       const deployTx = deployTokenManager({
@@ -144,31 +145,11 @@ describe("Interchain Token Service", () => {
       });
     });
 
-    it("Should revert when registering an interchain token as a lock/unlock for a second time", () => {
-      setupTokenManager();
-      deployTokenManager({
-        salt,
-      });
-
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
-
-      const secondDeployTx = deployTokenManager({ salt });
-      expect(secondDeployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"]
-      );
-    });
-
     it("Should revert when registering an interchain token when service is paused", () => {
-      setupTokenManager();
-      expect(setPaused({ paused: true }).result).toBeOk(Cl.bool(true));
-      expect(
-        deployTokenManager({
-          salt,
-        }).result
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      setPaused({ paused: true });
+      expect(deployInterchainToken({ salt }).result).toBeErr(
+        ITS_ERROR_CODES["ERR-PAUSED"]
+      );
     });
   });
 
@@ -297,17 +278,32 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]);
     });
 
-    it("Should revert when deploying a custom token manager twice", () => {});
+    it("Should revert when deploying a custom token manager twice", () => {
+      setupTokenManager();
+      deployTokenManager({
+        salt,
+      });
 
-    it("Should revert when calling unsupported functions directly on the token manager implementation", () => {});
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
 
-    it("Should deploy a mint/burn token manager", () => {});
+      const secondDeployTx = deployTokenManager({ salt });
+      expect(secondDeployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"]
+      );
+    });
 
-    it("Should deploy a mint/burn_from token manager", () => {});
-
-    it("Should deploy a lock/unlock with fee on transfer token manager", () => {});
-
-    it("Should revert when deploying a custom token manager if paused", () => {});
+    it("Should revert when deploying a custom token manager if paused", () => {
+      setupTokenManager();
+      expect(setPaused({ paused: true }).result).toBeOk(Cl.bool(true));
+      expect(
+        deployTokenManager({
+          salt,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
 
     it("Should not approve on the second token manager gateway deployment", () => {});
   });
