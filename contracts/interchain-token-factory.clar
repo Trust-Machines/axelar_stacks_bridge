@@ -151,7 +151,7 @@
             (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
-    (contract-call? .interchain-token-service deploy-interchain-token salt token (some minter))))
+    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter))))
 
 ;; This will only be a risk if the user deploying the token remotely 
 ;; is deploying an existing malicious token on stacks

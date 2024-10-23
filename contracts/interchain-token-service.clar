@@ -485,6 +485,7 @@
 (define-public (deploy-interchain-token
         (salt (buff 32))
         (token <native-interchain-token-trait>)
+        (supply uint)
         (minter (optional principal)))
     (let (
             (token-id (interchain-token-id contract-caller salt)))
@@ -505,6 +506,7 @@
                 decimals: (unwrap-panic (contract-call? token get-decimals)),
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 operator: (default-to NULL-ADDRESS minter),
+                supply: supply,
                 wrapped-payload: none,
             })))))
 
@@ -734,6 +736,7 @@
                 decimals: (get decimals payload-decoded),
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 operator: NULL-ADDRESS,
+                supply: u0,
             }))))
     ))
 
@@ -759,6 +762,7 @@
                 symbol: (string-ascii 32),
                 decimals: uint,
                 operator: principal,
+                supply: uint,
                 wrapped-payload: (optional {
                     source-chain: (string-ascii 18),
                     source-address: (string-ascii 48),
