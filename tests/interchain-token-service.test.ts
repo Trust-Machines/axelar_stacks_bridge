@@ -13,6 +13,7 @@ import {
   enableTokenManager,
   executeDeployInterchainToken,
   executeDeployTokenManager,
+  executeReceiveInterchainToken,
   getTokenId,
   interchainTransfer,
   MessageType,
@@ -695,11 +696,170 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Execute checks", () => {
-    it("Should revert on execute if remote address validation fails", () => {});
+    it("Should revert on execute deploy token manager if remote address validation fails", () => {
+      setupTokenManager({
+        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
+      });
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager"
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
+        payload: payload,
+        sourceChain: "ethereum",
+        sourceAddress: "untrusted address",
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+      });
+      expect(deployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]
+      );
+    });
 
-    it("Should revert on execute if the service is paused", () => {});
+    it("Should revert on execute deploy remote interchain token if remote address validation fails", () => {
+      const { payload } = approveRemoteInterchainToken({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-interchain-token-deployment-message",
+          payload: Cl.serialize(payload),
+          sourceAddress: "untrusted address",
+          sourceChain: "ethereum",
+          tokenAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
+    });
 
-    it("Should revert on execute with invalid messageType", () => {});
+    it("Should revert on execute receive interchain token if remote address validation fails", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "interchain-transfer-received",
+          sourceChain: "ethereum",
+          tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+          token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          payload: {
+            type: Cl.uint(3),
+            "token-id": tokenId,
+            "source-address": Cl.stringAscii("untrusted address"),
+            "destination-address": Cl.buffer(
+              Cl.serialize(Cl.address(address1))
+            ),
+            amount: Cl.uint(1000),
+            data: Cl.bufferFromHex("0x"),
+          },
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
+    });
+
+    it("Should revert on execute deploy token manager if the service is paused", () => {
+      setupTokenManager({
+        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
+      });
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager"
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.address(address1),
+              "token-address": tokenAddress,
+            })
+          )
+        ),
+      };
+      setPaused({ paused: true });
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
+        payload: payload,
+        sourceChain: "ethereum",
+        sourceAddress: TRUSTED_ADDRESS,
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+      });
+      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
+
+    it("Should revert on execute deploy interchain token if the service is paused", () => {
+      const { payload } = approveRemoteInterchainToken({
+        proofSigners,
+        tokenId,
+      });
+      setPaused({ paused: true });
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-interchain-token-deployment-message",
+          payload: Cl.serialize(payload),
+          sourceAddress: TRUSTED_ADDRESS,
+          sourceChain: "ethereum",
+          tokenAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
+
+    it("Should revert on execute receive interchain token if the service is paused", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      setPaused({ paused: true });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "interchain-transfer-received",
+          sourceChain: "ethereum",
+          tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+          token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          payload: {
+            type: Cl.uint(3),
+            "token-id": tokenId,
+            "source-address": Cl.stringAscii(TRUSTED_ADDRESS),
+            "destination-address": Cl.buffer(
+              Cl.serialize(Cl.address(address1))
+            ),
+            amount: Cl.uint(1000),
+            data: Cl.bufferFromHex("0x"),
+          },
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
   });
 
   describe("Execute with token checks", () => {

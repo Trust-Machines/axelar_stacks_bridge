@@ -614,3 +614,40 @@ export function buildSTXTransferEvent({
     },
   };
 }
+
+export function executeReceiveInterchainToken({
+  messageId,
+  sourceChain,
+  tokenManager,
+  token,
+  payload,
+  destinationContract,
+}: {
+  messageId: string;
+  sourceChain: string;
+  tokenManager: ContractPrincipalCV;
+  token: ContractPrincipalCV;
+  payload: {
+    type: UIntCV;
+    "token-id": BufferCV;
+    "source-address": StringAsciiCV;
+    "destination-address": BufferCV;
+    amount: UIntCV;
+    data: BufferCV;
+  };
+  destinationContract?: ContractPrincipalCV;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "execute-receive-interchain-token",
+    [
+      Cl.stringAscii(messageId),
+      Cl.stringAscii(sourceChain),
+      tokenManager,
+      token,
+      Cl.buffer(Cl.serialize(Cl.tuple(payload))),
+      destinationContract ? Cl.some(destinationContract) : Cl.none(),
+    ],
+    address1
+  );
+}
