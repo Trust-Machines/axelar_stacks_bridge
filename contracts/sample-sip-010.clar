@@ -61,7 +61,8 @@
         (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)
-        (print (default-to 0x memo))
+        (match memo m 
+            (print m) 0x)
         (ft-transfer? itscoin amount from to)))
 
 (ft-mint? itscoin u1000000000 tx-sender)
