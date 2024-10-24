@@ -18,6 +18,8 @@ import { expect } from "vitest";
 import { makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 
+export const TRUSTED_ADDRESS = "cosmwasm";
+
 export enum MessageType {
   INTERCHAIN_TRANSFER,
   DEPLOY_INTERCHAIN_TOKEN,
@@ -447,7 +449,7 @@ export function approveRemoteInterchainToken({
           "approved-interchain-token-deployment-message"
         ),
         payload,
-        sourceAddress: Cl.stringAscii("cosmwasm"),
+        sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii("ethereum"),
       })
     ),

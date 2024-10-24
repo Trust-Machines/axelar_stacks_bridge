@@ -19,6 +19,7 @@ import {
   setPaused,
   setupTokenManager,
   TokenType,
+  TRUSTED_ADDRESS,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
 import { ITS_ERROR_CODES } from "./constants";
@@ -48,7 +49,7 @@ function setupService() {
         Cl.list([
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
-            address: Cl.stringAscii("cosmwasm"),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
           }),
         ]),
       ],
@@ -79,7 +80,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("cosmwasm")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii(TRUSTED_ADDRESS)],
           address1
         ).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -90,7 +91,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("cosmwasm")],
+          [Cl.stringAscii("ethereum"), Cl.stringAscii(TRUSTED_ADDRESS)],
           deployer
         ).result
       ).toBeOk(Cl.bool(true));
@@ -249,7 +250,7 @@ describe("Interchain Token Service", () => {
               "minter-bytes": Cl.bufferFromHex("0x00"),
             })
           ),
-          sourceAddress: "cosmwasm",
+          sourceAddress: TRUSTED_ADDRESS,
           sourceChain: "ethereum",
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
@@ -265,7 +266,7 @@ describe("Interchain Token Service", () => {
         executeDeployInterchainToken({
           messageId: "approved-interchain-token-deployment-message",
           payload: Cl.serialize(payload),
-          sourceAddress: "cosmwasm",
+          sourceAddress: TRUSTED_ADDRESS,
           sourceChain: "ethereum",
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
@@ -365,7 +366,7 @@ describe("Interchain Token Service", () => {
 
       const message = buildOutgoingGMPMessage({
         destinationChain: "axelar",
-        destinationContractAddress: "cosmwasm",
+        destinationContractAddress: TRUSTED_ADDRESS,
         payload: Cl.tuple({
           "destination-chain": Cl.stringAscii("ethereum"),
           type: Cl.uint(3),
@@ -445,14 +446,14 @@ describe("Interchain Token Service", () => {
         messageId: wrappedMessageId,
         payload: payload,
         sourceChain: "ethereum",
-        sourceAddress: "cosmwasm",
+        sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
       });
 
       const wrappedPayload = {
         "message-id": Cl.stringAscii(wrappedMessageId),
-        "source-address": Cl.stringAscii("cosmwasm"),
+        "source-address": Cl.stringAscii(TRUSTED_ADDRESS),
         "source-chain": Cl.stringAscii("ethereum"),
         payload: Cl.buffer(Cl.serialize(Cl.tuple(payload))),
       };
@@ -507,7 +508,7 @@ describe("Interchain Token Service", () => {
         messageId: wrappedMessageId,
         payload: payload,
         sourceChain: "ethereum",
-        sourceAddress: "cosmwasm",
+        sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
       });
@@ -544,7 +545,7 @@ describe("Interchain Token Service", () => {
         messageId: wrappedMessageId,
         payload: payload,
         sourceChain: "ethereum",
-        sourceAddress: "cosmwasm",
+        sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
       });
@@ -618,7 +619,7 @@ describe("Interchain Token Service", () => {
       expect(gatewayContractCall.data.value).toBeTuple(
         buildOutgoingGMPMessage({
           destinationChain: "axelar",
-          destinationContractAddress: "cosmwasm",
+          destinationContractAddress: TRUSTED_ADDRESS,
           sender: Cl.address(`${deployer}.interchain-token-service`),
           payload: Cl.tuple({
             "destination-chain": Cl.stringAscii(destinationChain),
@@ -666,17 +667,31 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
     });
 
-    it("Should revert on initiate interchain token transfer when service is paused", () => {});
+    it("Should revert on initiate interchain token transfer when service is paused", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
 
-    it("Should revert on transmit send token when service is paused", () => {});
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
 
-    it("Should revert on transmit send token when not called by interchain token", () => {});
-  });
-
-  describe("Gateway call", () => {
-    it("Should revert on initiating an interchain token transfer for gateway token when gateway call failed", () => {});
-
-    it("Should revert on callContractWithInterchainToken when gateway call failed", () => {});
+      setPaused({ paused: true });
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(0),
+          destinationAddress: Cl.bufferFromHex("0x00"),
+          destinationChain: Cl.stringAscii("ethereum"),
+          gasValue: Cl.uint(100),
+          tokenAddress: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          tokenId,
+          tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+          caller: deployer,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
   });
 
   describe("Execute checks", () => {
