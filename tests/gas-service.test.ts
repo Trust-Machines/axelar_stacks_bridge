@@ -12,9 +12,9 @@ describe('gas-service contract test suite', () => {
     });
 
     it('ensures initial state is correct', () => {
-        const owner = simnet.callReadOnlyFn('gas_service', 'get-owner', [], deployer);
-        const isDeployerOwner = simnet.callReadOnlyFn('gas_service', 'is-owner', [], deployer);
-        const isWallet1Owner = simnet.callReadOnlyFn('gas_service', 'is-owner', [], wallet1);
+        const owner = simnet.callReadOnlyFn('gas-service', 'get-owner', [], deployer);
+        const isDeployerOwner = simnet.callReadOnlyFn('gas-service', 'is-owner', [], deployer);
+        const isWallet1Owner = simnet.callReadOnlyFn('gas-service', 'is-owner', [], wallet1);
 
         expect(owner.result).toBeOk(Cl.principal(deployer));
         expect(isDeployerOwner.result).toBeOk(Cl.bool(true));
@@ -29,7 +29,7 @@ describe('gas-service contract test suite', () => {
         const payload = Buffer.from('test payload');
         const refundAddress = wallet2;
 
-        const payTx = simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
+        const payTx = simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
             Cl.uint(amount),
             Cl.principal(sender),
             Cl.stringAscii(destinationChain),
@@ -47,7 +47,7 @@ describe('gas-service contract test suite', () => {
         const logIndex = 0n;
         const refundAddress = wallet2;
 
-        const addGasTx = simnet.callPublicFn('gas_service', 'add-native-gas', [
+        const addGasTx = simnet.callPublicFn('gas-service', 'add-native-gas', [
             Cl.uint(amount),
             Cl.buffer(txHash),
             Cl.uint(logIndex),
@@ -64,7 +64,7 @@ describe('gas-service contract test suite', () => {
         const receiver = wallet1;
 
         // First, add some STX to the contract
-        simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
+        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
             Cl.uint(amount),
             Cl.principal(wallet1),
             Cl.stringAscii('ethereum'),
@@ -73,7 +73,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(wallet1)
         ], wallet1);
 
-        const refundTx = simnet.callPublicFn('gas_service', 'refund', [
+        const refundTx = simnet.callPublicFn('gas-service', 'refund', [
             Cl.buffer(txHash),
             Cl.uint(logIndex),
             Cl.principal(receiver),
@@ -89,7 +89,7 @@ describe('gas-service contract test suite', () => {
         const logIndex = 0n;
         const receiver = wallet1;
 
-        const refundTx = simnet.callPublicFn('gas_service', 'refund', [
+        const refundTx = simnet.callPublicFn('gas-service', 'refund', [
             Cl.buffer(txHash),
             Cl.uint(logIndex),
             Cl.principal(receiver),
@@ -100,25 +100,25 @@ describe('gas-service contract test suite', () => {
     });
 
     it('allows owner to transfer ownership', () => {
-        const transferTx = simnet.callPublicFn('gas_service', 'transfer-ownership', [Cl.principal(wallet1)], deployer);
+        const transferTx = simnet.callPublicFn('gas-service', 'transfer-ownership', [Cl.principal(wallet1)], deployer);
         expect(transferTx.result).toBeOk(Cl.bool(true));
 
-        const newOwner = simnet.callReadOnlyFn('gas_service', 'get-owner', [], deployer);
+        const newOwner = simnet.callReadOnlyFn('gas-service', 'get-owner', [], deployer);
         expect(newOwner.result).toBeOk(Cl.principal(wallet1));
     });
 
     it('prevents non-owner from transferring ownership', () => {
-        const transferTx = simnet.callPublicFn('gas_service', 'transfer-ownership', [Cl.principal(wallet2)], wallet1);
+        const transferTx = simnet.callPublicFn('gas-service', 'transfer-ownership', [Cl.principal(wallet2)], wallet1);
         expect(transferTx.result).toBeErr(Cl.uint(100)); // err-owner-only
     });
 
     it('checks contract balance', () => {
-        const balanceBefore = simnet.callReadOnlyFn('gas_service', 'get-balance', [], deployer);
+        const balanceBefore = simnet.callReadOnlyFn('gas-service', 'get-balance', [], deployer);
         expect(balanceBefore.result).toBeOk(Cl.uint(0));
 
         // Add some STX to the contract
         const amount = 1000n;
-        simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
+        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
             Cl.uint(amount),
             Cl.principal(wallet1),
             Cl.stringAscii('ethereum'),
@@ -127,7 +127,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(wallet1)
         ], wallet1);
 
-        const balanceAfter = simnet.callReadOnlyFn('gas_service', 'get-balance', [], deployer);
+        const balanceAfter = simnet.callReadOnlyFn('gas-service', 'get-balance', [], deployer);
         expect(balanceAfter.result).toBeOk(Cl.uint(amount));
     });
 
@@ -141,7 +141,7 @@ describe('gas-service contract test suite', () => {
         const txHash = Buffer.alloc(32, 1);
         const logIndex = 0n;
 
-        const payGasTx = simnet.callPublicFn('gas_service', 'pay-gas-for-contract-call', [
+        const payGasTx = simnet.callPublicFn('gas-service', 'pay-gas-for-contract-call', [
             Cl.uint(amount),
             Cl.principal(sender),
             Cl.stringAscii(destinationChain),
@@ -150,7 +150,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(refundAddress)
         ], wallet1);
 
-        const addGasTx = simnet.callPublicFn('gas_service', 'add-gas', [
+        const addGasTx = simnet.callPublicFn('gas-service', 'add-gas', [
             Cl.uint(amount),
             Cl.principal(sender),
             Cl.buffer(txHash),
@@ -158,7 +158,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(refundAddress)
         ], wallet1);
 
-        const payExpressTx = simnet.callPublicFn('gas_service', 'pay-native-gas-for-express-call', [
+        const payExpressTx = simnet.callPublicFn('gas-service', 'pay-native-gas-for-express-call', [
             Cl.uint(amount),
             Cl.principal(sender),
             Cl.stringAscii(destinationChain),
@@ -167,7 +167,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(refundAddress)
         ], wallet1);
 
-        const addExpressGasTx = simnet.callPublicFn('gas_service', 'add-native-express-gas', [
+        const addExpressGasTx = simnet.callPublicFn('gas-service', 'add-native-express-gas', [
             Cl.uint(amount),
             Cl.principal(sender),
             Cl.buffer(txHash),
@@ -186,7 +186,7 @@ describe('gas-service contract test suite', () => {
         const receiver = wallet2;
 
         // First, add some STX to the contract
-        simnet.callPublicFn('gas_service', 'pay-native-gas-for-contract-call', [
+        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
             Cl.uint(amount),
             Cl.principal(wallet1),
             Cl.stringAscii('ethereum'),
@@ -195,7 +195,7 @@ describe('gas-service contract test suite', () => {
             Cl.principal(wallet1)
         ], wallet1);
 
-        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
             Cl.principal(receiver),
             Cl.uint(amount)
         ], deployer);
@@ -207,7 +207,7 @@ describe('gas-service contract test suite', () => {
         const amount = 1000n;
         const receiver = wallet2;
 
-        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
             Cl.principal(receiver),
             Cl.uint(amount)
         ], wallet1);
@@ -219,7 +219,7 @@ describe('gas-service contract test suite', () => {
         const amount = 1000n;
         const receiver = wallet2;
 
-        const collectFeesTx = simnet.callPublicFn('gas_service', 'collect-fees', [
+        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
             Cl.principal(receiver),
             Cl.uint(amount)
         ], deployer);

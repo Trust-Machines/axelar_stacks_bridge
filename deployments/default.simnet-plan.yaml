@@ -50,9 +50,9 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
-            contract-name: gas_service
+            contract-name: gas-service
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas_service.clar
+            path: contracts/gas-service.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: traits
