@@ -45,6 +45,7 @@
 (define-constant ERR-TOKEN-REQUIRED (err u2073))
 (define-constant ERR-TOKEN-MANAGER-REQUIRED (err u2074))
 (define-constant ERR-TOKEN-METADATA-INVALID (err u2074))
+(define-constant ERR-NOT-REMOTE-SERVICE (err u2075))
 
 
 
@@ -204,7 +205,7 @@
 ;; @return bool true if the sender chain/address are trusted, false otherwise
 
 (define-read-only (is-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
-    (ok (is-eq address (default-to "" (map-get? trusted-chain-address chain-name)))))
+    (is-eq address (default-to "" (map-get? trusted-chain-address chain-name))))
 
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
@@ -670,7 +671,6 @@
         (call-contract destination-chain payload metadata-version gas-value)
     ))
 
-;; TODO: make sure that this follows the same flow as the NITs verification
 (define-public (execute-deploy-token-manager
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
@@ -692,6 +692,7 @@
         )
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
+        (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
             (process-deploy-token-manager-from-external-chain
@@ -716,6 +717,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
+        (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
@@ -884,6 +886,7 @@
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
+    (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
         (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))

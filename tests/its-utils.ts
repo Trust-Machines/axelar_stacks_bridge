@@ -447,7 +447,7 @@ export function approveRemoteInterchainToken({
           "approved-interchain-token-deployment-message"
         ),
         payload,
-        sourceAddress: Cl.stringAscii("0x00"),
+        sourceAddress: Cl.stringAscii("cosmwasm"),
         sourceChain: Cl.stringAscii("ethereum"),
       })
     ),

@@ -249,7 +249,7 @@ describe("Interchain Token Service", () => {
               "minter-bytes": Cl.bufferFromHex("0x00"),
             })
           ),
-          sourceAddress: "0x00",
+          sourceAddress: "cosmwasm",
           sourceChain: "ethereum",
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
@@ -265,7 +265,7 @@ describe("Interchain Token Service", () => {
         executeDeployInterchainToken({
           messageId: "approved-interchain-token-deployment-message",
           payload: Cl.serialize(payload),
-          sourceAddress: "0x00",
+          sourceAddress: "cosmwasm",
           sourceChain: "ethereum",
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
