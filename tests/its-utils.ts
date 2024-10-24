@@ -34,6 +34,11 @@ export enum TokenType {
   GATEWAY, // The token will be sent through the gateway via callContractWithToken
 }
 
+export enum MetadataVersion {
+  ContractCall,
+  ExpressCall,
+}
+
 export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
 }: {
@@ -514,4 +519,96 @@ export function executeDeployTokenManager({
     ],
     address1
   );
+}
+
+export function interchainTransfer({
+  amount,
+  destinationAddress,
+  destinationChain,
+  gasValue,
+  tokenAddress,
+  tokenId,
+  tokenManagerAddress,
+  metadata,
+  caller,
+}: {
+  tokenManagerAddress: PrincipalCV;
+  tokenAddress: PrincipalCV;
+  tokenId: BufferCV;
+  amount: UIntCV;
+  destinationChain: StringAsciiCV;
+  destinationAddress: BufferCV;
+  gasValue: UIntCV;
+  metadata?: {
+    version: UIntCV;
+    data: BufferCV;
+  };
+  caller: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "interchain-transfer",
+    [
+      tokenManagerAddress,
+      tokenAddress,
+      tokenId,
+      destinationChain,
+      destinationAddress,
+      amount,
+      metadata
+        ? Cl.tuple(metadata)
+        : Cl.tuple({
+            version: Cl.uint(MetadataVersion.ContractCall),
+            data: Cl.bufferFromHex("0x"),
+          }),
+      gasValue,
+    ],
+    caller
+  );
+}
+
+export function buildFtTransferEvent({
+  amount,
+  tokenAddress,
+  tokenName,
+  recipient,
+  sender,
+}: {
+  amount: number;
+  tokenName: string;
+  tokenAddress: string;
+  sender: string;
+  recipient: string;
+}) {
+  return {
+    event: "ft_transfer_event",
+    data: {
+      amount: `${amount}`,
+      asset_identifier: `${tokenAddress}::${tokenName}`,
+      sender,
+      recipient,
+    },
+  };
+}
+
+export function buildSTXTransferEvent({
+  amount,
+  recipient,
+  sender,
+  memo = "",
+}: {
+  amount: number;
+  sender: string;
+  recipient: string;
+  memo?: string;
+}) {
+  return {
+    event: "stx_transfer_event",
+    data: {
+      amount: `${amount}`,
+      memo,
+      recipient,
+      sender,
+    },
+  };
 }

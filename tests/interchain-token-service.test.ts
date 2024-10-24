@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   approveRemoteInterchainToken,
+  buildFtTransferEvent,
   buildOutgoingGMPMessage,
+  buildSTXTransferEvent,
   buildVerifyTokenManagerPayload,
   deployInterchainToken,
   deployRemoteInterchainToken,
@@ -12,6 +14,7 @@ import {
   executeDeployInterchainToken,
   executeDeployTokenManager,
   getTokenId,
+  interchainTransfer,
   MessageType,
   setPaused,
   setupTokenManager,
@@ -552,11 +555,116 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Send Token", () => {
-    it("Should be able to initiate an interchain token transfer for lockUnlockFee with a normal ERC20 token", () => {});
+    it("Should be able to initiate an interchain token transfer for lockUnlock with a normal SIP-010 token", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
 
-    it("Should revert on initiating an interchain token transfer for lockUnlockFee with reentrant token", () => {});
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      const amount = 1000;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      const transferTx = interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii(destinationAddress),
+        destinationChain: Cl.stringAscii(destinationChain),
+        gasValue: Cl.uint(gasValue),
+        tokenAddress: Cl.address(tokenAddress),
+        tokenId,
+        tokenManagerAddress: Cl.address(managerAddress),
+        caller: deployer,
+      });
+      const [
+        ftTransfer,
+        itsTransferAnnouncement,
+        gasTransfer,
+        _nativeGasPaidForContractCall,
+        gatewayContractCall,
+      ] = transferTx.events;
 
-    it("Should revert on initiate interchain token transfer with zero amount", () => {});
+      expect(ftTransfer).toStrictEqual(
+        buildFtTransferEvent({
+          amount,
+          recipient: managerAddress,
+          sender: deployer,
+          tokenName: "itscoin",
+          tokenAddress,
+        })
+      );
+      expect(gasTransfer).toStrictEqual(
+        buildSTXTransferEvent({
+          amount: gasValue,
+          recipient: `${deployer}.gas_service`,
+          sender: deployer,
+        })
+      );
+      expect(itsTransferAnnouncement.data.value).toBeTuple({
+        type: Cl.stringAscii("interchain-transfer"),
+        "token-id": tokenId,
+        "source-address": Cl.address(deployer),
+        "destination-chain": Cl.stringAscii(destinationChain),
+        "destination-address": Cl.bufferFromAscii(destinationAddress),
+        amount: Cl.uint(amount),
+        data: Cl.bufferFromHex("0x" + "00".repeat(32)),
+      });
+      expect(transferTx.result).toBeOk(Cl.bool(true));
+      expect(gatewayContractCall.data.value).toBeTuple(
+        buildOutgoingGMPMessage({
+          destinationChain: "axelar",
+          destinationContractAddress: "cosmwasm",
+          sender: Cl.address(`${deployer}.interchain-token-service`),
+          payload: Cl.tuple({
+            "destination-chain": Cl.stringAscii(destinationChain),
+            type: Cl.uint(MessageType.SEND_TO_HUB),
+            payload: Cl.buffer(
+              Cl.serialize(
+                Cl.tuple({
+                  type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
+                  "token-id": tokenId,
+                  "source-address": Cl.address(deployer),
+                  "destination-address": Cl.bufferFromAscii(destinationAddress),
+                  amount: Cl.uint(amount),
+                  data: Cl.bufferFromHex("0x"),
+                })
+              )
+            ),
+          }),
+        })
+      );
+    });
+
+    // it("Should revert on initiating an interchain token transfer for lockUnlockFee with reentrant token", () => {});
+
+    it("Should revert on initiate interchain token transfer with zero amount", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(0),
+          destinationAddress: Cl.bufferFromHex("0x00"),
+          destinationChain: Cl.stringAscii("ethereum"),
+          gasValue: Cl.uint(100),
+          tokenAddress: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          tokenId,
+          tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+          caller: deployer,
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+    });
 
     it("Should revert on initiate interchain token transfer when service is paused", () => {});
 
@@ -775,33 +883,5 @@ describe("Interchain Token Service", () => {
     it("Should revert if trying to add a flow limiter as not the operator", () => {});
 
     it("Should be able to transfer a flow limiter and the operator in one call", () => {});
-  });
-
-  describe("Call contract value", () => {
-    it("Should revert on contractCallValue if not called by remote service", () => {});
-
-    it("Should revert on contractCallValue if service is paused", () => {});
-
-    it("Should revert on invalid express message type", () => {});
-
-    it("Should return correct token address and amount", () => {});
-  });
-
-  describe("Call contract with token value", () => {
-    it("Should revert on contractCallWithTokenValue if not called by remote service", () => {});
-
-    it("Should revert on contractCallWithTokenValue if service is paused", () => {});
-
-    it("Should revert on invalid express message type", () => {});
-
-    it("Should revert on token missmatch", () => {});
-
-    it("Should revert on amount missmatch", () => {});
-
-    it("Should return correct token address and amount", () => {});
-  });
-
-  describe("Bytecode checks [ @skip-on-coverage ]", () => {
-    it("Should preserve the same proxy bytecode for each EVM", () => {});
   });
 });
