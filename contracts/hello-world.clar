@@ -1,14 +1,21 @@
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait gas-service-trait .traits.gas-service-trait)
 
-(define-data-var last-payload (buff 10240) 0x00)
-(define-read-only (get-last-payload) (var-get last-payload))
+(define-data-var value 
+    {
+        source-chain: (string-ascii 32),
+        message-id: (string-ascii 71),
+        source-address: (string-ascii 48),
+        payload: (buff 10240),
+    } {
+        source-chain: "", 
+        message-id: "", 
+        source-address: "", 
+        payload: 0x00
+    }
+)
 
-(define-data-var last-source-chain (string-ascii 32) "")
-(define-read-only (get-last-source-chain) (var-get last-source-chain))
-
-(define-data-var last-source-address (string-ascii 48) "")
-(define-read-only (get-last-source-address) (var-get last-source-address))
+(define-read-only (get-value) (var-get value))
 
 (define-public (set-remote-value 
     (destination-chain (string-ascii 32)) 
@@ -44,9 +51,12 @@
 ) 
     (begin 
         (try! (contract-call? gateway validate-message source-chain message-id source-address (keccak256 payload)))
-        (var-set last-source-chain source-chain)
-        (var-set last-source-address source-address)
-        (var-set last-payload payload)
+        (var-set value {
+            source-chain: source-chain, 
+            message-id: message-id, 
+            source-address: source-address, 
+            payload: payload
+        })
         (ok true)
     )
 )
