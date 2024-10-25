@@ -1,5 +1,7 @@
 ;; Gas Service Contract
 
+(impl-trait .traits.gas-service-trait)
+
 ;; Define constants
 (define-constant err-owner-only (err u100))
 (define-constant err-insufficient-balance (err u101))

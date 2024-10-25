@@ -50,18 +50,23 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
-            contract-name: gas-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas-service.clar
-            clarity-version: 2
-        - emulated-contract-publish:
             contract-name: traits
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/traits.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: gas-service
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-service.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: gateway
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/gateway.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: hello-world
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/hello-world.clar
             clarity-version: 2
       epoch: "2.5"
