@@ -1,4 +1,5 @@
 (use-trait gateway-trait .traits.gateway-trait)
+(use-trait gas-service-trait .traits.gas-service-trait)
 
 (define-data-var last-payload (buff 10240) 0x00)
 (define-read-only (get-last-payload) (var-get last-payload))
@@ -15,11 +16,12 @@
     (payload (buff 10240))
     (gas-amount uint)
     (gateway <gateway-trait>)
+    (gas-service <gas-service-trait>)
 )
     (begin 
         (try! (stx-transfer? gas-amount contract-caller (as-contract tx-sender)))
         (try! 
-            (contract-call? .gas-service pay-native-gas-for-contract-call 
+            (contract-call? gas-service pay-native-gas-for-contract-call 
                 gas-amount 
                 (as-contract tx-sender) 
                 destination-chain 
