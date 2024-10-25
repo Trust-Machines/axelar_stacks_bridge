@@ -1,3 +1,4 @@
+(use-trait gateway-trait .traits.gateway-trait)
 
 (define-data-var last-payload (buff 10240) 0x00)
 (define-read-only (get-last-payload) (var-get last-payload))
@@ -13,6 +14,7 @@
     (destination-contract-address (string-ascii 48)) 
     (payload (buff 10240))
     (gas-amount uint)
+    (gateway <gateway-trait>)
 )
     (begin 
         (try! (stx-transfer? gas-amount contract-caller (as-contract tx-sender)))
@@ -26,7 +28,7 @@
                 contract-caller
             )
         )
-        (try! (contract-call? .gateway call-contract destination-chain destination-contract-address payload))
+        (try! (contract-call? gateway call-contract destination-chain destination-contract-address payload))
         (ok true)
     )
 )
@@ -36,9 +38,10 @@
     (message-id (string-ascii 71)) 
     (source-address (string-ascii 48)) 
     (payload (buff 10240))
+    (gateway <gateway-trait>)
 ) 
     (begin 
-        (try! (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload)))
+        (try! (contract-call? gateway validate-message source-chain message-id source-address (keccak256 payload)))
         (var-set last-source-chain source-chain)
         (var-set last-source-address source-address)
         (var-set last-payload payload)
