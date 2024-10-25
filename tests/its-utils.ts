@@ -615,15 +615,7 @@ export function executeReceiveInterchainToken({
   sourceAddress: string;
   tokenManager: ContractPrincipalCV;
   token: ContractPrincipalCV;
-  payload: {
-    type: UIntCV;
-    "token-id": BufferCV;
-    "source-chain": StringAsciiCV;
-    "source-address": BufferCV;
-    "destination-address": BufferCV;
-    amount: UIntCV;
-    data: BufferCV;
-  };
+  payload: BufferCV;
   destinationContract?: ContractPrincipalCV;
 }) {
   return simnet.callPublicFn(
@@ -635,9 +627,65 @@ export function executeReceiveInterchainToken({
       Cl.stringAscii(sourceAddress),
       tokenManager,
       token,
-      Cl.buffer(Cl.serialize(Cl.tuple(payload))),
+      payload,
       destinationContract ? Cl.some(destinationContract) : Cl.none(),
     ],
     address1
   );
+}
+
+export function buildIncomingInterchainTransferPayload({
+  tokenId,
+  recipient,
+  sender,
+  amount,
+  data,
+}: {
+  tokenId: BufferCV;
+  sender: string;
+  recipient: string;
+  amount: number;
+  data: BufferCV;
+}) {
+  return Cl.tuple({
+    // (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
+    type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
+    "source-chain": Cl.stringAscii("ethereum"),
+    "token-id": tokenId,
+    "source-address": Cl.buffer(Cl.serialize(Cl.address(sender))),
+    "destination-address": Cl.buffer(Cl.serialize(Cl.address(recipient))),
+    amount: Cl.uint(amount),
+    data,
+  });
+}
+
+export function approveReceiveInterchainTransfer({
+  proofSigners,
+  payload,
+}: {
+  proofSigners: Signers;
+  payload: TupleCV;
+}) {
+  const messages = Cl.list([
+    Cl.tuple(
+      buildIncomingGMPMessage({
+        contractAddress: Cl.contractPrincipal(
+          deployer,
+          "interchain-token-service"
+        ),
+        messageId: Cl.stringAscii("approved-interchain-transfer-message"),
+        payload,
+        sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
+        sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
+      })
+    ),
+  ]);
+  signAndApproveMessages({
+    messages,
+    proofSigners,
+  });
+
+  return {
+    payload,
+  };
 }

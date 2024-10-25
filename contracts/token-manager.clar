@@ -187,8 +187,9 @@
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
-        (as-contract (transfer-token-from sip-010-token (as-contract contract-caller) to amount))))
+        (as-contract (transfer-token-from sip-010-token contract-caller to amount))))
 
 ;; This function takes token from a specified address to the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -199,6 +200,7 @@
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
@@ -206,7 +208,6 @@
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
         (asserts! (is-eq (contract-of sip-010-token) (unwrap-panic (var-get token-address))) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
 

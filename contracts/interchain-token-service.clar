@@ -889,7 +889,7 @@
     (try! (as-contract
         (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))
     ))
-    (try! (contract-call? token-manager give-token token recipient amount))
+    (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
     (print {
         type: "interchain-transfer-received",
         token-id: token-id,
@@ -899,7 +899,7 @@
         amount: amount,
         data: (if data-is-empty (keccak256 data) EMPTY-32-BYTES),
     })
-    (if data-is-empty
+    (if (or (is-none destination-contract) data-is-empty)
         (ok 0x)
         (let (
             (destination-contract-unwrapped (unwrap! destination-contract ERR-INVALID-DESTINATION-ADDRESS))

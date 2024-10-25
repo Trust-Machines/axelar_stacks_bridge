@@ -2,8 +2,10 @@ import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  approveReceiveInterchainTransfer,
   approveRemoteInterchainToken,
   buildFtTransferEvent,
+  buildIncomingInterchainTransferPayload,
   buildOutgoingGMPMessage,
   buildSTXTransferEvent,
   buildVerifyTokenManagerPayload,
@@ -777,17 +779,21 @@ describe("Interchain Token Service", () => {
           sourceAddress: "untrusted address",
           tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
-          payload: {
-            type: Cl.uint(3),
-            "token-id": tokenId,
-            "source-chain": Cl.stringAscii("ethereum"),
-            "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
-            "destination-address": Cl.buffer(
-              Cl.serialize(Cl.address(address1))
-            ),
-            amount: Cl.uint(1000),
-            data: Cl.bufferFromHex("0x"),
-          },
+          payload: Cl.buffer(
+            Cl.serialize(
+              Cl.tuple({
+                type: Cl.uint(3),
+                "token-id": tokenId,
+                "source-chain": Cl.stringAscii("ethereum"),
+                "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
+                "destination-address": Cl.buffer(
+                  Cl.serialize(Cl.address(address1))
+                ),
+                amount: Cl.uint(1000),
+                data: Cl.bufferFromHex("0x"),
+              })
+            )
+          ),
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
     });
@@ -863,17 +869,21 @@ describe("Interchain Token Service", () => {
           sourceAddress: TRUSTED_ADDRESS,
           tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
-          payload: {
-            type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
-            "token-id": tokenId,
-            "source-chain": Cl.stringAscii("ethereum"),
-            "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
-            "destination-address": Cl.buffer(
-              Cl.serialize(Cl.address(address1))
-            ),
-            amount: Cl.uint(1000),
-            data: Cl.bufferFromHex("0x"),
-          },
+          payload: Cl.buffer(
+            Cl.serialize(
+              Cl.tuple({
+                type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
+                "token-id": tokenId,
+                "source-chain": Cl.stringAscii("ethereum"),
+                "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
+                "destination-address": Cl.buffer(
+                  Cl.serialize(Cl.address(address1))
+                ),
+                amount: Cl.uint(1000),
+                data: Cl.bufferFromHex("0x"),
+              })
+            )
+          ),
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
@@ -888,17 +898,62 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Tokens", () => {
-    it("Should revert with InvalidPayload", () => {});
+    it("Should be able to receive lock/unlock token", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
 
-    it("Should be able to receive lock/unlock token", () => {});
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(managerAddress),
+          caller: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+          token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeOk(Cl.bufferFromHex("0x"));
+    });
 
     it("Should be able to receive mint/burn token", () => {});
-
-    it("Should be able to receive lock/unlock with fee on transfer token", () => {});
-
-    it("Should be able to receive lock/unlock with fee on transfer token with normal ERC20 token", () => {});
-
-    it("Should be able to receive gateway token", () => {});
   });
 
   describe("Send Token With Data", () => {
