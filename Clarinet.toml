@@ -5,9 +5,18 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
+[contracts.gas-service]
+path = 'contracts/gas-service.clar'
+clarity_version = 2
+epoch = 2.5
 
 [contracts.gateway]
 path = 'contracts/gateway.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.hello-world]
+path = 'contracts/hello-world.clar'
 clarity_version = 2
 epoch = 2.5
 
@@ -15,12 +24,6 @@ epoch = 2.5
 path = 'contracts/traits.clar'
 clarity_version = 2
 epoch = 2.5
-
-[contracts.gas-service]
-path = 'contracts/gas-service.clar'
-clarity_version = 2
-epoch = 2.5
-
 [repl.analysis]
 passes = ['check_checker']
 
