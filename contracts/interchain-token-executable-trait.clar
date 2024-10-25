@@ -17,7 +17,7 @@
         ;; amount
         (string-ascii 71)
         (string-ascii 18)
-        (string-ascii 48)
+        (buff 200)
         (buff 1024)
         (buff 32)
         principal

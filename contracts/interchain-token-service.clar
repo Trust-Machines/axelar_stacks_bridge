@@ -323,12 +323,14 @@
         })
         (if (is-eq (len destination-chain) u0) 
             (process-deploy-token-manager-from-external-chain 
-                token-id
-                destination-chain
-                token-manager-type
-                ;; #[filter(token-manager, params)]
-                params
                 token-manager
+                (unwrap-panic (to-consensus-buff? {
+                    source-chain: destination-chain,
+                    type: MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER,
+                    token-id: token-id,
+                    token-manager-type: TOKEN-TYPE-LOCK-UNLOCK,
+                    params: params
+                }))
                 none)
             ;; #[filter(token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value token-manager)
@@ -369,23 +371,30 @@
 ;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
 (define-public (process-deploy-token-manager-from-external-chain
-        (token-id (buff 32))
-        (destination-chain (string-ascii 18))
-        (token-manager-type uint)
-        (params (buff 1024))
         (token-manager <token-manager-trait>)
+        (payload (buff 2048))
         (wrapped-payload  (optional {
             source-chain: (string-ascii 18),
             source-address: (string-ascii 48),
             message-id: (string-ascii 71),
-            payload: (buff 1024),
+            payload: (buff 2048),
         })))
     (let (
+
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
+        (payload-decoded (unwrap! (from-consensus-buff? {
+            source-chain: (string-ascii 18),
+            type: uint,
+            token-id: (buff 32),
+            token-manager-type: uint,
+            params: (buff 512)
+        } payload) ERR-INVALID-PAYLOAD))
+        (token-manager-type (get token-manager-type payload-decoded))
+        (token-id (get token-id payload-decoded))
         (data (unwrap-panic (from-consensus-buff? {
             operator: principal,
             token-address: principal
-        } params)))
+        } (get params payload-decoded))))
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
@@ -678,29 +687,15 @@
         (payload (buff 1024))
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
-    (let
-        (
-            (payload-decoded (unwrap! (from-consensus-buff? {
-                type: uint,
-                token-id: (buff 32),
-                token-manager-type: uint,
-                params: (buff 512)
-            } payload) ERR-INVALID-PAYLOAD))
-            (token-id (get token-id payload-decoded))
-            (token-manager-type (get token-manager-type payload-decoded))
-            (params (get params payload-decoded))
-        )
+    (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
             (process-deploy-token-manager-from-external-chain
-                token-id
-                CHAIN-NAME
-                token-manager-type
-                params
                 token-manager
+                payload
                 (some {
                     source-chain: source-chain,
                     source-address: source-address,
@@ -739,6 +734,7 @@
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
             type: uint,
+            source-chain: (string-ascii 18),
             token-id: (buff 32),
             name: (string-ascii 32),
             symbol: (string-ascii 32),
@@ -862,6 +858,7 @@
 (define-public (execute-receive-interchain-token
         (message-id (string-ascii 71))
         (source-chain (string-ascii 18))
+        (source-address (string-ascii 48))
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (payload (buff 1024))
@@ -870,14 +867,15 @@
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
             type: uint,
+            source-chain: (string-ascii 18),
             token-id: (buff 32),
-            source-address: (string-ascii 48),
+            source-address: (buff 200),
             destination-address: (buff 200),
             amount: uint,
             data: (buff 256),
         } payload) ERR-INVALID-PAYLOAD))
         (token-id (get token-id payload-decoded))
-        (source-address (get source-address payload-decoded))
+        (sender-address (get source-address payload-decoded))
         (recipient (unwrap-panic (from-consensus-buff? principal (get destination-address payload-decoded))))
         (amount (get amount payload-decoded))
         (data (get data payload-decoded))
@@ -896,7 +894,7 @@
         type: "interchain-transfer-received",
         token-id: token-id,
         source-chain: source-chain,
-        source-address: source-address,
+        source-address: sender-address,
         destination-address: recipient,
         amount: amount,
         data: (if data-is-empty (keccak256 data) EMPTY-32-BYTES),
@@ -909,7 +907,7 @@
             (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
             (as-contract 
                 (contract-call? destination-contract-unwrapped execute-with-interchain-token 
-                    message-id source-chain source-address data token-id (contract-of token) amount))))))
+                    message-id source-chain sender-address data token-id (contract-of token) amount))))))
 
 
 ;; ######################

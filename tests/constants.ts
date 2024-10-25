@@ -32,3 +32,27 @@ export const ITS_ERROR_CODES = {
   "ERR-STARTED": Cl.uint(4051),
   "ERR-NOT-STARTED": Cl.uint(4052),
 };
+
+export const TRUSTED_CHAIN = "axelar";
+export const TRUSTED_ADDRESS = "cosmwasm";
+
+export enum MessageType {
+  INTERCHAIN_TRANSFER,
+  DEPLOY_INTERCHAIN_TOKEN,
+  DEPLOY_TOKEN_MANAGER,
+  SEND_TO_HUB,
+  RECEIVE_FROM_HUB,
+}
+export enum TokenType {
+  NATIVE_INTERCHAIN_TOKEN, // This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
+  MINT_BURN_FROM, // The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
+  LOCK_UNLOCK, // The token will be locked/unlocked at the token manager.
+  LOCK_UNLOCK_FEE, // The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
+  MINT_BURN, // The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
+  GATEWAY, // The token will be sent through the gateway via callContractWithToken
+}
+
+export enum MetadataVersion {
+  ContractCall,
+  ExpressCall,
+}

@@ -16,14 +16,17 @@ import {
   executeReceiveInterchainToken,
   getTokenId,
   interchainTransfer,
-  MessageType,
   setPaused,
   setupTokenManager,
-  TokenType,
-  TRUSTED_ADDRESS,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
-import { ITS_ERROR_CODES } from "./constants";
+import {
+  ITS_ERROR_CODES,
+  MessageType,
+  TokenType,
+  TRUSTED_ADDRESS,
+  TRUSTED_CHAIN,
+} from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -48,6 +51,10 @@ function setupService() {
         Cl.contractPrincipal(deployer, "gas-service"),
         Cl.standardPrincipal(deployer),
         Cl.list([
+          Cl.tuple({
+            "chain-name": Cl.stringAscii(TRUSTED_CHAIN),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
+          }),
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
             address: Cl.stringAscii(TRUSTED_ADDRESS),
@@ -244,6 +251,7 @@ describe("Interchain Token Service", () => {
           payload: Cl.serialize(
             Cl.tuple({
               type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
+              "source-chain": Cl.stringAscii("ethereum"),
               "token-id": Cl.buffer(randomBytes(32)),
               name: Cl.stringAscii("unapproved-token"),
               symbol: Cl.stringAscii("unapproved-token"),
@@ -252,7 +260,7 @@ describe("Interchain Token Service", () => {
             })
           ),
           sourceAddress: TRUSTED_ADDRESS,
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-TOKEN-DEPLOYMENT-NOT-APPROVED"]);
@@ -268,7 +276,7 @@ describe("Interchain Token Service", () => {
           messageId: "approved-interchain-token-deployment-message",
           payload: Cl.serialize(payload),
           sourceAddress: TRUSTED_ADDRESS,
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
       ).toBeOk(Cl.bool(true));
@@ -432,6 +440,7 @@ describe("Interchain Token Service", () => {
       );
       const payload = {
         type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
         "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
         params: Cl.buffer(
@@ -446,7 +455,7 @@ describe("Interchain Token Service", () => {
       const deployTx = executeDeployTokenManager({
         messageId: wrappedMessageId,
         payload: payload,
-        sourceChain: "ethereum",
+        sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
@@ -455,7 +464,7 @@ describe("Interchain Token Service", () => {
       const wrappedPayload = {
         "message-id": Cl.stringAscii(wrappedMessageId),
         "source-address": Cl.stringAscii(TRUSTED_ADDRESS),
-        "source-chain": Cl.stringAscii("ethereum"),
+        "source-chain": Cl.stringAscii(TRUSTED_CHAIN),
         payload: Cl.buffer(Cl.serialize(Cl.tuple(payload))),
       };
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -494,6 +503,7 @@ describe("Interchain Token Service", () => {
       );
       const payload = {
         type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
         "token-manager-type": Cl.uint(TokenType.MINT_BURN),
         params: Cl.buffer(
@@ -508,7 +518,7 @@ describe("Interchain Token Service", () => {
       const deployTx = executeDeployTokenManager({
         messageId: wrappedMessageId,
         payload: payload,
-        sourceChain: "ethereum",
+        sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
@@ -531,6 +541,7 @@ describe("Interchain Token Service", () => {
       );
       const payload = {
         type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
         "token-manager-type": Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
         params: Cl.buffer(
@@ -545,7 +556,7 @@ describe("Interchain Token Service", () => {
       const deployTx = executeDeployTokenManager({
         messageId: wrappedMessageId,
         payload: payload,
-        sourceChain: "ethereum",
+        sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
@@ -590,6 +601,7 @@ describe("Interchain Token Service", () => {
         _nativeGasPaidForContractCall,
         gatewayContractCall,
       ] = transferTx.events;
+      expect(transferTx.result).toBeOk(Cl.bool(true));
 
       expect(ftTransfer).toStrictEqual(
         buildFtTransferEvent({
@@ -616,7 +628,6 @@ describe("Interchain Token Service", () => {
         amount: Cl.uint(amount),
         data: Cl.bufferFromHex("0x" + "00".repeat(32)),
       });
-      expect(transferTx.result).toBeOk(Cl.bool(true));
       expect(gatewayContractCall.data.value).toBeTuple(
         buildOutgoingGMPMessage({
           destinationChain: "axelar",
@@ -709,6 +720,7 @@ describe("Interchain Token Service", () => {
       );
       const payload = {
         type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
         "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
         params: Cl.buffer(
@@ -723,7 +735,7 @@ describe("Interchain Token Service", () => {
       const deployTx = executeDeployTokenManager({
         messageId: wrappedMessageId,
         payload: payload,
-        sourceChain: "ethereum",
+        sourceChain: TRUSTED_CHAIN,
         sourceAddress: "untrusted address",
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
@@ -743,7 +755,7 @@ describe("Interchain Token Service", () => {
           messageId: "approved-interchain-token-deployment-message",
           payload: Cl.serialize(payload),
           sourceAddress: "untrusted address",
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
@@ -761,13 +773,15 @@ describe("Interchain Token Service", () => {
       expect(
         executeReceiveInterchainToken({
           messageId: "interchain-transfer-received",
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: "untrusted address",
           tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: {
             type: Cl.uint(3),
             "token-id": tokenId,
-            "source-address": Cl.stringAscii("untrusted address"),
+            "source-chain": Cl.stringAscii("ethereum"),
+            "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
             "destination-address": Cl.buffer(
               Cl.serialize(Cl.address(address1))
             ),
@@ -791,6 +805,7 @@ describe("Interchain Token Service", () => {
       );
       const payload = {
         type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
         "token-id": tokenId,
         "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
         params: Cl.buffer(
@@ -806,7 +821,7 @@ describe("Interchain Token Service", () => {
       const deployTx = executeDeployTokenManager({
         messageId: wrappedMessageId,
         payload: payload,
-        sourceChain: "ethereum",
+        sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
@@ -825,7 +840,7 @@ describe("Interchain Token Service", () => {
           messageId: "approved-interchain-token-deployment-message",
           payload: Cl.serialize(payload),
           sourceAddress: TRUSTED_ADDRESS,
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
@@ -844,13 +859,15 @@ describe("Interchain Token Service", () => {
       expect(
         executeReceiveInterchainToken({
           messageId: "interchain-transfer-received",
-          sourceChain: "ethereum",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
           tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: {
-            type: Cl.uint(3),
+            type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
             "token-id": tokenId,
-            "source-address": Cl.stringAscii(TRUSTED_ADDRESS),
+            "source-chain": Cl.stringAscii("ethereum"),
+            "source-address": Cl.buffer(Cl.serialize(Cl.address(deployer))),
             "destination-address": Cl.buffer(
               Cl.serialize(Cl.address(address1))
             ),
