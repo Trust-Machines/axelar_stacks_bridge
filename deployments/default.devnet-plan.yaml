@@ -74,9 +74,9 @@ plan:
       epoch: "2.5"
     - id: 2
       transactions:
-        - emulated-contract-call:
+        - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             method: setup
             parameters:
               - '"interchain-token-service"'
