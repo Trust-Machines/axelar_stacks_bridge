@@ -13,21 +13,21 @@
 (define-data-var owner principal tx-sender)
 
 ;; Public function for native gas payment for contract call
-(define-public (pay-native-gas-for-contract-call 
+(define-public (pay-native-gas-for-contract-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 32))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
-    (payload (buff 10240))
+    (payload (buff 64000))
     (refund-address principal))
     (begin
         (asserts! (> amount u0) err-invalid-amount)
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
-            type: "native-gas-paid-for-contract-call", 
-            sender: sender, 
-            amount: amount, 
+            type: "native-gas-paid-for-contract-call",
+            sender: sender,
+            amount: amount,
             refund-address: refund-address,
             destination-chain: destination-chain,
             destination-address: destination-address,
@@ -38,7 +38,7 @@
 )
 
 ;; Public function to add native gas (deduct from contract balance)
-(define-public (add-native-gas 
+(define-public (add-native-gas
     (amount uint)
     (tx-hash (buff 32))
     (log-index uint)
@@ -48,8 +48,8 @@
         ;; Transfer STX from the caller to the contract
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (print {
-            type: "native-gas-added", 
-            amount: amount, 
+            type: "native-gas-added",
+            amount: amount,
             refund-address: refund-address,
             tx-hash: tx-hash,
             log-index: log-index
@@ -59,7 +59,7 @@
 )
 
 ;; Function to refund gas (transfer from contract balance to receiver)
-(define-public (refund 
+(define-public (refund
     (tx-hash (buff 32))
     (log-index uint)
     (receiver principal)
@@ -70,10 +70,10 @@
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))
         (print {
-            type: "refunded", 
+            type: "refunded",
             tx-hash: tx-hash,
             log-index: log-index,
-            receiver: receiver, 
+            receiver: receiver,
             amount: amount
         })
         (ok true)
@@ -81,46 +81,46 @@
 )
 
 ;; Public function to collect fees (transfer STX from contract to receiver)
-(define-public (collect-fees 
+(define-public (collect-fees
     (receiver principal)
     (amount uint))
     (begin
         ;; Ensure only the owner can call this function
         (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
-        
+
         ;; Ensure the amount is greater than zero
         (asserts! (> amount u0) err-invalid-amount)
-        
+
         ;; Ensure the contract has sufficient balance
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
-        
+
         ;; Transfer STX from the contract to the receiver
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))
-        
+
         ;; Log the fee collection
         (print {
-            type: "fees-collected", 
-            receiver: receiver, 
+            type: "fees-collected",
+            receiver: receiver,
             amount: amount
         })
-        
+
         (ok true)
     )
 )
 
 ;; Placeholder for future implementation: pay gas for contract call
-(define-public (pay-gas-for-contract-call 
+(define-public (pay-gas-for-contract-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 32))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
-    (payload (buff 10240))
+    (payload (buff 64000))
     (refund-address principal))
     (err err-not-implemented)
 )
 
 ;; Placeholder for future implementation: add gas
-(define-public (add-gas 
+(define-public (add-gas
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))
@@ -130,18 +130,18 @@
 )
 
 ;; Placeholder for future implementation: pay native gas for express call
-(define-public (pay-native-gas-for-express-call 
+(define-public (pay-native-gas-for-express-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 32))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
-    (payload (buff 10240))
+    (payload (buff 64000))
     (refund-address principal))
     (err err-not-implemented)
 )
 
 ;; Placeholder for future implementation: add native express gas
-(define-public (add-native-express-gas 
+(define-public (add-native-express-gas
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))

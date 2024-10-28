@@ -7,12 +7,12 @@
 ;; @param destination-chain; The chain where the destination contract exists. A registered chain name on Axelar must be used here
 ;; @param destination-contract-address; The address of the contract to call on the destination chain
 ;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
-(define-public (call-contract 
-    (destination-chain (string-ascii 32))
-    (destination-contract-address (string-ascii 128)) 
-    (payload (buff 10240))
-) 
-    (begin 
+(define-public (call-contract
+    (destination-chain (string-ascii 20))
+    (destination-contract-address (string-ascii 128))
+    (payload (buff 64000))
+)
+    (begin
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
@@ -42,7 +42,7 @@
 ;; @param source-chain The name of the source chain as registered on Axelar.
 ;; @param message-id The unique message id for the message.
 ;; @returns (buff 32) the command-id.
-(define-read-only (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 128))) 
+(define-read-only (message-to-command-id (source-chain (string-ascii 20)) (message-id (string-ascii 128)))
     ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
@@ -51,19 +51,19 @@
 ;; @returns (buff 32) the message hash
 (define-private (get-message-hash (message {
         message-id: (string-ascii 128),
-        source-chain: (string-ascii 32),
+        source-chain: (string-ascii 20),
         source-address: (string-ascii 128),
         contract-address: principal,
         payload-hash: (buff 32)
-    })) 
+    }))
     (keccak256 (unwrap-panic (to-consensus-buff? message)))
 )
 
 ;; Helper function to build keccak256 data-hash from messages
-;; @param messages; 
-;; @returns (response (buff 32)) 
+;; @param messages;
+;; @returns (response (buff 32))
 (define-read-only (data-hash-from-messages (messages (list 10 {
-                source-chain: (string-ascii 32),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -76,16 +76,16 @@
 ;; @params message;
 ;; @returns (some message) or none
 (define-private (approve-message (message {
-                source-chain: (string-ascii 32),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
                 payload-hash: (buff 32)
-            })) 
+            }))
             (let (
                     (command-id (message-to-command-id (get source-chain message) (get message-id message)))
                 )
-                (if 
+                (if
                     (map-insert messages-storage command-id (get-message-hash {
                         message-id: (get message-id message),
                         source-chain: (get source-chain message),
@@ -104,21 +104,21 @@
 ;; @param messages; The list of messages to verify.
 ;; @param proof; The proof signed by the Axelar signers for this command.
 ;; @returns (response true) or err
-(define-public (approve-messages 
-    (messages (buff 4096)) 
-    (proof (buff 16384))) 
+(define-public (approve-messages
+    (messages (buff 4096))
+    (proof (buff 16384)))
     (let (
-        (proof_ (unwrap! (from-consensus-buff? { 
+        (proof_ (unwrap! (from-consensus-buff? {
                 signers: {
-                    signers: (list 100 {signer: (buff 33), weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
                 },
                 signatures: (list 100 (buff 65))
             } proof) ERR-SIGNERS-DATA))
-        (messages_ (unwrap! (from-consensus-buff? 
+        (messages_ (unwrap! (from-consensus-buff?
             (list 10 {
-                source-chain: (string-ascii 32),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -140,12 +140,12 @@
 ;; @param source-address; The address of the sender on the source chain.
 ;; @param payload-hash The keccak256 hash of the payload data.
 ;; @returns (response true) or reverts
-(define-public (validate-message 
-    (source-chain (string-ascii 32)) 
-    (message-id (string-ascii 128)) 
-    (source-address (string-ascii 128)) 
+(define-public (validate-message
+    (source-chain (string-ascii 20))
+    (message-id (string-ascii 128))
+    (source-address (string-ascii 128))
     (payload-hash (buff 32))
-) 
+)
     (let (
         (command-id (message-to-command-id source-chain message-id))
         (message-hash (get-message-hash {
@@ -155,7 +155,7 @@
                 contract-address: contract-caller,
                 payload-hash: payload-hash
             }))
-    ) 
+    )
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (map-set messages-storage command-id MESSAGE-EXECUTED)
@@ -177,11 +177,11 @@
 ;; @param contract-address; The address of the contract where the call will be executed.
 ;; @param payload-hash; The keccak256 hash of the payload data.
 ;; @returns (response bool)
-(define-read-only (is-message-approved 
-    (source-chain (string-ascii 32))
+(define-read-only (is-message-approved
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
-    (source-address (string-ascii 128)) 
-    (contract-address principal) 
+    (source-address (string-ascii 128))
+    (contract-address principal)
     (payload-hash (buff 32))
 )
     (let (
@@ -193,7 +193,7 @@
                 contract-address: contract-address,
                 payload-hash: payload-hash
             }))
-        ) 
+        )
         (ok (is-eq message-hash (get-message command-id))))
 )
 
@@ -203,9 +203,9 @@
 ;; @param message-id; The unique identifier of the message.
 ;; @returns (response bool)
 (define-read-only (is-message-executed
-    (source-chain (string-ascii 32))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
-) 
+)
     (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
 )
 
@@ -230,7 +230,7 @@
 (define-read-only (get-operator) (var-get operator))
 
 ;; Transfers operatorship to a new account
-(define-public (transfer-operatorship (new-operator principal)) 
+(define-public (transfer-operatorship (new-operator principal))
     (begin
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
@@ -255,12 +255,12 @@
 (define-read-only (get-last-rotation-timestamp) (var-get last-rotation-timestamp))
 
 ;; The map of signer hash by epoch
-(define-map signer-hash-by-epoch uint (buff 256))
+(define-map signer-hash-by-epoch uint (buff 32))
 (define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (map-get? signer-hash-by-epoch signer-epoch))
 
 ;; The map of epoch by signer hash
-(define-map epoch-by-signer-hash (buff 256) uint)
-(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 256))) (map-get? epoch-by-signer-hash signer-hash))
+(define-map epoch-by-signer-hash (buff 32) uint)
+(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (map-get? epoch-by-signer-hash signer-hash))
 
 ;; Previous signers retention. 0 means only the current signers are valid
 (define-data-var previous-signers-retention uint u0)
@@ -284,14 +284,14 @@
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
 ;; @param data-hash; The hash of the data
 ;; @returns (buff 32); The message hash to be signed
-(define-read-only (message-hash-to-sign (signers-hash (buff 32)) (data-hash (buff 32))) 
-    (keccak256 
-        (concat 
-            (unwrap-panic (to-consensus-buff? "Stacks Signed Message")) 
-            (concat 
+(define-read-only (message-hash-to-sign (signers-hash (buff 32)) (data-hash (buff 32)))
+    (keccak256
+        (concat
+            (unwrap-panic (to-consensus-buff? "Stacks Signed Message"))
+            (concat
                 (var-get domain-separator)
-                (concat 
-                    signers-hash 
+                (concat
+                    signers-hash
                     data-hash
                 )
             )
@@ -300,24 +300,24 @@
 )
 
 ;; Helper function to build keccak256 data-hash from signers
-;; @param signers; 
-;; @returns (response (buff 32)) 
-(define-read-only (data-hash-from-signers (signers { 
-                signers: (list 100 {signer: (buff 33), weight: uint}), 
-                threshold: uint, 
-                nonce: (buff 32) 
+;; @param signers;
+;; @returns (response (buff 32))
+(define-read-only (data-hash-from-signers (signers {
+                signers: (list 100 {signer: (buff 33), weight: uint}),
+                threshold: uint,
+                nonce: (buff 32)
             })
 )
     (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: signers} { type: "rotate-signers" }))))
 )
 
 ;; Helper function to build keccak256 of signers
-;; @param signers; 
-;; @returns (response (buff 32)) 
-(define-read-only (get-signers-hash (signers { 
-                signers: (list 100 {signer: (buff 33), weight: uint}), 
-                threshold: uint, 
-                nonce: (buff 32) 
+;; @param signers;
+;; @returns (response (buff 32))
+(define-read-only (get-signers-hash (signers {
+                signers: (list 100 {signer: (buff 33), weight: uint}),
+                threshold: uint,
+                nonce: (buff 32)
             })
 )
     (keccak256 (unwrap-panic (to-consensus-buff? signers)))
@@ -342,18 +342,18 @@
 ;; Validates a particular signer's weight
 ;; @param signer; Signer to validate
 ;; @returns bool
-(define-private (validate-signer-weight (signer {signer: (buff 33), weight: uint})) 
+(define-private (validate-signer-weight (signer {signer: (buff 33), weight: uint}))
     (> (get weight signer) u0) ;; signer weight must be bigger than zero
 )
 
 ;; Validates signer order
 ;; @param signer; Signer to validate
 ;; @returns (response true) or reverts
-(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint})) 
-    (let 
+(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint}))
+    (let
         (
             (r (> (get signer signer) (var-get temp-pub)))
-        ) 
+        )
        ;; save this signer in order to do comparison with the next signer
        (var-set temp-pub (get signer signer))
        (ok r)
@@ -368,11 +368,11 @@
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
 ;; @param new-signers; Signers to validate
 ;; @returns (response true) or reverts
-(define-private (validate-signers (signers { 
-            signers: (list 100 {signer: (buff 33), weight: uint}), 
-            threshold: uint, 
-            nonce: (buff 32) 
-        })) 
+(define-private (validate-signers (signers {
+            signers: (list 100 {signer: (buff 33), weight: uint}),
+            threshold: uint,
+            nonce: (buff 32)
+        }))
     (let
         (
             (signers- (get signers signers))
@@ -412,16 +412,16 @@
 ;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
 ;; @param signature;
 ;; @returns (response {signer: (buff 33), weight: uint}) or (err u0) or (err u1)
-(define-private (signature-to-signer (signature (buff 65))) 
-    (let 
+(define-private (signature-to-signer (signature (buff 65)))
+    (let
        (
             (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
        )
        (var-set temp-pub pub)
-       (let 
+       (let
             (
                 (signers (filter is-the-signer (var-get temp-signers)))
-                (signer (unwrap! (element-at? signers u0) (err u1)))   
+                (signer (unwrap! (element-at? signers u0) (err u1)))
             )
             (ok signer)
        )
@@ -429,20 +429,20 @@
 )
 
 ;; A helper function to unwrap signer value from an ok response
-;; @param signer; 
+;; @param signer;
 ;; @returns {signer: (buff 33), weight: uint}
 (define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
     (unwrap-panic signer)
 )
 
 ;; A helper function to determine whether the provided signer is an error.
-;; @param signer; 
+;; @param signer;
 ;; @returns bool
 (define-read-only (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
   (is-err signer)
 )
 
-;; Accumulates weight of signers 
+;; Accumulates weight of signers
 ;; @param signer
 ;; @accumulator
 (define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
@@ -454,26 +454,26 @@
 ;; @param message-hash; The hash of the message that was signed
 ;; @param signers; The weighted signers
 ;; @param signatures The sorted signatures data
-(define-private (validate-signatures 
-                (message-hash (buff 32)) 
+(define-private (validate-signatures
+                (message-hash (buff 32))
                 (signers {
-                    signers: (list 100 {signer: (buff 33), weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
                 })
                 (signatures (list 100 (buff 65))
-)) 
-    (begin 
+))
+    (begin
         ;; Fill temp variables with data will be used in loops
         (var-set temp-hash message-hash)
         (var-set temp-signers (get signers signers))
-        (let  
+        (let
             (
                 (signers-raw (map signature-to-signer signatures))
                 (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
             )
             (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH) (unwrap-err-panic (unwrap-panic signer-err)))))
-            (let 
+            (let
                 (
                     ;; Convert signatures to signers
                     (signers- (map unwrap-signer signers-raw))
@@ -489,11 +489,11 @@
                 (var-set temp-hash 0x00)
                 (var-set temp-signers (list))
                 (var-set temp-pub NULL-PUB)
-                ;; total-weight must be bigger than the signers threshold 
+                ;; total-weight must be bigger than the signers threshold
                 (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
                 (ok true)
             )
-        )    
+        )
     )
 )
 
@@ -509,15 +509,15 @@
 ;; @param data-hash; The hash of the message that was signed
 ;; @param proof; The multisig proof data
 ;; @returns (response true) or reverts
-(define-private (validate-proof (data-hash (buff 32)) (proof { 
+(define-private (validate-proof (data-hash (buff 32)) (proof {
                 signers: {
-                    signers: (list 100 {signer: (buff 33), weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
                 },
                 signatures: (list 100 (buff 65))
-            })) 
-    (let 
+            }))
+    (let
         (
             (signers (get signers proof))
             (signers-hash (get-signers-hash signers))
@@ -526,7 +526,7 @@
             ;; True if the proof is from the latest signer set
             (is-latest-signers (is-eq signer-epoch current-epoch))
             (message-hash (message-hash-to-sign signers-hash data-hash))
-        ) 
+        )
 
         (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (var-get previous-signers-retention))) false) ERR-INVALID-SIGNERS)
 
@@ -550,8 +550,8 @@
 ;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
 ;; @params enforce-rotation-delay
 ;; @returns (response true) or reverts
-(define-private (update-rotation-timestamp (enforce-rotation-delay bool)) 
-    (let   
+(define-private (update-rotation-timestamp (enforce-rotation-delay bool))
+    (let
         (
             (last-rotation-timestamp_ (var-get last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
@@ -566,13 +566,13 @@
 ;; @param new-signers The new weighted signers data
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
-(define-private (rotate-signers-inner (new-signers { 
-                signers: (list 100 {signer: (buff 33), weight: uint}), 
-                threshold: uint, 
-                nonce: (buff 32) 
+(define-private (rotate-signers-inner (new-signers {
+                signers: (list 100 {signer: (buff 33), weight: uint}),
+                threshold: uint,
+                nonce: (buff 32)
             }) (enforce-rotation-delay bool)
 )
-    (let 
+    (let
             (
                 (new-signers-hash (get-signers-hash new-signers))
                 (new-epoch (+ (var-get epoch) u1))
@@ -586,11 +586,11 @@
             (print {
                 type: "signers-rotated",
                 epoch: new-epoch,
-                signers-hash: new-signers-hash, 
+                signers-hash: new-signers-hash,
                 signers: new-signers
             })
             (ok true)
-        ) 
+        )
 )
 
 ;; Rotate the weighted signers, signed off by the latest Axelar signers.
@@ -600,24 +600,24 @@
 ;; @param new-signers; The data for the new signers.
 ;; @param proof; The proof signed by the Axelar verifiers for this command.
 ;; @returns (response true) or reverts
-(define-public (rotate-signers 
+(define-public (rotate-signers
     (new-signers (buff 8192))
     (proof (buff 16384))
 )
-    (begin 
+    (begin
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
-        (let 
+        (let
             (
-                (new-signers_ (unwrap! (from-consensus-buff? { 
-                    signers: (list 100 {signer: (buff 33), weight: uint}), 
-                    threshold: uint, 
-                    nonce: (buff 32) 
+                (new-signers_ (unwrap! (from-consensus-buff? {
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
                 } new-signers) ERR-SIGNERS-DATA))
-                (proof_ (unwrap! (from-consensus-buff? { 
+                (proof_ (unwrap! (from-consensus-buff? {
                     signers: {
-                        signers: (list 100 {signer: (buff 33), weight: uint}), 
-                        threshold: uint, 
-                        nonce: (buff 32) 
+                        signers: (list 100 {signer: (buff 33), weight: uint}),
+                        threshold: uint,
+                        nonce: (buff 32)
                     },
                     signatures: (list 100 (buff 65))
                 } proof) ERR-PROOF-DATA))
@@ -653,19 +653,19 @@
 ;; @domain-separator_
 ;; @minimum-rotation-delay_
 ;; @returns (response true) or reverts
-(define-public (setup 
-    (signers (buff 8192)) 
-    (operator_ principal) 
-    (domain-separator_ (buff 32)) 
+(define-public (setup
+    (signers (buff 8192))
+    (operator_ principal)
+    (domain-separator_ (buff 32))
     (minimum-rotation-delay_ uint)
-    (previous-signers-retention_ uint) 
-) 
+    (previous-signers-retention_ uint)
+)
     (let
         (
-            (signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 100 {signer: (buff 33), weight: uint}), 
-                threshold: uint, 
-                nonce: (buff 32) 
+            (signers_ (unwrap! (from-consensus-buff? {
+                signers: (list 100 {signer: (buff 33), weight: uint}),
+                threshold: uint,
+                nonce: (buff 32)
             } signers) ERR-SIGNERS-DATA))
         )
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
@@ -674,7 +674,7 @@
         (var-set domain-separator domain-separator_)
         (var-set minimum-rotation-delay minimum-rotation-delay_)
         (var-set previous-signers-retention previous-signers-retention_)
-        (var-set is-started true) 
+        (var-set is-started true)
         (ok true)
     )
 )

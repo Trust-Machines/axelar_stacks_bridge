@@ -50,7 +50,7 @@
 
 ;; Getter for the contract id.
 ;; @return bytes32 The contract id of this contract.
-(define-read-only (get-contract-id) 
+(define-read-only (get-contract-id)
     (ok CONTRACT-ID))
 
 ;; Calculates the salt for an interchain token.
@@ -59,10 +59,10 @@
 ;; @param salt A unique identifier to generate the salt.
 ;; @return tokenSalt The calculated salt for the interchain token.
 (define-read-only (get-interchain-token-salt (chain-name-hash_ (buff 32)) (deployer principal) (salt (buff 32)))
-        (keccak256 
+        (keccak256
             (concat
                 (concat PREFIX-INTERCHAIN-TOKEN-SALT chain-name-hash_)
-                (concat 
+                (concat
                     (unwrap-panic (to-consensus-buff? deployer))
                     salt))))
 
@@ -71,9 +71,9 @@
 ;; @param token-address The address of the token.
 ;; @return salt The calculated salt for the interchain token.
 (define-read-only (get-canonical-interchain-token-salt (chain-name-hash_ (buff 32)) (token-address principal))
-        (keccak256 
-            (concat 
-                (concat PREFIX-CANONICAL-TOKEN-SALT chain-name-hash_) 
+        (keccak256
+            (concat
+                (concat PREFIX-CANONICAL-TOKEN-SALT chain-name-hash_)
                 (unwrap-panic (to-consensus-buff? token-address)))))
 
 ;; Computes the ID for an interchain token based on the deployer and a salt.
@@ -81,7 +81,7 @@
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
 (define-read-only (get-interchain-token-id (deployer principal) (salt (buff 32)))
-    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER 
+    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER
         (get-interchain-token-salt CHAIN-NAME-HASH deployer salt))))
 
 
@@ -98,11 +98,11 @@
 (define-public (register-canonical-interchain-token (token-address <sip-010-trait>) (token-manager-address <token-manager-trait>))
     (begin
         (asserts! (is-ok (contract-call? .token-manager contract-id)) ERR-TOKEN-NOT-ENABLED)
-        (contract-call? 
+        (contract-call?
             .interchain-token-service deploy-token-manager
-                (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address)) 
-                "" 
-                TOKEN-TYPE-LOCK-UNLOCK 
+                (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
+                ""
+                TOKEN-TYPE-LOCK-UNLOCK
                 u0
                 0x
                 token-manager-address)
@@ -115,7 +115,7 @@
 ;; @param gasValue The gas amount to be sent for deployment.
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 32)) (gas-value uint))
+(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 20)) (gas-value uint))
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
@@ -132,7 +132,7 @@
 
 
 (define-public (deploy-interchain-token
-        (salt_ (buff 32)) 
+        (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter_ principal))
@@ -141,10 +141,10 @@
             (sender contract-caller)
             (salt (get-interchain-token-salt CHAIN-NAME-HASH sender salt_))
             (minter
-                (if 
+                (if
                     (> initial-supply u0)
                     (as-contract tx-sender)
-                    (if 
+                    (if
                         (not (is-eq NULL-ADDRESS minter_))
                             minter_
                             NULL-ADDRESS)))
@@ -153,14 +153,14 @@
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter))))
 
-;; This will only be a risk if the user deploying the token remotely 
+;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
 ;; basically getting themself rekt
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-interchain-token 
+(define-public (deploy-remote-interchain-token
     (salt_ (buff 32))
-    (minter_ (buff 200))
-    (destination-chain (string-ascii 32))
+    (minter_ (buff 128))
+    (destination-chain (string-ascii 20))
     (gas-value uint)
     (token <sip-010-trait>)
     (token-manager <token-manager-trait>)
@@ -171,8 +171,8 @@
         (symbol (unwrap-panic (contract-call? token get-symbol)))
         (decimals (unwrap-panic  (contract-call? token get-decimals)))
         (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
-        (minter 
-            (if 
+        (minter
+            (if
                 (not (is-eq NULL-BYTES minter_))
                 (begin
                     (asserts! (unwrap-panic (contract-call? token-manager is-minter contract-caller)) ERR-NOT-MINTER)
@@ -180,7 +180,7 @@
                 NULL-BYTES
         ))
     )
-        (contract-call? .interchain-token-service deploy-remote-interchain-token 
+        (contract-call? .interchain-token-service deploy-remote-interchain-token
             salt
             destination-chain
             name

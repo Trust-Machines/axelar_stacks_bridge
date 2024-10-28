@@ -1,34 +1,34 @@
 (define-trait gateway-trait
 	(
-		(call-contract ((string-ascii 32) (string-ascii 128) (buff 10240)) (response bool uint))
+		(call-contract ((string-ascii 20) (string-ascii 128) (buff 64000)) (response bool uint))
         (approve-messages ((buff 4096) (buff 16384)) (response bool uint))
-        (validate-message ((string-ascii 32) (string-ascii 128) (string-ascii 128) (buff 32)) (response bool uint))
-        (is-message-approved  ((string-ascii 32) (string-ascii 128) (string-ascii 128) principal (buff 32)) (response bool uint))
-        (is-message-executed  ((string-ascii 32) (string-ascii 128)) (response bool uint))
+        (validate-message ((string-ascii 20) (string-ascii 128) (string-ascii 128) (buff 32)) (response bool uint))
+        (is-message-approved  ((string-ascii 20) (string-ascii 128) (string-ascii 128) principal (buff 32)) (response bool uint))
+        (is-message-executed  ((string-ascii 20) (string-ascii 128)) (response bool uint))
         (rotate-signers ((buff 8192) (buff 16384)) (response bool uint))
 	)
 )
 
 (define-trait gas-service-trait
 	(
-		(pay-native-gas-for-contract-call (uint principal (string-ascii 32) (string-ascii 128) (buff 10240) principal) (response bool uint))
+		(pay-native-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (add-native-gas (uint (buff 32) uint principal) (response bool uint))
 	)
 )
 
 (define-trait interchain-token-executable-trait (
     (execute-with-interchain-token (
-        ;; commandId,
         ;; sourceChain,
+        ;; messageId,
         ;; sourceAddress,
         ;; data,
         ;; tokenId,
         ;; tokenAddress,
         ;; amount
+        (string-ascii 20)
         (string-ascii 128)
-        (string-ascii 32)
-        (buff 200)
-        (buff 1024)
+        (buff 128)
+        (buff 64000)
         (buff 32)
         principal
         uint
@@ -38,7 +38,7 @@
 
 (define-trait interchain-token-service-trait (
     (get-chain-name-hash () (response (buff 32) uint))
-    (interchain-transfer ((buff 32) (string-ascii 32) (string-ascii 128) uint (buff 32) uint) (response bool uint))
+    (interchain-transfer ((buff 32) (string-ascii 20) (string-ascii 128) uint (buff 32) uint) (response bool uint))
     ;;     /**
     ;;      * @notice Initiates an interchain call contract with interchain token to a destination chain.
     ;;      * @param tokenId The unique identifier of the token to be transferred.
@@ -47,7 +47,7 @@
     ;;      * @param amount The amount of tokens to be transferred.
     ;;      * @param data Additional data to be passed along with the transfer.
     ;;      */
-    (call-contract-with-interchain-token ((buff 32) (string-ascii 32) (string-ascii 128) uint (buff 32) uint) (response bool uint))
+    (call-contract-with-interchain-token ((buff 32) (string-ascii 20) (buff 128) uint (buff 32) uint) (response bool uint))
     ;;     /**
     ;;      * @notice Sets the flow limits for multiple tokens.
     ;;      * @param tokenIds An array of tokenIds.
