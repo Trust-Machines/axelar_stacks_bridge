@@ -31,7 +31,7 @@
             refund-address: refund-address,
             destination-chain: destination-chain,
             destination-address: destination-address,
-            payload-hash: (sha256 payload)
+            payload-hash: (keccak256 payload)
         })
         (ok true)
     )
