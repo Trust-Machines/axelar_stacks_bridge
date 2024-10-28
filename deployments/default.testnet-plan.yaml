@@ -1,0 +1,85 @@
+---
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: "https://api.testnet.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - requirement-publish:
+            contract-id: SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard
+            remap-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            remap-principals:
+              SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 8400
+            path: "./.cache/requirements/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.clar"
+            clarity-version: 1
+      epoch: "2.0"
+    - id: 1
+      transactions:
+        - contract-publish:
+            contract-name: traits
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 70860
+            path: contracts/traits.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gas-service
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 53140
+            path: contracts/gas-service.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gateway
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 266020
+            path: contracts/gateway.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: hello-world
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 18020
+            path: contracts/hello-world.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: interchain-token-service
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 426430
+            path: contracts/interchain-token-service.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: token-manager
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 113470
+            path: contracts/token-manager.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: interchain-token-factory
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 92320
+            path: contracts/interchain-token-factory.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: native-interchain-token
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 122710
+            path: contracts/native-interchain-token.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: sample-sip-010
+            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            cost: 13410
+            path: contracts/sample-sip-010.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.5"
