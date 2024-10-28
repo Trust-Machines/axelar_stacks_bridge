@@ -106,15 +106,15 @@
 ;; @returns (response true) or err
 (define-public (approve-messages 
     (messages (buff 4096)) 
-    (proof (buff 7168))) 
+    (proof (buff 16384))) 
     (let (
         (proof_ (unwrap! (from-consensus-buff? { 
                 signers: {
-                    signers: (list 48 {signer: (buff 33), weight: uint}), 
+                    signers: (list 100 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 48 (buff 65))
+                signatures: (list 100 (buff 65))
             } proof) ERR-SIGNERS-DATA))
         (messages_ (unwrap! (from-consensus-buff? 
             (list 10 {
@@ -277,7 +277,7 @@
 ;; Helper vars to use within loops
 (define-data-var temp-pub (buff 33) NULL-PUB)
 (define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 48 {signer: (buff 33), weight: uint}) (list))
+(define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
 
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
@@ -303,7 +303,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-signers (signers { 
-                signers: (list 48 {signer: (buff 33), weight: uint}), 
+                signers: (list 100 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -315,7 +315,7 @@
 ;; @param signers; 
 ;; @returns (response (buff 32)) 
 (define-read-only (get-signers-hash (signers { 
-                signers: (list 48 {signer: (buff 33), weight: uint}), 
+                signers: (list 100 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             })
@@ -369,7 +369,7 @@
 ;; @param new-signers; Signers to validate
 ;; @returns (response true) or reverts
 (define-private (validate-signers (signers { 
-            signers: (list 48 {signer: (buff 33), weight: uint}), 
+            signers: (list 100 {signer: (buff 33), weight: uint}), 
             threshold: uint, 
             nonce: (buff 32) 
         })) 
@@ -457,11 +457,11 @@
 (define-private (validate-signatures 
                 (message-hash (buff 32)) 
                 (signers {
-                    signers: (list 48 {signer: (buff 33), weight: uint}), 
+                    signers: (list 100 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 })
-                (signatures (list 48 (buff 65))
+                (signatures (list 100 (buff 65))
 )) 
     (begin 
         ;; Fill temp variables with data will be used in loops
@@ -511,11 +511,11 @@
 ;; @returns (response true) or reverts
 (define-private (validate-proof (data-hash (buff 32)) (proof { 
                 signers: {
-                    signers: (list 48 {signer: (buff 33), weight: uint}), 
+                    signers: (list 100 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 },
-                signatures: (list 48 (buff 65))
+                signatures: (list 100 (buff 65))
             })) 
     (let 
         (
@@ -567,7 +567,7 @@
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
 (define-private (rotate-signers-inner (new-signers { 
-                signers: (list 48 {signer: (buff 33), weight: uint}), 
+                signers: (list 100 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             }) (enforce-rotation-delay bool)
@@ -601,25 +601,25 @@
 ;; @param proof; The proof signed by the Axelar verifiers for this command.
 ;; @returns (response true) or reverts
 (define-public (rotate-signers 
-    (new-signers (buff 4096))
-    (proof (buff 7168))
+    (new-signers (buff 8192))
+    (proof (buff 16384))
 )
     (begin 
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (let 
             (
                 (new-signers_ (unwrap! (from-consensus-buff? { 
-                    signers: (list 48 {signer: (buff 33), weight: uint}), 
+                    signers: (list 100 {signer: (buff 33), weight: uint}), 
                     threshold: uint, 
                     nonce: (buff 32) 
                 } new-signers) ERR-SIGNERS-DATA))
                 (proof_ (unwrap! (from-consensus-buff? { 
                     signers: {
-                        signers: (list 48 {signer: (buff 33), weight: uint}), 
+                        signers: (list 100 {signer: (buff 33), weight: uint}), 
                         threshold: uint, 
                         nonce: (buff 32) 
                     },
-                    signatures: (list 48 (buff 65))
+                    signatures: (list 100 (buff 65))
                 } proof) ERR-PROOF-DATA))
                 (data-hash (data-hash-from-signers new-signers_))
                 (enforce-rotation-delay (not (is-eq contract-caller (var-get operator))))
@@ -654,7 +654,7 @@
 ;; @minimum-rotation-delay_
 ;; @returns (response true) or reverts
 (define-public (setup 
-    (signers (buff 4096)) 
+    (signers (buff 8192)) 
     (operator_ principal) 
     (domain-separator_ (buff 32)) 
     (minimum-rotation-delay_ uint)
@@ -663,7 +663,7 @@
     (let
         (
             (signers_ (unwrap! (from-consensus-buff? { 
-                signers: (list 48 {signer: (buff 33), weight: uint}), 
+                signers: (list 100 {signer: (buff 33), weight: uint}), 
                 threshold: uint, 
                 nonce: (buff 32) 
             } signers) ERR-SIGNERS-DATA))

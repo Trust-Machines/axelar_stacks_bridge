@@ -13,7 +13,7 @@
 ```clarity
 (define-public (approve-messages
     (messages (buff 4096)) ;; Serialized buff data from Messages type
-    (proof (buff 7168)) ;; Serialized buff data from Proof type
+    (proof (buff 16384)) ;; Serialized buff data from Proof type
 )
 ```
 
@@ -45,8 +45,8 @@
 
 ```clarity
 (define-public (rotate-signers
-    (new-signers (buff 4096)) ;; Serialized buff data from Signers type
-    (proof (buff 7168)) ;; Serialized buff data from Proof type
+    (new-signers (buff 8192)) ;; Serialized buff data from Signers type
+    (proof (buff 16384)) ;; Serialized buff data from Proof type
 )
 ```
 
@@ -118,7 +118,7 @@ const messages = bufferCV(
 
 ```clarity
 {
-    signers: (list 48 {signer: (buff 33), weight: uint}),
+    signers: (list 100 {signer: (buff 33), weight: uint}),
     threshold: uint,
     nonce: (buff 32)
 }
@@ -174,11 +174,11 @@ const signers = bufferCV(
 ```clarity
 {
     signers: {
-        signers: (list 48 {signer: (buff 33), weight: uint}),
+        signers: (list 100 {signer: (buff 33), weight: uint}),
         threshold: uint,
         nonce: (buff 32)
     },
-    signatures: (list 48 (buff 65))
+    signatures: (list 100 (buff 65))
 }
 ```
 
@@ -334,7 +334,11 @@ The deserialization function [messageExecutedEventToObj](./tests/util.ts#L175) o
     type: "signers-rotated",
     epoch: uint,
     signers-hash: (buff 32),
-    signers: (buff 2048)
+    signers: {
+      signers: (list 100 {signer: (buff 33), weight: uint}),
+      threshold: uint,
+      nonce: (buff 32)
+    }
 }
 ```
 
