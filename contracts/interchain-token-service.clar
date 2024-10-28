@@ -54,6 +54,8 @@
 (define-constant ERR-TOKEN-METADATA-MINTER-ITS-INVALID (err u2082))
 (define-constant ERR-TOKEN-METADATA-TOKEN-ID-INVALID (err u2083))
 (define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u2084))
+(define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u2085))
+(define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u2086))
 
 
 
@@ -831,6 +833,7 @@
         (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-minter (get minter data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
         (asserts! 
             (is-eq 
                 (get token-id data)
@@ -838,15 +841,19 @@
                 ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
-        (asserts! (is-eq u0 (unwrap-panic (contract-call? deployed-token get-total-supply))) ERR-TOKEN-METADATA-SUPPLY-INVALID)
+        (asserts! (is-eq
+            (get supply data)
+            (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload data) wrapped-payload  
             (begin
-                (asserts! (is-eq u0 
-                    (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
+                (asserts! (is-eq NULL-ADDRESS (get minter data)) ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL)
+                (asserts! (is-eq u0
+                    (get supply data)
                 ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
                 (as-contract (contract-call? .gateway validate-message
                     (get source-chain wrapped-payload)
