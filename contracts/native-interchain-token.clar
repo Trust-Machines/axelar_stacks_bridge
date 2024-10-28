@@ -77,12 +77,21 @@
 (define-read-only (get-token-id) 
     (ok (var-get token-id)))
 
-(define-private (burn (from principal) (amount uint))
-    (ft-burn? itscoin amount from)
+(define-public (burn (from principal) (amount uint))
+    (begin 
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)
+        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (ft-burn? itscoin amount from))
 )
 
-(define-private (mint (from principal) (amount uint))
-    (ft-mint? itscoin amount from)
+(define-public (mint (to principal) (amount uint))
+    (begin 
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
+        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (ft-mint? itscoin amount to))
 )
 
 ;; Reads the managed token address
@@ -98,21 +107,17 @@
 ;; subject to change
 (define-public (take-token (token <sip-010-trait>) (from principal) (amount uint))
     (begin
-        (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)
-        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        ;; #[filter(amount)]
         (try! (add-flow-out amount))
         (burn from amount))
 )
 
 (define-public (give-token (token <sip-010-trait>) (to principal) (amount uint))
     (begin
-        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)
-        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        ;; #[filter(amount)]
         (try! (add-flow-in amount))
         (mint to amount)))
+
 
 (define-read-only (is-minter-raw (address principal)) 
     (or 
@@ -219,6 +224,7 @@
             (current-flow-in  (unwrap-panic (get-flow-in-amount)))
             (new-flow-out (+ current-flow-out flow-amount))
         )
+        (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
         (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
         (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if (is-eq limit u0)
@@ -239,6 +245,7 @@
             (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
             (current-flow-in (unwrap-panic (get-flow-in-amount)))
             (new-flow-in (+ current-flow-in flow-amount)))
+        (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
         (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
         (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if  (is-eq limit u0)
