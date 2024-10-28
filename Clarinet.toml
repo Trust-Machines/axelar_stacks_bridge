@@ -17,11 +17,6 @@ path = 'contracts/gateway.clar'
 clarity_version = 2
 epoch = 2.5
 
-[contracts.interchain-token-executable-trait]
-path = 'contracts/interchain-token-executable-trait.clar'
-clarity_version = 2
-epoch = 2.5
-
 [contracts.interchain-token-factory]
 path = 'contracts/interchain-token-factory.clar'
 clarity_version = 2
@@ -32,18 +27,8 @@ path = 'contracts/interchain-token-service.clar'
 clarity_version = 2
 epoch = 2.5
 
-[contracts.interchain-token-service-trait]
-path = 'contracts/interchain-token-service-trait.clar'
-clarity_version = 2
-epoch = 2.5
-
 [contracts.native-interchain-token]
 path = 'contracts/native-interchain-token.clar'
-clarity_version = 2
-epoch = 2.5
-
-[contracts.native-interchain-token-trait]
-path = 'contracts/native-interchain-token-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
@@ -54,11 +39,6 @@ epoch = 2.5
 
 [contracts.token-manager]
 path = 'contracts/token-manager.clar'
-clarity_version = 2
-epoch = 2.5
-
-[contracts.token-manager-trait]
-path = 'contracts/token-manager-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
