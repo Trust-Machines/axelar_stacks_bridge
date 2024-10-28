@@ -793,3 +793,43 @@ export function approveDeployNativeInterchainToken({
     payload,
   };
 }
+
+export function mintNIT({
+  amount,
+  minter,
+  recipient,
+  NITAddress = "native-interchain-token",
+}: {
+  minter: string;
+  amount: number;
+  NITAddress?: string;
+  // mints to minter if not provided.
+  recipient?: string;
+}) {
+  return simnet.callPublicFn(
+    NITAddress,
+    "mint",
+    [Cl.address(recipient ?? minter), Cl.uint(amount)],
+    minter
+  );
+}
+
+export function burnNIT({
+  amount,
+  minter,
+  recipient,
+  NITAddress = "native-interchain-token",
+}: {
+  minter: string;
+  amount: number;
+  NITAddress?: string;
+  // mints to minter if not provided.
+  recipient?: string;
+}) {
+  return simnet.callPublicFn(
+    NITAddress,
+    "burn",
+    [Cl.address(recipient ?? minter), Cl.uint(amount)],
+    minter
+  );
+}

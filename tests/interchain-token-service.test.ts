@@ -1,4 +1,9 @@
-import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
+import {
+  BufferCV,
+  randomBytes,
+  Cl,
+  ContractPrincipalCV,
+} from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -20,6 +25,7 @@ import {
   getSip010Balance,
   getTokenId,
   interchainTransfer,
+  mintNIT,
   setPaused,
   setupNIT,
   setupTokenManager,
@@ -1002,7 +1008,102 @@ describe("Interchain Token Service", () => {
       expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
     });
 
-    it("Should be able to receive mint/burn token", () => {});
+    it("Should be able to receive mint/burn token", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        mintNIT({
+          amount,
+          minter: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const senderInitialBalance = getSip010Balance({
+        address: sender,
+        contractAddress: tokenAddress,
+      });
+
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(tokenAddress),
+          caller: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeOk(Cl.bufferFromHex("0x"));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      const senderFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: sender,
+      });
+      expect(recipientFinalBalance).toBe(
+        recipientInitialBalance + BigInt(amount)
+      );
+      expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
+    });
   });
 
   describe("Send Token With Data", () => {

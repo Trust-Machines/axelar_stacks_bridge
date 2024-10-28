@@ -141,7 +141,7 @@
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2051))
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u3051))
 
 (define-map flows uint {
     flow-in: uint,
@@ -224,12 +224,12 @@
             (current-flow-in  (unwrap-panic (get-flow-in-amount)))
             (new-flow-out (+ current-flow-out flow-amount))
         )
-        (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
-        (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if (is-eq limit u0)
             (ok true)
             (begin
+                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
+                (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts! (< new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: new-flow-out,
                     flow-in: current-flow-in
@@ -245,12 +245,12 @@
             (current-flow-out    (unwrap-panic  (get-flow-out-amount)))
             (current-flow-in (unwrap-panic (get-flow-in-amount)))
             (new-flow-in (+ current-flow-in flow-amount)))
-        (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
-        (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
-        (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
         (if  (is-eq limit u0)
             (ok true)
             (begin
+                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
+                (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts!  (< new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: current-flow-out,
                     flow-in: new-flow-in
