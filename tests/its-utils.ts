@@ -212,11 +212,7 @@ export function buildOutgoingGMPMessage({
     "destination-chain": Cl.stringAscii(destinationChain),
     "destination-contract-address": Cl.stringAscii(destinationContractAddress),
     payload: Cl.buffer(Cl.serialize(payload)),
-    "payload-hash": Cl.buffer(
-      createKeccakHash("keccak256")
-        .update(Buffer.from(Cl.serialize(payload)))
-        .digest()
-    ),
+    "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
   };
 }
 
@@ -238,11 +234,7 @@ export function buildIncomingGMPMessage({
     "message-id": messageId,
     "source-address": sourceAddress,
     "contract-address": contractAddress,
-    "payload-hash": Cl.buffer(
-      createKeccakHash("keccak256")
-        .update(Buffer.from(Cl.serialize(payload)))
-        .digest()
-    ),
+    "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
   };
 }
 export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
@@ -832,4 +824,8 @@ export function burnNIT({
     [Cl.address(recipient ?? minter), Cl.uint(amount)],
     minter
   );
+}
+
+export function keccak256(data: Uint8Array | Buffer) {
+  return createKeccakHash("keccak256").update(Buffer.from(data)).digest();
 }

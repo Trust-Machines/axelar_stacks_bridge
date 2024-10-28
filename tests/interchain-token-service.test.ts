@@ -3,6 +3,7 @@ import {
   randomBytes,
   Cl,
   ContractPrincipalCV,
+  TupleCV,
 } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -25,6 +26,7 @@ import {
   getSip010Balance,
   getTokenId,
   interchainTransfer,
+  keccak256,
   mintNIT,
   setPaused,
   setupNIT,
@@ -34,6 +36,7 @@ import { deployGateway, getSigners } from "./util";
 import {
   ITS_ERROR_CODES,
   MessageType,
+  MetadataVersion,
   TokenType,
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
@@ -1107,18 +1110,141 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Send Token With Data", () => {
-    it("Should revert on an interchain transfer if service is paused", () => {});
+    it("Should revert on an interchain transfer if service is paused", () => {
+      const amount = 100;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.native-interchain-token`;
 
-    for (const type of [
-      "lockUnlock",
-      "mintBurn",
-      "lockUnlockFee",
-      "mintBurnFrom",
-    ]) {
-      it(`Should initiate an interchain token transfer via the interchainTransfer standard contract call & express call [${type}]`, () => {});
-    }
+      setPaused({ paused: true });
 
-    it("Should initiate an interchain token transfer via the interchainTransfer standard contract call & express call [gateway]", () => {});
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(tokenAddress),
+          caller: deployer,
+          metadata: {
+            data: Cl.bufferFromAscii("some data"),
+            version: Cl.uint(MetadataVersion.ContractCall),
+          },
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
+
+    it(`Should initiate an interchain token transfer via the interchainTransfer standard contract call & express call lockUnlock`, () => {
+      {
+        setupTokenManager({});
+        deployTokenManager({
+          salt,
+        });
+        enableTokenManager({
+          proofSigners,
+          tokenId,
+        });
+
+        const amount = 100;
+        const destinationAddress = "some eth address";
+        const destinationChain = "ethereum";
+        const gasValue = 100;
+        const tokenAddress = `${deployer}.sample-sip-010`;
+        const managerAddress = `${deployer}.token-manager`;
+        const transferTx = interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(managerAddress),
+          caller: deployer,
+          metadata: {
+            data: Cl.bufferFromAscii("some data"),
+            version: Cl.uint(MetadataVersion.ContractCall),
+          },
+        });
+        expect(transferTx.result).toBeOk(Cl.bool(true));
+        const [
+          _ftTransfer,
+          itsTransferAnnouncement,
+          _gasTransfer,
+          _nativeGasPaidForContractCall,
+          _gatewayContractCall,
+        ] = transferTx.events;
+        expect(
+          (itsTransferAnnouncement.data.value as TupleCV<{ data: BufferCV }>)
+            .data.data
+        ).toBeBuff(keccak256(Buffer.from("some data")));
+      }
+    });
+    it(`Should initiate an interchain token transfer via the interchainTransfer standard contract call & express call mintBurn`, () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+
+      const amount = 100;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        mintNIT({
+          amount,
+          minter: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+      const transferTx = interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii(destinationAddress),
+        destinationChain: Cl.stringAscii(destinationChain),
+        gasValue: Cl.uint(gasValue),
+        tokenAddress: Cl.address(tokenAddress),
+        tokenId,
+        tokenManagerAddress: Cl.address(tokenAddress),
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(transferTx.result).toBeOk(Cl.bool(true));
+      const [
+        _ftTransfer,
+        itsTransferAnnouncement,
+        _gasTransfer,
+        _nativeGasPaidForContractCall,
+        _gatewayContractCall,
+      ] = transferTx.events;
+      expect(
+        (itsTransferAnnouncement.data.value as TupleCV<{ data: BufferCV }>).data
+          .data
+      ).toBeBuff(keccak256(Buffer.from("some data")));
+    });
 
     it("Should revert on callContractWithInterchainToken function on the service if amount is 0", () => {});
 
