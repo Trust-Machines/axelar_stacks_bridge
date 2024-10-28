@@ -29,6 +29,8 @@
 (define-data-var name (string-ascii 32) "not-initialized")
 (define-data-var symbol (string-ascii 32) "not-initialized")
 (define-data-var token-id (buff 32) 0x)
+(define-data-var minter principal NULL-ADDRESS)
+
 (define-read-only (get-balance (address principal))
     (ok (ft-get-balance itscoin address)))
 
@@ -61,8 +63,6 @@
 ;; constants
 ;;
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
-
-(define-constant MINTER .interchain-token-service)
 
 (define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
 
@@ -101,7 +101,7 @@
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)
-        (asserts! (is-eq tx-sender MINTER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (burn from amount))
 )
@@ -110,12 +110,17 @@
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)
-        (asserts! (is-eq tx-sender MINTER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
         (mint to amount)))
 
+(define-read-only (is-minter-raw (address principal)) 
+    (or 
+        (is-eq address (var-get minter))
+        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))))
+
 (define-read-only (is-minter (address principal)) 
-    (ok (is-eq address MINTER)))
+    (ok (is-minter-raw address)))
 
 (define-map roles principal {
     flow-limiter: bool,
@@ -272,6 +277,7 @@
     (symbol_ (string-ascii 32))
     (decimals_ uint)
     (token-uri_ (optional (string-utf8 256)))
+    (minter_ (optional principal))
 ) 
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
@@ -280,6 +286,7 @@
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
+        (asserts! (not (is-eq its-address (default-to NULL-ADDRESS minter_))) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
@@ -303,6 +310,8 @@
         ;; #[allow(unchecked_data)]
         (var-set token-uri token-uri_)
         (var-set token-id token-id_)
+        ;; #[allow(unchecked_data)]
+        (var-set minter (default-to NULL-ADDRESS minter_))
         (ok true)
     )
 )

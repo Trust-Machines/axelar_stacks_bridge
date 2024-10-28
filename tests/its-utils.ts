@@ -709,7 +709,15 @@ export function getSip010Balance({
   return result.value.value;
 }
 
-export function setupNIT({ tokenId }: { tokenId: BufferCV }) {
+export function setupNIT({
+  tokenId,
+  minter,
+  operator,
+}: {
+  tokenId: BufferCV;
+  minter?: string;
+  operator?: string;
+}) {
   return simnet.callPublicFn(
     "native-interchain-token",
     "setup",
@@ -721,7 +729,7 @@ export function setupNIT({ tokenId }: { tokenId: BufferCV }) {
       // (its-address principal)
       Cl.address(`${deployer}.interchain-token-service`),
       // (operator-address (optional principal))
-      Cl.none(),
+      operator ? Cl.some(Cl.address(operator)) : Cl.none(),
       // (name_ (string-ascii 32))
       Cl.stringAscii("Nitter"),
       // (symbol_ (string-ascii 32))
@@ -730,6 +738,7 @@ export function setupNIT({ tokenId }: { tokenId: BufferCV }) {
       Cl.uint(6),
       // (token-uri_ (optional (string-utf8 256)))
       Cl.none(),
+      minter ? Cl.some(Cl.address(minter)) : Cl.none(),
     ],
     deployer
   );
@@ -738,15 +747,19 @@ export function setupNIT({ tokenId }: { tokenId: BufferCV }) {
 export function approveDeployNativeInterchainToken({
   tokenId,
   proofSigners,
+  minter = "ST000000000000000000002AMW42H",
+  operator = "ST000000000000000000002AMW42H",
 }: {
   tokenId: BufferCV;
   proofSigners: Signers;
+  minter?: string;
+  operator?: string;
 }) {
   const payload = Cl.tuple({
     decimals: Cl.uint(6),
-    minter: Cl.address("ST000000000000000000002AMW42H"),
+    minter: Cl.address(minter),
     name: Cl.stringAscii("Nitter"),
-    operator: Cl.address("ST000000000000000000002AMW42H"),
+    operator: Cl.address(operator),
     supply: Cl.uint(0),
     symbol: Cl.stringAscii("NIT"),
     "token-address": Cl.address(`${deployer}.native-interchain-token`),
