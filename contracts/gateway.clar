@@ -8,7 +8,8 @@
 ;; @param destination-contract-address; The address of the contract to call on the destination chain
 ;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
 (define-public (call-contract 
-    (destination-chain (string-ascii 32)) 
+    (destination-chain (string-ascii 32))
+    ;; FIXME: need to make this longer
     (destination-contract-address (string-ascii 48)) 
     (payload (buff 10240))
 ) 

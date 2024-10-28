@@ -4,7 +4,9 @@ description = ''
 authors = []
 telemetry = true
 cache_dir = './.cache'
-requirements = []
+
+[[project.requirements]]
+contract_id = 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard'
 [contracts.gas-service]
 path = 'contracts/gas-service.clar'
 clarity_version = 2
@@ -15,8 +17,48 @@ path = 'contracts/gateway.clar'
 clarity_version = 2
 epoch = 2.5
 
-[contracts.hello-world]
-path = 'contracts/hello-world.clar'
+[contracts.interchain-token-executable-trait]
+path = 'contracts/interchain-token-executable-trait.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-factory]
+path = 'contracts/interchain-token-factory.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-service]
+path = 'contracts/interchain-token-service.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-service-trait]
+path = 'contracts/interchain-token-service-trait.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.native-interchain-token]
+path = 'contracts/native-interchain-token.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.native-interchain-token-trait]
+path = 'contracts/native-interchain-token-trait.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.sample-sip-010]
+path = 'contracts/sample-sip-010.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.token-manager]
+path = 'contracts/token-manager.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.token-manager-trait]
+path = 'contracts/token-manager-trait.clar'
 clarity_version = 2
 epoch = 2.5
 
@@ -24,6 +66,12 @@ epoch = 2.5
 path = 'contracts/traits.clar'
 clarity_version = 2
 epoch = 2.5
+
+[contracts.hello-world]
+path = 'contracts/hello-world.clar'
+clarity_version = 2
+epoch = 2.5
+
 [repl.analysis]
 passes = ['check_checker']
 
