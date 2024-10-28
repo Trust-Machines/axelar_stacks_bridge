@@ -43,9 +43,17 @@
 (define-constant ERR-INVALID-MESSAGE-TYPE (err u2071))
 (define-constant ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF (err u2072))
 (define-constant ERR-TOKEN-REQUIRED (err u2073))
-(define-constant ERR-TOKEN-MANAGER-REQUIRED (err u2074))
 (define-constant ERR-TOKEN-METADATA-INVALID (err u2074))
 (define-constant ERR-NOT-REMOTE-SERVICE (err u2075))
+(define-constant ERR-TOKEN-METADATA-NAME-INVALID (err u2076))
+(define-constant ERR-TOKEN-METADATA-SYMBOL-INVALID (err u2077))
+(define-constant ERR-TOKEN-METADATA-DECIMALS-INVALID (err u2078))
+(define-constant ERR-TOKEN-METADATA-OPERATOR-INVALID (err u2079))
+(define-constant ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID (err u2080))
+(define-constant ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID (err u2081))
+(define-constant ERR-TOKEN-METADATA-MINTER-ITS-INVALID (err u2082))
+(define-constant ERR-TOKEN-METADATA-TOKEN-ID-INVALID (err u2083))
+(define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u2084))
 
 
 
@@ -712,7 +720,11 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
+        (asserts! (or 
+            (and 
+                (is-eq source-chain CHAIN-NAME)
+                (is-eq source-address (var-get its-contract-name)))
+        (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
@@ -807,26 +819,26 @@
         (asserts! (is-eq (contract-of deployed-token) (get token-address data)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (is-eq 
             (get name data)
-            (unwrap! (contract-call? deployed-token get-name) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+            (unwrap! (contract-call? deployed-token get-name) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-NAME-INVALID)
         (asserts! (is-eq 
             (get symbol data) 
-            (unwrap! (contract-call? deployed-token get-symbol) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+            (unwrap! (contract-call? deployed-token get-symbol) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-SYMBOL-INVALID)
         (asserts! (is-eq
             (get decimals data)
-            (unwrap! (contract-call? deployed-token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-INVALID)
+            (unwrap! (contract-call? deployed-token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-DECIMALS-INVALID)
         (asserts! (unwrap! 
-            (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
-        (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
-        (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
-        (asserts! (unwrap! (contract-call? deployed-token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-INVALID)
+            (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
         (asserts! 
             (is-eq 
                 (get token-id data)
                 (unwrap! (contract-call? deployed-token get-token-id) ERR-TOKEN-NOT-DEPLOYED))
-                ERR-TOKEN-METADATA-INVALID)
+                ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
-        (asserts! (is-eq u0 (unwrap-panic (contract-call? deployed-token get-total-supply))) ERR-TOKEN-METADATA-INVALID)
+        (asserts! (is-eq u0 (unwrap-panic (contract-call? deployed-token get-total-supply))) ERR-TOKEN-METADATA-SUPPLY-INVALID)
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
@@ -835,7 +847,7 @@
             (begin
                 (asserts! (is-eq u0 
                     (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
-                ) ERR-TOKEN-METADATA-INVALID)
+                ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
                 (as-contract (contract-call? .gateway validate-message
                     (get source-chain wrapped-payload)
                     (get message-id wrapped-payload)

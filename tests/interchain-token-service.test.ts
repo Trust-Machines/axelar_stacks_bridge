@@ -2,6 +2,7 @@ import { BufferCV, randomBytes, Cl } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  approveDeployNativeInterchainToken,
   approveReceiveInterchainTransfer,
   approveRemoteInterchainToken,
   buildFtTransferEvent,
@@ -16,9 +17,11 @@ import {
   executeDeployInterchainToken,
   executeDeployTokenManager,
   executeReceiveInterchainToken,
+  getSip010Balance,
   getTokenId,
   interchainTransfer,
   setPaused,
+  setupNIT,
   setupTokenManager,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
@@ -160,6 +163,28 @@ describe("Interchain Token Service", () => {
         proofSigners,
         tokenId,
       });
+    });
+
+    it("Should register a native interchain token", () => {
+      setupNIT({ tokenId });
+      const deployTx = deployInterchainToken({ salt });
+
+      const { payload } = approveDeployNativeInterchainToken({
+        proofSigners,
+        tokenId,
+      });
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(payload),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(deployTx.result).toBeOk(Cl.bool(true));
     });
 
     it("Should revert when registering an interchain token when service is paused", () => {
@@ -397,6 +422,7 @@ describe("Interchain Token Service", () => {
       expect(gatewayContractCall.data.value).toBeTuple(message);
     });
 
+    // FIXME: remove this test too if not possible to execute
     it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {
       // will always fail since the VM won't be able to read the interface of a contract that doesn't exist
       // const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
@@ -889,6 +915,7 @@ describe("Interchain Token Service", () => {
     });
   });
 
+  // FIXME: remove these tests if eventually they're not needed
   describe("Execute with token checks", () => {
     it("Should revert on execute with token if remote address validation fails", () => {});
 
@@ -911,12 +938,21 @@ describe("Interchain Token Service", () => {
       const amount = 100;
       const sender = deployer;
       const recipient = address1;
-
       const destinationAddress = "some eth address";
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
       const managerAddress = `${deployer}.token-manager`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const senderInitialBalance = getSip010Balance({
+        address: sender,
+        contractAddress: tokenAddress,
+      });
+
       expect(
         interchainTransfer({
           amount: Cl.uint(amount),
@@ -951,6 +987,19 @@ describe("Interchain Token Service", () => {
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result
       ).toBeOk(Cl.bufferFromHex("0x"));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      const senderFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: sender,
+      });
+      expect(recipientFinalBalance).toBe(
+        recipientInitialBalance + BigInt(amount)
+      );
+      expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
     });
 
     it("Should be able to receive mint/burn token", () => {});

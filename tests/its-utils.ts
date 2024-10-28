@@ -5,6 +5,7 @@ import {
   cvToJSON,
   ListCV,
   PrincipalCV,
+  ResponseOkCV,
   StringAsciiCV,
   TupleCV,
   UIntCV,
@@ -398,17 +399,19 @@ export function buildVerifyInterchainTokenPayload({
 
 export function buildIncomingDeployInterchainTokenPayload({
   tokenId,
+  sourceChain = "ethereum",
 }: {
   tokenId: BufferCV;
+  sourceChain?: string;
 }) {
   return Cl.tuple({
     // (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
     type: Cl.uint(MessageType.DEPLOY_INTERCHAIN_TOKEN),
-    "source-chain": Cl.stringAscii("ethereum"),
+    "source-chain": Cl.stringAscii(sourceChain),
     "token-id": tokenId,
     name: Cl.stringAscii("native-interchain-token"),
-    symbol: Cl.stringAscii("ITT"),
-    decimals: Cl.uint(18),
+    symbol: Cl.stringAscii("NIT"),
+    decimals: Cl.uint(6),
     "minter-bytes": Cl.buffer(Buffer.from([0])),
   });
 }
@@ -677,6 +680,94 @@ export function approveReceiveInterchainTransfer({
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
+      })
+    ),
+  ]);
+  signAndApproveMessages({
+    messages,
+    proofSigners,
+  });
+
+  return {
+    payload,
+  };
+}
+
+export function getSip010Balance({
+  address,
+  contractAddress,
+}: {
+  address: string;
+  contractAddress: string;
+}) {
+  const result = simnet.callReadOnlyFn(
+    contractAddress,
+    "get-balance",
+    [Cl.address(address)],
+    address1
+  ).result as ResponseOkCV<UIntCV>;
+  return result.value.value;
+}
+
+export function setupNIT({ tokenId }: { tokenId: BufferCV }) {
+  return simnet.callPublicFn(
+    "native-interchain-token",
+    "setup",
+    [
+      // (token-id_ (buff 32))
+      tokenId,
+      // (token-type_ uint)
+      Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
+      // (its-address principal)
+      Cl.address(`${deployer}.interchain-token-service`),
+      // (operator-address (optional principal))
+      Cl.none(),
+      // (name_ (string-ascii 32))
+      Cl.stringAscii("Nitter"),
+      // (symbol_ (string-ascii 32))
+      Cl.stringAscii("NIT"),
+      // (decimals_ uint)
+      Cl.uint(6),
+      // (token-uri_ (optional (string-utf8 256)))
+      Cl.none(),
+    ],
+    deployer
+  );
+}
+
+export function approveDeployNativeInterchainToken({
+  tokenId,
+  proofSigners,
+}: {
+  tokenId: BufferCV;
+  proofSigners: Signers;
+}) {
+  const payload = Cl.tuple({
+    decimals: Cl.uint(6),
+    minter: Cl.address("ST000000000000000000002AMW42H"),
+    name: Cl.stringAscii("Nitter"),
+    operator: Cl.address("ST000000000000000000002AMW42H"),
+    supply: Cl.uint(0),
+    symbol: Cl.stringAscii("NIT"),
+    "token-address": Cl.address(`${deployer}.native-interchain-token`),
+    "token-id": tokenId,
+    "token-type": Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
+    type: Cl.stringAscii("verify-interchain-token"),
+    "wrapped-payload": Cl.none(),
+  });
+  const messages = Cl.list([
+    Cl.tuple(
+      buildIncomingGMPMessage({
+        contractAddress: Cl.contractPrincipal(
+          deployer,
+          "interchain-token-service"
+        ),
+        messageId: Cl.stringAscii(
+          "approved-native-interchain-token-deployment-message"
+        ),
+        payload,
+        sourceAddress: Cl.stringAscii("interchain-token-service"),
+        sourceChain: Cl.stringAscii("stacks"),
       })
     ),
   ]);
