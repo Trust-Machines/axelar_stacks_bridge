@@ -48,7 +48,12 @@ genesis:
 plan:
   batches:
     - id: 0
-      transactions: []
+      transactions:
+        - emulated-contract-publish:
+            contract-name: sip-010-trait-ft-standard
+            emulated-sender: SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE
+            path: "./.cache/requirements/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.clar"
+            clarity-version: 1
       epoch: "2.0"
     - id: 1
       transactions:
@@ -72,7 +77,49 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/hello-world.clar
             clarity-version: 2
-      epoch: "2.5"
-    - id: 4
-      transactions: []
+        - emulated-contract-publish:
+            contract-name: interchain-token-executable-trait
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-executable-trait.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: native-interchain-token-trait
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/native-interchain-token-trait.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: token-manager-trait
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/token-manager-trait.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: interchain-token-service
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-service.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: token-manager
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/token-manager.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: interchain-token-factory
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-factory.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: interchain-token-service-trait
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-service-trait.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: native-interchain-token
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/native-interchain-token.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: sample-sip-010
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/sample-sip-010.clar
+            clarity-version: 2
       epoch: "2.5"

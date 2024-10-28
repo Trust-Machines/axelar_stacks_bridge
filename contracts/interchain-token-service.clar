@@ -274,7 +274,7 @@
     (if
         (> amount u0)
             ;; ERR-GAS-NOT-PAID
-            (contract-call? .gas_service pay-native-gas-for-contract-call
+            (contract-call? .gas-service pay-native-gas-for-contract-call
                 amount
                 tx-sender
                 destination-chain

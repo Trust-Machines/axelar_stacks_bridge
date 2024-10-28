@@ -396,7 +396,7 @@ describe("Interchain Token Service", () => {
       expect(stxTransfer.data).toStrictEqual({
         amount: "100",
         memo: "",
-        recipient: `${deployer}.gas_service`,
+        recipient: `${deployer}.gas-service`,
         sender: address1,
       });
 
@@ -643,7 +643,7 @@ describe("Interchain Token Service", () => {
       expect(gasTransfer).toStrictEqual(
         buildSTXTransferEvent({
           amount: gasValue,
-          recipient: `${deployer}.gas_service`,
+          recipient: `${deployer}.gas-service`,
           sender: deployer,
         })
       );
