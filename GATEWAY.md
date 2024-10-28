@@ -334,7 +334,11 @@ The deserialization function [messageExecutedEventToObj](./tests/util.ts#L175) o
     type: "signers-rotated",
     epoch: uint,
     signers-hash: (buff 32),
-    signers: (buff 2048)
+    signers: {
+      signers: (list 100 {signer: (buff 33), weight: uint}),
+      threshold: uint,
+      nonce: (buff 32)
+    }
 }
 ```
 
