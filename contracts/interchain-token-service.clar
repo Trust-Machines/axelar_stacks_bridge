@@ -635,7 +635,7 @@
         (amount uint)
         (metadata {
             version: uint,
-            data: (buff 1024)
+            data: (buff 62000)
         })
         (gas-value uint)
 )
@@ -694,7 +694,7 @@
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
-        (payload (buff 64000))
+        (payload (buff 63000))
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
     (begin
@@ -718,7 +718,7 @@
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
-        (payload (buff 64000)))
+        (payload (buff 62000)))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -743,7 +743,7 @@
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
-        (payload (buff 64000))
+        (payload (buff 62000))
     )
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
