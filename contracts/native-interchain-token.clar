@@ -115,7 +115,7 @@
         (mint to amount)))
 
 (define-read-only (is-minter (address principal)) 
-    (ok (is-eq tx-sender MINTER)))
+    (ok (is-eq address MINTER)))
 
 (define-map roles principal {
     flow-limiter: bool,
