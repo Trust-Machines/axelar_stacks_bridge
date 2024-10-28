@@ -78,21 +78,6 @@ plan:
             path: contracts/hello-world.clar
             clarity-version: 2
         - emulated-contract-publish:
-            contract-name: interchain-token-executable-trait
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/interchain-token-executable-trait.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: native-interchain-token-trait
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/native-interchain-token-trait.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: token-manager-trait
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/token-manager-trait.clar
-            clarity-version: 2
-        - emulated-contract-publish:
             contract-name: interchain-token-service
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-service.clar
@@ -106,11 +91,6 @@ plan:
             contract-name: interchain-token-factory
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-factory.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: interchain-token-service-trait
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/interchain-token-service-trait.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: native-interchain-token

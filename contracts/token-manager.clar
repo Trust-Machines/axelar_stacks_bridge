@@ -3,8 +3,8 @@
 ;; This contract is responsible for managing tokens, 
 ;; such as setting locking token balances, 
 ;; or setting flow limits, for interchain transfers.
-(impl-trait .token-manager-trait.token-manager-trait)
-(use-trait sip-010-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(impl-trait .traits.token-manager-trait)
+(use-trait sip-010-trait .traits.sip-010-trait)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 
