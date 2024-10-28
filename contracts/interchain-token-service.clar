@@ -85,7 +85,7 @@
 (define-constant CA (as-contract tx-sender))
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-data-var its-hub-chain (string-ascii 18) "axelar")
+(define-data-var its-hub-chain (string-ascii 32) "axelar")
 
 ;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;; for that chain should be routed via the ITS hub.
@@ -138,7 +138,7 @@
 
 ;; ;; data vars
 ;;
-(define-data-var its-contract-name (string-ascii 48) "")
+(define-data-var its-contract-name (string-ascii 128) "")
 ;; data maps
 ;;
 
@@ -186,7 +186,7 @@
 ;; ####################
 ;; ####################
 
-(define-map trusted-chain-address (string-ascii 18) (string-ascii 48))
+(define-map trusted-chain-address (string-ascii 32) (string-ascii 128))
 
 ;; Gets the name of the chain this is deployed at
 (define-read-only (get-chain-name)
@@ -196,13 +196,13 @@
 ;; Gets the trusted address at a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @return trustedAddress_ The trusted address for the chain. Returns '' if the chain is untrusted
-(define-read-only (get-trusted-address (chain (string-ascii 18)))
+(define-read-only (get-trusted-address (chain (string-ascii 32)))
     (map-get? trusted-chain-address chain))
 
 ;; Gets the trusted address hash for a chain
 ;; @param chain Chain name
 ;; @return trustedAddressHash_ the hash of the trusted address for that chain
-(define-read-only (get-trusted-address-hash (chain (string-ascii 18)))
+(define-read-only (get-trusted-address-hash (chain (string-ascii 32)))
     (ok (match (map-get? trusted-chain-address chain)
             trusted-address (some (keccak256 (unwrap-panic (to-consensus-buff? trusted-address))))
             none)))
@@ -212,14 +212,14 @@
 ;; @param address_ Address of the sender
 ;; @return bool true if the sender chain/address are trusted, false otherwise
 
-(define-read-only (is-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
+(define-read-only (is-trusted-address (chain-name (string-ascii 32)) (address (string-ascii 128)))
     (is-eq address (default-to "" (map-get? trusted-chain-address chain-name))))
 
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @param address_ the string representation of the trusted address
 ;; #[allow(unchecked_data)]
-(define-public (set-trusted-address (chain-name (string-ascii 18)) (address (string-ascii 48)))
+(define-public (set-trusted-address (chain-name (string-ascii 32)) (address (string-ascii 128)))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -234,7 +234,7 @@
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
-(define-public (remove-trusted-address  (chain-name  (string-ascii 18)))
+(define-public (remove-trusted-address  (chain-name  (string-ascii 32)))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -246,7 +246,7 @@
         (ok (map-delete trusted-chain-address chain-name))))
 
 
-(define-private (get-call-params (destination-chain (string-ascii 18)) (payload (buff 4096)))
+(define-private (get-call-params (destination-chain (string-ascii 32)) (payload (buff 4096)))
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
@@ -269,7 +269,7 @@
         (amount uint)
         (refund-address principal)
         (destination-chain (string-ascii 32))
-        (destination-address (string-ascii 48))
+        (destination-address (string-ascii 128))
         (payload (buff 10240)))
     (if
         (> amount u0)
@@ -289,7 +289,7 @@
 ;; @param destinationChain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
 ;; @param gasValue The amount of gas to be paid for the transaction.
-(define-private (call-contract (destination-chain (string-ascii 18)) (payload (buff 4096)) (metadata-version uint) (gas-value uint))
+(define-private (call-contract (destination-chain (string-ascii 32)) (payload (buff 4096)) (metadata-version uint) (gas-value uint))
     (let
         (
             (params (try! (get-call-params destination-chain payload)))
@@ -309,7 +309,7 @@
 
 (define-public (deploy-token-manager
         (salt (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (token-manager-type uint)
         (gas-value uint)
         (params (buff 1024))
@@ -346,7 +346,7 @@
 
 (define-private (process-deploy-remote-token-manager
         (token-id (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (token-manager-type uint)
         (params (buff 1024))
         (gas-value uint)
@@ -382,16 +382,16 @@
         (token-manager <token-manager-trait>)
         (payload (buff 2048))
         (wrapped-payload  (optional {
-            source-chain: (string-ascii 18),
-            source-address: (string-ascii 48),
-            message-id: (string-ascii 71),
+            source-chain: (string-ascii 32),
+            source-address: (string-ascii 128),
+            message-id: (string-ascii 128),
             payload: (buff 2048),
         })))
     (let (
 
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
         (payload-decoded (unwrap! (from-consensus-buff? {
-            source-chain: (string-ascii 18),
+            source-chain: (string-ascii 32),
             type: uint,
             token-id: (buff 32),
             token-manager-type: uint,
@@ -427,9 +427,9 @@
 
 
 (define-public (process-deploy-token-manager-from-stacks
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (payload (buff 4096)))
     (let (
         ;; #[filter(token-id)]
@@ -439,9 +439,9 @@
                 token-id: (buff 32),
                 token-type: uint,
                 wrapped-payload: (optional {
-                    source-chain: (string-ascii 18),
-                    source-address: (string-ascii 48),
-                    message-id: (string-ascii 71),
+                    source-chain: (string-ascii 32),
+                    source-address: (string-ascii 128),
+                    message-id: (string-ascii 128),
                     payload: (buff 1024),
                 }),
             } payload) ERR-INVALID-PAYLOAD))
@@ -487,7 +487,7 @@
 ;; @param gasValue The amount of gas to be paid for the transaction.
 (define-public (deploy-remote-interchain-token
         (salt (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -570,7 +570,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (destination-address (buff 100))
         (amount uint)
         (metadata {
@@ -599,7 +599,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (destination-address (buff 100))
         (amount uint)
         (metadata {
@@ -628,7 +628,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (destination-address (buff 100))
         (amount uint)
         (metadata {
@@ -658,7 +658,7 @@
 (define-private (transmit-interchain-transfer
         (token-id (buff 32))
         (source-address principal)
-        (destination-chain (string-ascii 18))
+        (destination-chain (string-ascii 32))
         (destination-address (buff 100))
         (amount uint)
         (metadata-version uint)
@@ -689,9 +689,9 @@
     ))
 
 (define-public (execute-deploy-token-manager
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (payload (buff 1024))
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
@@ -712,9 +712,9 @@
                 })))))
 
 (define-public (execute-deploy-interchain-token
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 1024)))
     (begin
@@ -737,16 +737,16 @@
                 payload))))
 
 (define-private (process-deploy-interchain-from-external-chain
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 1024))
     )
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
             type: uint,
-            source-chain: (string-ascii 18),
+            source-chain: (string-ascii 32),
             token-id: (buff 32),
             name: (string-ascii 32),
             symbol: (string-ascii 32),
@@ -788,9 +788,9 @@
 
 
 (define-private (process-deploy-interchain-from-stacks
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (payload (buff 1024))
         (deployed-token <native-interchain-token-trait>))
     (let (
@@ -806,9 +806,9 @@
                 operator: principal,
                 supply: uint,
                 wrapped-payload: (optional {
-                    source-chain: (string-ascii 18),
-                    source-address: (string-ascii 48),
-                    message-id: (string-ascii 71),
+                    source-chain: (string-ascii 32),
+                    source-address: (string-ascii 128),
+                    message-id: (string-ascii 128),
                     payload: (buff 1024),
                 }),
             } payload) ERR-INVALID-PAYLOAD))
@@ -868,9 +868,9 @@
     ))
 
 (define-public (execute-receive-interchain-token
-        (message-id (string-ascii 71))
-        (source-chain (string-ascii 18))
-        (source-address (string-ascii 48))
+        (message-id (string-ascii 128))
+        (source-chain (string-ascii 32))
+        (source-address (string-ascii 128))
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (payload (buff 1024))
@@ -879,7 +879,7 @@
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
             type: uint,
-            source-chain: (string-ascii 18),
+            source-chain: (string-ascii 32),
             token-id: (buff 32),
             source-address: (buff 200),
             destination-address: (buff 200),
@@ -939,17 +939,17 @@
 (define-read-only (get-is-started) (var-get is-started))
 
 (define-private (extract-and-set-trusted-address 
-    (entry {chain-name: (string-ascii 18), address: (string-ascii 48)})) 
+    (entry {chain-name: (string-ascii 32), address: (string-ascii 128)})) 
         (map-set trusted-chain-address (get chain-name entry) (get address entry)))
 ;; Constructor function
 ;; @returns (response true) or reverts
 (define-public (setup
-    (its-contract-address-name (string-ascii 48))
+    (its-contract-address-name (string-ascii 128))
     (interchain-token-factory-address principal)
     (gateway-address principal)
     (gas-service-address principal)
     (operator-address principal)
-    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 18), address: (string-ascii 48)}))
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 32), address: (string-ascii 128)}))
 )
     (begin
         (asserts! (not (var-get is-started)) ERR-STARTED)

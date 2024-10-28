@@ -15,8 +15,8 @@
         ;; tokenId,
         ;; tokenAddress,
         ;; amount
-        (string-ascii 71)
-        (string-ascii 18)
+        (string-ascii 128)
+        (string-ascii 32)
         (buff 200)
         (buff 1024)
         (buff 32)

@@ -4,8 +4,8 @@
 (define-data-var value 
     {
         source-chain: (string-ascii 32),
-        message-id: (string-ascii 71),
-        source-address: (string-ascii 48),
+        message-id: (string-ascii 128),
+        source-address: (string-ascii 128),
         payload: (buff 10240),
     } {
         source-chain: "", 
@@ -19,7 +19,7 @@
 
 (define-public (set-remote-value 
     (destination-chain (string-ascii 32)) 
-    (destination-contract-address (string-ascii 48)) 
+    (destination-contract-address (string-ascii 128)) 
     (payload (buff 10240))
     (gas-amount uint)
     (gateway <gateway-trait>)
@@ -44,8 +44,8 @@
 
 (define-public (execute 
     (source-chain (string-ascii 32)) 
-    (message-id (string-ascii 71)) 
-    (source-address (string-ascii 48)) 
+    (message-id (string-ascii 128)) 
+    (source-address (string-ascii 128)) 
     (payload (buff 10240))
     (gateway <gateway-trait>)
 ) 

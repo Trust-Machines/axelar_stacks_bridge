@@ -115,7 +115,7 @@
 ;; @param gasValue The gas amount to be sent for deployment.
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 18)) (gas-value uint))
+(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 32)) (gas-value uint))
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
@@ -160,7 +160,7 @@
 (define-public (deploy-remote-interchain-token 
     (salt_ (buff 32))
     (minter_ (buff 200))
-    (destination-chain (string-ascii 18))
+    (destination-chain (string-ascii 32))
     (gas-value uint)
     (token <sip-010-trait>)
     (token-manager <token-manager-trait>)

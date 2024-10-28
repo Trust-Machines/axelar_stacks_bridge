@@ -89,7 +89,7 @@ sender: principal,
 amount: uint,
 refund-address: principal,
 destination-chain: (string-ascii 32),
-destination-address: (string-ascii 48),
+destination-address: (string-ascii 128),
 payload-hash: (buff 10240)
 }
 

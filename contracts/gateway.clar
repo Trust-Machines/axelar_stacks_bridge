@@ -9,8 +9,7 @@
 ;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
 (define-public (call-contract 
     (destination-chain (string-ascii 32))
-    ;; FIXME: need to make this longer
-    (destination-contract-address (string-ascii 48)) 
+    (destination-contract-address (string-ascii 128)) 
     (payload (buff 10240))
 ) 
     (begin 
@@ -43,7 +42,7 @@
 ;; @param source-chain The name of the source chain as registered on Axelar.
 ;; @param message-id The unique message id for the message.
 ;; @returns (buff 32) the command-id.
-(define-read-only (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 71))) 
+(define-read-only (message-to-command-id (source-chain (string-ascii 32)) (message-id (string-ascii 128))) 
     ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
@@ -51,9 +50,9 @@
 ;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
 ;; @returns (buff 32) the message hash
 (define-private (get-message-hash (message {
-        message-id: (string-ascii 71),
+        message-id: (string-ascii 128),
         source-chain: (string-ascii 32),
-        source-address: (string-ascii 48),
+        source-address: (string-ascii 128),
         contract-address: principal,
         payload-hash: (buff 32)
     })) 
@@ -65,8 +64,8 @@
 ;; @returns (response (buff 32)) 
 (define-read-only (data-hash-from-messages (messages (list 10 {
                 source-chain: (string-ascii 32),
-                message-id: (string-ascii 71),
-                source-address: (string-ascii 48),
+                message-id: (string-ascii 128),
+                source-address: (string-ascii 128),
                 contract-address: principal,
                 payload-hash: (buff 32)
         })))
@@ -78,8 +77,8 @@
 ;; @returns (some message) or none
 (define-private (approve-message (message {
                 source-chain: (string-ascii 32),
-                message-id: (string-ascii 71),
-                source-address: (string-ascii 48),
+                message-id: (string-ascii 128),
+                source-address: (string-ascii 128),
                 contract-address: principal,
                 payload-hash: (buff 32)
             })) 
@@ -120,8 +119,8 @@
         (messages_ (unwrap! (from-consensus-buff? 
             (list 10 {
                 source-chain: (string-ascii 32),
-                message-id: (string-ascii 71),
-                source-address: (string-ascii 48),
+                message-id: (string-ascii 128),
+                source-address: (string-ascii 128),
                 contract-address: principal,
                 payload-hash: (buff 32)
             })
@@ -143,8 +142,8 @@
 ;; @returns (response true) or reverts
 (define-public (validate-message 
     (source-chain (string-ascii 32)) 
-    (message-id (string-ascii 71)) 
-    (source-address (string-ascii 48)) 
+    (message-id (string-ascii 128)) 
+    (source-address (string-ascii 128)) 
     (payload-hash (buff 32))
 ) 
     (let (
@@ -180,8 +179,8 @@
 ;; @returns (response bool)
 (define-read-only (is-message-approved 
     (source-chain (string-ascii 32))
-    (message-id (string-ascii 71))
-    (source-address (string-ascii 48)) 
+    (message-id (string-ascii 128))
+    (source-address (string-ascii 128)) 
     (contract-address principal) 
     (payload-hash (buff 32))
 )
@@ -205,7 +204,7 @@
 ;; @returns (response bool)
 (define-read-only (is-message-executed
     (source-chain (string-ascii 32))
-    (message-id (string-ascii 71))
+    (message-id (string-ascii 128))
 ) 
     (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
 )

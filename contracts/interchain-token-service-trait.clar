@@ -3,7 +3,7 @@
 (define-trait interchain-token-service-trait (
 
 (get-chain-name-hash () (response (buff 32) uint))
-(interchain-transfer ((buff 32) (string-ascii 18) (string-ascii 48) uint (buff 32) uint) (response bool uint))
+(interchain-transfer ((buff 32) (string-ascii 32) (string-ascii 128) uint (buff 32) uint) (response bool uint))
 ;;     /**
 ;;      * @notice Initiates an interchain call contract with interchain token to a destination chain.
 ;;      * @param tokenId The unique identifier of the token to be transferred.
@@ -12,7 +12,7 @@
 ;;      * @param amount The amount of tokens to be transferred.
 ;;      * @param data Additional data to be passed along with the transfer.
 ;;      */
-(call-contract-with-interchain-token ((buff 32) (string-ascii 18) (string-ascii 48) uint (buff 32) uint) (response bool uint))
+(call-contract-with-interchain-token ((buff 32) (string-ascii 32) (string-ascii 128) uint (buff 32) uint) (response bool uint))
 ;;     /**
 ;;      * @notice Sets the flow limits for multiple tokens.
 ;;      * @param tokenIds An array of tokenIds.
