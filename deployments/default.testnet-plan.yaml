@@ -8,93 +8,93 @@ plan:
   batches:
     - id: 0
       transactions:
-        - requirement-publish:
-            contract-id: SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard
-            remap-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            remap-principals:
-              SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 8400
-            path: "./.cache/requirements/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.clar"
-            clarity-version: 1
-      epoch: "2.0"
-    - id: 1
-      transactions:
         - contract-publish:
             contract-name: traits
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 70860
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 472311
             path: contracts/traits.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gas-service
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 53140
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 471733
             path: contracts/gas-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gateway
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 266020
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 477035
             path: contracts/gateway.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: hello-world
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 18020
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 471051
             path: contracts/hello-world.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-service
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 426430
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 481078
             path: contracts/interchain-token-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: token-manager
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 113470
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 737461
             path: contracts/token-manager.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-factory
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 92320
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 736643
             path: contracts/interchain-token-factory.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: native-interchain-token
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 122710
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 737788
             path: contracts/native-interchain-token.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: sample-sip-010
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
-            cost: 13410
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            cost: 733534
             path: contracts/sample-sip-010.clar
             anchor-block-only: true
             clarity-version: 2
       epoch: "2.5"
-    - id: 2
+    - id: 1
       transactions:
         - contract-call:
-            contract-id: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C.interchain-token-service
-            expected-sender: ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C
+            contract-id: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.gateway
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
+            method: setup
+            parameters:
+              - "0x0c00000003056e6f6e63650200000020000000000000000000000000000000000000000000000000000000000038d32c077369676e6572730b000000030c00000002067369676e65720200000021026e4a6fc3a6988c4cd7d3bc02e07bac8b72a9f5342d92f42161e7b6e57dd47e180677656967687401000000000000000000000000000000010c00000002067369676e6572020000002102d19c406d763c98d98554c980ae03543b936aad0c3f1289a367a0c2aafb71e8c10677656967687401000000000000000000000000000000010c00000002067369676e6572020000002103ea531f69879b3b15b6e3fe262250d5ceca6217e03e4def6919d4bdce3a7ec389067765696768740100000000000000000000000000000001097468726573686f6c640100000000000000000000000000000002"
+              - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54"
+              - "0x9f3f816350e47038614b888448ffbcb9f520b2bcdeeff15cec6c08c3c61c4f20"
+              - "u3600"
+              - "u16"
+            cost: 5960
+        - contract-call:
+            contract-id: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.interchain-token-service
+            expected-sender: ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54
             method: setup
             parameters:
               - '"interchain-token-service"'
-              - "'ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C.interchain-token-factory"
-              - "'ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C.gateway"
-              - "'ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C.gas-service"
-              - "'ST1TJ8NT387H1R3H2D9XVA2P30B9ESHJXYK2ERS8C"
+              - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.interchain-token-factory"
+              - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.gateway"
+              - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.gas-service"
+              - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54"
               - '(list {chain-name: "axelar", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"} {chain-name: "avalanche-fuji", address: "hub"})'
             cost: 5960
       epoch: "2.5"
