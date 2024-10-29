@@ -1766,7 +1766,68 @@ describe("Interchain Token Service", () => {
       expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
     });
 
-    it("Should be able to receive mint/burn token", () => {});
+    it("Should be able to receive mint/burn token", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeOk(Cl.bufferFromHex("0x"));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      expect(recipientFinalBalance).toBe(
+        BigInt(recipientInitialBalance) + BigInt(amount)
+      );
+    });
 
     it("Should be able to receive mint/burn from token", () => {});
 
