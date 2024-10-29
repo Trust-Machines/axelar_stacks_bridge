@@ -365,8 +365,8 @@ export function executeDeployInterchainToken({
     "interchain-token-service",
     "execute-deploy-interchain-token",
     [
-      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceChain),
+      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
       Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
       Cl.buffer(payload),
@@ -493,8 +493,8 @@ export function executeDeployTokenManager({
     "interchain-token-service",
     "execute-deploy-token-manager",
     [
-      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceChain),
+      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
       Cl.buffer(Cl.serialize(Cl.tuple(payload))),
       token,
@@ -617,8 +617,8 @@ export function executeReceiveInterchainToken({
     "interchain-token-service",
     "execute-receive-interchain-token",
     [
-      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceChain),
+      Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
       tokenManager,
       token,
