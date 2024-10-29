@@ -95,18 +95,3 @@ plan:
             path: contracts/sample-sip-010.clar
             clarity-version: 2
       epoch: "2.5"
-    - id: 2
-      transactions:
-        - emulated-contract-call:
-            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            method: setup
-            parameters:
-              - '"interchain-token-service"'
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-factory"
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway"
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gas-service"
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
-              - '(list {chain-name: "axelar", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"} {chain-name: "avalanche-fuji", address: "hub"})'
-            cost: 5960
-      epoch: "2.5"

@@ -17,6 +17,7 @@
 )
 
 (define-trait interchain-token-executable-trait (
+  ;; MUST check that the caller is the ITS and only the ITS in contracts that impl this trait
     (execute-with-interchain-token (
         ;; sourceChain,
         ;; messageId,
@@ -157,3 +158,16 @@
     (get-operators () (response (list 2 principal) principal))
     (is-operator (principal) (response bool uint))
 ))
+
+;; TODO: write an axelar executable trait and contracts which interact with axelar should
+
+(define-trait axelar-executable (
+  ;; the gateway validate-message pub fn MUST be called in contracts that impls of this trait
+  (execute (
+    (string-ascii 20)
+    (string-ascii 128)
+    (string-ascii 128)
+    (buff 64000)
+    <gateway-trait>
+  ) (response bool uint)))
+)

@@ -1,17 +1,22 @@
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait gas-service-trait .traits.gas-service-trait)
+(impl-trait .traits.interchain-token-executable-trait)
+(impl-trait .traits.axelar-executable)
+(define-constant ERR-NOT-AUTHORIZED (err u1151))
 
 (define-data-var value
     {
         source-chain: (string-ascii 20),
         message-id: (string-ascii 128),
         source-address: (string-ascii 128),
+        source-address-its: (buff 128),
         payload: (buff 64000),
     } {
         source-chain: "",
         message-id: "",
         source-address: "",
-        payload: 0x00
+        payload: 0x00,
+        source-address-its: 0x00,
     }
 )
 
@@ -51,12 +56,30 @@
 )
     (begin
         (try! (contract-call? gateway validate-message source-chain message-id source-address (keccak256 payload)))
-        (var-set value {
+        (var-set value (merge (var-get value) {
             source-chain: source-chain,
             message-id: message-id,
             source-address: source-address,
             payload: payload
-        })
+        }))
         (ok true)
     )
 )
+
+(define-public (execute-with-interchain-token
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+        (source-address (buff 128))
+        (payload (buff 64000))
+        (token-id (buff 32))
+        (tokenAddress principal)
+        (amount uint))
+    (begin
+        (asserts! (is-eq contract-caller .interchain-token-service) ERR-NOT-AUTHORIZED)
+        (var-set value (merge (var-get value) {
+            source-chain: source-chain,
+            message-id: message-id,
+            source-address-its: source-address,
+            payload: payload
+        }))
+        (ok (keccak256 (unwrap-panic (to-consensus-buff? "its-execute-success"))))))
