@@ -1612,9 +1612,159 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Token with Data", () => {
-    it("Should be able to receive lock/unlock token", () => {});
+    it("Should be able to receive lock/unlock token", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
 
-    it("Should be able to receive lock/unlock token with empty data and not call destination contract", () => {});
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const senderInitialBalance = getSip010Balance({
+        address: sender,
+        contractAddress: tokenAddress,
+      });
+
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(managerAddress),
+          caller: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+          token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeOk(Cl.bufferFromHex("0x"));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      const senderFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: sender,
+      });
+      expect(recipientFinalBalance).toBe(
+        recipientInitialBalance + BigInt(amount)
+      );
+      expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
+    });
+
+    it("Should be able to receive lock/unlock token with empty data and not call destination contract", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const senderInitialBalance = getSip010Balance({
+        address: sender,
+        contractAddress: tokenAddress,
+      });
+
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(managerAddress),
+          caller: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      const receiveTokenTx = executeReceiveInterchainToken({
+        messageId: "approved-interchain-transfer-message",
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+        token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+        payload: Cl.buffer(Cl.serialize(payload)),
+        destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
+      });
+      expect(receiveTokenTx.result).toBeOk(Cl.bufferFromHex("0x"));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      const senderFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: sender,
+      });
+      expect(recipientFinalBalance).toBe(
+        recipientInitialBalance + BigInt(amount)
+      );
+      expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
+    });
 
     it("Should be able to receive mint/burn token", () => {});
 
@@ -1636,20 +1786,13 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Send Interchain Token", () => {
-    for (const type of [
-      "mintBurn",
-      "mintBurnFrom",
-      "lockUnlockFee",
-      "lockUnlock",
-    ]) {
-      it(`Should be able to initiate an interchain token transfer via interchainTransfer & interchainTransferFrom [${type}]`, () => {});
+    for (const type of ["mintBurn", "lockUnlock"]) {
+      it(`Should be able to initiate an interchain token transfer via interchainTransfer [${type}]`, () => {});
     }
 
     it("Should be able to initiate an interchain token transfer using interchainTransferFrom with max possible allowance", () => {});
 
     it("Should revert using interchainTransferFrom with zero amount", () => {});
-
-    it("Should be able to initiate an interchain token transfer via interchainTransfer & interchainTransferFrom [gateway]", () => {});
   });
 
   describe("Send Interchain Token With Data", () => {

@@ -899,7 +899,7 @@
         (amount (get amount payload-decoded))
         (data (get data payload-decoded))
         (token-info (unwrap! (map-get? token-managers token-id) ERR-TOKEN-NOT-FOUND))
-        (data-is-empty (> (len data) u0))
+        (data-is-empty (is-eq (len data) u0))
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
@@ -916,7 +916,7 @@
         source-address: sender-address,
         destination-address: recipient,
         amount: amount,
-        data: (if data-is-empty (keccak256 data) EMPTY-32-BYTES),
+        data: (if data-is-empty EMPTY-32-BYTES (keccak256 data)),
     })
     (if (or (is-none destination-contract) data-is-empty)
         (ok 0x)
