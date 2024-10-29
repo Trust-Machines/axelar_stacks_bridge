@@ -1418,17 +1418,197 @@ describe("Interchain Token Service", () => {
       }
     });
 
-    it("Should revert on callContractWithInterchainToken if data is empty", () => {});
+    it("Should revert on callContractWithInterchainToken if data is empty", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      const amount = Cl.uint(0);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.sample-sip-010`
+      ) as ContractPrincipalCV;
 
-    it("Should revert on callContractWithInterchainToken function when service is paused", () => {});
+      const tokenManager = Cl.address(
+        `${deployer}.token-manager`
+      ) as ContractPrincipalCV;
+      const callContractTx = callContractWithInterchainToken({
+        amount: amount,
+        destinationAddress: destinationAddress,
+        destinationChain: destinationChain,
+        gasValue: gasValue,
+        tokenAddress: tokenAddress,
+        tokenId: tokenId,
+        tokenManagerAddress: tokenManager,
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+    });
 
-    it("Should revert on interchainTransfer function when service is paused", () => {});
+    it("Should revert on callContractWithInterchainToken function when service is paused", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      setPaused({ paused: true });
+      const amount = Cl.uint(0);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.sample-sip-010`
+      ) as ContractPrincipalCV;
 
-    it("Should revert on transferToTokenManager when not called by the correct tokenManager", () => {});
+      const tokenManager = Cl.address(
+        `${deployer}.token-manager`
+      ) as ContractPrincipalCV;
+      const callContractTx = callContractWithInterchainToken({
+        amount: amount,
+        destinationAddress: destinationAddress,
+        destinationChain: destinationChain,
+        gasValue: gasValue,
+        tokenAddress: tokenAddress,
+        tokenId: tokenId,
+        tokenManagerAddress: tokenManager,
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
 
-    it("Should revert on interchainTransfer function with invalid metadata version", () => {});
+    it("Should revert on interchainTransfer function when service is paused", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      setPaused({ paused: true });
+      const amount = Cl.uint(100);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.sample-sip-010`
+      ) as ContractPrincipalCV;
 
-    it("Should revert on callContractWithInterchainToken when destination chain is untrusted chain", () => {});
+      const tokenManager = Cl.address(
+        `${deployer}.token-manager`
+      ) as ContractPrincipalCV;
+      const transferTx = interchainTransfer({
+        amount: amount,
+        destinationAddress: destinationAddress,
+        destinationChain: destinationChain,
+        gasValue: gasValue,
+        tokenAddress: tokenAddress,
+        tokenId: tokenId,
+        tokenManagerAddress: tokenManager,
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
+
+    it("Should revert on interchainTransfer function with invalid metadata version", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+
+      const amount = Cl.uint(100);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.sample-sip-010`
+      ) as ContractPrincipalCV;
+
+      const tokenManager = Cl.address(
+        `${deployer}.token-manager`
+      ) as ContractPrincipalCV;
+      const transferTx = interchainTransfer({
+        amount: amount,
+        destinationAddress: destinationAddress,
+        destinationChain: destinationChain,
+        gasValue: gasValue,
+        tokenAddress: tokenAddress,
+        tokenId: tokenId,
+        tokenManagerAddress: tokenManager,
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(2),
+        },
+      });
+      expect(transferTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-INVALID-METADATA-VERSION"]
+      );
+    });
+
+    it("Should revert on callContractWithInterchainToken when destination chain is untrusted chain", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      const amount = Cl.uint(100);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("oneCoin");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.sample-sip-010`
+      ) as ContractPrincipalCV;
+
+      const tokenManager = Cl.address(
+        `${deployer}.token-manager`
+      ) as ContractPrincipalCV;
+      const callContractTx = callContractWithInterchainToken({
+        amount: amount,
+        destinationAddress: destinationAddress,
+        destinationChain: destinationChain,
+        gasValue: gasValue,
+        tokenAddress: tokenAddress,
+        tokenId: tokenId,
+        tokenManagerAddress: tokenManager,
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(callContractTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]
+      );
+    });
   });
 
   describe("Receive Remote Token with Data", () => {
