@@ -97,7 +97,7 @@
 ;; @return tokenId The tokenId corresponding to the registered canonical token.
 (define-public (register-canonical-interchain-token (token-address <sip-010-trait>) (token-manager-address <token-manager-trait>))
     (begin
-        (asserts! (is-ok (contract-call? .token-manager contract-id)) ERR-TOKEN-NOT-ENABLED)
+        (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
             .interchain-token-service deploy-token-manager
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
