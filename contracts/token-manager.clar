@@ -262,6 +262,16 @@
     )
 )
 
+;;  * @notice Getter function for the parameters of a lock/unlock TokenManager.
+;;  * @dev This function will be mainly used by frontends.
+;;  * @param operator_ The operator of the TokenManager.
+;;  * @param tokenAddress_ The token to be managed.
+;;  * @return params_ The resulting params to be passed to custom TokenManager deployments.
+(define-read-only (get-params (operator_ (optional principal)) (token-address_ principal)) 
+    (ok (unwrap-panic (to-consensus-buff? {
+        operator: operator_,
+        token-address: token-address_,
+    }))))
 ;; ####################
 ;; ####################
 ;; ### Operatorship ###

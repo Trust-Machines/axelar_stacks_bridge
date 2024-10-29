@@ -104,7 +104,10 @@
                 ""
                 TOKEN-TYPE-LOCK-UNLOCK
                 u0
-                0x
+                (unwrap-panic (to-consensus-buff? {
+                    operator: none,
+                    token-address: token-address
+                }))
                 token-manager-address)
     ))
 

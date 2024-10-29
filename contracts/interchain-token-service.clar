@@ -402,7 +402,7 @@
         (token-manager-type (get token-manager-type payload-decoded))
         (token-id (get token-id payload-decoded))
         (data (unwrap-panic (from-consensus-buff? {
-            operator: principal,
+            operator: (optional principal),
             token-address: principal
         } (get params payload-decoded))))
     )
@@ -423,7 +423,7 @@
                 token-manager-address: (contract-of token-manager),
                 token-id: token-id,
                 token-type: token-manager-type,
-                operator: (get operator data),
+                operator: (default-to NULL-ADDRESS (get operator data)),
                 wrapped-payload: wrapped-payload,
             }))))))
 

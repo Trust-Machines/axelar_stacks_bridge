@@ -95,7 +95,7 @@ export function deployTokenManager({
       Cl.buffer(
         Cl.serialize(
           Cl.tuple({
-            operator: Cl.address(address1),
+            operator: Cl.some(Cl.address(address1)),
             "token-address": tokenAddress,
           })
         )
@@ -635,17 +635,19 @@ export function buildIncomingInterchainTransferPayload({
   sender,
   amount,
   data,
+  sourceChain = "ethereum",
 }: {
   tokenId: BufferCV;
   sender: string;
   recipient: string;
   amount: number;
   data: BufferCV;
+  sourceChain?: string;
 }) {
   return Cl.tuple({
     // (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
     type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
-    "source-chain": Cl.stringAscii("ethereum"),
+    "source-chain": Cl.stringAscii(sourceChain),
     "token-id": tokenId,
     "source-address": Cl.buffer(Cl.serialize(Cl.address(sender))),
     "destination-address": Cl.buffer(Cl.serialize(Cl.address(recipient))),

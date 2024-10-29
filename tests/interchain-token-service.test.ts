@@ -387,7 +387,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
@@ -484,7 +484,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
@@ -547,7 +547,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
@@ -585,7 +585,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
@@ -764,7 +764,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
@@ -853,7 +853,7 @@ describe("Interchain Token Service", () => {
         params: Cl.buffer(
           Cl.serialize(
             Cl.tuple({
-              operator: Cl.address(address1),
+              operator: Cl.some(Cl.address(address1)),
               "token-address": tokenAddress,
             })
           )
