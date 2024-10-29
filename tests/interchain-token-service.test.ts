@@ -1829,13 +1829,67 @@ describe("Interchain Token Service", () => {
       );
     });
 
-    it("Should be able to receive mint/burn from token", () => {});
+    it("Should revert if execute with interchain token fails", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
 
-    it("Should be able to receive lock/unlock with fee on transfer token", () => {});
+      const amount = 100;
+      const sender = deployer;
+      const recipient = `${deployer}.failed-interchain-executable`;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
 
-    it("Should revert if token handler transfer token from fails", () => {});
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0xdeadbeef"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+          destinationContract: Cl.address(recipient) as ContractPrincipalCV,
+        }).result
+      ).toBeErr(Cl.uint(8051));
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
 
-    it("Should revert if execute with interchain token fails", () => {});
+      expect(recipientFinalBalance).toBe(BigInt(recipientInitialBalance));
+    });
 
     it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted chain", () => {});
 
