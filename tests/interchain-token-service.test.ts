@@ -16,6 +16,7 @@ import {
   buildOutgoingGMPMessage,
   buildSTXTransferEvent,
   buildVerifyTokenManagerPayload,
+  callContractWithInterchainToken,
   deployInterchainToken,
   deployRemoteInterchainToken,
   deployTokenManager,
@@ -1246,15 +1247,176 @@ describe("Interchain Token Service", () => {
       ).toBeBuff(keccak256(Buffer.from("some data")));
     });
 
-    it("Should revert on callContractWithInterchainToken function on the service if amount is 0", () => {});
+    it("Should revert on callContractWithInterchainToken function on the service if amount is 0", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
 
-    for (const type of ["lockUnlock", "lockUnlockFee"]) {
-      it(`Should be able to initiate an interchain token transfer via the interchainTransfer function on the service when the service is approved as well [${type}]`, () => {});
-    }
+      const amount = Cl.uint(0);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = Cl.address(
+        `${deployer}.native-interchain-token`
+      ) as ContractPrincipalCV;
 
-    for (const type of ["lockUnlock", "mintBurn", "lockUnlockFee"]) {
-      it(`Should be able to initiate an interchain token transfer via the callContractWithInterchainToken function on the service [${type}]`, () => {});
-    }
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const callContractTx = callContractWithInterchainToken({
+        amount,
+        caller: deployer,
+        destinationAddress,
+        destinationChain,
+        gasValue,
+        tokenAddress,
+        tokenId,
+        tokenManagerAddress: tokenAddress,
+        metadata: {
+          data: Cl.bufferFromHex("0x"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+    });
+
+    it(`Should be able to initiate an interchain token transfer via the interchainTransfer function on the service when the service is approved as well [lockUnlock]`, () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+
+      const amount = 100;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      const transferTx = interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii(destinationAddress),
+        destinationChain: Cl.stringAscii(destinationChain),
+        gasValue: Cl.uint(gasValue),
+        tokenAddress: Cl.address(tokenAddress),
+        tokenId,
+        tokenManagerAddress: Cl.address(managerAddress),
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+      });
+      expect(transferTx.result).toBeOk(Cl.bool(true));
+    });
+
+    describe("callContractWithInterchainToken", () => {
+      const lockUnlockSalt = randomBytes(32);
+      const lockUnlockTokenId = getTokenId(lockUnlockSalt).result as BufferCV;
+      const mintBurnSalt = randomBytes(32);
+      const mintBurnTokenId = getTokenId(mintBurnSalt).result as BufferCV;
+      const tokenId = {
+        mintBurn: mintBurnTokenId,
+        lockUnlock: lockUnlockTokenId,
+      };
+
+      const amount = Cl.uint(100);
+      const destinationAddress = Cl.bufferFromAscii("some eth address");
+      const destinationChain = Cl.stringAscii("ethereum");
+      const gasValue = Cl.uint(100);
+      const tokenAddress = {
+        mintBurn: Cl.address(
+          `${deployer}.native-interchain-token`
+        ) as ContractPrincipalCV,
+        lockUnlock: Cl.address(
+          `${deployer}.sample-sip-010`
+        ) as ContractPrincipalCV,
+      };
+      const tokenManager = {
+        mintBurn: Cl.address(
+          `${deployer}.native-interchain-token`
+        ) as ContractPrincipalCV,
+        lockUnlock: Cl.address(
+          `${deployer}.token-manager`
+        ) as ContractPrincipalCV,
+      };
+      beforeEach(() => {
+        // setupService();
+        setupTokenManager({});
+        deployTokenManager({
+          salt: lockUnlockSalt,
+        });
+        enableTokenManager({
+          proofSigners,
+          tokenId: tokenId.lockUnlock,
+        });
+        setupNIT({ tokenId: tokenId.mintBurn, minter: deployer });
+        const deployTx = deployInterchainToken({
+          salt: mintBurnSalt,
+          minter: Cl.address(deployer),
+        });
+        expect(deployTx.result).toBeOk(Cl.bool(true));
+        expect(
+          executeDeployInterchainToken({
+            messageId: "approved-native-interchain-token-deployment-message",
+            payload: Cl.serialize(
+              approveDeployNativeInterchainToken({
+                proofSigners,
+                tokenId: mintBurnTokenId,
+                minter: deployer,
+              }).payload
+            ),
+            sourceAddress: "interchain-token-service",
+            sourceChain: "stacks",
+            tokenAddress: `${deployer}.native-interchain-token`,
+          }).result
+        ).toBeOk(Cl.bool(true));
+        mintNIT({
+          amount: 100000,
+          minter: deployer,
+        });
+      });
+      for (const type of ["lockUnlock", "mintBurn"] as (
+        | keyof typeof tokenAddress
+      )[]) {
+        it(`Should be able to initiate an interchain token transfer via the callContractWithInterchainToken function on the service [${type}]`, () => {
+          const callContractTx = callContractWithInterchainToken({
+            amount: amount,
+            destinationAddress: destinationAddress,
+            destinationChain: destinationChain,
+            gasValue: gasValue,
+            tokenAddress: tokenAddress[type],
+            tokenId: tokenId[type],
+            tokenManagerAddress: tokenManager[type],
+            caller: deployer,
+            metadata: {
+              data: Cl.bufferFromAscii("some data"),
+              version: Cl.uint(MetadataVersion.ContractCall),
+            },
+          });
+          expect(callContractTx.result).toBeOk(Cl.bool(true));
+        });
+      }
+    });
 
     it("Should revert on callContractWithInterchainToken if data is empty", () => {});
 

@@ -829,3 +829,49 @@ export function burnNIT({
 export function keccak256(data: Uint8Array | Buffer) {
   return createKeccakHash("keccak256").update(Buffer.from(data)).digest();
 }
+
+export function callContractWithInterchainToken({
+  amount,
+  destinationAddress,
+  destinationChain,
+  gasValue,
+  tokenAddress,
+  tokenId,
+  tokenManagerAddress,
+  metadata,
+  caller,
+}: {
+  tokenManagerAddress: PrincipalCV;
+  tokenAddress: PrincipalCV;
+  tokenId: BufferCV;
+  amount: UIntCV;
+  destinationChain: StringAsciiCV;
+  destinationAddress: BufferCV;
+  gasValue: UIntCV;
+  metadata?: {
+    version: UIntCV;
+    data: BufferCV;
+  };
+  caller: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "call-contract-with-interchain-token",
+    [
+      tokenManagerAddress,
+      tokenAddress,
+      tokenId,
+      destinationChain,
+      destinationAddress,
+      amount,
+      metadata
+        ? Cl.tuple(metadata)
+        : Cl.tuple({
+            version: Cl.uint(MetadataVersion.ContractCall),
+            data: Cl.bufferFromHex("0x"),
+          }),
+      gasValue,
+    ],
+    caller
+  );
+}
