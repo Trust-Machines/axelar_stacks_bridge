@@ -55,6 +55,11 @@ plan:
             path: contracts/traits.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: failed-interchain-executable
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/failed-interchain-executable.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: gas-service
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/gas-service.clar
