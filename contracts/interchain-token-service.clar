@@ -299,11 +299,6 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        ;; (try!
-        ;;     (if (is-eq (get express-call METADATA-VERSION) metadata-version)
-        ;;         (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-        ;;         (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-        ;;     ))
         (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload_))
     )
@@ -408,6 +403,14 @@
             operator: (optional principal),
             token-address: principal
         } (get params payload-decoded))))
+        (verify-payload (unwrap-panic (to-consensus-buff? {
+                type: "verify-token-manager",
+                token-manager-address: (contract-of token-manager),
+                token-id: token-id,
+                token-type: token-manager-type,
+                operator: (default-to NULL-ADDRESS (get operator data)),
+                wrapped-payload: wrapped-payload,
+            })))
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
@@ -418,19 +421,12 @@
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-    (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) payload))
+    (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) verify-payload))
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
             (var-get its-contract-name)
-            (unwrap-panic (to-consensus-buff? {
-                type: "verify-token-manager",
-                token-manager-address: (contract-of token-manager),
-                token-id: token-id,
-                token-type: token-manager-type,
-                operator: (default-to NULL-ADDRESS (get operator data)),
-                wrapped-payload: wrapped-payload,
-            }))))))
+            verify-payload))))
 
 
 (define-public (process-deploy-token-manager-from-stacks

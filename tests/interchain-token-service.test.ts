@@ -31,6 +31,7 @@ import {
   mintNIT,
   setPaused,
   setupNIT,
+  setupService,
   setupTokenManager,
 } from "./its-utils";
 import { deployGateway, getSigners } from "./util";
@@ -54,38 +55,13 @@ const proofSigners = getSigners(0, 10, 1, 10, "1");
   https://docs.hiro.so/stacks/clarinet-js-sdk
 */
 
-function setupService() {
-  expect(
-    simnet.callPublicFn(
-      "interchain-token-service",
-      "setup",
-      [
-        Cl.stringAscii("interchain-token-service"),
-        Cl.contractPrincipal(deployer, "interchain-token-factory"),
-        Cl.contractPrincipal(deployer, "gateway"),
-        Cl.contractPrincipal(deployer, "gas-service"),
-        Cl.standardPrincipal(deployer),
-        Cl.list([
-          Cl.tuple({
-            "chain-name": Cl.stringAscii(TRUSTED_CHAIN),
-            address: Cl.stringAscii(TRUSTED_ADDRESS),
-          }),
-          Cl.tuple({
-            "chain-name": Cl.stringAscii("ethereum"),
-            address: Cl.stringAscii(TRUSTED_ADDRESS),
-          }),
-        ]),
-      ],
-      deployer
-    ).result
-  ).toBeOk(Cl.bool(true));
-  deployGateway(proofSigners);
-}
 describe("Interchain Token Service", () => {
   const salt = randomBytes(32);
   const tokenId = getTokenId(salt).result as BufferCV;
 
-  beforeEach(setupService);
+  beforeEach(() => {
+    setupService(proofSigners);
+  });
   describe("Owner functions", () => {
     it("Should revert on set pause status when not called by the owner", () => {
       expect(

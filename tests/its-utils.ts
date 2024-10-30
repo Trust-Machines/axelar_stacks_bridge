@@ -16,7 +16,7 @@ const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { makeProofCV, signersToCv } from "./util";
+import { deployGateway, makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -886,4 +886,32 @@ export function callContractWithInterchainToken({
     ],
     caller
   );
+}
+
+export function setupService(proofSigners: Signers) {
+  expect(
+    simnet.callPublicFn(
+      "interchain-token-service",
+      "setup",
+      [
+        Cl.stringAscii("interchain-token-service"),
+        Cl.contractPrincipal(deployer, "interchain-token-factory"),
+        Cl.contractPrincipal(deployer, "gateway"),
+        Cl.contractPrincipal(deployer, "gas-service"),
+        Cl.standardPrincipal(deployer),
+        Cl.list([
+          Cl.tuple({
+            "chain-name": Cl.stringAscii(TRUSTED_CHAIN),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
+          }),
+          Cl.tuple({
+            "chain-name": Cl.stringAscii("ethereum"),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
+          }),
+        ]),
+      ],
+      deployer
+    ).result
+  ).toBeOk(Cl.bool(true));
+  deployGateway(proofSigners);
 }
