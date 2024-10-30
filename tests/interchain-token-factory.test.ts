@@ -69,13 +69,14 @@ describe("example tests", () => {
   });
 
   it("deploys a mint burn token", () => {
+    const originalSalt = randomBytes(32);
     const salt = simnet.callReadOnlyFn(
       "interchain-token-factory",
       "get-interchain-token-salt",
       [
         Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
-        Cl.address("ST000000000000000000002AMW42H"),
-        Cl.buffer(randomBytes(32)),
+        Cl.address(address1),
+        Cl.buffer(originalSalt),
       ],
       address1
     ).result as BufferCV;
@@ -83,7 +84,7 @@ describe("example tests", () => {
       simnet.callReadOnlyFn(
         "interchain-token-factory",
         "get-interchain-token-id",
-        [Cl.address("ST000000000000000000002AMW42H"), salt],
+        [Cl.address(address1), salt],
         address1
       ).result as ResponseOkCV<BufferCV>
     ).value;
@@ -96,7 +97,7 @@ describe("example tests", () => {
       "interchain-token-factory",
       "deploy-interchain-token",
       [
-        salt,
+        Cl.buffer(originalSalt),
         Cl.address(`${deployer}.native-interchain-token`),
         Cl.uint(0),
         Cl.address("ST000000000000000000002AMW42H"),
@@ -122,5 +123,21 @@ describe("example tests", () => {
         sourceAddress: "interchain-token-service",
       }).result
     ).toBeOk(Cl.bool(true));
+
+    const remoteDeployTx = simnet.callPublicFn(
+      "interchain-token-factory",
+      "deploy-remote-interchain-token",
+      [
+        Cl.buffer(originalSalt),
+        Cl.bufferFromHex("0x" + "00".repeat(20)),
+        Cl.stringAscii("ethereum"),
+        Cl.uint(100),
+        Cl.address(`${deployer}.native-interchain-token`),
+        Cl.address(`${deployer}.native-interchain-token`),
+      ],
+      address1
+    );
+
+    expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
   });
 });

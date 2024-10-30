@@ -145,8 +145,7 @@
         (gas-value uint))
     (let
         (
-            (sender contract-caller)
-            (salt (get-interchain-token-salt CHAIN-NAME-HASH sender salt_))
+            (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
             (minter
                 (if
                     (> initial-supply u0)
