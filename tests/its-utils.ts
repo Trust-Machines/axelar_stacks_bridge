@@ -186,11 +186,14 @@ export function enableTokenManager({
   ).toBeOk(Cl.bool(true));
 }
 
-export function getTokenId(salt: Uint8Array | Buffer) {
+export function getTokenId(
+  salt: Uint8Array | Buffer,
+  deployer: string = address1
+) {
   return simnet.callReadOnlyFn(
     "interchain-token-service",
     "interchain-token-id",
-    [Cl.standardPrincipal(address1), Cl.buffer(salt)],
+    [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
     address1
   );
 }

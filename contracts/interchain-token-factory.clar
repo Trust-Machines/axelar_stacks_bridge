@@ -40,8 +40,8 @@
 (define-constant PREFIX-CANONICAL-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
 (define-constant PREFIX-GATEWAY-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "gateway-token-salt"))))
-(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
 (define-constant CHAIN-NAME-HASH (unwrap-panic (contract-call? .interchain-token-service get-chain-name-hash)))
 (define-constant GATEWAY (unwrap-panic (contract-call? .interchain-token-service get-gateway)))
@@ -126,7 +126,7 @@
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+            (token-id (unwrap-panic (get-canonical-interchain-token-id (contract-of token))))
             (name (unwrap-panic (contract-call? token get-name)))
             (symbol (unwrap-panic (contract-call? token get-symbol)))
             (decimals (unwrap-panic (contract-call? token get-decimals)))
