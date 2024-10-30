@@ -316,6 +316,7 @@
         (gas-value uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
+        ;; (gas-value uint)
     )
     (let (
             (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
@@ -332,6 +333,7 @@
             salt: salt,
         })
         (if (is-eq (len destination-chain) u0)
+            ;; in this case we should accept STX payload in order to pay for cross chain gas
             (process-deploy-token-manager-from-external-chain
                 token-manager
                 (unwrap-panic (to-consensus-buff? {
@@ -343,6 +345,7 @@
                 }))
                 none)
             ;; #[filter(token, token-manager, params, gas-value)]
+            ;; in this other case we should check that the gas-value is 0
             (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value token-manager)
         )))
 
@@ -389,6 +392,7 @@
             message-id: (string-ascii 128),
             payload: (buff 63000),
         })))
+        ;; (gas-value uint)
     (let (
 
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
@@ -414,6 +418,8 @@
     ) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+
+    ;; since we are doing a cross chain call here (even if from Stacks to Stacks), before we do it we should pay for gas
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
@@ -531,11 +537,14 @@
         (token <native-interchain-token-trait>)
         (supply uint)
         (minter (optional principal)))
+        ;; (gas-value uint)
     (let (
             (token-id (interchain-token-id contract-caller salt)))
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+
+        ;; since we are doing a cross chain call here, we need to accept STX and pay for gas before
         (contract-call? .gateway call-contract
             CHAIN-NAME
             (var-get its-contract-name)
@@ -697,12 +706,15 @@
         (payload (buff 63000))
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>))
+        ;; (gas-value uint)
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
+            ;; in this case, gas-value should be 0
             (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
+            ;; in this case we should accept STX payment to pay for cross chain gas
             (process-deploy-token-manager-from-external-chain
                 token-manager
                 payload
@@ -719,6 +731,7 @@
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 62000)))
+        ;; (gas-value uint)
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -729,7 +742,9 @@
         (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
+            ;; in this case the gas-value should be 0
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
+            ;; in this case we need to accept STX payment for paying for cross chain gas
             (process-deploy-interchain-from-external-chain
             ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
                 message-id
@@ -744,6 +759,7 @@
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 62000))
+        ;; (gas-value uint)
     )
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
@@ -760,6 +776,7 @@
             source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
     (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
+    ;; since we are doing a cross chain call, we need to accept STX and pay for cross chain gas here
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
