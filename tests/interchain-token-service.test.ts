@@ -148,6 +148,7 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       const deployTx = deployTokenManager({
         salt,
+        gas: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
       expect(deployTx.events[0].event).toBe("print_event");
@@ -165,8 +166,8 @@ describe("Interchain Token Service", () => {
         destinationContractAddress: "interchain-token-service",
         sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
-      expect(deployTx.events[1].event).toBe("print_event");
-      expect(Cl.deserialize(deployTx.events[1].data.raw_value!)).toBeTuple(
+      expect(deployTx.events[3].event).toBe("print_event");
+      expect(Cl.deserialize(deployTx.events[3].data.raw_value!)).toBeTuple(
         message
       );
       enableTokenManager({
@@ -177,7 +178,7 @@ describe("Interchain Token Service", () => {
 
     it("Should register a native interchain token", () => {
       setupNIT({ tokenId });
-      const deployTx = deployInterchainToken({ salt });
+      const deployTx = deployInterchainToken({ salt, gasValue: 1000 });
 
       const { payload } = approveDeployNativeInterchainToken({
         proofSigners,
@@ -191,6 +192,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -199,7 +201,7 @@ describe("Interchain Token Service", () => {
 
     it("Should revert when registering an interchain token when service is paused", () => {
       setPaused({ paused: true });
-      expect(deployInterchainToken({ salt }).result).toBeErr(
+      expect(deployInterchainToken({ salt, gasValue: 1000 }).result).toBeErr(
         ITS_ERROR_CODES["ERR-PAUSED"]
       );
     });
@@ -299,6 +301,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
+          gasValue: 1000,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-TOKEN-DEPLOYMENT-NOT-APPROVED"]);
     });
@@ -315,6 +318,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
     });
@@ -497,6 +501,7 @@ describe("Interchain Token Service", () => {
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+        gasValue: 1000,
       });
 
       const wrappedPayload = {
@@ -516,8 +521,8 @@ describe("Interchain Token Service", () => {
         destinationContractAddress: "interchain-token-service",
         sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
-      expect(deployTx.events[0].event).toBe("print_event");
-      expect(Cl.deserialize(deployTx.events[0].data.raw_value!)).toBeTuple(
+      expect(deployTx.events[2].event).toBe("print_event");
+      expect(Cl.deserialize(deployTx.events[2].data.raw_value!)).toBeTuple(
         message
       );
       enableTokenManager({
@@ -560,6 +565,7 @@ describe("Interchain Token Service", () => {
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeErr(
         ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]
@@ -598,6 +604,7 @@ describe("Interchain Token Service", () => {
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeErr(
         ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]
@@ -777,6 +784,7 @@ describe("Interchain Token Service", () => {
         sourceAddress: "untrusted address",
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeErr(
         ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]
@@ -795,6 +803,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "untrusted address",
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
+          gasValue: 1000,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
     });
@@ -867,6 +876,7 @@ describe("Interchain Token Service", () => {
         sourceAddress: TRUSTED_ADDRESS,
         token: tokenAddress,
         tokenManager: tokenManagerAddress,
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
@@ -884,6 +894,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
+          gasValue: 1000,
         }).result
       ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
@@ -982,6 +993,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,
@@ -1017,6 +1029,7 @@ describe("Interchain Token Service", () => {
       const deployTx = deployInterchainToken({
         salt,
         minter: Cl.address(deployer),
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
@@ -1041,6 +1054,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -1079,6 +1093,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,
@@ -1188,6 +1203,7 @@ describe("Interchain Token Service", () => {
       const deployTx = deployInterchainToken({
         salt,
         minter: Cl.address(deployer),
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
@@ -1210,6 +1226,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -1252,6 +1269,7 @@ describe("Interchain Token Service", () => {
       const deployTx = deployInterchainToken({
         salt,
         minter: Cl.address(deployer),
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
@@ -1276,6 +1294,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -1373,6 +1392,7 @@ describe("Interchain Token Service", () => {
         const deployTx = deployInterchainToken({
           salt: mintBurnSalt,
           minter: Cl.address(deployer),
+          gasValue: 1000,
         });
         expect(deployTx.result).toBeOk(Cl.bool(true));
         expect(
@@ -1388,6 +1408,7 @@ describe("Interchain Token Service", () => {
             sourceAddress: "interchain-token-service",
             sourceChain: "stacks",
             tokenAddress: `${deployer}.native-interchain-token`,
+            gasValue: 1000,
           }).result
         ).toBeOk(Cl.bool(true));
         mintNIT({
@@ -1659,6 +1680,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,
@@ -1736,6 +1758,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,
@@ -1771,6 +1794,7 @@ describe("Interchain Token Service", () => {
       const deployTx = deployInterchainToken({
         salt,
         minter: Cl.address(deployer),
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
       expect(
@@ -1786,6 +1810,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -1804,6 +1829,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,
@@ -1834,6 +1860,7 @@ describe("Interchain Token Service", () => {
       const deployTx = deployInterchainToken({
         salt,
         minter: Cl.address(deployer),
+        gasValue: 1000,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
       expect(
@@ -1849,6 +1876,7 @@ describe("Interchain Token Service", () => {
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
           tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -1867,6 +1895,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0xdeadbeef"),
+        gasValue: 1000,
       });
       approveReceiveInterchainTransfer({
         payload,

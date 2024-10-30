@@ -91,7 +91,6 @@ export function deployTokenManager({
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
-      Cl.uint(gas),
       Cl.buffer(
         Cl.serialize(
           Cl.tuple({
@@ -101,6 +100,7 @@ export function deployTokenManager({
         )
       ),
       tokenManagerAddress,
+      Cl.uint(gas),
     ],
     address1
   );
@@ -354,12 +354,14 @@ export function executeDeployInterchainToken({
   sourceAddress,
   sourceChain,
   tokenAddress,
+  gasValue,
 }: {
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
   tokenAddress: `${string}.${string}`;
   payload: Buffer | Uint8Array;
+  gasValue: number;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -370,6 +372,7 @@ export function executeDeployInterchainToken({
       Cl.stringAscii(sourceAddress),
       Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
       Cl.buffer(payload),
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -449,8 +452,10 @@ export function deployInterchainToken({
   token = Cl.contractPrincipal(deployer, "native-interchain-token"),
   supply = 0,
   minter,
+  gasValue,
 }: {
   salt: Uint8Array | Buffer;
+  gasValue: number;
   token?: ContractPrincipalCV;
   supply?: number;
   minter?: PrincipalCV;
@@ -463,6 +468,7 @@ export function deployInterchainToken({
       token,
       Cl.uint(supply),
       minter ? Cl.some(minter) : Cl.none(),
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -475,6 +481,7 @@ export function executeDeployTokenManager({
   sourceChain,
   token,
   tokenManager,
+  gasValue,
 }: {
   messageId: string;
   sourceChain: string;
@@ -488,6 +495,7 @@ export function executeDeployTokenManager({
   };
   token: ContractPrincipalCV;
   tokenManager: ContractPrincipalCV;
+  gasValue: number;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -499,6 +507,7 @@ export function executeDeployTokenManager({
       Cl.buffer(Cl.serialize(Cl.tuple(payload))),
       token,
       tokenManager,
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -642,6 +651,7 @@ export function buildIncomingInterchainTransferPayload({
   recipient: string;
   amount: number;
   data: BufferCV;
+  gasValue: number;
   sourceChain?: string;
 }) {
   return Cl.tuple({

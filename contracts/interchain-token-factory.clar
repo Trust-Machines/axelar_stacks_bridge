@@ -95,7 +95,11 @@
 ;; Registers a canonical token as an interchain token and deploys its token manager.
 ;; @param tokenAddress The address of the canonical token.
 ;; @return tokenId The tokenId corresponding to the registered canonical token.
-(define-public (register-canonical-interchain-token (token-address <sip-010-trait>) (token-manager-address <token-manager-trait>))
+(define-public (register-canonical-interchain-token
+        (token-address <sip-010-trait>)
+        (token-manager-address <token-manager-trait>)
+        (gas-value uint)
+    )
     (begin
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
@@ -103,12 +107,12 @@
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
                 TOKEN-TYPE-LOCK-UNLOCK
-                u0
                 (unwrap-panic (to-consensus-buff? {
                     operator: none,
                     token-address: token-address
                 }))
-                token-manager-address)
+                token-manager-address
+                gas-value)
     ))
 
 
@@ -138,7 +142,8 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
-        (minter_ principal))
+        (minter_ principal)
+        (gas-value uint))
     (let
         (
             (sender contract-caller)
@@ -154,7 +159,7 @@
             (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
-    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter))))
+    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter) gas-value)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
