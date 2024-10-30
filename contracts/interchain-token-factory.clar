@@ -81,8 +81,7 @@
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
 (define-read-only (get-interchain-token-id (deployer principal) (salt (buff 32)))
-    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER
-        (get-interchain-token-salt CHAIN-NAME-HASH deployer salt))))
+    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
 
 
 ;; Computes the ID for a canonical interchain token based on its address.

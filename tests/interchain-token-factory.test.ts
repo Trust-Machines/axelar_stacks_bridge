@@ -1,12 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
+  approveDeployNativeInterchainToken,
   enableTokenManager,
-  getTokenId,
+  executeDeployInterchainToken,
   keccak256,
+  setupNIT,
   setupService,
   setupTokenManager,
 } from "./its-utils";
-import { BufferCV, Cl, cvToHex, ResponseOkCV } from "@stacks/transactions";
+import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
 import { getSigners } from "./util";
 
 const accounts = simnet.getAccounts();
@@ -20,18 +22,11 @@ const deployer = accounts.get("deployer")!;
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
 describe("example tests", () => {
+  beforeEach(() => {
+    setupService(proofSigners);
+  });
   it("deploys a lock unlock token with its manager", () => {
     setupTokenManager({});
-    setupService(proofSigners);
-    const salt = simnet.callReadOnlyFn(
-      "interchain-token-factory",
-      "get-canonical-interchain-token-salt",
-      [
-        Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
-        Cl.address(`${deployer}.sample-sip-010`),
-      ],
-      address1
-    ).result as BufferCV;
 
     const tokenId = (
       simnet.callReadOnlyFn(
@@ -71,5 +66,61 @@ describe("example tests", () => {
     );
 
     expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+  });
+
+  it("deploys a mint burn token", () => {
+    const salt = simnet.callReadOnlyFn(
+      "interchain-token-factory",
+      "get-interchain-token-salt",
+      [
+        Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
+        Cl.address("ST000000000000000000002AMW42H"),
+        Cl.buffer(randomBytes(32)),
+      ],
+      address1
+    ).result as BufferCV;
+    const tokenId = (
+      simnet.callReadOnlyFn(
+        "interchain-token-factory",
+        "get-interchain-token-id",
+        [Cl.address("ST000000000000000000002AMW42H"), salt],
+        address1
+      ).result as ResponseOkCV<BufferCV>
+    ).value;
+
+    setupNIT({
+      tokenId,
+    });
+
+    const deployTx = simnet.callPublicFn(
+      "interchain-token-factory",
+      "deploy-interchain-token",
+      [
+        salt,
+        Cl.address(`${deployer}.native-interchain-token`),
+        Cl.uint(0),
+        Cl.address("ST000000000000000000002AMW42H"),
+        Cl.uint(100),
+      ],
+      address1
+    );
+
+    expect(deployTx.result).toBeOk(Cl.bool(true));
+
+    const { payload } = approveDeployNativeInterchainToken({
+      tokenId,
+      proofSigners,
+    });
+
+    expect(
+      executeDeployInterchainToken({
+        messageId: "approved-native-interchain-token-deployment-message",
+        gasValue: 100,
+        payload: Cl.serialize(payload),
+        tokenAddress: `${deployer}.native-interchain-token`,
+        sourceChain: "stacks",
+        sourceAddress: "interchain-token-service",
+      }).result
+    ).toBeOk(Cl.bool(true));
   });
 });
