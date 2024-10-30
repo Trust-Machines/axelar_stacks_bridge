@@ -29,16 +29,19 @@ import {
   interchainTransfer,
   keccak256,
   mintNIT,
+  setFlowLimit,
   setPaused,
   setupNIT,
   setupService,
   setupTokenManager,
 } from "./its-utils";
-import { deployGateway, getSigners } from "./util";
+import { getSigners } from "./util";
 import {
   ITS_ERROR_CODES,
   MessageType,
   MetadataVersion,
+  NIT_ERRORS,
+  TOKEN_MANAGER_ERRORS,
   TokenType,
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
@@ -605,6 +608,10 @@ describe("Interchain Token Service", () => {
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
       const managerAddress = `${deployer}.token-manager`;
+      const senderInitialBalance = getSip010Balance({
+        address: deployer,
+        contractAddress: "sample-sip-010",
+      });
       const transferTx = interchainTransfer({
         amount: Cl.uint(amount),
         destinationAddress: Cl.bufferFromAscii(destinationAddress),
@@ -623,6 +630,14 @@ describe("Interchain Token Service", () => {
         gatewayContractCall,
       ] = transferTx.events;
       expect(transferTx.result).toBeOk(Cl.bool(true));
+
+      const senderFinalBalance = getSip010Balance({
+        address: deployer,
+        contractAddress: "sample-sip-010",
+      });
+      expect(BigInt(senderInitialBalance) - BigInt(amount)).toBe(
+        senderFinalBalance
+      );
 
       expect(ftTransfer).toStrictEqual(
         buildFtTransferEvent({
@@ -2107,92 +2122,135 @@ describe("Interchain Token Service", () => {
     });
   });
 
-  describe("Send Interchain Token", () => {
-    for (const type of ["mintBurn", "lockUnlock"]) {
-      it(`Should be able to initiate an interchain token transfer via interchainTransfer [${type}]`, () => {});
-    }
-
-    it("Should be able to initiate an interchain token transfer using interchainTransferFrom with max possible allowance", () => {});
-
-    it("Should revert using interchainTransferFrom with zero amount", () => {});
-  });
-
-  describe("Send Interchain Token With Data", () => {
-    for (const type of [
-      "lockUnlock",
-      "mintBurn",
-      "mintBurnFrom",
-      "lockUnlockFee",
-    ]) {
-      it(`Should be able to initiate an interchain token transfer [${type}]`, () => {});
-    }
-
-    it("Should be able to initiate an interchain token transfer [gateway]", () => {});
-  });
-
-  describe("Express Execute", () => {
-    it("Should revert on executeWithInterchainToken when not called by the service", () => {});
-
-    it("Should revert on expressExecuteWithInterchainToken when not called by the service", () => {});
-
-    it("Should revert on express execute when service is paused", () => {});
-
-    it("Should express execute", () => {});
-
-    it("Should revert on express execute if token handler transfer token from fails", () => {});
-
-    it("Should revert on express execute with token if token transfer fails on destination chain", () => {});
-
-    it("Should express execute with token", () => {});
-  });
-
-  describe("Express Execute With Token", () => {
-    it("Should revert on executeWithInterchainToken when not called by the service", () => {});
-
-    it("Should revert on expressExecuteWithInterchainToken when not called by the service", () => {});
-
-    it("Should revert on express execute with token when service is paused", () => {});
-
-    it("Should express execute with token", () => {});
-
-    it("Should revert on express execute if token handler transfer token from fails", () => {});
-
-    it("Should revert on express execute with token if token transfer fails on destination chain", () => {});
-
-    it("Should express execute with token", () => {});
-  });
-
-  describe("Express Receive Remote Token", () => {
-    it("Should revert if command is already executed by gateway", () => {});
-
-    it("Should revert with invalid messageType", () => {});
-
-    it("Should be able to receive lock/unlock token", () => {});
-
-    it("Should be able to receive interchain mint/burn token", () => {});
-
-    it("Should be able to receive mint/burn token", () => {});
-
-    it("Should be able to receive mint/burn from token", () => {});
-
-    it("Should be able to receive lock/unlock with fee on transfer token", () => {});
-
-    it("Should be able to receive lock/unlock with fee on transfer token with normal ERC20 token", () => {});
-
-    it("Should be able to receive mint/burn token", () => {});
-  });
-
-  describe("Express Receive Remote Token with Data", () => {
-    it("Should be able to receive lock/unlock token", () => {});
-
-    it("Should be able to receive interchain mint/burn token", () => {});
-    it("Should be able to receive mint/burn token", () => {});
-
-    it("Should be able to receive lock/unlock with fee on transfer token", () => {});
-  });
-
   describe("Flow Limits", () => {
-    it("Should be able to send token only if it does not trigger the mint limit", () => {});
+    function transferFromDeployer({
+      amount,
+      tokenAddress,
+      tokenManagerAddress,
+    }: {
+      amount: number;
+      tokenAddress: string;
+      tokenManagerAddress: string;
+    }) {
+      return interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii("destinationAddress"),
+        destinationChain: Cl.stringAscii("ethereum"),
+        gasValue: Cl.uint(100),
+        tokenAddress: Cl.contractPrincipal(deployer, tokenAddress),
+        tokenId: tokenId,
+        tokenManagerAddress: Cl.contractPrincipal(
+          deployer,
+          tokenManagerAddress
+        ),
+        caller: deployer,
+      });
+    }
+    function sendLockUnlock(amount: number) {
+      return transferFromDeployer({
+        amount,
+        tokenAddress: "sample-sip-010",
+        tokenManagerAddress: "token-manager",
+      });
+    }
+    function sendMintBurn(amount: number) {
+      return transferFromDeployer({
+        amount,
+        tokenAddress: "native-interchain-token",
+        tokenManagerAddress: "native-interchain-token",
+      });
+    }
+    it("Should be able to send token only if it does not trigger the mint limit", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      const setFlowTx = setFlowLimit({
+        tokenId,
+        tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+        limit: Cl.uint(500),
+      });
+
+      // test that the transfer limit is not reached
+      expect(setFlowTx.result).toBeOk(Cl.bool(true));
+      expect(sendLockUnlock(501).result).toBeErr(
+        TOKEN_MANAGER_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendLockUnlock(200).result).toBeOk(Cl.bool(true));
+      expect(sendLockUnlock(200).result).toBeOk(Cl.bool(true));
+      expect(sendLockUnlock(100).result).toBeOk(Cl.bool(true));
+      expect(sendLockUnlock(1).result).toBeErr(
+        TOKEN_MANAGER_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+    });
+    it("Should be able to send token only if it does not trigger the mint limit", () => {
+      // setup token manager and set a transfer limit through the ITS
+
+      // setup NIT and set a mint limit through the ITS
+      setupNIT({
+        tokenId,
+        minter: deployer,
+      });
+      deployInterchainToken({
+        salt,
+        gasValue: 1000,
+        minter: Cl.address(deployer),
+      });
+
+      const { payload } = approveDeployNativeInterchainToken({
+        proofSigners,
+        tokenId,
+        minter: deployer,
+      });
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(payload),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        mintNIT({
+          amount: 1000_000,
+          minter: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+      expect(
+        setFlowLimit({
+          tokenId,
+          limit: Cl.uint(500),
+          tokenManagerAddress: Cl.contractPrincipal(
+            deployer,
+            "native-interchain-token"
+          ),
+        }).result
+      ).toBeOk(Cl.bool(true));
+      // test that the transfer limit is not reached
+      expect(sendMintBurn(501).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendMintBurn(200).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(200).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(200).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendMintBurn(101).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendMintBurn(100).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(1).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+    });
 
     it("Should be able to receive token only if it does not trigger the mint limit", () => {});
 

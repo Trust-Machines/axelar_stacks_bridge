@@ -67,3 +67,27 @@ export enum MetadataVersion {
   ContractCall,
   ExpressCall,
 }
+
+export const TOKEN_MANAGER_ERRORS = {
+  "ERR-NOT-AUTHORIZED": Cl.uint(1051),
+  "ERR-FLOW-LIMIT-EXCEEDED": Cl.uint(2051),
+  "ERR-NOT-MANAGED-TOKEN": Cl.uint(3051),
+  "ERR-ZERO-AMOUNT": Cl.uint(3052),
+  "ERR-STARTED": Cl.uint(4051),
+  "ERR-NOT-STARTED": Cl.uint(4052),
+  "ERR-UNSUPPORTED-TOKEN-TYPE": Cl.uint(4053),
+  "ERR-ONLY-OPERATOR": Cl.uint(5051),
+};
+
+export const NIT_ERRORS = {
+  "ERR-NOT-AUTHORIZED": Cl.uint(1051),
+  "ERR-INSUFFICIENT-BALANCE": Cl.uint(2051),
+  "ERR-INVALID-PARAMS": Cl.uint(2052),
+  "ERR-ZERO-AMOUNT": Cl.uint(2053),
+  "ERR-NOT-MANAGED-TOKEN": Cl.uint(2053),
+  "ERR-FLOW-LIMIT-EXCEEDED": Cl.uint(3051),
+  "ERR-STARTED": Cl.uint(4051),
+  "ERR-NOT-STARTED": Cl.uint(4052),
+  "ERR-UNSUPPORTED-TOKEN-TYPE": Cl.uint(4053),
+  "ERR-ONLY-OPERATOR": Cl.uint(5051),
+};

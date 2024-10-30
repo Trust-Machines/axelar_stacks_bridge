@@ -918,3 +918,20 @@ export function setupService(proofSigners: Signers) {
   ).toBeOk(Cl.bool(true));
   deployGateway(proofSigners);
 }
+
+export function setFlowLimit({
+  tokenId,
+  tokenManagerAddress,
+  limit,
+}: {
+  tokenId: BufferCV;
+  tokenManagerAddress: ContractPrincipalCV;
+  limit: UIntCV;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "set-flow-limit",
+    [tokenId, tokenManagerAddress, limit],
+    deployer
+  );
+}
