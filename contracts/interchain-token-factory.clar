@@ -40,8 +40,8 @@
 (define-constant PREFIX-CANONICAL-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
 (define-constant PREFIX-GATEWAY-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "gateway-token-salt"))))
-(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
 (define-constant CHAIN-NAME-HASH (unwrap-panic (contract-call? .interchain-token-service get-chain-name-hash)))
 (define-constant GATEWAY (unwrap-panic (contract-call? .interchain-token-service get-gateway)))
@@ -95,7 +95,11 @@
 ;; Registers a canonical token as an interchain token and deploys its token manager.
 ;; @param tokenAddress The address of the canonical token.
 ;; @return tokenId The tokenId corresponding to the registered canonical token.
-(define-public (register-canonical-interchain-token (token-address <sip-010-trait>) (token-manager-address <token-manager-trait>))
+(define-public (register-canonical-interchain-token
+        (token-address <sip-010-trait>)
+        (token-manager-address <token-manager-trait>)
+        (gas-value uint)
+    )
     (begin
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
@@ -103,12 +107,12 @@
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
                 TOKEN-TYPE-LOCK-UNLOCK
-                u0
                 (unwrap-panic (to-consensus-buff? {
                     operator: none,
                     token-address: token-address
                 }))
-                token-manager-address)
+                token-manager-address
+                gas-value)
     ))
 
 
@@ -122,12 +126,12 @@
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+            (token-id (unwrap-panic (get-canonical-interchain-token-id (contract-of token))))
             (name (unwrap-panic (contract-call? token get-name)))
             (symbol (unwrap-panic (contract-call? token get-symbol)))
             (decimals (unwrap-panic (contract-call? token get-decimals)))
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
-            (token (try! (contract-call? .interchain-token-service valid-token-address token-id)))
+            (token_ (try! (contract-call? .interchain-token-service valid-token-address token-id)))
         )
         (contract-call? .interchain-token-service deploy-remote-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
     )
@@ -138,7 +142,8 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
-        (minter_ principal))
+        (minter_ principal)
+        (gas-value uint))
     (let
         (
             (sender contract-caller)
@@ -154,7 +159,7 @@
             (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
-    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter))))
+    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter) gas-value)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks

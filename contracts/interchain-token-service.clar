@@ -299,11 +299,6 @@
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
-        ;; (try!
-        ;;     (if (is-eq (get express-call METADATA-VERSION) metadata-version)
-        ;;         (pay-native-gas-for-express-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-        ;;         (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_)
-        ;;     ))
         (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
         (as-contract (contract-call? .gateway call-contract destination-chain_ destination-address_ payload_))
     )
@@ -313,9 +308,9 @@
         (salt (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
-        (gas-value uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
+        (gas-value uint)
     )
     (let (
             (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
@@ -341,7 +336,8 @@
                     token-manager-type: TOKEN-TYPE-LOCK-UNLOCK,
                     params: params
                 }))
-                none)
+                none
+                gas-value)
             ;; #[filter(token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager token-id destination-chain token-manager-type params gas-value token-manager)
         )))
@@ -363,6 +359,7 @@
             })))
         )
             (asserts! (not (is-eq destination-chain CHAIN-NAME)) ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF)
+            (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
             (print {
                 type: "token-manager-deployment-started",
                 token-id: token-id,
@@ -388,7 +385,8 @@
             source-address: (string-ascii 128),
             message-id: (string-ascii 128),
             payload: (buff 63000),
-        })))
+        }))
+        (gas-value uint))
     (let (
 
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
@@ -405,6 +403,14 @@
             operator: (optional principal),
             token-address: principal
         } (get params payload-decoded))))
+        (verify-payload (unwrap-panic (to-consensus-buff? {
+                type: "verify-token-manager",
+                token-manager-address: (contract-of token-manager),
+                token-id: token-id,
+                token-type: token-manager-type,
+                operator: (default-to NULL-ADDRESS (get operator data)),
+                wrapped-payload: wrapped-payload,
+            })))
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
@@ -414,18 +420,13 @@
     ) ERR-TOKEN-MANAGER-MISMATCH)
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+    (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
+    (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) verify-payload))
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
             (var-get its-contract-name)
-            (unwrap-panic (to-consensus-buff? {
-                type: "verify-token-manager",
-                token-manager-address: (contract-of token-manager),
-                token-id: token-id,
-                token-type: token-manager-type,
-                operator: (default-to NULL-ADDRESS (get operator data)),
-                wrapped-payload: wrapped-payload,
-            }))))))
+            verify-payload))))
 
 
 (define-public (process-deploy-token-manager-from-stacks
@@ -530,16 +531,11 @@
         (salt (buff 32))
         (token <native-interchain-token-trait>)
         (supply uint)
-        (minter (optional principal)))
+        (minter (optional principal))
+        (gas-value uint))
     (let (
-            (token-id (interchain-token-id contract-caller salt)))
-        (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (try! (require-not-paused))
-        (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
-        (contract-call? .gateway call-contract
-            CHAIN-NAME
-            (var-get its-contract-name)
-            (unwrap-panic (to-consensus-buff? {
+            (token-id (interchain-token-id contract-caller salt))
+            (payload (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
                 token-address: (contract-of token),
                 token-id: token-id,
@@ -554,7 +550,17 @@
                 operator: (default-to NULL-ADDRESS minter),
                 supply: supply,
                 wrapped-payload: none,
-            })))))
+            }))))
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
+        (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
+
+        (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) payload))
+        (contract-call? .gateway call-contract
+            CHAIN-NAME
+            (var-get its-contract-name)
+            payload)))
 
 
 (define-read-only (valid-token-address (token-id (buff 32)))
@@ -696,13 +702,16 @@
         (source-address (string-ascii 128))
         (payload (buff 63000))
         (token <sip-010-trait>)
-        (token-manager <token-manager-trait>))
+        (token-manager <token-manager-trait>)
+        (gas-value uint))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
+            ;; in this case, gas-value should be 0
             (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
+            ;; in this case we should accept STX payment to pay for cross chain gas
             (process-deploy-token-manager-from-external-chain
                 token-manager
                 payload
@@ -711,14 +720,16 @@
                     source-address: source-address,
                     message-id: message-id,
                     payload: payload,
-                })))))
+                })
+                gas-value))))
 
 (define-public (execute-deploy-interchain-token
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
-        (payload (buff 62000)))
+        (payload (buff 62000))
+        (gas-value uint))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
@@ -731,12 +742,13 @@
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
             (process-deploy-interchain-from-external-chain
-            ;; #[filter(message-id, source-chain, payload, token-address, source-address)]
+            ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
                 message-id
                 source-chain
                 source-address
                 token-address
-                payload))))
+                payload
+                gas-value))))
 
 (define-private (process-deploy-interchain-from-external-chain
         (message-id (string-ascii 128))
@@ -744,6 +756,7 @@
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 62000))
+        (gas-value uint)
     )
     (let (
         (payload-decoded (unwrap! (from-consensus-buff? {
@@ -755,16 +768,7 @@
             decimals: uint,
             minter-bytes: (buff 128),
         } payload) ERR-INVALID-PAYLOAD))
-    )
-    (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
-            source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
-        ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
-    (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
-    (as-contract
-        (contract-call? .gateway call-contract
-            CHAIN-NAME
-            (var-get its-contract-name)
-            (unwrap-panic (to-consensus-buff? {
+        (verify-payload (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
                 wrapped-payload: (some {
                     source-chain: source-chain,
@@ -781,7 +785,19 @@
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 operator: NULL-ADDRESS,
                 supply: u0,
-            }))))
+            })))
+    )
+    (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
+            source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
+        ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
+    (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
+    (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
+    (try! (pay-native-gas-for-contract-call gas-value tx-sender CHAIN-NAME (var-get its-contract-name) verify-payload))
+    (as-contract
+        (contract-call? .gateway call-contract
+            CHAIN-NAME
+            (var-get its-contract-name)
+            verify-payload))
     ))
 
 ;; A user deploys a native interchain token on their own on stacks

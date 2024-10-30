@@ -80,11 +80,6 @@ plan:
             path: contracts/interchain-token-service.clar
             clarity-version: 2
         - emulated-contract-publish:
-            contract-name: token-manager
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/token-manager.clar
-            clarity-version: 2
-        - emulated-contract-publish:
             contract-name: interchain-token-factory
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-factory.clar
@@ -98,5 +93,10 @@ plan:
             contract-name: sample-sip-010
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/sample-sip-010.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: token-manager
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/token-manager.clar
             clarity-version: 2
       epoch: "2.5"

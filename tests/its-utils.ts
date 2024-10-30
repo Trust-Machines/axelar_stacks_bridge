@@ -16,7 +16,7 @@ const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { makeProofCV, signersToCv } from "./util";
+import { deployGateway, makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -91,7 +91,6 @@ export function deployTokenManager({
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
-      Cl.uint(gas),
       Cl.buffer(
         Cl.serialize(
           Cl.tuple({
@@ -101,6 +100,7 @@ export function deployTokenManager({
         )
       ),
       tokenManagerAddress,
+      Cl.uint(gas),
     ],
     address1
   );
@@ -186,11 +186,14 @@ export function enableTokenManager({
   ).toBeOk(Cl.bool(true));
 }
 
-export function getTokenId(salt: Uint8Array | Buffer) {
+export function getTokenId(
+  salt: Uint8Array | Buffer,
+  deployer: string = address1
+) {
   return simnet.callReadOnlyFn(
     "interchain-token-service",
     "interchain-token-id",
-    [Cl.standardPrincipal(address1), Cl.buffer(salt)],
+    [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
     address1
   );
 }
@@ -354,12 +357,14 @@ export function executeDeployInterchainToken({
   sourceAddress,
   sourceChain,
   tokenAddress,
+  gasValue,
 }: {
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
   tokenAddress: `${string}.${string}`;
   payload: Buffer | Uint8Array;
+  gasValue: number;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -370,6 +375,7 @@ export function executeDeployInterchainToken({
       Cl.stringAscii(sourceAddress),
       Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
       Cl.buffer(payload),
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -449,8 +455,10 @@ export function deployInterchainToken({
   token = Cl.contractPrincipal(deployer, "native-interchain-token"),
   supply = 0,
   minter,
+  gasValue,
 }: {
   salt: Uint8Array | Buffer;
+  gasValue: number;
   token?: ContractPrincipalCV;
   supply?: number;
   minter?: PrincipalCV;
@@ -463,6 +471,7 @@ export function deployInterchainToken({
       token,
       Cl.uint(supply),
       minter ? Cl.some(minter) : Cl.none(),
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -475,6 +484,7 @@ export function executeDeployTokenManager({
   sourceChain,
   token,
   tokenManager,
+  gasValue,
 }: {
   messageId: string;
   sourceChain: string;
@@ -488,6 +498,7 @@ export function executeDeployTokenManager({
   };
   token: ContractPrincipalCV;
   tokenManager: ContractPrincipalCV;
+  gasValue: number;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -499,6 +510,7 @@ export function executeDeployTokenManager({
       Cl.buffer(Cl.serialize(Cl.tuple(payload))),
       token,
       tokenManager,
+      Cl.uint(gasValue),
     ],
     address1
   );
@@ -642,6 +654,7 @@ export function buildIncomingInterchainTransferPayload({
   recipient: string;
   amount: number;
   data: BufferCV;
+  gasValue: number;
   sourceChain?: string;
 }) {
   return Cl.tuple({
@@ -876,4 +889,32 @@ export function callContractWithInterchainToken({
     ],
     caller
   );
+}
+
+export function setupService(proofSigners: Signers) {
+  expect(
+    simnet.callPublicFn(
+      "interchain-token-service",
+      "setup",
+      [
+        Cl.stringAscii("interchain-token-service"),
+        Cl.contractPrincipal(deployer, "interchain-token-factory"),
+        Cl.contractPrincipal(deployer, "gateway"),
+        Cl.contractPrincipal(deployer, "gas-service"),
+        Cl.standardPrincipal(deployer),
+        Cl.list([
+          Cl.tuple({
+            "chain-name": Cl.stringAscii(TRUSTED_CHAIN),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
+          }),
+          Cl.tuple({
+            "chain-name": Cl.stringAscii("ethereum"),
+            address: Cl.stringAscii(TRUSTED_ADDRESS),
+          }),
+        ]),
+      ],
+      deployer
+    ).result
+  ).toBeOk(Cl.bool(true));
+  deployGateway(proofSigners);
 }
