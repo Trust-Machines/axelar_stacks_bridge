@@ -1896,13 +1896,215 @@ describe("Interchain Token Service", () => {
       expect(recipientFinalBalance).toBe(BigInt(recipientInitialBalance));
     });
 
-    it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted chain", () => {});
+    it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted chain", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+        gasValue: 1000,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
 
-    it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted original source chain", () => {});
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.native-interchain-token`;
 
-    it("Should revert with InvalidPayload when the message type is RECEIVE_FROM_HUB and has invalid inner payload.", () => {});
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: "oneCoin",
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+    });
 
-    it("Should revert with UntrustedChain when receiving a direct message from the ITS Hub. Not supported yet", () => {});
+    it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted original source chain", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+        gasValue: 1000,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
+        sourceChain: "oneCoin",
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+    });
+
+    it("Should revert with InvalidPayload when the message type is RECEIVE_FROM_HUB and has invalid inner payload.", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+        gasValue: 1000,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      const payload = Cl.tuple({
+        type: Cl.stringAscii("invalid"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-PAYLOAD"]);
+    });
+
+    it("Should revert with UntrustedChain when receiving a direct message from the ITS Hub. Not supported yet", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+        gasValue: 1000,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
+        sourceChain: TRUSTED_CHAIN,
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+          token: Cl.address(tokenAddress) as ContractPrincipalCV,
+          payload: Cl.buffer(Cl.serialize(payload)),
+        }).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+    });
   });
 
   describe("Send Interchain Token", () => {

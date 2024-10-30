@@ -217,6 +217,9 @@
 (define-read-only (is-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (is-eq address (default-to "" (map-get? trusted-chain-address chain-name))))
 
+(define-read-only (is-trusted-chain (chain-name (string-ascii 20))) 
+    (is-some (map-get? trusted-chain-address chain-name)))
+
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @param address_ the string representation of the trusted address
@@ -709,9 +712,7 @@
         (try! (require-not-paused))
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
-            ;; in this case, gas-value should be 0
             (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
-            ;; in this case we should accept STX payment to pay for cross chain gas
             (process-deploy-token-manager-from-external-chain
                 token-manager
                 payload
@@ -787,6 +788,7 @@
                 supply: u0,
             })))
     )
+    (asserts! (not (is-eq (get source-chain payload-decoded) (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
     (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
             source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
@@ -812,7 +814,7 @@
         (payload (buff 64000))
         (deployed-token <native-interchain-token-trait>))
     (let (
-        (data (unwrap! (from-consensus-buff? {
+        (payload-decoded (unwrap! (from-consensus-buff? {
                 type: (string-ascii 100),
                 token-address: principal,
                 token-id: (buff 32),
@@ -830,46 +832,46 @@
                     payload: (buff 63000),
                 }),
             } payload) ERR-INVALID-PAYLOAD))
-        (token-id (get token-id data))
-        (token-type (get token-type data))
+        (token-id (get token-id payload-decoded))
+        (token-type (get token-type payload-decoded))
     )
         (try! (require-not-paused))
-        (asserts! (is-eq (contract-of deployed-token) (get token-address data)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (is-eq (contract-of deployed-token) (get token-address payload-decoded)) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (is-eq
-            (get name data)
+            (get name payload-decoded)
             (unwrap! (contract-call? deployed-token get-name) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-NAME-INVALID)
         (asserts! (is-eq
-            (get symbol data)
+            (get symbol payload-decoded)
             (unwrap! (contract-call? deployed-token get-symbol) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-SYMBOL-INVALID)
         (asserts! (is-eq
-            (get decimals data)
+            (get decimals payload-decoded)
             (unwrap! (contract-call? deployed-token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-DECIMALS-INVALID)
         (asserts! (unwrap!
-            (contract-call? deployed-token is-operator (get operator data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+            (contract-call? deployed-token is-operator (get operator payload-decoded)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
         (asserts! (unwrap! (contract-call? deployed-token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
-        (asserts! (unwrap! (contract-call? deployed-token is-minter (get minter data)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
+        (asserts! (unwrap! (contract-call? deployed-token is-minter (get minter payload-decoded)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
         (asserts!
             (is-eq
-                (get token-id data)
+                (get token-id payload-decoded)
                 (unwrap! (contract-call? deployed-token get-token-id) ERR-TOKEN-NOT-DEPLOYED))
                 ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (asserts! (is-eq
-            (get supply data)
+            (get supply payload-decoded)
             (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
         ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
         (try!
             (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
-        (try! (match (get wrapped-payload data) wrapped-payload
+        (try! (match (get wrapped-payload payload-decoded) wrapped-payload
             (begin
-                (asserts! (is-eq NULL-ADDRESS (get minter data)) ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL)
+                (asserts! (is-eq NULL-ADDRESS (get minter payload-decoded)) ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL)
                 (asserts! (is-eq u0
-                    (get supply data)
+                    (get supply payload-decoded)
                 ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
                 (as-contract (contract-call? .gateway validate-message
                     (get source-chain wrapped-payload)
@@ -878,13 +880,13 @@
                     (keccak256 (get payload wrapped-payload)))))
             (ok true)))
         (asserts! (map-insert token-managers token-id {
-            manager-address: (get token-address data),
+            manager-address: (get token-address payload-decoded),
             token-type: token-type,
         }) ERR-TOKEN-EXISTS)
         (print {
             type: "token-manager-deployed",
             token-id: token-id,
-            token-manager: (get token-address data),
+            token-manager: (get token-address payload-decoded),
             token-type: token-type,
         })
         (ok true)
@@ -919,6 +921,9 @@
     )
     (asserts! (var-get is-started) ERR-NOT-STARTED)
     (try! (require-not-paused))
+    (asserts! (not (is-eq (get source-chain payload-decoded) (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+    (asserts! (is-trusted-chain (get source-chain payload-decoded)) ERR-UNTRUSTED-CHAIN)
+    (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
     (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
