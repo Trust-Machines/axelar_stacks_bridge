@@ -302,6 +302,6 @@
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
-        (ok u1)
+        (ok true)
     )
 )

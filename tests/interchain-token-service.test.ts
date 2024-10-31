@@ -8,6 +8,7 @@ import {
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  addFlowLimiter,
   approveDeployNativeInterchainToken,
   approveReceiveInterchainTransfer,
   approveRemoteInterchainToken,
@@ -28,13 +29,18 @@ import {
   getSip010Balance,
   getTokenId,
   interchainTransfer,
+  isFlowLimiter,
+  isOperator,
   keccak256,
   mintNIT,
+  removeFlowLimiter,
   setFlowLimit,
   setPaused,
+  setTokenFlowLimit,
   setupNIT,
   setupService,
   setupTokenManager,
+  transferOperatorShip,
 } from "./its-utils";
 import { getSigners } from "./util";
 import {
@@ -50,6 +56,7 @@ import {
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
@@ -2448,16 +2455,164 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Flow Limiters", () => {
-    it("Should be able to add a flow limiter", () => {});
+    describe("Should be able to add a flow limiter", () => {
+      function runCurrentTests(contractName: string) {
+        expect(
+          addFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+            operator: address1,
+          }).result
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+          }).result
+        ).toBeOk(Cl.bool(true));
 
-    it("Should be able to remove a flow limiter", () => {});
+        expect(setTokenFlowLimit(contractName, 100, address2).result).toBeOk(
+          Cl.bool(true)
+        );
+      }
+      it("lock unlock", () => {
+        setupTokenManager({});
+        const contractName = "token-manager";
+        runCurrentTests(contractName);
+      });
+      it("mint burn", () => {
+        const contractName = "native-interchain-token";
+        setupNIT({ tokenId, minter: deployer, operator: address1 });
+        runCurrentTests(contractName);
+      });
+    });
 
-    it("Should be able to transfer a flow limiter", () => {});
+    describe("Should be able to remove a flow limiter", () => {
+      function runCurrentTests(contractName: string) {
+        expect(
+          addFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+            operator: address1,
+          }).result
+        ).toBeOk(Cl.bool(true));
+        expect(setTokenFlowLimit(contractName, 100, address2).result).toBeOk(
+          Cl.bool(true)
+        );
+        expect(
+          removeFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+            operator: address1,
+          }).result
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+          }).result
+        ).toBeOk(Cl.bool(false));
 
-    it("Should revert if trying to add a flow limiter as not the operator", () => {});
+        expect(setTokenFlowLimit(contractName, 100, address2).result).toBeErr(
+          NIT_ERRORS["ERR-NOT-AUTHORIZED"]
+        );
+      }
+      it("lock unlock", () => {
+        setupTokenManager({});
+        const contractName = "token-manager";
+        runCurrentTests(contractName);
+      });
+      it("mint burn", () => {
+        const contractName = "native-interchain-token";
+        setupNIT({ tokenId, minter: deployer, operator: address1 });
+        runCurrentTests(contractName);
+      });
+    });
 
-    it("Should revert if trying to add a flow limiter as not the operator", () => {});
+    describe("Should revert if trying to add a flow limiter as not the operator", () => {
+      function runCurrentTests(contractName: string) {
+        expect(
+          addFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+            operator: address2,
+          }).result
+        ).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
-    it("Should be able to transfer a flow limiter and the operator in one call", () => {});
+        expect(
+          isFlowLimiter({
+            contractName,
+            limiterAddress: address2,
+          }).result
+        ).toBeOk(Cl.bool(false));
+
+        expect(setTokenFlowLimit(contractName, 100, address2).result).toBeErr(
+          NIT_ERRORS["ERR-NOT-AUTHORIZED"]
+        );
+      }
+      it("lock unlock", () => {
+        setupTokenManager({});
+        const contractName = "token-manager";
+        runCurrentTests(contractName);
+      });
+      it("mint burn", () => {
+        const contractName = "native-interchain-token";
+        setupNIT({ tokenId, minter: deployer });
+        runCurrentTests(contractName);
+      });
+    });
+
+    describe("Should be able to transfer the operator", () => {
+      function runCurrentTests(contractName: string, operator = address1) {
+        expect(isOperator({ contractName, operator: address2 }).result).toBeOk(
+          Cl.bool(false)
+        );
+        expect(isOperator({ contractName, operator: operator }).result).toBeOk(
+          Cl.bool(true)
+        );
+        expect(
+          transferOperatorShip({
+            contractName,
+            operator: operator,
+            newOperator: address2,
+          }).result
+        ).toBeOk(Cl.bool(true));
+        expect(isOperator({ contractName, operator: address2 }).result).toBeOk(
+          Cl.bool(true)
+        );
+        expect(isOperator({ contractName, operator: operator }).result).toBeOk(
+          Cl.bool(false)
+        );
+
+        expect(
+          transferOperatorShip({
+            contractName,
+            operator: operator,
+            newOperator: address2,
+          }).result
+        ).toBeErr(NIT_ERRORS["ERR-ONLY-OPERATOR"]);
+      }
+      it("lock unlock", () => {
+        setupTokenManager({});
+        const contractName = "token-manager";
+        runCurrentTests(contractName);
+      });
+      it("mint burn", () => {
+        const contractName = "native-interchain-token";
+        setupNIT({ tokenId, minter: deployer, operator: address1 });
+        runCurrentTests(contractName);
+      });
+
+      it("its", () => {
+        const contractName = "interchain-token-service";
+        console.log(
+          Cl.prettyPrint(
+            simnet.callReadOnlyFn(contractName, "get-operator", [], deployer)
+              .result
+          )
+        );
+        runCurrentTests(contractName, deployer);
+      });
+    });
   });
 });

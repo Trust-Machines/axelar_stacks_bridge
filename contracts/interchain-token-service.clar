@@ -165,21 +165,23 @@
 ;; ####################
 ;; ####################
 
-(define-constant ERR-ONLY-OPERATOR (err u3051))
+(define-constant ERR-ONLY-OPERATOR (err u5051))
 
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-operator) (var-get operator))
+(define-read-only (is-operator (address principal))
+    (ok (is-eq address (get-operator))))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
-        (ok u1)
+        (ok true)
     )
 )
 

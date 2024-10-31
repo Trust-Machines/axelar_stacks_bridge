@@ -997,17 +997,105 @@ export function getTokenFlowOut(contractName: string) {
   );
 }
 
-export function setTokenFlowLimit(contractName: string, limit: number) {
+export function setTokenFlowLimit(
+  contractName: string,
+  limit: number,
+  sender = address1
+) {
   return simnet.callPublicFn(
     contractName,
     "set-flow-limit",
     [Cl.uint(limit)],
-    address1
+    sender
   );
 }
+
 export function nextEpoch() {
   simnet.mineEmptyBlocks(36);
 }
+
 export function getFlowLimit(contractName: string) {
   return simnet.callReadOnlyFn(contractName, "get-flow-limit", [], address1);
+}
+
+export function addFlowLimiter({
+  operator,
+  limiterAddress,
+  contractName,
+}: {
+  limiterAddress: string;
+  operator: string;
+  contractName: string;
+}) {
+  return simnet.callPublicFn(
+    contractName,
+    "add-flow-limiter",
+    [Cl.address(limiterAddress)],
+    operator
+  );
+}
+
+export function removeFlowLimiter({
+  operator,
+  limiterAddress,
+  contractName,
+}: {
+  operator: string;
+  limiterAddress: string;
+  contractName: string;
+}) {
+  return simnet.callPublicFn(
+    contractName,
+    "remove-flow-limiter",
+    [Cl.address(limiterAddress)],
+    operator
+  );
+}
+
+export function isFlowLimiter({
+  limiterAddress,
+  contractName,
+}: {
+  limiterAddress: string;
+
+  contractName: string;
+}) {
+  return simnet.callReadOnlyFn(
+    contractName,
+    "is-flow-limiter",
+    [Cl.address(limiterAddress)],
+    address1
+  );
+}
+
+export function isOperator({
+  contractName,
+  operator,
+}: {
+  operator: string;
+  contractName: string;
+}) {
+  return simnet.callReadOnlyFn(
+    contractName,
+    "is-operator",
+    [Cl.address(operator)],
+    address1
+  );
+}
+
+export function transferOperatorShip({
+  contractName,
+  operator,
+  newOperator,
+}: {
+  contractName: string;
+  operator: string;
+  newOperator: string;
+}) {
+  return simnet.callPublicFn(
+    contractName,
+    "transfer-operatorship",
+    [Cl.address(newOperator)],
+    operator
+  );
 }
