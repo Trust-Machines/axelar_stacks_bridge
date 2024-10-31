@@ -232,7 +232,7 @@
         (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! 
             (or 
-                (is-eq (var-get its-hub-chain))
+                (is-eq (var-get its-hub-chain) chain-name)
                 (is-eq address ITS-HUB-ROUTING-IDENTIFIER)
                 ) ERR-INVALID-DESTINATION-ADDRESS)
         (print {

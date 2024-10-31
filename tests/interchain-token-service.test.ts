@@ -89,12 +89,35 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
-    it("Should set trusted address", () => {
+    it("Should only be allowed to set 'hub' as the trusted address if not the ITS hub chain", () => {
+      expect(
+        simnet.callPublicFn(
+          "interchain-token-service",
+          "set-trusted-address",
+          [Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
+          deployer
+        ).result
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-DESTINATION-ADDRESS"]);
+
       expect(
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
           [Cl.stringAscii("ethereum"), Cl.stringAscii(TRUSTED_ADDRESS)],
+          deployer
+        ).result
+      ).toBeOk(Cl.bool(true));
+    });
+
+    it("Should allow ITS hub chain to set whatever address", () => {
+      expect(
+        simnet.callPublicFn(
+          "interchain-token-service",
+          "set-trusted-address",
+          [
+            Cl.stringAscii(TRUSTED_CHAIN),
+            Cl.stringAscii("any arbitrary address"),
+          ],
           deployer
         ).result
       ).toBeOk(Cl.bool(true));

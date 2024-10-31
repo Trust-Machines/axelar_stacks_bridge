@@ -45,7 +45,7 @@ export const ITS_ERROR_CODES = {
 };
 
 export const TRUSTED_CHAIN = "axelarnet";
-export const TRUSTED_ADDRESS = "cosmwasm";
+export const TRUSTED_ADDRESS = "hub";
 
 export enum MessageType {
   INTERCHAIN_TRANSFER,
