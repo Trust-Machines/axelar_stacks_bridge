@@ -21,7 +21,7 @@ const deployer = accounts.get("deployer")!;
 */
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
-describe("example tests", () => {
+describe("Interchain token factory", () => {
   beforeEach(() => {
     setupService(proofSigners);
   });

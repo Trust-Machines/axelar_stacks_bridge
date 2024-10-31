@@ -2160,6 +2160,65 @@ describe("Interchain Token Service", () => {
         tokenManagerAddress: "native-interchain-token",
       });
     }
+    function receiveMintBurnToken(amount: number) {
+      const messageId = Buffer.from(randomBytes(32)).toString("hex");
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+        messageId,
+      });
+      return executeReceiveInterchainToken({
+        messageId: messageId,
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        tokenManager: Cl.address(tokenAddress) as ContractPrincipalCV,
+        token: Cl.address(tokenAddress) as ContractPrincipalCV,
+        payload: Cl.buffer(Cl.serialize(payload)),
+      });
+    }
+
+    function receiveLockUnlockToken(amount: number) {
+      const messageId = Buffer.from(randomBytes(32)).toString("hex");
+      const sender = deployer;
+      const recipient = address1;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0x"),
+        gasValue: 1000,
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+        messageId,
+      });
+      return executeReceiveInterchainToken({
+        messageId: messageId,
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        tokenManager: Cl.address(
+          `${deployer}.token-manager`
+        ) as ContractPrincipalCV,
+        token: Cl.address(tokenAddress) as ContractPrincipalCV,
+        payload: Cl.buffer(Cl.serialize(payload)),
+      });
+    }
     it("Should be able to send token only if it does not trigger the mint limit", () => {
       setupTokenManager({});
       deployTokenManager({
@@ -2251,8 +2310,64 @@ describe("Interchain Token Service", () => {
         NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
       );
     });
+    it("Should be able to receive token only if it does not trigger the mint limit", () => {
+      setupNIT({ tokenId, minter: deployer });
+      const deployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(deployer),
+        gasValue: 1000,
+      });
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+        }).result
+      ).toBeOk(Cl.bool(true));
+      mintNIT({
+        amount: 1000,
+        minter: deployer,
+      });
+      setFlowLimit({
+        tokenId,
+        tokenManagerAddress: Cl.contractPrincipal(
+          deployer,
+          "native-interchain-token"
+        ),
+        limit: Cl.uint(500),
+      });
+      expect(receiveMintBurnToken(501).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(receiveMintBurnToken(100).result).toBeOk(Cl.bufferFromHex("0x"));
+      expect(receiveMintBurnToken(200).result).toBeOk(Cl.bufferFromHex("0x"));
+      expect(receiveMintBurnToken(200).result).toBeOk(Cl.bufferFromHex("0x"));
+      expect(receiveMintBurnToken(1).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendMintBurn(501).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+      expect(sendMintBurn(100).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(200).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(200).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(500).result).toBeOk(Cl.bool(true));
+      expect(sendMintBurn(1).result).toBeErr(
+        NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
+      );
+    });
 
-    it("Should be able to receive token only if it does not trigger the mint limit", () => {});
+    it("Should be able to receive token only if it does not trigger the lock/unlock limit", () => {});
 
     it("Should be able to set flow limits for each token manager", () => {});
   });

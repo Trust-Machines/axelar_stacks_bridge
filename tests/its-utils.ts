@@ -672,9 +672,11 @@ export function buildIncomingInterchainTransferPayload({
 export function approveReceiveInterchainTransfer({
   proofSigners,
   payload,
+  messageId = "approved-interchain-transfer-message",
 }: {
   proofSigners: Signers;
   payload: TupleCV;
+  messageId?: string;
 }) {
   const messages = Cl.list([
     Cl.tuple(
@@ -683,7 +685,7 @@ export function approveReceiveInterchainTransfer({
           deployer,
           "interchain-token-service"
         ),
-        messageId: Cl.stringAscii("approved-interchain-transfer-message"),
+        messageId: Cl.stringAscii(messageId),
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),

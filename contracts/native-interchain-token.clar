@@ -229,7 +229,7 @@
             (begin
                 (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
                 (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
-                (asserts! (<= new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts! (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: new-flow-out,
                     flow-in: current-flow-in
@@ -250,7 +250,7 @@
             (begin
                 (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
                 (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
-                (asserts!  (<= new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts!  (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: current-flow-out,
                     flow-in: new-flow-in
@@ -319,6 +319,14 @@
         (var-set token-id token-id_)
         ;; #[allow(unchecked_data)]
         (var-set minter (default-to NULL-ADDRESS minter_))
+        (print 
+            {
+                notification: "token-metadata-update",
+                payload: {
+                    token-class: "ft", 
+                    contract-id: (as-contract tx-sender) 
+                }
+            })
         (ok true)
     )
 )

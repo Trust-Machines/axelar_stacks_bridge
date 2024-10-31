@@ -141,7 +141,7 @@
             (ok true)
             (begin
                 (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
-                (asserts! (<= new-flow-out limit) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts! (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: new-flow-out,
                     flow-in: current-flow-in
@@ -161,7 +161,7 @@
             (ok true)
             (begin
                 (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
-                (asserts!  (<= new-flow-in limit) ERR-FLOW-LIMIT-EXCEEDED)
+                (asserts!  (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
                     flow-out: current-flow-out,
                     flow-in: new-flow-in
