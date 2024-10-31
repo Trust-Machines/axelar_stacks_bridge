@@ -56,6 +56,7 @@
 (define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u2084))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u2085))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u2086))
+(define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u2087))
 
 
 
@@ -91,7 +92,7 @@
 
 ;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;; for that chain should be routed via the ITS hub.
-;; (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
+(define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 ;; (define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
 
 (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
@@ -229,6 +230,11 @@
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! 
+            (or 
+                (is-eq (var-get its-hub-chain))
+                (is-eq address ITS-HUB-ROUTING-IDENTIFIER)
+                ) ERR-INVALID-DESTINATION-ADDRESS)
         (print {
             type: "trusted-address-set",
             chain: chain-name,
@@ -254,15 +260,16 @@
 (define-private (get-call-params (destination-chain (string-ascii 20)) (payload (buff 63000)))
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
-            (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address)))))
+            (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address))))
+            (hub-chain (var-get its-hub-chain)))
         ;; Prevent sending directly to the ITS Hub chain. This is not supported yet,
         ;; so fail early to prevent the user from having their funds stuck.
-        (asserts! (not (is-eq destination-chain (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (not (is-eq destination-chain hub-chain)) ERR-UNTRUSTED-CHAIN)
         (ok
             {
                 ;; Wrap ITS message in an ITS Hub message
-                destination-address: destination-address,
-                destination-chain: (var-get its-hub-chain),
+                destination-address: (unwrap! (get-trusted-address hub-chain) ERR-HUB-TRUSTED-ADDRESS-MISSING),
+                destination-chain: hub-chain,
                 payload: (unwrap-panic (to-consensus-buff? {
                     type: MESSAGE-TYPE-SEND-TO-HUB,
                     destination-chain: destination-chain,
