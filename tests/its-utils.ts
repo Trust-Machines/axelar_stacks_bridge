@@ -938,3 +938,44 @@ export function setFlowLimit({
     deployer
   );
 }
+
+export function giveToken({
+  amount,
+  contractName,
+  receiver,
+  sender,
+  tokenAddress,
+}: {
+  amount: number;
+  sender: string;
+  receiver: string;
+  contractName: string;
+  tokenAddress: string;
+}) {
+  return simnet.callPublicFn(
+    contractName,
+    "give-token",
+    [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
+    sender
+  );
+}
+export function takeToken({
+  amount,
+  contractName,
+  receiver,
+  sender,
+  tokenAddress,
+}: {
+  amount: number;
+  sender: string;
+  receiver: string;
+  contractName: string;
+  tokenAddress: string;
+}) {
+  return simnet.callPublicFn(
+    contractName,
+    "take-token",
+    [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
+    sender
+  );
+}

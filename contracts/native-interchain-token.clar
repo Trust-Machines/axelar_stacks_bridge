@@ -90,7 +90,8 @@
     (begin 
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)
+        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
         (ft-mint? itscoin amount to))
 )
 
@@ -319,12 +320,12 @@
         (var-set token-id token-id_)
         ;; #[allow(unchecked_data)]
         (var-set minter (default-to NULL-ADDRESS minter_))
-        (print 
+        (print
             {
                 notification: "token-metadata-update",
                 payload: {
-                    token-class: "ft", 
-                    contract-id: (as-contract tx-sender) 
+                    token-class: "ft",
+                    contract-id: (as-contract tx-sender)
                 }
             })
         (ok true)
