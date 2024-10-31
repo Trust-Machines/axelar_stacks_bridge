@@ -979,3 +979,35 @@ export function takeToken({
     sender
   );
 }
+
+export function getTokenFlowIn(contractName: string) {
+  return simnet.callReadOnlyFn(
+    contractName,
+    "get-flow-in-amount",
+    [],
+    address1
+  );
+}
+export function getTokenFlowOut(contractName: string) {
+  return simnet.callReadOnlyFn(
+    contractName,
+    "get-flow-out-amount",
+    [],
+    address1
+  );
+}
+
+export function setTokenFlowLimit(contractName: string, limit: number) {
+  return simnet.callPublicFn(
+    contractName,
+    "set-flow-limit",
+    [Cl.uint(limit)],
+    address1
+  );
+}
+export function nextEpoch() {
+  simnet.mineEmptyBlocks(36);
+}
+export function getFlowLimit(contractName: string) {
+  return simnet.callReadOnlyFn(contractName, "get-flow-limit", [], address1);
+}

@@ -24,6 +24,7 @@ import {
   executeDeployInterchainToken,
   executeDeployTokenManager,
   executeReceiveInterchainToken,
+  getFlowLimit,
   getSip010Balance,
   getTokenId,
   interchainTransfer,
@@ -2367,14 +2368,63 @@ describe("Interchain Token Service", () => {
       );
     });
 
-    it("Should be able to receive token only if it does not trigger the lock/unlock limit", () => {});
+    describe("Should be able to set flow limits for each token manager", () => {
+      it("lock unlock", () => {
+        setupTokenManager({});
+        deployTokenManager({ salt });
+        enableTokenManager({
+          proofSigners,
+          tokenId,
+        });
 
-    it("Should be able to set flow limits for each token manager", () => {});
+        setFlowLimit({
+          tokenId,
+          tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+          limit: Cl.uint(5),
+        });
+        expect(getFlowLimit("token-manager").result).toBeOk(Cl.uint(5));
+      });
+      it("mint burn", () => {
+        setupNIT({ tokenId, minter: deployer });
+        const deployTx = deployInterchainToken({
+          salt,
+          minter: Cl.address(deployer),
+          gasValue: 1000,
+        });
+        expect(deployTx.result).toBeOk(Cl.bool(true));
+        expect(
+          executeDeployInterchainToken({
+            messageId: "approved-native-interchain-token-deployment-message",
+            payload: Cl.serialize(
+              approveDeployNativeInterchainToken({
+                proofSigners,
+                tokenId,
+                minter: deployer,
+              }).payload
+            ),
+            sourceAddress: "interchain-token-service",
+            sourceChain: "stacks",
+            tokenAddress: `${deployer}.native-interchain-token`,
+            gasValue: 1000,
+          }).result
+        ).toBeOk(Cl.bool(true));
+
+        setFlowLimit({
+          tokenId,
+          tokenManagerAddress: Cl.contractPrincipal(
+            deployer,
+            "native-interchain-token"
+          ),
+          limit: Cl.uint(5),
+        });
+        expect(getFlowLimit("native-interchain-token").result).toBeOk(
+          Cl.uint(5)
+        );
+      });
+    });
   });
 
   describe("Flow Limiters", () => {
-    it("Should have only the owner be a flow limiter", () => {});
-
     it("Should be able to add a flow limiter", () => {});
 
     it("Should be able to remove a flow limiter", () => {});
