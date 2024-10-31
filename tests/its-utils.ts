@@ -912,6 +912,7 @@ export function setupService(proofSigners: Signers) {
             address: Cl.stringAscii(TRUSTED_ADDRESS),
           }),
         ]),
+        Cl.stringAscii(TRUSTED_CHAIN),
       ],
       deployer
     ).result

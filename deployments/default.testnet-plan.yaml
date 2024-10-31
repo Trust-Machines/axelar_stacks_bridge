@@ -97,7 +97,9 @@ plan:
               - "'ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54"
               - '(list
                 {chain-name: "axelar", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
+                {chain-name: "axelarnet", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "avalanche-fuji", address: "hub"}
                 {chain-name: "stacks", address: "ST1ANVE46Q3ET5250MXMN09Y4T9JPVB5WEVPY6R54.interchain-token-service"})'
+              - '"axelarnet"'
             cost: 5960
       epoch: "2.5"

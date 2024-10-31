@@ -44,7 +44,7 @@ export const ITS_ERROR_CODES = {
   "ERR-NOT-STARTED": Cl.uint(4052),
 };
 
-export const TRUSTED_CHAIN = "axelar";
+export const TRUSTED_CHAIN = "axelarnet";
 export const TRUSTED_ADDRESS = "cosmwasm";
 
 export enum MessageType {

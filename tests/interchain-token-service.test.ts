@@ -394,7 +394,7 @@ describe("Interchain Token Service", () => {
       });
 
       const message = buildOutgoingGMPMessage({
-        destinationChain: "axelar",
+        destinationChain: TRUSTED_CHAIN,
         destinationContractAddress: TRUSTED_ADDRESS,
         payload: Cl.tuple({
           "destination-chain": Cl.stringAscii("ethereum"),
@@ -666,7 +666,7 @@ describe("Interchain Token Service", () => {
       });
       expect(gatewayContractCall.data.value).toBeTuple(
         buildOutgoingGMPMessage({
-          destinationChain: "axelar",
+          destinationChain: TRUSTED_CHAIN,
           destinationContractAddress: TRUSTED_ADDRESS,
           sender: Cl.address(`${deployer}.interchain-token-service`),
           payload: Cl.tuple({

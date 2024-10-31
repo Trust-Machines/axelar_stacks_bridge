@@ -87,7 +87,7 @@
 (define-constant CA (as-contract tx-sender))
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-data-var its-hub-chain (string-ascii 20) "axelar")
+(define-data-var its-hub-chain (string-ascii 20) "axelarnet")
 
 ;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;; for that chain should be routed via the ITS hub.
@@ -978,6 +978,7 @@
     (gas-service-address principal)
     (operator-address principal)
     (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
+    (hub-chain (string-ascii 20))
 )
     (begin
         (asserts! (not (var-get is-started)) ERR-STARTED)
@@ -993,6 +994,8 @@
         (var-set gas-service gas-service-address)
         ;; #[allow(unchecked_data)]
         (var-set operator operator-address)
+        ;; #[allow(unchecked_data)]
+        (var-set its-hub-chain hub-chain)
         (map extract-and-set-trusted-address trusted-chain-names-addresses)
         (ok true)
     )
