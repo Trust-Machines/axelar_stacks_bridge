@@ -45,7 +45,9 @@ export const ITS_ERROR_CODES = {
 };
 
 export const TRUSTED_CHAIN = "axelarnet";
-export const TRUSTED_ADDRESS = "hub";
+export const TRUSTED_ADDRESS =
+  "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp";
+export const ITS_HUB_ROUTING_IDENTIFIER = "hub";
 
 export enum MessageType {
   INTERCHAIN_TRANSFER,

@@ -45,6 +45,7 @@ import {
 import { getSigners } from "./util";
 import {
   ITS_ERROR_CODES,
+  ITS_HUB_ROUTING_IDENTIFIER,
   MessageType,
   MetadataVersion,
   NIT_ERRORS,
@@ -90,7 +91,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii(TRUSTED_ADDRESS)],
+          [
+            Cl.stringAscii("ethereum"),
+            Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
+          ],
           address1
         ).result
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -110,7 +114,10 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii(TRUSTED_ADDRESS)],
+          [
+            Cl.stringAscii("ethereum"),
+            Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
+          ],
           deployer
         ).result
       ).toBeOk(Cl.bool(true));
@@ -390,7 +397,7 @@ describe("Interchain Token Service", () => {
         interchainTokenIdClaimed,
         tokenManagerDeploymentStarted,
         stxTransfer,
-        _nativeGasPaidForContractCall,
+        nativeGasPaidForContractCall,
         gatewayContractCall,
       ] = deployTokenManagerTx.events;
       const wrappedITSPayload = {
@@ -423,8 +430,7 @@ describe("Interchain Token Service", () => {
         recipient: `${deployer}.gas-service`,
         sender: address1,
       });
-
-      const message = buildOutgoingGMPMessage({
+      const messageData = {
         destinationChain: TRUSTED_CHAIN,
         destinationContractAddress: TRUSTED_ADDRESS,
         payload: Cl.tuple({
@@ -442,6 +448,16 @@ describe("Interchain Token Service", () => {
           ),
         }),
         sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+      };
+      const message = buildOutgoingGMPMessage(messageData);
+      expect(nativeGasPaidForContractCall.data.value).toBeTuple({
+        type: Cl.stringAscii("native-gas-paid-for-contract-call"),
+        amount: Cl.uint(100),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+        "refund-address": Cl.address(address1),
+        "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
+        "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
+        "payload-hash": Cl.buffer(keccak256(Cl.serialize(messageData.payload))),
       });
       expect(gatewayContractCall.data.value).toBeTuple(message);
     });

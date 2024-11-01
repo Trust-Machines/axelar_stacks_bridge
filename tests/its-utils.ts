@@ -24,6 +24,7 @@ import {
   TRUSTED_ADDRESS,
   MetadataVersion,
   TRUSTED_CHAIN,
+  ITS_HUB_ROUTING_IDENTIFIER,
 } from "./constants";
 
 export function setupTokenManager({
@@ -911,7 +912,7 @@ export function setupService(proofSigners: Signers) {
           }),
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
-            address: Cl.stringAscii(TRUSTED_ADDRESS),
+            address: Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           }),
         ]),
         Cl.stringAscii(TRUSTED_CHAIN),
