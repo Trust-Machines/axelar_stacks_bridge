@@ -287,10 +287,9 @@
         (payload (buff 64000)))
     (if
         (> amount u0)
-            ;; ERR-GAS-NOT-PAID
             (contract-call? .gas-service pay-native-gas-for-contract-call
                 amount
-                tx-sender
+                (as-contract tx-sender)
                 destination-chain
                 destination-address
                 payload
@@ -433,7 +432,7 @@
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-    (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) verify-payload))
+    (try! (pay-native-gas-for-contract-call gas-value tx-sender CHAIN-NAME (var-get its-contract-name) verify-payload))
     (as-contract
         (contract-call? .gateway call-contract
             CHAIN-NAME
@@ -568,7 +567,7 @@
         (asserts! (is-none (map-get? token-managers token-id)) ERR-TOKEN-EXISTS)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
 
-        (try! (pay-native-gas-for-contract-call gas-value contract-caller CHAIN-NAME (var-get its-contract-name) payload))
+        (try! (pay-native-gas-for-contract-call gas-value tx-sender CHAIN-NAME (var-get its-contract-name) payload))
         (contract-call? .gateway call-contract
             CHAIN-NAME
             (var-get its-contract-name)
