@@ -545,7 +545,8 @@
         (minter (optional principal))
         (gas-value uint))
     (let (
-            (token-id (interchain-token-id contract-caller salt))
+            (deployer (if (is-eq contract-caller (var-get interchain-token-factory)) NULL-ADDRESS contract-caller))
+            (token-id (interchain-token-id deployer salt))
             (payload (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
                 token-address: (contract-of token),
