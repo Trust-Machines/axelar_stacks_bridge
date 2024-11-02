@@ -93,3 +93,9 @@ export const NIT_ERRORS = {
   "ERR-UNSUPPORTED-TOKEN-TYPE": Cl.uint(4053),
   "ERR-ONLY-OPERATOR": Cl.uint(5051),
 };
+
+export const ITF_ERRORS = {
+  "ERR-TOKEN-NOT-ENABLED": Cl.uint(1051),
+  "ERR-INVALID-MINTER": Cl.uint(1052),
+  "ERR-NOT-MINTER": Cl.uint(1053),
+};

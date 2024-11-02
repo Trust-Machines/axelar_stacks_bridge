@@ -8,15 +8,10 @@ import {
   setupService,
   setupTokenManager,
 } from "./its-utils";
-import {
-  BufferCV,
-  Cl,
-  cvToString,
-  randomBytes,
-  ResponseOkCV,
-} from "@stacks/transactions";
+import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
 import { getSigners } from "./util";
 import { deployInterchainToken } from "./itf-utils";
+import { ITF_ERRORS } from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -91,41 +86,33 @@ describe("interchain-token-factory", () => {
   });
 
   describe("Interchain token factory", () => {
-    it("deploys a mint burn token", () => {
-      const originalSalt = randomBytes(32);
-      const salt = simnet.callReadOnlyFn(
+    const originalSalt = randomBytes(32);
+    const salt = simnet.callReadOnlyFn(
+      "interchain-token-factory",
+      "get-interchain-token-salt",
+      [
+        Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
+        Cl.address(address1),
+        Cl.buffer(originalSalt),
+      ],
+      address1
+    ).result as BufferCV;
+    const tokenId = (
+      simnet.callReadOnlyFn(
         "interchain-token-factory",
-        "get-interchain-token-salt",
-        [
-          Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
-          Cl.address(address1),
-          Cl.buffer(originalSalt),
-        ],
+        "get-interchain-token-id",
+        [Cl.address(address1), salt],
         address1
-      ).result as BufferCV;
-      const tokenId = (
-        simnet.callReadOnlyFn(
-          "interchain-token-factory",
-          "get-interchain-token-id",
-          [Cl.address(address1), salt],
-          address1
-        ).result as ResponseOkCV<BufferCV>
-      ).value;
-
+      ).result as ResponseOkCV<BufferCV>
+    ).value;
+    it("deploys a mint burn token", () => {
       setupNIT({
         tokenId,
       });
-
       const deployTx = deployInterchainToken({
         salt: originalSalt,
         sender: address1,
       });
-
-      console.log(
-        deployTx.events.map((ev) =>
-          ev.data.value ? cvToString(ev.data.value!) : ev
-        )
-      );
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
@@ -162,12 +149,88 @@ describe("interchain-token-factory", () => {
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
     });
 
-    it("Should revert an interchain token deployment with the minter as interchainTokenService", () => {});
-    it("Should register a token if the mint amount is zero", () => {});
-    it("Should register a token if the mint amount is zero and minter is the zero address", () => {});
-    it("Should register a token if the mint amount is greater than zero and the minter is the zero address", () => {});
-    it("Should register a token", () => {});
-    it("Should initiate a remote interchain token deployment with the same minter", () => {});
-    it("Should initiate a remote interchain token deployment without the same minter", () => {});
+    it("Should revert an interchain token deployment with the minter as interchainTokenService", () => {
+      setupNIT({
+        tokenId,
+      });
+      const deployTx = deployInterchainToken({
+        salt: randomBytes(32),
+        sender: address1,
+        minterAddress: `${deployer}.interchain-token-service`,
+      });
+
+      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
+    });
+    it("Should register a token if the mint amount is zero", () => {
+      setupNIT({
+        tokenId,
+      });
+      const deployTx = deployInterchainToken({
+        salt: originalSalt,
+        sender: address1,
+        initialSupply: 0,
+      });
+
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+    });
+    it("Should register a token if the mint amount is zero and minter is the zero address", () => {
+      setupNIT({
+        tokenId,
+      });
+      const deployTx = deployInterchainToken({
+        salt: originalSalt,
+        sender: address1,
+        initialSupply: 0,
+        minterAddress: "ST000000000000000000002AMW42H",
+      });
+
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it("Should initiate a remote interchain token deployment without the same minter", () => {
+      setupNIT({
+        tokenId,
+        minter: address1,
+      });
+      const deployTx = deployInterchainToken({
+        salt: originalSalt,
+        sender: address1,
+        initialSupply: 0,
+        minterAddress: address1,
+      });
+
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+      const { payload } = approveDeployNativeInterchainToken({
+        tokenId,
+        proofSigners,
+      });
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          gasValue: 100,
+          payload: Cl.serialize(payload),
+          tokenAddress: `${deployer}.native-interchain-token`,
+          sourceChain: "stacks",
+          sourceAddress: "interchain-token-service",
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const remoteDeployTx = simnet.callPublicFn(
+        "interchain-token-factory",
+        "deploy-remote-interchain-token",
+        [
+          Cl.buffer(originalSalt),
+          Cl.bufferFromHex("0x" + "00".repeat(20)),
+          Cl.stringAscii("ethereum"),
+          Cl.uint(100),
+          Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(`${deployer}.native-interchain-token`),
+        ],
+        address1
+      );
+      // TODO: ask Rares about setting a remote minter to the zero address being allowed in the Solidity impl
+      expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+    });
   });
 });

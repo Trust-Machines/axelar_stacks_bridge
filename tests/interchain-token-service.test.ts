@@ -2621,12 +2621,6 @@ describe("Interchain Token Service", () => {
 
       it("its", () => {
         const contractName = "interchain-token-service";
-        console.log(
-          Cl.prettyPrint(
-            simnet.callReadOnlyFn(contractName, "get-operator", [], deployer)
-              .result
-          )
-        );
         runCurrentTests(contractName, deployer);
       });
     });
