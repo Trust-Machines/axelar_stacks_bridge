@@ -57,6 +57,8 @@
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u2085))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u2086))
 (define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u2087))
+(define-constant ERR-INVALID-PARAMS (err u2088))
+(define-constant ERR-GATEWAY-NOT-DEPLOYED (err u2089))
 
 
 
@@ -410,10 +412,10 @@
         } payload) ERR-INVALID-PAYLOAD))
         (token-manager-type (get token-manager-type payload-decoded))
         (token-id (get token-id payload-decoded))
-        (data (unwrap-panic (from-consensus-buff? {
+        (data (unwrap! (from-consensus-buff? {
             operator: (optional principal),
             token-address: principal
-        } (get params payload-decoded))))
+        } (get params payload-decoded)) ERR-INVALID-PARAMS))
         (verify-payload (unwrap-panic (to-consensus-buff? {
                 type: "verify-token-manager",
                 token-manager-address: (contract-of token-manager),
@@ -553,11 +555,11 @@
                 token-id: token-id,
                 minter: (default-to NULL-ADDRESS minter),
                 ;; #[filter(token)]
-                name: (unwrap-panic (contract-call? token get-name)),
+                name: (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED),
                 ;; #[filter(token)]
-                symbol: (unwrap-panic (contract-call? token get-symbol)),
+                symbol: (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED),
                 ;; #[filter(token)]
-                decimals: (unwrap-panic (contract-call? token get-decimals)),
+                decimals: (unwrap! (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED),
                 token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
                 operator: (default-to NULL-ADDRESS minter),
                 supply: supply,
@@ -798,8 +800,9 @@
             })))
     )
     (asserts! (not (is-eq (get source-chain payload-decoded) (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-    (asserts! (unwrap-panic (contract-call? .gateway is-message-approved
-            source-chain message-id source-address (as-contract tx-sender) (keccak256 payload)))
+    (asserts! (unwrap! (contract-call? .gateway is-message-approved
+            source-chain message-id source-address (as-contract tx-sender) (keccak256 payload))
+                ERR-GATEWAY-NOT-DEPLOYED)
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
     (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)

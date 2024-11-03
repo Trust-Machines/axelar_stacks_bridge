@@ -34,6 +34,10 @@
 (define-constant ERR-TOKEN-NOT-ENABLED (err u1051))
 (define-constant ERR-INVALID-MINTER (err u1052))
 (define-constant ERR-NOT-MINTER (err u1053))
+(define-constant ERR-SERVICE-NOT-DEPLOYED (err u1054))
+(define-constant ERR-GATEWAY-NOT-DEPLOYED (err u1055))
+(define-constant ERR-TOKEN-NOT-DEPLOYED (err u1056))
+(define-constant ERR-MANAGER-NOT-DEPLOYED (err u1057))
 
 
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
@@ -43,8 +47,8 @@
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
-(define-constant CHAIN-NAME-HASH (unwrap-panic (contract-call? .interchain-token-service get-chain-name-hash)))
-(define-constant GATEWAY (unwrap-panic (contract-call? .interchain-token-service get-gateway)))
+(define-constant CHAIN-NAME-HASH (unwrap! (contract-call? .interchain-token-service get-chain-name-hash) ERR-SERVICE-NOT-DEPLOYED))
+(define-constant GATEWAY (unwrap! (contract-call? .interchain-token-service get-gateway) ERR-GATEWAY-NOT-DEPLOYED))
 ;; The address of the interchain token service.
 (define-constant ITS .interchain-token-service)
 
@@ -108,7 +112,7 @@
                 TOKEN-TYPE-LOCK-UNLOCK
                 (unwrap-panic (to-consensus-buff? {
                     operator: none,
-                    token-address: token-address
+                    token-address: (contract-of token-address)
                 }))
                 token-manager-address
                 gas-value)
@@ -125,10 +129,10 @@
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (unwrap-panic (get-canonical-interchain-token-id (contract-of token))))
-            (name (unwrap-panic (contract-call? token get-name)))
-            (symbol (unwrap-panic (contract-call? token get-symbol)))
-            (decimals (unwrap-panic (contract-call? token get-decimals)))
+            (token-id (unwrap! (get-canonical-interchain-token-id (contract-of token)) ERR-SERVICE-NOT-DEPLOYED))
+            (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
+            (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
+            (decimals (unwrap! (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
             (token_ (try! (contract-call? .interchain-token-service valid-token-address token-id)))
         )
@@ -154,7 +158,7 @@
                         (not (is-eq NULL-ADDRESS minter_))
                             minter_
                             NULL-ADDRESS)))
-            (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+            (token-id (unwrap! (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt) ERR-SERVICE-NOT-DEPLOYED))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter) gas-value)))
@@ -173,15 +177,18 @@
 )
     (let (
         (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
-        (name (unwrap-panic (contract-call? token get-name)))
-        (symbol (unwrap-panic (contract-call? token get-symbol)))
-        (decimals (unwrap-panic  (contract-call? token get-decimals)))
-        (token-id (unwrap-panic (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+        (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
+        (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
+        (decimals (unwrap!  (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
+        (token-id (unwrap! (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt) ERR-SERVICE-NOT-DEPLOYED))
         (minter
             (if
                 (not (is-eq NULL-BYTES minter_))
                 (begin
-                    (asserts! (unwrap-panic (contract-call? token-manager is-minter contract-caller)) ERR-NOT-MINTER)
+                    (asserts! (unwrap! 
+                                (contract-call? token-manager is-minter contract-caller) 
+                            ERR-MANAGER-NOT-DEPLOYED) 
+                        ERR-NOT-MINTER)
                     minter_)
                 NULL-BYTES
         ))

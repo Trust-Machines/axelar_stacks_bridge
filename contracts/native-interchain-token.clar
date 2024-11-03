@@ -156,7 +156,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
-        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
@@ -166,7 +166,7 @@
 (define-public (remove-flow-limiter (address principal))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))

@@ -70,7 +70,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
-        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
@@ -80,7 +80,7 @@
 (define-public (remove-flow-limiter (address principal))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
@@ -204,7 +204,7 @@
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (unwrap! (var-get interchain-token-service) ERR-NOT-STARTED)) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
@@ -212,7 +212,7 @@
 (define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq (contract-of sip-010-token) (unwrap-panic (var-get token-address))) ERR-NOT-MANAGED-TOKEN)
+        (asserts! (is-eq (contract-of sip-010-token) (unwrap! (var-get token-address) ERR-NOT-STARTED)) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
 
 (define-read-only (is-minter (address principal)) 
