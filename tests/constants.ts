@@ -78,6 +78,7 @@ export const TOKEN_MANAGER_ERRORS = {
   "ERR-STARTED": Cl.uint(4051),
   "ERR-NOT-STARTED": Cl.uint(4052),
   "ERR-UNSUPPORTED-TOKEN-TYPE": Cl.uint(4053),
+  "ERR-INVALID-PARAMS": Cl.uint(4054),
   "ERR-ONLY-OPERATOR": Cl.uint(5051),
 };
 

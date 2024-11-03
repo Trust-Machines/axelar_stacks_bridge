@@ -224,6 +224,7 @@
 (define-constant ERR-STARTED (err u4051))
 (define-constant ERR-NOT-STARTED (err u4052))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
+(define-constant ERR-INVALID-PARAMS (err u4054))
 
 (define-data-var is-started bool false)
 (define-read-only (get-is-started) (var-get is-started))
@@ -239,8 +240,8 @@
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
-        ;; FIXME: is this check needed?
         ;; (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)
+        (asserts! (not (is-eq its-address NULL-ADDRESS)) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-address (some token-address_))
@@ -272,6 +273,7 @@
         operator: operator_,
         token-address: token-address_,
     }))))
+
 ;; ####################
 ;; ####################
 ;; ### Operatorship ###

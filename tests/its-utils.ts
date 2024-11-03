@@ -29,8 +29,14 @@ import {
 
 export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
+  itsAddress = `${deployer}.interchain-token-service`,
+  operator = address1,
+  sender = deployer,
 }: {
   tokenType?: TokenType;
+  itsAddress?: string;
+  operator?: string | null;
+  sender?: string;
 }) {
   return simnet.callPublicFn(
     "token-manager",
@@ -38,10 +44,10 @@ export function setupTokenManager({
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
       Cl.uint(tokenType),
-      Cl.contractPrincipal(deployer, "interchain-token-service"),
-      Cl.some(Cl.standardPrincipal(address1)),
+      Cl.address(itsAddress),
+      operator ? Cl.some(Cl.standardPrincipal(operator)) : Cl.none(),
     ],
-    deployer
+    sender
   );
 }
 
@@ -723,10 +729,16 @@ export function setupNIT({
   tokenId,
   minter,
   operator,
+  name = "Nitter",
+  symbol = "NIT",
+  itsAddress = `${deployer}.interchain-token-service`,
 }: {
   tokenId: BufferCV;
   minter?: string;
   operator?: string;
+  name?: string;
+  symbol?: string;
+  itsAddress?: string;
 }) {
   return simnet.callPublicFn(
     "native-interchain-token",
@@ -737,13 +749,13 @@ export function setupNIT({
       // (token-type_ uint)
       Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
       // (its-address principal)
-      Cl.address(`${deployer}.interchain-token-service`),
+      Cl.address(itsAddress),
       // (operator-address (optional principal))
       operator ? Cl.some(Cl.address(operator)) : Cl.none(),
       // (name_ (string-ascii 32))
-      Cl.stringAscii("Nitter"),
+      Cl.stringAscii(name),
       // (symbol_ (string-ascii 32))
-      Cl.stringAscii("NIT"),
+      Cl.stringAscii(symbol),
       // (decimals_ uint)
       Cl.uint(6),
       // (token-uri_ (optional (string-utf8 256)))

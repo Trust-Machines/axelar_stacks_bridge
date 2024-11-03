@@ -21,9 +21,9 @@ const deployer = accounts.get("deployer")!;
 const contractName = "native-interchain-token";
 
 describe("Native Interchain Token", () => {
+  const salt = randomBytes(32);
+  const tokenId = getTokenId(salt).result as BufferCV;
   describe("FlowLimit", async () => {
-    const salt = randomBytes(32);
-    const tokenId = getTokenId(salt).result as BufferCV;
     const flowLimit = 5;
 
     beforeEach(() => {
@@ -145,6 +145,40 @@ describe("Native Interchain Token", () => {
           sender: address1,
         }).result
       ).toBeErr(NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]);
+    });
+  });
+
+  describe("Interchain Token", () => {
+    it("revert on init if service is address(0)", () => {
+      expect(
+        setupNIT({
+          itsAddress: "ST000000000000000000002AMW42H",
+          tokenId,
+        }).result
+      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
+    });
+    it("revert on init if tokenId is 0", () => {
+      expect(
+        setupNIT({
+          tokenId: Cl.bufferFromHex("0x"),
+        }).result
+      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
+    });
+    it("revert on init if token name is invalid", () => {
+      expect(
+        setupNIT({
+          tokenId,
+          name: "",
+        }).result
+      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
+    });
+    it("revert on init if token symbol is invalid", () => {
+      expect(
+        setupNIT({
+          tokenId,
+          symbol: "",
+        }).result
+      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });
   });
 });

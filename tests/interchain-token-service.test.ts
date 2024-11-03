@@ -599,9 +599,11 @@ describe("Interchain Token Service", () => {
     });
 
     it("Should not be able to receive a remote interchain token manager deployment", () => {
-      setupTokenManager({
-        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
-      });
+      expect(
+        setupTokenManager({
+          tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
+        }).result
+      ).toBeOk(Cl.bool(true));
       const messageId = "remote-token-manager-deployment";
       const wrappedMessageId = "wrapped-" + messageId;
       const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
