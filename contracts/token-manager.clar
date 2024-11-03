@@ -78,7 +78,8 @@
 ;; @param flowLimiter the address of an existing flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
-    (begin 
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (unwrap-panic (is-operator contract-caller)) ERR-NOT-AUTHORIZED)
         (match (map-get? roles address) 
             ;; no need to check limiter if they don't exist it will be a noop
@@ -107,6 +108,7 @@
     (let (
         (perms (unwrap! (map-get? roles contract-caller) ERR-NOT-AUTHORIZED))
     )
+    (asserts! (var-get is-started) ERR-NOT-STARTED)
     (asserts! (get flow-limiter perms) ERR-NOT-AUTHORIZED)
     ;; no need to check can be set to 0 to practically makes it unlimited
     (var-set flow-limit limit)
@@ -140,6 +142,7 @@
         (if (is-eq limit u0)
             (ok true)
             (begin
+                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
                 (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)
                 (asserts! (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
@@ -160,6 +163,7 @@
         (if  (is-eq limit u0)
             (ok true)
             (begin
+                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)
                 (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)
                 (asserts!  (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)
                 (map-set flows epoch {
@@ -187,7 +191,7 @@
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (unwrap-panic (var-get interchain-token-service))) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (unwrap! (var-get interchain-token-service) ERR-NOT-STARTED)) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
         (as-contract (transfer-token-from sip-010-token contract-caller to amount))))
 

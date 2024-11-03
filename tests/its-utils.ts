@@ -1112,3 +1112,22 @@ export function transferOperatorShip({
     operator
   );
 }
+
+export function transferSip010({
+  amount,
+  sender,
+  recipient,
+  contractAddress,
+}: {
+  amount: number;
+  sender: string;
+  recipient: string;
+  contractAddress: string;
+}) {
+  return simnet.callPublicFn(
+    contractAddress,
+    "transfer",
+    [Cl.uint(amount), Cl.address(sender), Cl.address(recipient), Cl.none()],
+    sender
+  );
+}

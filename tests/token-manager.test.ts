@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { keccak256, setTokenFlowLimit, setupTokenManager } from "./its-utils";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  keccak256,
+  setTokenFlowLimit,
+  setupTokenManager,
+  transferSip010,
+} from "./its-utils";
 import { TOKEN_MANAGER_ERRORS } from "./constants";
 import { Cl } from "@stacks/transactions";
+import { runFlowLimitsSuite } from "./token-manager-utils";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -65,6 +71,45 @@ describe("example tests", () => {
       address1
     );
     expect(params.result).toBeOk(Cl.buffer(expectedParams));
+  });
+
+  describe("Flow Limit", () => {
+    const flowLimit = 5;
+
+    beforeEach(() => {
+      expect(
+        setupTokenManager({
+          operator: address1,
+          itsAddress: address1,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(setTokenFlowLimit("token-manager", flowLimit).result).toBeOk(
+        Cl.bool(true)
+      );
+
+      expect(
+        transferSip010({
+          amount: 100,
+          sender: deployer,
+          recipient: address1,
+          contractAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+      expect(
+        transferSip010({
+          amount: 100,
+          sender: deployer,
+          recipient: `${deployer}.token-manager`,
+          contractAddress: `${deployer}.sample-sip-010`,
+        }).result
+      ).toBeOk(Cl.bool(true));
+    });
+    runFlowLimitsSuite({
+      flowLimit: 5,
+      tokenAddress: `${deployer}.sample-sip-010`,
+      tokenManagerAddress: `${deployer}.token-manager`,
+    });
   });
 
   // it("shows an example", () => {
