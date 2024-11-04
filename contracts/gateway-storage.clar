@@ -7,8 +7,7 @@
 (define-public (set-operator (new-operator principal)) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set operator new-operator)
-        (ok true)
+        (ok (var-set operator new-operator))
     )
 )
 
@@ -20,8 +19,7 @@
 (define-public (set-epoch (epoch- uint)) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set epoch epoch-)
-        (ok true)
+        (ok (var-set epoch epoch-))
     )
 )
 
@@ -33,8 +31,7 @@
 (define-public (set-last-rotation-timestamp (new-timestamp uint)) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set last-rotation-timestamp new-timestamp)
-        (ok true)
+        (ok (var-set last-rotation-timestamp new-timestamp))
     )
 )
 
@@ -46,8 +43,7 @@
 (define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32))) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (map-set signer-hash-by-epoch epoch- signers-hash)
-        (ok true)
+        (ok (map-set signer-hash-by-epoch epoch- signers-hash))
     )
 )
 
@@ -59,8 +55,7 @@
 (define-public (set-epoch-by-signer-hash (signers-hash (buff 32)) (epoch- uint) ) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (map-set epoch-by-signer-hash signers-hash epoch-)
-        (ok true)
+        (ok (map-set epoch-by-signer-hash signers-hash epoch-))
     )
 )
 
@@ -72,8 +67,7 @@
 (define-public (set-previous-signers-retention (retention uint)) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set previous-signers-retention retention)
-        (ok true)
+        (ok (var-set previous-signers-retention retention))
     )
 )
 
@@ -85,8 +79,7 @@
 (define-public (set-domain-separator (separator (buff 32))) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set domain-separator separator)
-        (ok true)
+        (ok (var-set domain-separator separator))
     )
 )
 
@@ -99,8 +92,7 @@
 (define-public (set-minimum-rotation-delay (delay uint)) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (var-set minimum-rotation-delay delay)
-        (ok true)
+        (ok (var-set minimum-rotation-delay delay))
     )
 )
 
