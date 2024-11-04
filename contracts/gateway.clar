@@ -252,8 +252,7 @@
 (define-read-only (get-last-rotation-timestamp) (contract-call? .gateway-storage get-last-rotation-timestamp))
 
 ;; The map of signer hash by epoch
-(define-map signer-hash-by-epoch uint (buff 32))
-(define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (map-get? signer-hash-by-epoch signer-epoch))
+(define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (contract-call? .gateway-storage get-signer-hash-by-epoch signer-epoch))
 
 ;; The map of epoch by signer hash
 (define-map epoch-by-signer-hash (buff 32) uint)
@@ -578,7 +577,7 @@
             (try! (validate-signers new-signers))
             (try! (update-rotation-timestamp enforce-rotation-delay))
             (try! (contract-call? .gateway-storage set-epoch new-epoch))
-            (map-set signer-hash-by-epoch new-epoch new-signers-hash)
+            (try! (contract-call? .gateway-storage set-signer-hash-by-epoch new-epoch new-signers-hash))
             (map-set epoch-by-signer-hash new-signers-hash new-epoch)
             (print {
                 type: "signers-rotated",
