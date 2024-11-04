@@ -264,8 +264,7 @@
 (define-read-only (get-domain-separator) (contract-call? .gateway-storage get-domain-separator))
 
 ;; The minimum delay required between rotations
-(define-data-var minimum-rotation-delay uint u0)
-(define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
+(define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
 
 ;; Helper vars to use within loops
 (define-data-var temp-pub (buff 33) NULL-PUB)
@@ -549,7 +548,7 @@
             (last-rotation-timestamp_ (get-last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
         )
-        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
+        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (get-minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
         (try! (contract-call? .gateway-storage set-last-rotation-timestamp current-ts))
         (ok true)
     )
@@ -665,7 +664,7 @@
         (try! (rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
-        (var-set minimum-rotation-delay minimum-rotation-delay_)
+        (try! (contract-call? .gateway-storage set-minimum-rotation-delay minimum-rotation-delay_))
         (try! (contract-call? .gateway-storage set-previous-signers-retention previous-signers-retention_))
         (var-set is-started true)
         (ok true)

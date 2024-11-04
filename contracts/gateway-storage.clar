@@ -89,3 +89,17 @@
         (ok true)
     )
 )
+
+
+;; The minimum delay required between rotations
+(define-data-var minimum-rotation-delay uint u0)
+
+(define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
+
+(define-public (set-minimum-rotation-delay (delay uint)) 
+    (begin
+        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (var-set minimum-rotation-delay delay)
+        (ok true)
+    )
+)
