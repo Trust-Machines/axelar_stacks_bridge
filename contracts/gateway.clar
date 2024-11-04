@@ -258,8 +258,7 @@
 (define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (contract-call? .gateway-storage get-epoch-by-signer-hash signer-hash))
 
 ;; Previous signers retention. 0 means only the current signers are valid
-(define-data-var previous-signers-retention uint u0)
-(define-read-only (get-previous-signers-retention) (var-get previous-signers-retention))
+(define-read-only (get-previous-signers-retention) (contract-call? .gateway-storage get-previous-signers-retention))
 
 ;; The domain separator for the signer proof
 (define-data-var domain-separator (buff 32) 0x00)
@@ -523,7 +522,7 @@
             (message-hash (message-hash-to-sign signers-hash data-hash))
         )
 
-        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (var-get previous-signers-retention))) false) ERR-INVALID-SIGNERS)
+        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (get-previous-signers-retention))) false) ERR-INVALID-SIGNERS)
 
         (try! (validate-signatures message-hash signers (get signatures proof)))
 
@@ -668,7 +667,7 @@
         (try! (contract-call? .gateway-storage set-operator operator_))
         (var-set domain-separator domain-separator_)
         (var-set minimum-rotation-delay minimum-rotation-delay_)
-        (var-set previous-signers-retention previous-signers-retention_)
+        (try! (contract-call? .gateway-storage set-previous-signers-retention previous-signers-retention_))
         (var-set is-started true)
         (ok true)
     )
