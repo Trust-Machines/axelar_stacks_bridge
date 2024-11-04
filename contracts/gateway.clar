@@ -226,15 +226,14 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u1051))
 
-(define-data-var operator principal contract-caller)
-(define-read-only (get-operator) (var-get operator))
+(define-read-only (get-operator) (unwrap-panic (contract-call? .gateway-storage get-operator)))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq contract-caller (var-get operator)) ERR-ONLY-OPERATOR)
-        (var-set operator new-operator)
+        (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
+        (try! (contract-call? .gateway-storage set-operator new-operator))
         (print {type: "transfer-operatorship", new-operator: new-operator})
         (ok true)
     )
@@ -622,7 +621,7 @@
                     signatures: (list 100 (buff 65))
                 } proof) ERR-PROOF-DATA))
                 (data-hash (data-hash-from-signers new-signers_))
-                (enforce-rotation-delay (not (is-eq contract-caller (var-get operator))))
+                (enforce-rotation-delay (not (is-eq contract-caller (get-operator))))
                 (is-latest-signers (try! (validate-proof data-hash proof_)))
             )
             ;; if the caller is not the operator the signer set provided in proof must be the latest
@@ -670,7 +669,7 @@
         )
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (try! (rotate-signers-inner signers_ false))
-        (var-set operator operator_)
+        (try! (contract-call? .gateway-storage set-operator operator_))
         (var-set domain-separator domain-separator_)
         (var-set minimum-rotation-delay minimum-rotation-delay_)
         (var-set previous-signers-retention previous-signers-retention_)
