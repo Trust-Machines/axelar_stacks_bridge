@@ -249,8 +249,7 @@
 (define-read-only (get-epoch) (contract-call? .gateway-storage get-epoch))
 
 ;; The timestamp for the last signer rotation
-(define-data-var last-rotation-timestamp uint u0)
-(define-read-only (get-last-rotation-timestamp) (var-get last-rotation-timestamp))
+(define-read-only (get-last-rotation-timestamp) (contract-call? .gateway-storage get-last-rotation-timestamp))
 
 ;; The map of signer hash by epoch
 (define-map signer-hash-by-epoch uint (buff 32))
@@ -551,11 +550,11 @@
 (define-private (update-rotation-timestamp (enforce-rotation-delay bool))
     (let
         (
-            (last-rotation-timestamp_ (var-get last-rotation-timestamp))
+            (last-rotation-timestamp_ (get-last-rotation-timestamp))
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
         )
         (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (var-get minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
-        (var-set last-rotation-timestamp current-ts)
+        (try! (contract-call? .gateway-storage set-last-rotation-timestamp current-ts))
         (ok true)
     )
 )
