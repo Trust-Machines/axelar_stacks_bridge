@@ -6,6 +6,20 @@
 
 (define-read-only (is-proxy) (is-eq contract-caller (var-get proxy)))
 
+
+;; Constructor flag
+(define-data-var is-started bool false)
+
+(define-read-only (get-is-started) (var-get is-started))
+
+(define-public (start) 
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set is-started true))
+    )
+)
+
+
 ;; Gateway implementation contract address 
 (define-data-var impl principal .gateway-impl)
 

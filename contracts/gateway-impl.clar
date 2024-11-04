@@ -13,6 +13,7 @@
     (payload (buff 64000))
 )
     (begin
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
             sender: contract-caller,
@@ -126,6 +127,7 @@
             messages) ERR-MESSAGES-DATA))
              (data-hash (data-hash-from-messages messages_)
         ))
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
         (map approve-message messages_)
         (ok true)
@@ -154,6 +156,7 @@
                 payload-hash: payload-hash
             }))
     )
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
         (print {
@@ -228,6 +231,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
         (print {type: "transfer-operatorship", new-operator: new-operator})
@@ -593,6 +597,7 @@
     (proof (buff 16384))
 )
     (begin
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (let
             (
                 (new-signers_ (unwrap! (from-consensus-buff? {
@@ -620,3 +625,11 @@
     )
 )
 
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
+(define-constant ERR-NOT-STARTED (err u6052))
