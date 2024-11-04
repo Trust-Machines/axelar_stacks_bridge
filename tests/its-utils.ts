@@ -25,6 +25,7 @@ import {
   MetadataVersion,
   TRUSTED_CHAIN,
   ITS_HUB_ROUTING_IDENTIFIER,
+  BURN_ADDRESS,
 } from "./constants";
 
 export function setupTokenManager({
@@ -191,6 +192,9 @@ export function enableTokenManager({
       address1
     ).result
   ).toBeOk(Cl.bool(true));
+  return {
+    enableTokenTx,
+  };
 }
 
 export function getTokenId(
@@ -769,8 +773,8 @@ export function setupNIT({
 export function approveDeployNativeInterchainToken({
   tokenId,
   proofSigners,
-  minter = "ST000000000000000000002AMW42H",
-  operator = "ST000000000000000000002AMW42H",
+  minter = BURN_ADDRESS,
+  operator = BURN_ADDRESS,
 }: {
   tokenId: BufferCV;
   proofSigners: Signers;
@@ -924,6 +928,10 @@ export function setupService(proofSigners: Signers) {
           }),
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
+            address: Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
+          }),
+          Cl.tuple({
+            "chain-name": Cl.stringAscii("avalanche"),
             address: Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           }),
         ]),
