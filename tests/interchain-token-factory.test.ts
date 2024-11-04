@@ -11,7 +11,7 @@ import {
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
 import { getSigners } from "./util";
 import {
-  deployInterchainToken,
+  factoryDeployInterchainToken,
   deployRemoteCanonicalInterchainToken,
   factoryDeployRemoteInterchainToken,
   getCanonicalInterChainTokenId,
@@ -89,7 +89,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
       });
@@ -125,7 +125,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: randomBytes(32),
         sender: address1,
         minterAddress: `${deployer}.interchain-token-service`,
@@ -137,7 +137,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
@@ -149,7 +149,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
@@ -164,7 +164,7 @@ describe("interchain-token-factory", () => {
         tokenId,
         minter: address1,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,

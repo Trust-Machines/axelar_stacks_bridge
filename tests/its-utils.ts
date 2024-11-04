@@ -775,18 +775,20 @@ export function approveDeployNativeInterchainToken({
   proofSigners,
   minter = BURN_ADDRESS,
   operator = BURN_ADDRESS,
+  supply = 0,
 }: {
   tokenId: BufferCV;
   proofSigners: Signers;
   minter?: string;
   operator?: string;
+  supply?: number;
 }) {
   const payload = Cl.tuple({
     decimals: Cl.uint(6),
     minter: Cl.address(minter),
     name: Cl.stringAscii("Nitter"),
     operator: Cl.address(operator),
-    supply: Cl.uint(0),
+    supply: Cl.uint(supply),
     symbol: Cl.stringAscii("NIT"),
     "token-address": Cl.address(`${deployer}.native-interchain-token`),
     "token-id": tokenId,

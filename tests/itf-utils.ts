@@ -1,10 +1,11 @@
 import { BufferCV, Cl, PrincipalCV, ResponseOkCV } from "@stacks/transactions";
 import { BURN_ADDRESS } from "./constants";
+import { keccak256 } from "./its-utils";
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 
-export function deployInterchainToken({
+export function factoryDeployInterchainToken({
   sender,
   salt,
   tokenAddress = `${deployer}.native-interchain-token`,
@@ -133,4 +134,23 @@ export function factoryDeployRemoteInterchainToken({
     ],
     sender
   );
+}
+
+export function getInterchainTokenSalt({
+  deployer,
+  salt,
+}: {
+  deployer: string;
+  salt: Buffer | Uint8Array;
+}) {
+  return simnet.callReadOnlyFn(
+    "interchain-token-factory",
+    "get-interchain-token-salt",
+    [
+      Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
+      Cl.address(deployer),
+      Cl.buffer(salt),
+    ],
+    address1
+  ).result as BufferCV;
 }

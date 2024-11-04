@@ -150,6 +150,7 @@
     (let
         (
             (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
+            ;; TODO: ask rares about minter being the factory this behavior is not valid here
             (minter
                 (if
                     (> initial-supply u0)
@@ -158,7 +159,6 @@
                         (not (is-eq NULL-ADDRESS minter_))
                             minter_
                             NULL-ADDRESS)))
-            (token-id (unwrap! (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt) ERR-SERVICE-NOT-DEPLOYED))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter) gas-value)))
@@ -180,7 +180,6 @@
         (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
         (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
         (decimals (unwrap!  (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
-        (token-id (unwrap! (get-interchain-token-id TOKEN-FACTORY-DEPLOYER salt) ERR-SERVICE-NOT-DEPLOYED))
         (minter
             (if
                 (not (is-eq NULL-BYTES minter_))
@@ -199,6 +198,6 @@
             name
             symbol
             decimals
-            minter_
+            minter
             gas-value
         )))
