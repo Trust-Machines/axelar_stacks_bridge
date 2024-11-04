@@ -1,5 +1,7 @@
 (define-data-var gateway principal .gateway)
 
+;; Gateway operator
+
 (define-data-var operator principal contract-caller)
 
 (define-read-only (get-operator) (var-get operator))
