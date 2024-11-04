@@ -1,14 +1,17 @@
-(define-data-var gateway principal .gateway)
+(define-data-var proxy principal .gateway)
+
+(define-constant ERR-UNAUTHORIZED (err u10111))
+
+(define-read-only (is-proxy-or-impl) (is-eq contract-caller (var-get proxy)))
 
 ;; Gateway operator
-
 (define-data-var operator principal contract-caller)
 
 (define-read-only (get-operator) (var-get operator))
 
 (define-public (set-operator (new-operator principal)) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set operator new-operator))
     )
 )
@@ -20,7 +23,7 @@
 
 (define-public (set-epoch (epoch- uint)) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set epoch epoch-))
     )
 )
@@ -32,7 +35,7 @@
 
 (define-public (set-last-rotation-timestamp (new-timestamp uint)) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set last-rotation-timestamp new-timestamp))
     )
 )
@@ -44,7 +47,7 @@
 
 (define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32))) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set signer-hash-by-epoch epoch- signers-hash))
     )
 )
@@ -56,7 +59,7 @@
 
 (define-public (set-epoch-by-signer-hash (signers-hash (buff 32)) (epoch- uint) ) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set epoch-by-signer-hash signers-hash epoch-))
     )
 )
@@ -68,7 +71,7 @@
 
 (define-public (set-previous-signers-retention (retention uint)) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set previous-signers-retention retention))
     )
 )
@@ -80,7 +83,7 @@
 
 (define-public (set-domain-separator (separator (buff 32))) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set domain-separator separator))
     )
 )
@@ -93,7 +96,7 @@
 
 (define-public (set-minimum-rotation-delay (delay uint)) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set minimum-rotation-delay delay))
     )
 )
@@ -105,14 +108,14 @@
 
 (define-public (insert-message (command-id (buff 32)) (message-hash (buff 32)) ) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (map-insert messages command-id message-hash))
     )
 )
 
 (define-public (set-message (command-id (buff 32)) (message-hash (buff 32)) ) 
     (begin
-        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set messages command-id message-hash))
     )
 )
