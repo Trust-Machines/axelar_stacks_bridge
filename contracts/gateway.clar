@@ -255,8 +255,7 @@
 (define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (contract-call? .gateway-storage get-signer-hash-by-epoch signer-epoch))
 
 ;; The map of epoch by signer hash
-(define-map epoch-by-signer-hash (buff 32) uint)
-(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (map-get? epoch-by-signer-hash signer-hash))
+(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (contract-call? .gateway-storage get-epoch-by-signer-hash signer-hash))
 
 ;; Previous signers retention. 0 means only the current signers are valid
 (define-data-var previous-signers-retention uint u0)
@@ -517,7 +516,7 @@
         (
             (signers (get signers proof))
             (signers-hash (get-signers-hash signers))
-            (signer-epoch (default-to u0 (map-get? epoch-by-signer-hash signers-hash)))
+            (signer-epoch (default-to u0 (get-epoch-by-signer-hash signers-hash)))
             (current-epoch (get-epoch))
             ;; True if the proof is from the latest signer set
             (is-latest-signers (is-eq signer-epoch current-epoch))
@@ -573,12 +572,12 @@
                 (new-signers-hash (get-signers-hash new-signers))
                 (new-epoch (+ (get-epoch) u1))
             )
-            (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
+            (asserts! (is-none (get-epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
             (try! (validate-signers new-signers))
             (try! (update-rotation-timestamp enforce-rotation-delay))
             (try! (contract-call? .gateway-storage set-epoch new-epoch))
             (try! (contract-call? .gateway-storage set-signer-hash-by-epoch new-epoch new-signers-hash))
-            (map-set epoch-by-signer-hash new-signers-hash new-epoch)
+            (try! (contract-call? .gateway-storage set-epoch-by-signer-hash new-signers-hash new-epoch))
             (print {
                 type: "signers-rotated",
                 epoch: new-epoch,

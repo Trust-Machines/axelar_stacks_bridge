@@ -40,10 +40,22 @@
 
 (define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (map-get? signer-hash-by-epoch signer-epoch))
 
-(define-public (set-signer-hash-by-epoch (new-epoch uint) (new-signers-hash (buff 32))) 
+(define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32))) 
     (begin
         (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
-        (map-set signer-hash-by-epoch new-epoch new-signers-hash)
+        (map-set signer-hash-by-epoch epoch- signers-hash)
+        (ok true)
+    )
+)
+
+(define-map epoch-by-signer-hash (buff 32) uint)
+
+(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (map-get? epoch-by-signer-hash signer-hash))
+
+(define-public (set-epoch-by-signer-hash (signers-hash (buff 32)) (epoch- uint) ) 
+    (begin
+        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (map-set epoch-by-signer-hash signers-hash epoch-)
         (ok true)
     )
 )
