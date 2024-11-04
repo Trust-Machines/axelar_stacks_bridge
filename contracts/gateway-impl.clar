@@ -554,7 +554,7 @@
 ;; @param new-signers The new weighted signers data
 ;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
 ;; @returns (response true) or reverts
-(define-private (rotate-signers-inner (new-signers {
+(define-public (rotate-signers-inner (new-signers {
                 signers: (list 100 {signer: (buff 33), weight: uint}),
                 threshold: uint,
                 nonce: (buff 32)

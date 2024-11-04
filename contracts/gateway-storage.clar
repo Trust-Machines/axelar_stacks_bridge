@@ -2,7 +2,21 @@
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
-(define-read-only (is-proxy-or-impl) (is-eq contract-caller (var-get proxy)))
+(define-read-only (is-proxy-or-impl) (or (is-eq contract-caller (var-get proxy)) (is-eq contract-caller (var-get impl))))
+
+(define-read-only (is-proxy) (is-eq contract-caller (var-get proxy)))
+
+;; Gateway implementation contract address 
+(define-data-var impl principal .gateway-impl)
+
+(define-read-only (get-impl) (var-get impl))
+
+(define-public (set-impl (new-impl principal)) 
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set impl new-impl))
+    )
+)
 
 ;; Gateway operator
 (define-data-var operator principal contract-caller)

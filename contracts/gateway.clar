@@ -1,4 +1,4 @@
-(impl-trait .traits.gateway-trait)
+(use-trait gateway-trait .traits.gateway-trait)
 
 (define-constant NULL-PUB 0x00)
 
@@ -661,7 +661,7 @@
             } signers) ERR-SIGNERS-DATA))
         )
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
-        (try! (rotate-signers-inner signers_ false))
+        (try! (contract-call? .gateway-impl rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
         (try! (contract-call? .gateway-storage set-minimum-rotation-delay minimum-rotation-delay_))
