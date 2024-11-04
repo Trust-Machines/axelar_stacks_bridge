@@ -4,18 +4,6 @@
 
 (define-read-only (is-proxy-or-impl) (is-eq contract-caller (var-get proxy)))
 
-;; Flag
-(define-data-var is-started bool false)
-
-(define-read-only (get-is-started) (var-get is-started))
-
-(define-public (start) 
-    (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
-        (ok (var-set is-started true))
-    )
-)
-
 ;; Gateway operator
 (define-data-var operator principal contract-caller)
 

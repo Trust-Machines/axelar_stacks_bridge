@@ -13,7 +13,7 @@
     (payload (buff 64000))
 )
     (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
             sender: contract-caller,
@@ -127,7 +127,7 @@
             messages) ERR-MESSAGES-DATA))
              (data-hash (data-hash-from-messages messages_)
         ))
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
         (map approve-message messages_)
         (ok true)
@@ -156,7 +156,7 @@
                 payload-hash: payload-hash
             }))
     )
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
         (print {
@@ -231,7 +231,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
         (print {type: "transfer-operatorship", new-operator: new-operator})
@@ -597,7 +597,7 @@
     (proof (buff 16384))
 )
     (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (let
             (
                 (new-signers_ (unwrap! (from-consensus-buff? {
@@ -635,7 +635,8 @@
 (define-constant ERR-STARTED (err u6051))
 (define-constant ERR-NOT-STARTED (err u6052))
 
-(define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
+(define-data-var is-started bool false)
+(define-read-only (get-is-started) (var-get is-started))
 
 ;; Constructor function
 ;; @param signers; The data for the new signers.
@@ -659,13 +660,13 @@
                 nonce: (buff 32)
             } signers) ERR-SIGNERS-DATA))
         )
-        (asserts! (is-eq (get-is-started) false) ERR-STARTED)
+        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (try! (rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
         (try! (contract-call? .gateway-storage set-minimum-rotation-delay minimum-rotation-delay_))
         (try! (contract-call? .gateway-storage set-previous-signers-retention previous-signers-retention_))
-        (try! (contract-call? .gateway-storage start))
+        (var-set is-started true)
         (ok true)
     )
 )
