@@ -226,7 +226,7 @@
 
 (define-constant ERR-ONLY-OPERATOR (err u1051))
 
-(define-read-only (get-operator) (unwrap-panic (contract-call? .gateway-storage get-operator)))
+(define-read-only (get-operator) (contract-call? .gateway-storage get-operator))
 
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
@@ -246,8 +246,7 @@
 ;; #########################
 
 ;; Current signers epoch
-(define-data-var epoch uint u0)
-(define-read-only (get-epoch) (var-get epoch))
+(define-read-only (get-epoch) (contract-call? .gateway-storage get-epoch))
 
 ;; The timestamp for the last signer rotation
 (define-data-var last-rotation-timestamp uint u0)
@@ -521,7 +520,7 @@
             (signers (get signers proof))
             (signers-hash (get-signers-hash signers))
             (signer-epoch (default-to u0 (map-get? epoch-by-signer-hash signers-hash)))
-            (current-epoch (var-get epoch))
+            (current-epoch (get-epoch))
             ;; True if the proof is from the latest signer set
             (is-latest-signers (is-eq signer-epoch current-epoch))
             (message-hash (message-hash-to-sign signers-hash data-hash))
@@ -574,12 +573,12 @@
     (let
             (
                 (new-signers-hash (get-signers-hash new-signers))
-                (new-epoch (+ (var-get epoch) u1))
+                (new-epoch (+ (get-epoch) u1))
             )
             (asserts! (is-none (map-get? epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
             (try! (validate-signers new-signers))
             (try! (update-rotation-timestamp enforce-rotation-delay))
-            (var-set epoch new-epoch)
+            (try! (contract-call? .gateway-storage set-epoch new-epoch))
             (map-set signer-hash-by-epoch new-epoch new-signers-hash)
             (map-set epoch-by-signer-hash new-signers-hash new-epoch)
             (print {
