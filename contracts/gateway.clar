@@ -261,8 +261,7 @@
 (define-read-only (get-previous-signers-retention) (contract-call? .gateway-storage get-previous-signers-retention))
 
 ;; The domain separator for the signer proof
-(define-data-var domain-separator (buff 32) 0x00)
-(define-read-only (get-domain-separator) (var-get domain-separator))
+(define-read-only (get-domain-separator) (contract-call? .gateway-storage get-domain-separator))
 
 ;; The minimum delay required between rotations
 (define-data-var minimum-rotation-delay uint u0)
@@ -283,7 +282,7 @@
         (concat
             (unwrap-panic (to-consensus-buff? "Stacks Signed Message"))
             (concat
-                (var-get domain-separator)
+                (get-domain-separator)
                 (concat
                     signers-hash
                     data-hash
@@ -665,7 +664,7 @@
         (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
         (try! (rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
-        (var-set domain-separator domain-separator_)
+        (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
         (var-set minimum-rotation-delay minimum-rotation-delay_)
         (try! (contract-call? .gateway-storage set-previous-signers-retention previous-signers-retention_))
         (var-set is-started true)

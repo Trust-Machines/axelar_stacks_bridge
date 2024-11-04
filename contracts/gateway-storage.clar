@@ -76,3 +76,16 @@
         (ok true)
     )
 )
+
+;; The domain separator for the signer proof
+(define-data-var domain-separator (buff 32) 0x00)
+
+(define-read-only (get-domain-separator) (var-get domain-separator))
+
+(define-public (set-domain-separator (separator (buff 32))) 
+    (begin
+        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (var-set domain-separator separator)
+        (ok true)
+    )
+)
