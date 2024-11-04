@@ -35,7 +35,6 @@
 (define-constant ERR-MESSAGES-DATA (err u9051))
 (define-constant ERR-MESSAGE-NOT-FOUND (err u9052))
 (define-constant MESSAGE-EXECUTED 0x01)
-(define-map messages-storage (buff 32) (buff 32))
 
 
 ;; Compute the command-id for a message.
@@ -84,15 +83,16 @@
             }))
             (let (
                     (command-id (message-to-command-id (get source-chain message) (get message-id message)))
-                )
-                (if
-                    (map-insert messages-storage command-id (get-message-hash {
+                    (inserted (unwrap-panic (contract-call? .gateway-storage insert-message command-id (get-message-hash {
                         message-id: (get message-id message),
                         source-chain: (get source-chain message),
                         source-address: (get source-address message),
                         contract-address: (get contract-address message),
                         payload-hash: (get payload-hash message)
-                    }))
+                    }))))
+                )
+                (if
+                    inserted
                     (some (print (merge message {
                         type: "message-approved",
                         command-id: command-id,
@@ -158,7 +158,7 @@
     )
         (asserts! (is-eq (var-get is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
-        (map-set messages-storage command-id MESSAGE-EXECUTED)
+        (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
         (print {
             type: "message-executed",
             command-id: command-id,
@@ -215,7 +215,7 @@
 (define-read-only (get-message
     (command-id (buff 32))
 )
-    (default-to 0x00 (map-get? messages-storage command-id))
+    (default-to 0x00 (contract-call? .gateway-storage get-message command-id))
 )
 
 ;; ####################

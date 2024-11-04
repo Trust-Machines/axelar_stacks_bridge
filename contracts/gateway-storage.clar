@@ -103,3 +103,22 @@
         (ok true)
     )
 )
+
+;; Messages map
+(define-map messages (buff 32) (buff 32))
+
+(define-read-only (get-message (command-id (buff 32))) (map-get? messages command-id))
+
+(define-public (insert-message (command-id (buff 32)) (message-hash (buff 32)) ) 
+    (begin
+        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (ok (map-insert messages command-id message-hash))
+    )
+)
+
+(define-public (set-message (command-id (buff 32)) (message-hash (buff 32)) ) 
+    (begin
+        (asserts! (is-eq u1 u1) (err u321)) ;; TODO: validate if the gateway or impl
+        (ok (map-set messages command-id message-hash))
+    )
+)
