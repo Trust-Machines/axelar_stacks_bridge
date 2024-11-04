@@ -20,6 +20,11 @@ path = 'contracts/gateway.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.gateway-impl]
+path = 'contracts/gateway-impl.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.gateway-storage]
 path = 'contracts/gateway-storage.clar'
 clarity_version = 2
