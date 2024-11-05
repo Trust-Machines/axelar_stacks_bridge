@@ -122,7 +122,6 @@
 ;; ######################
 
 (define-constant ERR-STARTED (err u6051))
-(define-constant ERR-NOT-STARTED (err u6052))
 
 (define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
 
