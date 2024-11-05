@@ -43,18 +43,7 @@
     (keccak256 (unwrap-panic (to-consensus-buff? message)))
 )
 
-;; Helper function to build keccak256 data-hash from messages
-;; @param messages;
-;; @returns (response (buff 32))
-(define-read-only (data-hash-from-messages (messages (list 10 {
-                source-chain: (string-ascii 20),
-                message-id: (string-ascii 128),
-                source-address: (string-ascii 128),
-                contract-address: principal,
-                payload-hash: (buff 32)
-        })))
-    (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: messages} { type: "approve-messages" }))))
-)
+
 
 
 (define-public (approve-messages

@@ -111,12 +111,12 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-messages", [messages], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
@@ -170,7 +170,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-messages", [messages], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], contractCaller);
         return cvToJSON(result).value;
       })();
 

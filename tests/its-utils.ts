@@ -251,7 +251,7 @@ export function buildIncomingGMPMessage({
 }
 export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "data-hash-from-messages",
     [messages],
     address1
