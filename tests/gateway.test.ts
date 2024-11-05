@@ -144,6 +144,7 @@ describe("gateway tests", () => {
 
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -216,6 +217,7 @@ describe("gateway tests", () => {
       // execute message
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',

@@ -202,6 +202,23 @@
     )
 )
 
+(define-public (emit-message-executed
+        (command-id (buff 32))
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+) 
+    (begin 
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print {
+          type: "message-executed",
+            command-id: command-id,
+            source-chain: source-chain,
+            message-id: message-id,
+        })
+        (ok true)
+    )
+)
+
 ;; General purpose event emitter for future
 (define-public (emit-str (o (string-ascii 4096))) 
     (begin

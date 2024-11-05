@@ -161,12 +161,7 @@
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
-        (print {
-            type: "message-executed",
-            command-id: command-id,
-            source-chain: source-chain,
-            message-id: message-id,
-        })
+        (try! (contract-call? .gateway-storage emit-message-executed command-id source-chain message-id))
         (ok true)
     )
 )
