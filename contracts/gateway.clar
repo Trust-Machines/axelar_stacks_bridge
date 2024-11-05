@@ -43,15 +43,6 @@
 
 
 
-;; Message getter with the command-id. Returns an empty buffer if no message matched.
-;; @param command-id
-;; @returns (buff 32) or (buff 1)
-(define-read-only (get-message
-    (command-id (buff 32))
-)
-    (default-to 0x00 (contract-call? .gateway-storage get-message command-id))
-)
-
 ;; ####################
 ;; ####################
 ;; ### Operatorship ###
