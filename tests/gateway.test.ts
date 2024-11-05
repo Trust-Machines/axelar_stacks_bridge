@@ -57,7 +57,7 @@ describe("gateway tests", () => {
     expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
     expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
     expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller).result).toBeBool(true);
-    expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
+    expect(simnet.callReadOnlyFn("gateway-impl", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
   });
 
   it("should not run setup func again", () => {

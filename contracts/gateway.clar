@@ -22,30 +22,6 @@
 (define-constant MESSAGE-EXECUTED 0x01)
 
 
-;; Compute the command-id for a message.
-;; @param source-chain The name of the source chain as registered on Axelar.
-;; @param message-id The unique message id for the message.
-;; @returns (buff 32) the command-id.
-(define-read-only (message-to-command-id (source-chain (string-ascii 20)) (message-id (string-ascii 128)))
-    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
-    (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
-
-
-;; For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
-;; @returns (buff 32) the message hash
-(define-private (get-message-hash (message {
-        message-id: (string-ascii 128),
-        source-chain: (string-ascii 20),
-        source-address: (string-ascii 128),
-        contract-address: principal,
-        payload-hash: (buff 32)
-    }))
-    (keccak256 (unwrap-panic (to-consensus-buff? message)))
-)
-
-
-
-
 (define-public (approve-messages
     (gateway-impl <gateway-trait>)
     (messages (buff 4096))
