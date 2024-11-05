@@ -2,28 +2,13 @@
 
 (define-constant NULL-PUB 0x00)
 
-;; Sends a message to the specified destination chain and address with a given payload.
-;; This function is the entry point for general message passing between chains.
-;; @param destination-chain; The chain where the destination contract exists. A registered chain name on Axelar must be used here
-;; @param destination-contract-address; The address of the contract to call on the destination chain
-;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
 (define-public (call-contract
+    (gateway-impl <gateway-trait>)
     (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
 )
-    (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (print {
-            type: "contract-call",
-            sender: contract-caller,
-            destination-chain: destination-chain,
-            destination-contract-address: destination-contract-address,
-            payload-hash: (keccak256 payload),
-            payload: payload
-        })
-        (ok true)
-    )
+    (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
 )
 
 ;; ######################

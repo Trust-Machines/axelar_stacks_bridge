@@ -95,6 +95,7 @@ export function deployTokenManager({
     "interchain-token-service",
     "deploy-token-manager",
     [
+      gatewayImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
@@ -347,6 +348,7 @@ export function deployRemoteInterchainToken({
     "interchain-token-service",
     "deploy-remote-interchain-token",
     [
+      gatewayImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.stringAscii(name),
@@ -476,6 +478,7 @@ export function deployInterchainToken({
     "interchain-token-service",
     "deploy-interchain-token",
     [
+      gatewayImpl,
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
@@ -554,6 +557,7 @@ export function interchainTransfer({
     "interchain-token-service",
     "interchain-transfer",
     [
+      gatewayImpl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -892,6 +896,7 @@ export function callContractWithInterchainToken({
     "interchain-token-service",
     "call-contract-with-interchain-token",
     [
+      gatewayImpl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,

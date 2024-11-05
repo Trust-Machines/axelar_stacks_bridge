@@ -39,7 +39,7 @@ describe("gateway tests", () => {
     ]);
 
     expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "call-contract", [gatewayImpl, stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImpl, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
@@ -73,7 +73,7 @@ describe("gateway tests", () => {
     const destinationAddress = '0x123abc';
     const payload = operatorAddress;
 
-    const { result, events } = simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
+    const { result, events } = simnet.callPublicFn("gateway", "call-contract", [gatewayImpl, stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
     expect(result).toBeOk(boolCV(true));
     expect(contractCallEventToObj(events[0].data.raw_value!)).toStrictEqual({
       type: 'contract-call',
