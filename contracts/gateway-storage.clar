@@ -166,6 +166,7 @@
         (destination-chain (string-ascii 20))
         (destination-contract-address (string-ascii 128))
         (payload (buff 64000))
+        (payload-hash (buff 32))
 )
     (begin 
         (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
@@ -174,9 +175,29 @@
             sender: sender,
             destination-chain: destination-chain,
             destination-contract-address: destination-contract-address,
-            payload-hash: (keccak256 payload),
+            payload-hash: payload-hash,
             payload: payload
         })
+        (ok true)
+    )
+)
+
+(define-public (emit-message-approved
+        (command-id (buff 32))
+        (message {
+                source-chain: (string-ascii 20),
+                message-id: (string-ascii 128),
+                source-address: (string-ascii 128),
+                contract-address: principal,
+                payload-hash: (buff 32)
+        })
+)
+    (begin
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print (merge message {
+            type: "message-approved",
+            command-id: command-id
+        }))
         (ok true)
     )
 )

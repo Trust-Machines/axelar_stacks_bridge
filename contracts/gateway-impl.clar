@@ -24,7 +24,7 @@
     (begin
         (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (try! (contract-call? .gateway-storage emit-contract-call tx-sender destination-chain destination-contract-address payload))
+        (try! (contract-call? .gateway-storage emit-contract-call tx-sender destination-chain destination-contract-address payload (keccak256 payload)))
         (ok true)
     )
 )
@@ -96,10 +96,7 @@
                 )
                 (if
                     inserted
-                    (some (print (merge message {
-                        type: "message-approved",
-                        command-id: command-id,
-                    })))
+                    (some (contract-call? .gateway-storage emit-message-approved command-id message))
                     none)))
 
 

@@ -125,6 +125,7 @@ describe("gateway tests", () => {
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -184,6 +185,7 @@ describe("gateway tests", () => {
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
