@@ -180,3 +180,12 @@
         (ok true)
     )
 )
+
+;; General purpose event emitter for future
+(define-public (emit-str (o (string-ascii 4096))) 
+    (begin
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print o)
+        (ok true)
+    )
+)
