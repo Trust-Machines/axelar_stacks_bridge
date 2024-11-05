@@ -56,34 +56,6 @@
     (keccak256 (unwrap-panic (to-consensus-buff? (merge {data: messages} { type: "approve-messages" }))))
 )
 
-;; Approves a message if it hasn't been approved before. The message status is set to approved.
-;; @params message;
-;; @returns (some message) or none
-(define-private (approve-message (message {
-                source-chain: (string-ascii 20),
-                message-id: (string-ascii 128),
-                source-address: (string-ascii 128),
-                contract-address: principal,
-                payload-hash: (buff 32)
-            }))
-            (let (
-                    (command-id (message-to-command-id (get source-chain message) (get message-id message)))
-                    (inserted (unwrap-panic (contract-call? .gateway-storage insert-message command-id (get-message-hash {
-                        message-id: (get message-id message),
-                        source-chain: (get source-chain message),
-                        source-address: (get source-address message),
-                        contract-address: (get contract-address message),
-                        payload-hash: (get payload-hash message)
-                    }))))
-                )
-                (if
-                    inserted
-                    (some (print (merge message {
-                        type: "message-approved",
-                        command-id: command-id,
-                    })))
-                    none)))
-
 
 (define-public (approve-messages
     (gateway-impl <gateway-trait>)
@@ -260,66 +232,6 @@
 (define-constant ERR-SIGNERS-THRESHOLD (err u2055))
 (define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u2056))
 
-;; Returns weight of a signer
-;; @param signer; Signer to validate
-;; @returns uint
-(define-private (get-signer-weight (signer {signer: (buff 33), weight: uint})) (get weight signer))
-
-;; Validates a particular signer's weight
-;; @param signer; Signer to validate
-;; @returns bool
-(define-private (validate-signer-weight (signer {signer: (buff 33), weight: uint}))
-    (> (get weight signer) u0) ;; signer weight must be bigger than zero
-)
-
-;; Validates signer order
-;; @param signer; Signer to validate
-;; @returns (response true) or reverts
-(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint}))
-    (let
-        (
-            (r (> (get signer signer) (var-get temp-pub)))
-        )
-       ;; save this signer in order to do comparison with the next signer
-       (var-set temp-pub (get signer signer))
-       (ok r)
-    )
-)
-
-;; A helper fn to unwrap a response boolean
-;; @param b;
-;; @returns bool
-(define-private (unwrap-bool (b (response bool bool))) (unwrap-panic b))
-
-;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
-;; @param new-signers; Signers to validate
-;; @returns (response true) or reverts
-(define-private (validate-signers (signers {
-            signers: (list 100 {signer: (buff 33), weight: uint}),
-            threshold: uint,
-            nonce: (buff 32)
-        }))
-    (let
-        (
-            (signers- (get signers signers))
-            (threshold (get threshold signers))
-            (total-weight (fold + (map get-signer-weight signers-) u0))
-        )
-        ;; signers list must have at least one item
-        (asserts! (> (len signers-) u0) ERR-SIGNERS-LEN)
-        ;; threshold must be bigger than zero
-        (asserts! (> threshold u0) ERR-SIGNERS-THRESHOLD)
-        ;; total weight of signers must be bigger than the threshold
-        (asserts! (>= total-weight threshold) ERR-SIGNERS-THRESHOLD-MISMATCH)
-        ;; signer weights need to be > 0
-        (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
-        ;; signers need to be in strictly increasing order
-        (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-        ;; reset temp var
-        (var-set temp-pub NULL-PUB)
-        (ok true)
-    )
-)
 
 ;; ############################
 ;; ### Signature validation ###
@@ -329,100 +241,6 @@
 (define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
 (define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
 
-;; Returns true if the address of the signer provided equals to the value stored in temp-account
-;; @param signer;
-;; @returns bool
-(define-private (is-the-signer (signer {signer: (buff 33), weight: uint})) (is-eq (var-get temp-pub) (get signer signer)))
-
-
-;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
-;; @param signature;
-;; @returns (response {signer: (buff 33), weight: uint}) or (err u0) or (err u1)
-(define-private (signature-to-signer (signature (buff 65)))
-    (let
-       (
-            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
-       )
-       (var-set temp-pub pub)
-       (let
-            (
-                (signers (filter is-the-signer (var-get temp-signers)))
-                (signer (unwrap! (element-at? signers u0) (err u1)))
-            )
-            (ok signer)
-       )
-    )
-)
-
-;; A helper function to unwrap signer value from an ok response
-;; @param signer;
-;; @returns {signer: (buff 33), weight: uint}
-(define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-    (unwrap-panic signer)
-)
-
-;; A helper function to determine whether the provided signer is an error.
-;; @param signer;
-;; @returns bool
-(define-read-only (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-  (is-err signer)
-)
-
-;; Accumulates weight of signers
-;; @param signer
-;; @accumulator
-(define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
-    (+ accumulator (get weight signer))
-)
-
-;; This function takes message-hash and proof data and reverts if proof is invalid
-;; The signers and signatures should be sorted by signer address in ascending order
-;; @param message-hash; The hash of the message that was signed
-;; @param signers; The weighted signers
-;; @param signatures The sorted signatures data
-(define-private (validate-signatures
-                (message-hash (buff 32))
-                (signers {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                })
-                (signatures (list 100 (buff 65))
-))
-    (begin
-        ;; Fill temp variables with data will be used in loops
-        (var-set temp-hash message-hash)
-        (var-set temp-signers (get signers signers))
-        (let
-            (
-                (signers-raw (map signature-to-signer signatures))
-                (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
-            )
-            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH) (unwrap-err-panic (unwrap-panic signer-err)))))
-            (let
-                (
-                    ;; Convert signatures to signers
-                    (signers- (map unwrap-signer signers-raw))
-                    ;; Total weight of signatures provided
-                    (total-weight (fold accumulate-weights signers- u0))
-                )
-
-                ;; Reset temp principal var
-                (var-set temp-pub NULL-PUB)
-                ;; Signers need to be in strictly increasing order
-                (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-                ;; Reset temp vars
-                (var-set temp-hash 0x00)
-                (var-set temp-signers (list))
-                (var-set temp-pub NULL-PUB)
-                ;; total-weight must be bigger than the signers threshold
-                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
-                (ok true)
-            )
-        )
-    )
-)
-
 
 ;; ########################
 ;; ### Proof validation ###
@@ -430,37 +248,6 @@
 
 (define-constant ERR-INVALID-SIGNERS (err u4051))
 
-
-;; This function takes data-hash and proof data and reverts if proof is invalid
-;; @param data-hash; The hash of the message that was signed
-;; @param proof; The multisig proof data
-;; @returns (response true) or reverts
-(define-private (validate-proof (data-hash (buff 32)) (proof {
-                signers: {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                },
-                signatures: (list 100 (buff 65))
-            }))
-    (let
-        (
-            (signers (get signers proof))
-            (signers-hash (get-signers-hash signers))
-            (signer-epoch (default-to u0 (get-epoch-by-signer-hash signers-hash)))
-            (current-epoch (get-epoch))
-            ;; True if the proof is from the latest signer set
-            (is-latest-signers (is-eq signer-epoch current-epoch))
-            (message-hash (message-hash-to-sign signers-hash data-hash))
-        )
-
-        (asserts! (is-eq (or (is-eq signer-epoch u0) (> (- current-epoch signer-epoch) (get-previous-signers-retention))) false) ERR-INVALID-SIGNERS)
-
-        (try! (validate-signatures message-hash signers (get signatures proof)))
-
-        (ok is-latest-signers)
-    )
-)
 
 ;; ########################
 ;; ### Signer rotation ####
