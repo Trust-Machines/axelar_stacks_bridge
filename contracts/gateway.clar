@@ -12,6 +12,7 @@
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
 )
+    ;; TODO: gateway-impl address validation
     (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
 )
 
@@ -20,6 +21,7 @@
     (messages (buff 4096))
     (proof (buff 16384))
 )
+    ;; TODO: gateway-impl address validation
     (contract-call? gateway-impl approve-messages messages proof)
 )
 
@@ -30,6 +32,7 @@
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
 )
+    ;; TODO: gateway-impl address validation
     (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
 )
 
@@ -38,11 +41,19 @@
     (new-signers (buff 8192))
     (proof (buff 16384))
 )
+    ;; TODO: gateway-impl address validation
     (contract-call? gateway-impl rotate-signers new-signers proof)
 )
 
 (define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
+    ;; TODO: gateway-impl address validation
     (contract-call? gateway-impl transfer-operatorship new-operator)
+)
+
+;; General purose proxy call for the future
+(define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
+    ;; TODO: gateway-impl address validation
+    (contract-call? gateway-impl dispatch fn data)
 )
 
 ;; ######################

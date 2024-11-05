@@ -7,6 +7,7 @@
         (is-message-executed  ((string-ascii 20) (string-ascii 128)) (response bool uint))
         (rotate-signers ((buff 8192) (buff 16384)) (response bool uint))
         (transfer-operatorship (principal) (response bool uint))
+        (dispatch ((string-ascii 32) (buff 65000)) (response bool uint))
 	)
 )
 
