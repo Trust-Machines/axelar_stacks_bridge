@@ -2,10 +2,14 @@
 
 (define-constant NULL-PUB 0x00)
 
-(define-constant ERR-NOT-STARTED (err u6052))
+(define-constant proxy .gateway)
+
+(define-read-only (is-proxy) (is-eq contract-caller proxy))
 
 (define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
 
+(define-constant ERR-NOT-STARTED (err u6052))
+(define-constant ERR-UNAUTHORIZED (err u10111))
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -18,6 +22,7 @@
     (payload (buff 64000))
 )
     (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
@@ -132,6 +137,7 @@
             messages) ERR-MESSAGES-DATA))
              (data-hash (data-hash-from-messages messages_)
         ))
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
         (map approve-message messages_)
@@ -161,6 +167,7 @@
                 payload-hash: payload-hash
             }))
     )
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
@@ -236,6 +243,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
@@ -574,6 +582,7 @@
                 (new-signers-hash (get-signers-hash new-signers))
                 (new-epoch (+ (get-epoch) u1))
             )
+            (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
             (asserts! (is-none (get-epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
             (try! (validate-signers new-signers))
             (try! (update-rotation-timestamp enforce-rotation-delay))
@@ -602,6 +611,7 @@
     (proof (buff 16384))
 )
     (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (let
             (
