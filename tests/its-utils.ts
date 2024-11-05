@@ -276,7 +276,7 @@ export const getMessageHashToSign = ({
   dataHash: string;
 }) => {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "message-hash-to-sign",
     [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
     address1
@@ -296,7 +296,7 @@ export function signAndApproveMessages({
   const signersHash = getSignersHash({ proofSigners });
   const messageHashToSign = (() => {
     const { result } = simnet.callReadOnlyFn(
-      "gateway",
+      "gateway-impl",
       "message-hash-to-sign",
       [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
       address1

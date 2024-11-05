@@ -95,27 +95,7 @@
 (define-data-var temp-pub (buff 33) NULL-PUB)
 (define-data-var temp-hash (buff 32) 0x00)
 (define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
-
-;; Compute the message hash that is signed by the weighted signers
-;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
-;; @param signers-hash; The hash of the weighted signers that sign off on the data
-;; @param data-hash; The hash of the data
-;; @returns (buff 32); The message hash to be signed
-(define-read-only (message-hash-to-sign (signers-hash (buff 32)) (data-hash (buff 32)))
-    (keccak256
-        (concat
-            (unwrap-panic (to-consensus-buff? "Stacks Signed Message"))
-            (concat
-                (get-domain-separator)
-                (concat
-                    signers-hash
-                    data-hash
-                )
-            )
-        )
-    )
-)
-
+ 
 ;; Helper function to build keccak256 data-hash from signers
 ;; @param signers;
 ;; @returns (response (buff 32))
