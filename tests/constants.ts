@@ -100,3 +100,5 @@ export const ITF_ERRORS = {
   "ERR-INVALID-MINTER": Cl.uint(1052),
   "ERR-NOT-MINTER": Cl.uint(1053),
 };
+
+export const BURN_ADDRESS = "ST000000000000000000002AMW42H";

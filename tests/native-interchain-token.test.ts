@@ -1,23 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  getTokenId,
-  mintNIT,
-  setupNIT,
-  giveToken,
-  takeToken,
-  getTokenFlowIn,
-  getTokenFlowOut,
-  setTokenFlowLimit,
-  nextEpoch,
-  getFlowLimit,
-} from "./its-utils";
+import { getTokenId, mintNIT, setupNIT, setTokenFlowLimit } from "./its-utils";
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
-import { NIT_ERRORS } from "./constants";
+import { BURN_ADDRESS, NIT_ERRORS } from "./constants";
 import { runFlowLimitsSuite } from "./token-manager-utils";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
-const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 const contractName = "native-interchain-token";
 
@@ -49,7 +37,7 @@ describe("Native Interchain Token", () => {
     it("revert on init if service is address(0)", () => {
       expect(
         setupNIT({
-          itsAddress: "ST000000000000000000002AMW42H",
+          itsAddress: BURN_ADDRESS,
           tokenId,
         }).result
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);

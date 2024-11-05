@@ -25,6 +25,7 @@ import {
   MetadataVersion,
   TRUSTED_CHAIN,
   ITS_HUB_ROUTING_IDENTIFIER,
+  BURN_ADDRESS,
 } from "./constants";
 
 export function setupTokenManager({
@@ -193,6 +194,9 @@ export function enableTokenManager({
       address1
     ).result
   ).toBeOk(Cl.bool(true));
+  return {
+    enableTokenTx,
+  };
 }
 
 export function getTokenId(
@@ -777,20 +781,22 @@ export function setupNIT({
 export function approveDeployNativeInterchainToken({
   tokenId,
   proofSigners,
-  minter = "ST000000000000000000002AMW42H",
-  operator = "ST000000000000000000002AMW42H",
+  minter = BURN_ADDRESS,
+  operator = BURN_ADDRESS,
+  supply = 0,
 }: {
   tokenId: BufferCV;
   proofSigners: Signers;
   minter?: string;
   operator?: string;
+  supply?: number;
 }) {
   const payload = Cl.tuple({
     decimals: Cl.uint(6),
     minter: Cl.address(minter),
     name: Cl.stringAscii("Nitter"),
     operator: Cl.address(operator),
-    supply: Cl.uint(0),
+    supply: Cl.uint(supply),
     symbol: Cl.stringAscii("NIT"),
     "token-address": Cl.address(`${deployer}.native-interchain-token`),
     "token-id": tokenId,
@@ -933,6 +939,10 @@ export function setupService(proofSigners: Signers) {
           }),
           Cl.tuple({
             "chain-name": Cl.stringAscii("ethereum"),
+            address: Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
+          }),
+          Cl.tuple({
+            "chain-name": Cl.stringAscii("avalanche"),
             address: Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           }),
         ]),

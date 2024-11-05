@@ -10,8 +10,15 @@ import {
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
 import { gatewayImplCV, getSigners } from "./util";
-import { deployInterchainToken } from "./itf-utils";
-import { ITF_ERRORS } from "./constants";
+import {
+  factoryDeployInterchainToken,
+  deployRemoteCanonicalInterchainToken,
+  factoryDeployRemoteInterchainToken,
+  getCanonicalInterChainTokenId,
+  getInterchainTokenId,
+  registerCanonicalInterchainToken,
+} from "./itf-utils";
+import { BURN_ADDRESS, ITF_ERRORS } from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -44,26 +51,10 @@ describe("interchain-token-factory", () => {
     it("deploys a lock unlock token with its manager", () => {
       setupTokenManager({});
 
-      const tokenId = (
-        simnet.callReadOnlyFn(
-          "interchain-token-factory",
-          "get-canonical-interchain-token-id",
-          [Cl.address(`${deployer}.sample-sip-010`)],
-          address1
-        ).result as ResponseOkCV<BufferCV>
-      ).value;
+      const tokenId = getCanonicalInterChainTokenId({}).value;
 
-      const deployTx = simnet.callPublicFn(
-        "interchain-token-factory",
-        "register-canonical-interchain-token",
-        [
-          gatewayImplCV,
-          Cl.address(`${deployer}.sample-sip-010`),
-          Cl.address(`${deployer}.token-manager`),
-          Cl.uint(1000),
-        ],
-        address1
-      );
+      const deployTx = registerCanonicalInterchainToken({});
+
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
       enableTokenManager({
@@ -71,17 +62,7 @@ describe("interchain-token-factory", () => {
         tokenId,
       });
 
-      const remoteDeployTx = simnet.callPublicFn(
-        "interchain-token-factory",
-        "deploy-remote-canonical-interchain-token",
-        [
-          gatewayImplCV,
-          Cl.address(`${deployer}.sample-sip-010`),
-          Cl.stringAscii("ethereum"),
-          Cl.uint(100),
-        ],
-        address1
-      );
+      const remoteDeployTx = deployRemoteCanonicalInterchainToken({});
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
     });
@@ -99,19 +80,17 @@ describe("interchain-token-factory", () => {
       ],
       address1
     ).result as BufferCV;
-    const tokenId = (
-      simnet.callReadOnlyFn(
-        "interchain-token-factory",
-        "get-interchain-token-id",
-        [Cl.address(address1), salt],
-        address1
-      ).result as ResponseOkCV<BufferCV>
-    ).value;
+
+    const tokenId = getInterchainTokenId({
+      salt,
+      deployer: Cl.address(address1),
+      sender: address1,
+    }).value;
     it("deploys a mint burn token", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
       });
@@ -134,20 +113,12 @@ describe("interchain-token-factory", () => {
         }).result
       ).toBeOk(Cl.bool(true));
 
-      const remoteDeployTx = simnet.callPublicFn(
-        "interchain-token-factory",
-        "deploy-remote-interchain-token",
-        [
-          gatewayImplCV,
-          Cl.buffer(originalSalt),
-          Cl.bufferFromHex("0x" + "00".repeat(20)),
-          Cl.stringAscii("ethereum"),
-          Cl.uint(100),
-          Cl.address(`${deployer}.native-interchain-token`),
-          Cl.address(`${deployer}.native-interchain-token`),
-        ],
-        address1
-      );
+      const remoteDeployTx = factoryDeployRemoteInterchainToken({
+        salt: originalSalt,
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.token-manager`,
+        sender: address1,
+      });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
     });
@@ -156,7 +127,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: randomBytes(32),
         sender: address1,
         minterAddress: `${deployer}.interchain-token-service`,
@@ -168,7 +139,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
@@ -180,11 +151,11 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
-        minterAddress: "ST000000000000000000002AMW42H",
+        minterAddress: BURN_ADDRESS,
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -195,7 +166,7 @@ describe("interchain-token-factory", () => {
         tokenId,
         minter: address1,
       });
-      const deployTx = deployInterchainToken({
+      const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
@@ -206,35 +177,28 @@ describe("interchain-token-factory", () => {
       const { payload } = approveDeployNativeInterchainToken({
         tokenId,
         proofSigners,
+        minter: address1,
       });
 
-      // expect(
-      //   executeDeployInterchainToken({
-      //     messageId: "approved-native-interchain-token-deployment-message",
-      //     gasValue: 100,
-      //     payload: Cl.serialize(payload),
-      //     tokenAddress: `${deployer}.native-interchain-token`,
-      //     sourceChain: "stacks",
-      //     sourceAddress: "interchain-token-service",
-      //   }).result
-      // ).toBeOk(Cl.bool(true));
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          gasValue: 100,
+          payload: Cl.serialize(payload),
+          tokenAddress: `${deployer}.native-interchain-token`,
+          sourceChain: "stacks",
+          sourceAddress: "interchain-token-service",
+        }).result
+      ).toBeOk(Cl.bool(true));
 
-      const remoteDeployTx = simnet.callPublicFn(
-        "interchain-token-factory",
-        "deploy-remote-interchain-token",
-        [
-          gatewayImplCV,
-          Cl.buffer(originalSalt),
-          Cl.bufferFromHex("0x" + "00".repeat(20)),
-          Cl.stringAscii("ethereum"),
-          Cl.uint(100),
-          Cl.address(`${deployer}.native-interchain-token`),
-          Cl.address(`${deployer}.native-interchain-token`),
-        ],
-        address1
-      );
-      // TODO: ask Rares about setting a remote minter to the zero address being allowed in the Solidity impl
-      // expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+      const remoteDeployTx = factoryDeployRemoteInterchainToken({
+        salt: originalSalt,
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.token-manager`,
+        sender: address1,
+      });
+
+      expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
     });
   });
 });

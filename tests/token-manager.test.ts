@@ -5,7 +5,7 @@ import {
   setupTokenManager,
   transferSip010,
 } from "./its-utils";
-import { TOKEN_MANAGER_ERRORS } from "./constants";
+import { BURN_ADDRESS, TOKEN_MANAGER_ERRORS } from "./constants";
 import { Cl } from "@stacks/transactions";
 import { runFlowLimitsSuite } from "./token-manager-utils";
 
@@ -22,7 +22,7 @@ describe("example tests", () => {
   it("Should revert on token manager deployment with invalid service address", async () => {
     expect(
       setupTokenManager({
-        itsAddress: "ST000000000000000000002AMW42H",
+        itsAddress: BURN_ADDRESS,
         operator: null,
       }).result
     ).toBeErr(TOKEN_MANAGER_ERRORS["ERR-INVALID-PARAMS"]);
