@@ -9,7 +9,7 @@ import {
   setupTokenManager,
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
-import { gatewayImpl, getSigners } from "./util";
+import { gatewayImplCV, getSigners } from "./util";
 import { deployInterchainToken } from "./itf-utils";
 import { ITF_ERRORS } from "./constants";
 
@@ -57,7 +57,7 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory",
         "register-canonical-interchain-token",
         [
-          gatewayImpl,
+          gatewayImplCV,
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.address(`${deployer}.token-manager`),
           Cl.uint(1000),
@@ -75,7 +75,7 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory",
         "deploy-remote-canonical-interchain-token",
         [
-          gatewayImpl,
+          gatewayImplCV,
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.stringAscii("ethereum"),
           Cl.uint(100),
@@ -138,7 +138,7 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory",
         "deploy-remote-interchain-token",
         [
-          gatewayImpl,
+          gatewayImplCV,
           Cl.buffer(originalSalt),
           Cl.bufferFromHex("0x" + "00".repeat(20)),
           Cl.stringAscii("ethereum"),
@@ -223,7 +223,7 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory",
         "deploy-remote-interchain-token",
         [
-          gatewayImpl,
+          gatewayImplCV,
           Cl.buffer(originalSalt),
           Cl.bufferFromHex("0x" + "00".repeat(20)),
           Cl.stringAscii("ethereum"),

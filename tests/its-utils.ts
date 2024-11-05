@@ -16,7 +16,7 @@ const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { deployGateway, gatewayImpl, makeProofCV, signersToCv } from "./util";
+import { deployGateway, gatewayImplCV, makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -95,7 +95,7 @@ export function deployTokenManager({
     "interchain-token-service",
     "deploy-token-manager",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
@@ -176,7 +176,7 @@ export function enableTokenManager({
     "interchain-token-service",
     "process-deploy-token-manager-from-stacks",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
@@ -308,7 +308,7 @@ export function signAndApproveMessages({
   const { result: approveResult } = simnet.callPublicFn(
     "gateway",
     "approve-messages",
-    [gatewayImpl, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    [gatewayImplCV, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
     address1
   );
 
@@ -348,7 +348,7 @@ export function deployRemoteInterchainToken({
     "interchain-token-service",
     "deploy-remote-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.stringAscii(name),
@@ -380,7 +380,7 @@ export function executeDeployInterchainToken({
     "interchain-token-service",
     "execute-deploy-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -478,7 +478,7 @@ export function deployInterchainToken({
     "interchain-token-service",
     "deploy-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
@@ -516,7 +516,7 @@ export function executeDeployTokenManager({
     "interchain-token-service",
     "execute-deploy-token-manager",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -557,7 +557,7 @@ export function interchainTransfer({
     "interchain-token-service",
     "interchain-transfer",
     [
-      gatewayImpl,
+      gatewayImplCV,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -643,7 +643,7 @@ export function executeReceiveInterchainToken({
     "interchain-token-service",
     "execute-receive-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -896,7 +896,7 @@ export function callContractWithInterchainToken({
     "interchain-token-service",
     "call-contract-with-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       tokenManagerAddress,
       tokenAddress,
       tokenId,

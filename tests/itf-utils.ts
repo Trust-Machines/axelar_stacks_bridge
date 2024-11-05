@@ -1,5 +1,5 @@
 import { Cl } from "@stacks/transactions";
-import { gatewayImpl } from "./util";
+import { gatewayImplCV } from "./util";
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 
@@ -22,7 +22,7 @@ export function deployInterchainToken({
     "interchain-token-factory",
     "deploy-interchain-token",
     [
-      gatewayImpl,
+      gatewayImplCV,
       Cl.buffer(salt),
       Cl.address(tokenAddress),
       Cl.uint(initialSupply),

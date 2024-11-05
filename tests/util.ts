@@ -227,4 +227,4 @@ export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: 
     return signers;
 }
 
-export const gatewayImpl = contractPrincipalCV(accounts.get("deployer")!, "gateway-impl");
+export const gatewayImplCV = contractPrincipalCV(accounts.get("deployer")!, "gateway-impl");
