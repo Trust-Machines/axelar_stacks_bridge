@@ -240,6 +240,16 @@
     )
 )
 
+(define-public (emit-transfer-operatorship
+        (new-operator principal)
+) 
+    (begin 
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print {type: "transfer-operatorship", new-operator: new-operator})
+        (ok true)
+    )
+)
+
 ;; General purpose event emitter for future
 (define-public (emit-str (o (string-ascii 4096))) 
     (begin

@@ -232,7 +232,7 @@
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
-        (print {type: "transfer-operatorship", new-operator: new-operator})
+        (try! (contract-call? .gateway-storage emit-transfer-operatorship new-operator))
         (ok true)
     )
 )

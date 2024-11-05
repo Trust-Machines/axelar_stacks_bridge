@@ -892,6 +892,7 @@ describe("gateway tests", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
+      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(transferOperatorshipEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'transfer-operatorship',
         newOperator: contractCaller
