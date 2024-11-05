@@ -270,6 +270,7 @@ describe("gateway tests", () => {
 
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
+      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'signers-rotated',
         epoch: 2,

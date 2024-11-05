@@ -574,12 +574,7 @@
             (try! (contract-call? .gateway-storage set-epoch new-epoch))
             (try! (contract-call? .gateway-storage set-signer-hash-by-epoch new-epoch new-signers-hash))
             (try! (contract-call? .gateway-storage set-epoch-by-signer-hash new-signers-hash new-epoch))
-            (print {
-                type: "signers-rotated",
-                epoch: new-epoch,
-                signers-hash: new-signers-hash,
-                signers: new-signers
-            })
+            (try! (contract-call? .gateway-storage emit-signers-rotated new-epoch new-signers new-signers-hash))
             (ok true)
         )
 )

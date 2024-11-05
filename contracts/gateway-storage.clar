@@ -219,6 +219,27 @@
     )
 )
 
+(define-public (emit-signers-rotated
+        (new-epoch uint)
+        (new-signers {
+                signers: (list 100 {signer: (buff 33), weight: uint}),
+                threshold: uint,
+                nonce: (buff 32)
+        })
+        (new-signers-hash (buff 32))
+) 
+    (begin 
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print {
+            type: "signers-rotated",
+            epoch: new-epoch,
+            signers-hash: new-signers-hash,
+            signers: new-signers
+        })
+        (ok true)
+    )
+)
+
 ;; General purpose event emitter for future
 (define-public (emit-str (o (string-ascii 4096))) 
     (begin
