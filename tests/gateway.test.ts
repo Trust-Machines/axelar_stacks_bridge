@@ -17,7 +17,7 @@ describe("gateway tests", () => {
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
       return cvToJSON(result).value;
     })();
 
@@ -252,7 +252,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -284,7 +284,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -310,7 +310,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -327,7 +327,7 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -353,7 +353,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -370,7 +370,7 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -398,7 +398,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -424,7 +424,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -450,7 +450,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -480,7 +480,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -527,7 +527,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -574,7 +574,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -599,7 +599,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -624,7 +624,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -670,7 +670,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -701,7 +701,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -755,7 +755,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -791,7 +791,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -815,7 +815,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -841,7 +841,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -865,7 +865,7 @@ describe("gateway tests", () => {
       })();
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
