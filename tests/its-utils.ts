@@ -260,7 +260,7 @@ export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
 }
 export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "get-signers-hash",
     [signersToCv(proofSigners)],
     address1

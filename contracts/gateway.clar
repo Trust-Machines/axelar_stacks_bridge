@@ -96,17 +96,6 @@
 (define-data-var temp-hash (buff 32) 0x00)
 (define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
 
-;; Helper function to build keccak256 of signers
-;; @param signers;
-;; @returns (response (buff 32))
-(define-read-only (get-signers-hash (signers {
-                signers: (list 100 {signer: (buff 33), weight: uint}),
-                threshold: uint,
-                nonce: (buff 32)
-            })
-)
-    (keccak256 (unwrap-panic (to-consensus-buff? signers)))
-)
 
 
 ;; ##########################

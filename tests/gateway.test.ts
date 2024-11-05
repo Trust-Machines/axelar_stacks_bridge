@@ -12,7 +12,7 @@ describe("gateway tests", () => {
     const proofSigners = getSigners(0, 1, 1, 2, "1")
 
     const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
       return cvToJSON(result).value;
     })();
 
@@ -106,7 +106,7 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -165,7 +165,7 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -247,7 +247,7 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -279,7 +279,7 @@ describe("gateway tests", () => {
       const newSigners = { ...proofSigners }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -305,7 +305,7 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -348,7 +348,7 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -393,7 +393,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -419,7 +419,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -445,7 +445,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -475,7 +475,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(0, 0, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -522,7 +522,7 @@ describe("gateway tests", () => {
       }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -569,7 +569,7 @@ describe("gateway tests", () => {
       }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -594,7 +594,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 15, 1, 0, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -619,7 +619,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 15, 1, 6, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -665,7 +665,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(25, 30, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -696,7 +696,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(25, 30, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -750,7 +750,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 20, 1, 6, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -786,7 +786,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -810,7 +810,7 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(22, 30, 1, 3, "3")
 
       const signersHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -836,7 +836,7 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
@@ -860,7 +860,7 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(22, 30, 1, 3, "3")
 
       const signersHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
