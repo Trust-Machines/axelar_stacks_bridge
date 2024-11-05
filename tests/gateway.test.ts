@@ -1,7 +1,7 @@
 
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV } from "./util";
 import { Signers } from "./types";
 
@@ -75,6 +75,7 @@ describe("gateway tests", () => {
 
     const { result, events } = simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
     expect(result).toBeOk(boolCV(true));
+    expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage');
     expect(contractCallEventToObj(events[0].data.raw_value!)).toStrictEqual({
       type: 'contract-call',
       sender: contractCaller,

@@ -6,6 +6,13 @@
 
 (define-read-only (is-proxy) (is-eq contract-caller (var-get proxy)))
 
+(define-read-only (is-impl) (is-eq contract-caller (var-get impl)))
+
+;; ######################
+;; ######################
+;; ####### Storage ######
+;; ######################
+;; ######################
 
 ;; Constructor flag
 (define-data-var is-started bool false)
@@ -145,5 +152,31 @@
     (begin
         (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set messages command-id message-hash))
+    )
+)
+
+;; ######################
+;; ######################
+;; ####### Events #######
+;; ######################
+;; ######################
+
+(define-public (emit-contract-call 
+        (sender principal)
+        (destination-chain (string-ascii 20))
+        (destination-contract-address (string-ascii 128))
+        (payload (buff 64000))
+)
+    (begin 
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (print {
+            type: "contract-call",
+            sender: sender,
+            destination-chain: destination-chain,
+            destination-contract-address: destination-contract-address,
+            payload-hash: (keccak256 payload),
+            payload: payload
+        })
+        (ok true)
     )
 )

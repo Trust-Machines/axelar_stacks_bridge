@@ -24,14 +24,7 @@
     (begin
         (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (print {
-            type: "contract-call",
-            sender: tx-sender,
-            destination-chain: destination-chain,
-            destination-contract-address: destination-contract-address,
-            payload-hash: (keccak256 payload),
-            payload: payload
-        })
+        (try! (contract-call? .gateway-storage emit-contract-call tx-sender destination-chain destination-contract-address payload))
         (ok true)
     )
 )
