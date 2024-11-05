@@ -2,6 +2,11 @@
 
 (define-constant NULL-PUB 0x00)
 
+(define-constant ERR-NOT-STARTED (err u6052))
+
+(define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
+
+
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
 ;; @param destination-chain; The chain where the destination contract exists. A registered chain name on Axelar must be used here
@@ -625,11 +630,3 @@
     )
 )
 
-;; ######################
-;; ######################
-;; ### Initialization ###
-;; ######################
-;; ######################
-
-(define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
-(define-constant ERR-NOT-STARTED (err u6052))
