@@ -1,7 +1,5 @@
 (use-trait gateway-trait .traits.gateway-trait)
 
-(define-constant NULL-PUB 0x00)
-
 (define-public (call-contract
     (gateway-impl <gateway-trait>)
     (destination-chain (string-ascii 20))
@@ -16,10 +14,6 @@
 ;; ##### Messaging ######
 ;; ######################
 ;; ######################
-
-(define-constant ERR-MESSAGES-DATA (err u9051))
-(define-constant ERR-MESSAGE-NOT-FOUND (err u9052))
-(define-constant MESSAGE-EXECUTED 0x01)
 
 
 (define-public (approve-messages
@@ -91,38 +85,28 @@
 ;; The minimum delay required between rotations
 (define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
 
-;; Helper vars to use within loops
-(define-data-var temp-pub (buff 33) NULL-PUB)
-(define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
-
-
 
 ;; ##########################
 ;; ### Signers validation ###
 ;; ##########################
 
-(define-constant ERR-SIGNERS-LEN (err u2051))
-(define-constant ERR-SIGNER-WEIGHT (err u2053))
-(define-constant ERR-SIGNERS-ORDER (err u2054))
-(define-constant ERR-SIGNERS-THRESHOLD (err u2055))
-(define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u2056))
+
 
 
 ;; ############################
 ;; ### Signature validation ###
 ;; ############################
 
-(define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
-(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
+
+
+
 
 
 ;; ########################
 ;; ### Proof validation ###
 ;; ########################
 
-(define-constant ERR-INVALID-SIGNERS (err u4051))
+
 
 
 ;; ########################
