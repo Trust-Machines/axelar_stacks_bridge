@@ -46,7 +46,7 @@ describe("gateway tests", () => {
   });
 
   it("queries", () => {
-    const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller);
+    const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway-impl", "get-is-started", [], contractCaller);
     expect(getIsStarted1).toBeBool(false);
 
     deployGateway(getSigners(0, 10, 1, 10, "1"));
@@ -56,7 +56,7 @@ describe("gateway tests", () => {
     expect(Buffer.from((simnet.callReadOnlyFn("gateway", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
     expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
     expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
-    expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller).result).toBeBool(true);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-is-started", [], contractCaller).result).toBeBool(true);
     expect(simnet.callReadOnlyFn("gateway-impl", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
   });
 

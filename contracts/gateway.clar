@@ -123,8 +123,6 @@
 
 (define-constant ERR-STARTED (err u6051))
 
-(define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
-
 ;; Constructor function
 ;; @param signers; The data for the new signers.
 ;; @param operator_
@@ -147,7 +145,7 @@
                 nonce: (buff 32)
             } signers) ERR-SIGNERS-DATA))
         )
-        (asserts! (is-eq (get-is-started) false) ERR-STARTED)
+        (asserts! (is-eq (contract-call? .gateway-storage get-is-started) false) ERR-STARTED)
         (try! (contract-call? .gateway-impl rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
