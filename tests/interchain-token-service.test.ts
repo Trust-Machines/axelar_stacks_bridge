@@ -2238,36 +2238,6 @@ describe("Interchain Token Service", () => {
       });
     }
 
-    function receiveLockUnlockToken(amount: number) {
-      const messageId = Buffer.from(randomBytes(32)).toString("hex");
-      const sender = deployer;
-      const recipient = address1;
-      const tokenAddress = `${deployer}.sample-sip-010`;
-
-      const payload = buildIncomingInterchainTransferPayload({
-        amount,
-        recipient,
-        sender,
-        tokenId,
-        data: Cl.bufferFromHex("0x"),
-        gasValue: 1000,
-      });
-      approveReceiveInterchainTransfer({
-        payload,
-        proofSigners,
-        messageId,
-      });
-      return executeReceiveInterchainToken({
-        messageId: messageId,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        tokenManager: Cl.address(
-          `${deployer}.token-manager`
-        ) as ContractPrincipalCV,
-        token: Cl.address(tokenAddress) as ContractPrincipalCV,
-        payload: Cl.buffer(Cl.serialize(payload)),
-      });
-    }
     it("Should be able to send token only if it does not trigger the mint limit", () => {
       setupTokenManager({});
       deployTokenManager({

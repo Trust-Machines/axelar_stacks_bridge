@@ -1141,3 +1141,24 @@ export function transferSip010({
     sender
   );
 }
+
+export function getHelloWorldValue() {
+  return simnet.callReadOnlyFn("hello-world", "get-value", [], address1)
+    .result as TupleCV<{
+    "source-chain": StringAsciiCV;
+    "message-id": StringAsciiCV;
+    "source-address": StringAsciiCV;
+    "source-address-its": BufferCV;
+    payload: BufferCV;
+  }>;
+}
+
+export function getCommandId({
+  sourceChain,
+  messageId,
+}: {
+  sourceChain: string;
+  messageId: string;
+}) {
+  return keccak256(Cl.serialize(Cl.stringAscii(`${sourceChain}_${messageId}`)));
+}

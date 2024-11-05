@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   approveDeployNativeInterchainToken,
+  approveReceiveInterchainTransfer,
+  buildIncomingInterchainTransferPayload,
   buildOutgoingGMPMessage,
   enableTokenManager,
   executeDeployInterchainToken,
+  executeReceiveInterchainToken,
+  getCommandId,
+  getHelloWorldValue,
   interchainTransfer,
   keccak256,
   mintNIT,
@@ -33,6 +38,7 @@ import {
 } from "./constants";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+
 const deployer = accounts.get("deployer")!;
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
@@ -495,16 +501,100 @@ describe("Interchain Token Service Full Flow", () => {
           }),
         );
       }
-      it("Should send some tokens to another chain via ITS", async () => {
+      it("Should send some tokens to another chain via ITS Hub", async () => {
         const destChain = otherChains[0];
 
         transferToChain({ chain: destChain, gas: gasValue });
       });
 
-      it("Should send some tokens to multiple chains via ITS", async () => {
+      it("Should send some tokens to multiple chains via ITS Hub", async () => {
         for (let i = 0; i < otherChains.length; i++) {
           transferToChain({ chain: otherChains[i], gas: gasValues[i] });
         }
+      });
+    });
+
+    /**
+     * Change the minter to another address
+     */
+    it("Should be able to change the token minter", async () => {
+      // TODO: ask rares if we need transfer mintership functionality
+    });
+
+    it("Should execute an application with interchain transfer via ITS Hub", async () => {
+      const amount = 1234;
+      const sourceChain = otherChains[0];
+      const gasValue = 6789; // Set this to the gas quote for the interchain call in production
+      const recipient = `${deployer}.hello-world`;
+      const sender = address1;
+      const messageId = Buffer.from(randomBytes(32)).toString("hex");
+      const data = Cl.bufferFromHex("0x1234");
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data,
+        gasValue,
+        sourceChain,
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+        messageId,
+      });
+      const receiveTokenTx = executeReceiveInterchainToken({
+        messageId,
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        tokenManager: Cl.contractPrincipal(deployer, "native-interchain-token"),
+        token: Cl.contractPrincipal(deployer, "native-interchain-token"),
+        payload: Cl.buffer(Cl.serialize(payload)),
+        destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
+      });
+      expect(receiveTokenTx.result).toBeOk(
+        Cl.buffer(
+          keccak256(Cl.serialize(Cl.stringAscii("its-execute-success"))),
+        ),
+      );
+
+      const [gmpValidateEvent, tokenMintEvent, tokenReceivedNotification] =
+        receiveTokenTx.events;
+      expect(gmpValidateEvent.data.value).toBeTuple({
+        type: Cl.stringAscii("message-executed"),
+        "command-id": Cl.buffer(
+          getCommandId({ sourceChain: TRUSTED_CHAIN, messageId }),
+        ),
+        "message-id": Cl.stringAscii(messageId),
+        "source-chain": Cl.stringAscii(TRUSTED_CHAIN),
+      });
+      expect(tokenMintEvent).toStrictEqual({
+        event: "ft_mint_event",
+        data: {
+          amount: String(amount),
+          asset_identifier: `${deployer}.native-interchain-token::itscoin`,
+          recipient: `${deployer}.hello-world`,
+        },
+      });
+
+      expect(tokenReceivedNotification.data.value).toBeTuple({
+        type: Cl.stringAscii("interchain-transfer-received"),
+        amount: Cl.uint(amount),
+        data: Cl.buffer(keccak256(data.buffer)),
+        "destination-address": Cl.address(`${deployer}.hello-world`),
+        "source-address": Cl.buffer(Cl.serialize(Cl.address(sender))),
+        "source-chain": Cl.stringAscii(sourceChain),
+        "token-id": tokenId,
+      });
+
+      const helloWorldValue = getHelloWorldValue();
+
+      expect(helloWorldValue).toBeTuple({
+        "source-chain": Cl.stringAscii(sourceChain),
+        "message-id": Cl.stringAscii(messageId),
+        "source-address": Cl.stringAscii(""),
+        "source-address-its": Cl.buffer(Cl.serialize(Cl.address(sender))),
+        payload: data,
       });
     });
   });
