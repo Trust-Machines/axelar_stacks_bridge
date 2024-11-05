@@ -45,29 +45,6 @@
     (contract-call? gateway-impl transfer-operatorship new-operator)
 )
 
-
-;; Current signers epoch
-(define-read-only (get-epoch) (contract-call? .gateway-storage get-epoch))
-
-;; The timestamp for the last signer rotation
-(define-read-only (get-last-rotation-timestamp) (contract-call? .gateway-storage get-last-rotation-timestamp))
-
-;; The map of signer hash by epoch
-(define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (contract-call? .gateway-storage get-signer-hash-by-epoch signer-epoch))
-
-;; The map of epoch by signer hash
-(define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (contract-call? .gateway-storage get-epoch-by-signer-hash signer-hash))
-
-;; Previous signers retention. 0 means only the current signers are valid
-(define-read-only (get-previous-signers-retention) (contract-call? .gateway-storage get-previous-signers-retention))
-
-;; The domain separator for the signer proof
-(define-read-only (get-domain-separator) (contract-call? .gateway-storage get-domain-separator))
-
-;; The minimum delay required between rotations
-(define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
-
-
 ;; ######################
 ;; ######################
 ;; ### Initialization ###

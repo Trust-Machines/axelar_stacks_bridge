@@ -53,9 +53,9 @@ describe("gateway tests", () => {
 
     // check init values 
     expect(simnet.callReadOnlyFn("gateway-impl", "get-operator", [], operatorAddress).result).toBePrincipal(operatorAddress);
-    expect(Buffer.from((simnet.callReadOnlyFn("gateway", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
-    expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
-    expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
+    expect(Buffer.from((simnet.callReadOnlyFn("gateway-impl", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
     expect(simnet.callReadOnlyFn("gateway-impl", "get-is-started", [], contractCaller).result).toBeBool(true);
     expect(simnet.callReadOnlyFn("gateway-impl", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
   });
