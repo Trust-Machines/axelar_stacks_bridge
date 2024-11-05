@@ -614,7 +614,7 @@
                     signatures: (list 100 (buff 65))
                 } proof) ERR-PROOF-DATA))
                 (data-hash (data-hash-from-signers new-signers_))
-                (enforce-rotation-delay (not (is-eq contract-caller (get-operator))))
+                (enforce-rotation-delay (not (is-eq tx-sender (get-operator))))
                 (is-latest-signers (try! (validate-proof data-hash proof_)))
             )
             ;; if the caller is not the operator the signer set provided in proof must be the latest

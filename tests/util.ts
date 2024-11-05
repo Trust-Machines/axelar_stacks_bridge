@@ -2,6 +2,7 @@ import {
     boolCV,
     bufferCV,
     bufferCVFromString,
+    contractPrincipalCV,
     createStacksPrivateKey,
     cvToJSON,
     hexToCV,
@@ -225,3 +226,5 @@ export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: 
 
     return signers;
 }
+
+export const gatewayImpl = contractPrincipalCV(accounts.get("deployer")!, "gateway-impl");

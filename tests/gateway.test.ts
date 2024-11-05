@@ -2,7 +2,7 @@
 import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { beforeEach, describe, expect, it } from "vitest";
-import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj } from "./util";
+import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImpl } from "./util";
 import { Signers } from "./types";
 
 describe("gateway tests", () => {
@@ -38,7 +38,7 @@ describe("gateway tests", () => {
       })
     ]);
 
-    expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "validate-message", [stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
@@ -263,7 +263,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
       expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'signers-rotated',
@@ -295,7 +295,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(5054));
     });
 
@@ -321,7 +321,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
@@ -338,7 +338,7 @@ describe("gateway tests", () => {
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contractCaller);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contractCaller);
       expect(result2).toBeErr(uintCV(5055));
     });
 
@@ -364,7 +364,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
@@ -381,7 +381,7 @@ describe("gateway tests", () => {
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeOk(boolCV(true));
     });
 
@@ -409,7 +409,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
     });
 
@@ -435,7 +435,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(5051));
     });
 
@@ -461,7 +461,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operatorAddress);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operatorAddress);
       expect(result).toBeOk(boolCV(true));
     });
   });
@@ -491,7 +491,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2051))
     });
 
@@ -538,7 +538,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2053));
     });
 
@@ -585,7 +585,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2054));
     });
 
@@ -610,7 +610,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2055));
     });
 
@@ -635,7 +635,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2056));
     });
   });
@@ -654,7 +654,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3051));
     });
 
@@ -686,7 +686,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3053));
     });
 
@@ -717,7 +717,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3055));
     });
 
@@ -773,7 +773,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2054));
     });
   });
@@ -802,7 +802,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       // -------------
@@ -826,7 +826,7 @@ describe("gateway tests", () => {
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeOk(boolCV(true));
     });
 
@@ -852,7 +852,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       // -------------
@@ -876,7 +876,7 @@ describe("gateway tests", () => {
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeErr(uintCV(4051));
     });
   });

@@ -532,97 +532,14 @@
 ;; ### Signer rotation ####
 ;; ########################
 
-(define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u5051))
 (define-constant ERR-SIGNERS-DATA (err u5052))
-(define-constant ERR-PROOF-DATA (err u5053))
-(define-constant ERR-DUPLICATE-SIGNERS (err u5054))
-(define-constant ERR-NOT-LATEST-SIGNERS (err u5055))
 
-
-;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
-;; @params enforce-rotation-delay
-;; @returns (response true) or reverts
-(define-private (update-rotation-timestamp (enforce-rotation-delay bool))
-    (let
-        (
-            (last-rotation-timestamp_ (get-last-rotation-timestamp))
-            (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
-        )
-        (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (get-minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
-        (try! (contract-call? .gateway-storage set-last-rotation-timestamp current-ts))
-        (ok true)
-    )
-)
-
-;; This function rotates the current signers with a new set of signers
-;; @param new-signers The new weighted signers data
-;; @param enforce-rotation-delay If true, the minimum rotation delay will be enforced
-;; @returns (response true) or reverts
-(define-private (rotate-signers-inner (new-signers {
-                signers: (list 100 {signer: (buff 33), weight: uint}),
-                threshold: uint,
-                nonce: (buff 32)
-            }) (enforce-rotation-delay bool)
-)
-    (let
-            (
-                (new-signers-hash (get-signers-hash new-signers))
-                (new-epoch (+ (get-epoch) u1))
-            )
-            (asserts! (is-none (get-epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
-            (try! (validate-signers new-signers))
-            (try! (update-rotation-timestamp enforce-rotation-delay))
-            (try! (contract-call? .gateway-storage set-epoch new-epoch))
-            (try! (contract-call? .gateway-storage set-signer-hash-by-epoch new-epoch new-signers-hash))
-            (try! (contract-call? .gateway-storage set-epoch-by-signer-hash new-signers-hash new-epoch))
-            (print {
-                type: "signers-rotated",
-                epoch: new-epoch,
-                signers-hash: new-signers-hash,
-                signers: new-signers
-            })
-            (ok true)
-        )
-)
-
-;; Rotate the weighted signers, signed off by the latest Axelar signers.
-;; The minimum rotation delay is enforced by default, unless the caller is the gateway operator.
-;; The gateway operator allows recovery in case of an incorrect/malicious rotation, while still requiring a valid proof from a recent signer set.
-;; Rotation to duplicate signers is rejected.
-;; @param new-signers; The data for the new signers.
-;; @param proof; The proof signed by the Axelar verifiers for this command.
-;; @returns (response true) or reverts
 (define-public (rotate-signers
+    (gateway-impl <gateway-trait>)
     (new-signers (buff 8192))
     (proof (buff 16384))
 )
-    (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (let
-            (
-                (new-signers_ (unwrap! (from-consensus-buff? {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                } new-signers) ERR-SIGNERS-DATA))
-                (proof_ (unwrap! (from-consensus-buff? {
-                    signers: {
-                        signers: (list 100 {signer: (buff 33), weight: uint}),
-                        threshold: uint,
-                        nonce: (buff 32)
-                    },
-                    signatures: (list 100 (buff 65))
-                } proof) ERR-PROOF-DATA))
-                (data-hash (data-hash-from-signers new-signers_))
-                (enforce-rotation-delay (not (is-eq contract-caller (get-operator))))
-                (is-latest-signers (try! (validate-proof data-hash proof_)))
-            )
-            ;; if the caller is not the operator the signer set provided in proof must be the latest
-            (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (is-eq is-latest-signers false)) false) ERR-NOT-LATEST-SIGNERS)
-            (try! (rotate-signers-inner new-signers_ enforce-rotation-delay))
-            (ok true)
-        )
-    )
+    (contract-call? gateway-impl rotate-signers new-signers proof)
 )
 
 
