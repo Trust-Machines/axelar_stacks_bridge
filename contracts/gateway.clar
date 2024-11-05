@@ -43,19 +43,10 @@
 ;; ####################
 ;; ####################
 
-(define-constant ERR-ONLY-OPERATOR (err u1051))
-
-(define-read-only (get-operator) (contract-call? .gateway-storage get-operator))
 
 ;; Transfers operatorship to a new account
-(define-public (transfer-operatorship (new-operator principal))
-    (begin
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
-        (try! (contract-call? .gateway-storage set-operator new-operator))
-        (print {type: "transfer-operatorship", new-operator: new-operator})
-        (ok true)
-    )
+(define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
+    (contract-call? gateway-impl transfer-operatorship new-operator)
 )
 
 ;; #########################

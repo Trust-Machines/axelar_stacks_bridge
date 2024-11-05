@@ -232,7 +232,7 @@
 (define-public (transfer-operatorship (new-operator principal))
     (begin
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq contract-caller (get-operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq tx-sender (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
         (print {type: "transfer-operatorship", new-operator: new-operator})
         (ok true)

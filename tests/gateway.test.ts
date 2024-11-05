@@ -42,7 +42,7 @@ describe("gateway tests", () => {
     expect(simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
   });
 
   it("queries", () => {
@@ -52,7 +52,7 @@ describe("gateway tests", () => {
     deployGateway(getSigners(0, 10, 1, 10, "1"));
 
     // check init values 
-    expect(simnet.callReadOnlyFn("gateway", "get-operator", [], operatorAddress).result).toBePrincipal(operatorAddress);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-operator", [], operatorAddress).result).toBePrincipal(operatorAddress);
     expect(Buffer.from((simnet.callReadOnlyFn("gateway", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
     expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
     expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
@@ -884,7 +884,7 @@ describe("gateway tests", () => {
   describe("operatorship", () => {
     it("should allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
-      const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(contractCaller)], operatorAddress);
+      const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
       expect(transferOperatorshipEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'transfer-operatorship',
@@ -894,7 +894,7 @@ describe("gateway tests", () => {
 
     it("should not allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
-      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller);
       expect(result).toBeErr(uintCV(1051));
     });
   });
