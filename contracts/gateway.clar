@@ -1,5 +1,11 @@
 (use-trait gateway-trait .traits.gateway-trait)
 
+;; ######################
+;; ######################
+;; ### Proxy Calls ######
+;; ######################
+;; ######################
+
 (define-public (call-contract
     (gateway-impl <gateway-trait>)
     (destination-chain (string-ascii 20))
@@ -8,13 +14,6 @@
 )
     (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
 )
-
-;; ######################
-;; ######################
-;; ##### Messaging ######
-;; ######################
-;; ######################
-
 
 (define-public (approve-messages
     (gateway-impl <gateway-trait>)
@@ -34,26 +33,18 @@
     (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
 )
 
+(define-public (rotate-signers
+    (gateway-impl <gateway-trait>)
+    (new-signers (buff 8192))
+    (proof (buff 16384))
+)
+    (contract-call? gateway-impl rotate-signers new-signers proof)
+)
 
-
-
-;; ####################
-;; ####################
-;; ### Operatorship ###
-;; ####################
-;; ####################
-
-
-;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
     (contract-call? gateway-impl transfer-operatorship new-operator)
 )
 
-;; #########################
-;; #########################
-;; ### Weighted Multisig ###
-;; #########################
-;; #########################
 
 ;; Current signers epoch
 (define-read-only (get-epoch) (contract-call? .gateway-storage get-epoch))
@@ -77,50 +68,13 @@
 (define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
 
 
-;; ##########################
-;; ### Signers validation ###
-;; ##########################
-
-
-
-
-;; ############################
-;; ### Signature validation ###
-;; ############################
-
-
-
-
-
-
-;; ########################
-;; ### Proof validation ###
-;; ########################
-
-
-
-
-;; ########################
-;; ### Signer rotation ####
-;; ########################
-
-(define-constant ERR-SIGNERS-DATA (err u5052))
-
-(define-public (rotate-signers
-    (gateway-impl <gateway-trait>)
-    (new-signers (buff 8192))
-    (proof (buff 16384))
-)
-    (contract-call? gateway-impl rotate-signers new-signers proof)
-)
-
-
 ;; ######################
 ;; ######################
 ;; ### Initialization ###
 ;; ######################
 ;; ######################
 
+(define-constant ERR-SIGNERS-DATA (err u5052))
 (define-constant ERR-STARTED (err u6051))
 
 ;; Constructor function
