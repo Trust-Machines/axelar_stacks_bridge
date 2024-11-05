@@ -10,6 +10,7 @@
 (use-trait token-manager-trait .traits.token-manager-trait)
 (use-trait interchain-token-executable-trait .traits.interchain-token-executable-trait)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
+(use-trait gateway-trait .traits.gateway-trait)
 
 ;; token definitions
 ;;
@@ -443,6 +444,7 @@
 
 
 (define-public (process-deploy-token-manager-from-stacks
+        (gateway-impl <gateway-trait>) 
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -470,11 +472,12 @@
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (var-get its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!
-            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
+            (as-contract (contract-call? .gateway validate-message gateway-impl CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload data) wrapped-payload
             (as-contract (contract-call? .gateway validate-message
+                gateway-impl
                 (get source-chain wrapped-payload)
                 (get message-id wrapped-payload)
                 (get source-address wrapped-payload)
@@ -711,6 +714,7 @@
     ))
 
 (define-public (execute-deploy-token-manager
+        (gateway-impl <gateway-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -723,7 +727,7 @@
         (try! (require-not-paused))
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
-            (process-deploy-token-manager-from-stacks message-id source-chain source-address payload)
+            (process-deploy-token-manager-from-stacks gateway-impl message-id source-chain source-address payload)
             (process-deploy-token-manager-from-external-chain
                 token-manager
                 payload
@@ -736,6 +740,7 @@
                 gas-value))))
 
 (define-public (execute-deploy-interchain-token
+        (gateway-impl <gateway-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -752,7 +757,7 @@
         (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
-            (process-deploy-interchain-from-stacks message-id source-chain source-address payload token-address)
+            (process-deploy-interchain-from-stacks gateway-impl message-id source-chain source-address payload token-address)
             (process-deploy-interchain-from-external-chain
             ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
                 message-id
@@ -820,6 +825,7 @@
 
 
 (define-private (process-deploy-interchain-from-stacks
+        (gateway-impl <gateway-trait>)
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -876,7 +882,7 @@
             (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
         ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
         (try!
-            (as-contract (contract-call? .gateway validate-message CHAIN-NAME message-id
+            (as-contract (contract-call? .gateway validate-message gateway-impl CHAIN-NAME message-id
                 (var-get its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload payload-decoded) wrapped-payload
@@ -886,6 +892,7 @@
                     (get supply payload-decoded)
                 ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
                 (as-contract (contract-call? .gateway validate-message
+                    gateway-impl
                     (get source-chain wrapped-payload)
                     (get message-id wrapped-payload)
                     (get source-address wrapped-payload)
@@ -905,6 +912,7 @@
     ))
 
 (define-public (execute-receive-interchain-token
+        (gateway-impl <gateway-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -939,7 +947,7 @@
     (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
-        (contract-call? .gateway validate-message source-chain message-id source-address (keccak256 payload))
+        (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
     ))
     (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
     (print {

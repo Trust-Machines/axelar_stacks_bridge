@@ -100,73 +100,22 @@
                     none)))
 
 
-;; @notice Approves an array of messages, signed by the Axelar signers.
-;; @param messages; The list of messages to verify.
-;; @param proof; The proof signed by the Axelar signers for this command.
-;; @returns (response true) or err
 (define-public (approve-messages
+    (gateway-impl <gateway-trait>)
     (messages (buff 4096))
-    (proof (buff 16384)))
-    (let (
-        (proof_ (unwrap! (from-consensus-buff? {
-                signers: {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                },
-                signatures: (list 100 (buff 65))
-            } proof) ERR-SIGNERS-DATA))
-        (messages_ (unwrap! (from-consensus-buff?
-            (list 10 {
-                source-chain: (string-ascii 20),
-                message-id: (string-ascii 128),
-                source-address: (string-ascii 128),
-                contract-address: principal,
-                payload-hash: (buff 32)
-            })
-            messages) ERR-MESSAGES-DATA))
-             (data-hash (data-hash-from-messages messages_)
-        ))
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (try! (validate-proof data-hash proof_))
-        (map approve-message messages_)
-        (ok true)
-    )
+    (proof (buff 16384))
+)
+    (contract-call? gateway-impl approve-messages messages proof)
 )
 
-;; Validates if a message is approved. If message was in approved status, status is updated to executed to avoid replay.
-;; @param source-chain; The name of the source chain.
-;; @param message-id; The unique identifier of the message.
-;; @param source-address; The address of the sender on the source chain.
-;; @param payload-hash The keccak256 hash of the payload data.
-;; @returns (response true) or reverts
 (define-public (validate-message
+    (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
 )
-    (let (
-        (command-id (message-to-command-id source-chain message-id))
-        (message-hash (get-message-hash {
-                message-id: message-id,
-                source-chain: source-chain,
-                source-address: source-address,
-                contract-address: contract-caller,
-                payload-hash: payload-hash
-            }))
-    )
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
-        (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
-        (print {
-            type: "message-executed",
-            command-id: command-id,
-            source-chain: source-chain,
-            message-id: message-id,
-        })
-        (ok true)
-    )
+    (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
 )
 
 ;; Checks if a message is approved.

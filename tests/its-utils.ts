@@ -16,7 +16,7 @@ const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { deployGateway, makeProofCV, signersToCv } from "./util";
+import { deployGateway, gatewayImpl, makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -175,6 +175,7 @@ export function enableTokenManager({
     "interchain-token-service",
     "process-deploy-token-manager-from-stacks",
     [
+      gatewayImpl,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
@@ -306,7 +307,7 @@ export function signAndApproveMessages({
   const { result: approveResult } = simnet.callPublicFn(
     "gateway",
     "approve-messages",
-    [Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    [gatewayImpl, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
     address1
   );
 
@@ -377,6 +378,7 @@ export function executeDeployInterchainToken({
     "interchain-token-service",
     "execute-deploy-interchain-token",
     [
+      gatewayImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -511,6 +513,7 @@ export function executeDeployTokenManager({
     "interchain-token-service",
     "execute-deploy-token-manager",
     [
+      gatewayImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -636,6 +639,7 @@ export function executeReceiveInterchainToken({
     "interchain-token-service",
     "execute-receive-interchain-token",
     [
+      gatewayImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),

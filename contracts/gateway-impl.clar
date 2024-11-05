@@ -16,7 +16,7 @@
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (print {
             type: "contract-call",
-            sender: contract-caller,
+            sender: tx-sender,
             destination-chain: destination-chain,
             destination-contract-address: destination-contract-address,
             payload-hash: (keccak256 payload),
@@ -152,7 +152,7 @@
                 message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
-                contract-address: contract-caller,
+                contract-address: tx-sender,
                 payload-hash: payload-hash
             }))
     )

@@ -40,8 +40,8 @@ describe("gateway tests", () => {
 
     expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImpl, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "validate-message", [stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImpl, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
     expect(simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
   });
 
@@ -122,7 +122,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
@@ -140,7 +140,7 @@ describe("gateway tests", () => {
       const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
-      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImpl, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
@@ -156,7 +156,7 @@ describe("gateway tests", () => {
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // should not re-validate
-      const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImpl, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult2).toBeErr(uintCV(9052));
     });
 
@@ -181,7 +181,7 @@ describe("gateway tests", () => {
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
@@ -200,7 +200,7 @@ describe("gateway tests", () => {
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
       // re-approval should be a no-op
-      const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult2).toBeOk(boolCV(true));
       expect(approveEvents2.length).toBe(0);
 
@@ -211,7 +211,7 @@ describe("gateway tests", () => {
       expect(isExecutedBefore2).toBeOk(boolCV(false));
 
       // execute message
-      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImpl, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
@@ -227,7 +227,7 @@ describe("gateway tests", () => {
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // re-approving same message after execution should be a no-op as well
-      const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImpl, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult3).toBeOk(boolCV(true));
       expect(approveEvents3.length).toBe(0);
 
