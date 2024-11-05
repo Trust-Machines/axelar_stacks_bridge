@@ -134,7 +134,7 @@ describe("gateway tests", () => {
         payloadHash: cvToValue(payloadHash)
       });
 
-      const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
       const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
@@ -149,7 +149,7 @@ describe("gateway tests", () => {
         messageId: cvToValue(messageId),
       });
 
-      const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
       const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
@@ -193,7 +193,7 @@ describe("gateway tests", () => {
         payloadHash: cvToValue(payloadHash)
       });
 
-      const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
       const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
@@ -204,7 +204,7 @@ describe("gateway tests", () => {
       expect(approveResult2).toBeOk(boolCV(true));
       expect(approveEvents2.length).toBe(0);
 
-      const isApprovedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore2).toBeOk(boolCV(true));
 
       const isExecutedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
@@ -220,7 +220,7 @@ describe("gateway tests", () => {
         messageId: cvToValue(messageId),
       });
 
-      const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
       const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
@@ -231,7 +231,7 @@ describe("gateway tests", () => {
       expect(approveResult3).toBeOk(boolCV(true));
       expect(approveEvents3.length).toBe(0);
 
-      const isApprovedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter2).toBeOk(boolCV(false));
 
       const isExecutedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;

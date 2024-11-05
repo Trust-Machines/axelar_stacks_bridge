@@ -64,33 +64,7 @@
     (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
 )
 
-;; Checks if a message is approved.
-;; Determines whether a given message, identified by the source-chain and message-id, is approved.
-;; @param source-chain; The name of the source chain.
-;; @param message-id; The unique identifier of the message.
-;; @param source-address; The address of the sender on the source chain.
-;; @param contract-address; The address of the contract where the call will be executed.
-;; @param payload-hash; The keccak256 hash of the payload data.
-;; @returns (response bool)
-(define-read-only (is-message-approved
-    (source-chain (string-ascii 20))
-    (message-id (string-ascii 128))
-    (source-address (string-ascii 128))
-    (contract-address principal)
-    (payload-hash (buff 32))
-)
-    (let (
-            (command-id (message-to-command-id source-chain message-id))
-            (message-hash (get-message-hash {
-                message-id: message-id,
-                source-chain: source-chain,
-                source-address: source-address,
-                contract-address: contract-address,
-                payload-hash: payload-hash
-            }))
-        )
-        (ok (is-eq message-hash (get-message command-id))))
-)
+
 
 ;; Checks if a message is executed.
 ;; Determines whether a given message, identified by the source-chain and message-id is executed.
