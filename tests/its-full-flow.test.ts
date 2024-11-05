@@ -26,6 +26,7 @@ import { getSigners } from "./util";
 import {
   BURN_ADDRESS,
   MessageType,
+  MetadataVersion,
   TokenType,
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
@@ -88,10 +89,10 @@ describe("Interchain Token Service Full Flow", () => {
                 symbol: Cl.stringAscii(symbol),
                 decimals: Cl.uint(decimals),
                 minter: Cl.bufferFromHex(
-                  "0x0000000000000000000000000000000000000000"
+                  "0x0000000000000000000000000000000000000000",
                 ),
-              })
-            )
+              }),
+            ),
           ),
         });
         const deployRemoteTx = deployRemoteCanonicalInterchainToken({
@@ -101,7 +102,7 @@ describe("Interchain Token Service Full Flow", () => {
         expect(deployRemoteTx.result).toBeOk(Cl.bool(true));
 
         expect(
-          enableTokenTx.events.map((item) => item.data.raw_value)
+          enableTokenTx.events.map((item) => item.data.raw_value),
         ).toContain(
           cvToHex(
             Cl.tuple({
@@ -109,12 +110,12 @@ describe("Interchain Token Service Full Flow", () => {
               "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
               "token-manager": Cl.address(`${deployer}.token-manager`),
               "token-id": tokenId,
-            })
-          )
+            }),
+          ),
         );
 
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value)
+          deployRemoteTx.events.map((item) => item.data.raw_value),
         ).toContain(
           cvToHex(
             Cl.tuple({
@@ -124,14 +125,14 @@ describe("Interchain Token Service Full Flow", () => {
               symbol: Cl.stringAscii(symbol),
               decimals: Cl.uint(decimals),
               minter: Cl.bufferFromHex(
-                "0x0000000000000000000000000000000000000000"
+                "0x0000000000000000000000000000000000000000",
               ),
               "destination-chain": Cl.stringAscii(chain),
-            })
-          )
+            }),
+          ),
         );
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value)
+          deployRemoteTx.events.map((item) => item.data.raw_value),
         ).toContain(
           cvToHex(
             Cl.tuple({
@@ -142,11 +143,11 @@ describe("Interchain Token Service Full Flow", () => {
               "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
               "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
               "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
-            })
-          )
+            }),
+          ),
         );
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value)
+          deployRemoteTx.events.map((item) => item.data.raw_value),
         ).toContain(
           cvToHex(
             Cl.tuple(
@@ -155,9 +156,9 @@ describe("Interchain Token Service Full Flow", () => {
                 destinationContractAddress: TRUSTED_ADDRESS,
                 payload,
                 sender: Cl.address(`${deployer}.interchain-token-service`),
-              })
-            )
-          )
+              }),
+            ),
+          ),
         );
       }
     });
@@ -187,7 +188,7 @@ describe("Interchain Token Service Full Flow", () => {
           enableTokenManager({
             proofSigners,
             tokenId,
-          }).enableTokenTx.result
+          }).enableTokenTx.result,
         ).toBeOk(Cl.bool(true));
         for (const chain of otherChains) {
           const deployRemoteTx = deployRemoteCanonicalInterchainToken({
@@ -258,7 +259,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
             sender: Cl.address(`${deployer}.interchain-token-service`),
-          })
+          }),
         );
       });
     });
@@ -287,26 +288,16 @@ describe("Interchain Token Service Full Flow", () => {
 
     const gasValues = [1234, 5678];
     const tokenCap = 1e9;
-    beforeEach(() => {
-      setupService(proofSigners);
-      setupNIT({
-        tokenId,
-        minter: address1,
-      });
-    });
-    it("Should register the token and initiate its deployment on other chains", async () => {
-      const totalMint = tokenCap;
+    function deployNIT() {
       mintNIT({
         minter: address1,
-        amount: totalMint,
+        amount: tokenCap,
       });
-      // Deploy a new Interchain token on the local chain.
-      // The initial mint occurs on the factory contract, so it can be moved to other chains within the same multicall.
       const localDeployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         gasValue: gasValues[0],
-        initialSupply: totalMint,
+        initialSupply: tokenCap,
         minterAddress: address1,
         tokenAddress: `${deployer}.native-interchain-token`,
       });
@@ -315,7 +306,7 @@ describe("Interchain Token Service Full Flow", () => {
         tokenId,
         proofSigners,
         minter: address1,
-        supply: totalMint,
+        supply: tokenCap,
       });
 
       expect(
@@ -326,11 +317,23 @@ describe("Interchain Token Service Full Flow", () => {
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       expect(localDeployTx.result).toBeOk(Cl.bool(true));
+    }
+    beforeEach(() => {
+      setupService(proofSigners);
+      setupNIT({
+        tokenId,
+        minter: address1,
+      });
+      // Deploy a new Interchain token on the local chain.
+      // The initial mint occurs on the factory contract, so it can be moved to other chains within the same multicall.
+      deployNIT();
+    });
 
+    it("Should register the token and initiate its deployment on other chains", async () => {
       // Deploy a linked Interchain token to remote chains.
       for (const chain of otherChains) {
         const payload = Cl.tuple({
@@ -345,8 +348,8 @@ describe("Interchain Token Service Full Flow", () => {
                 symbol: Cl.stringAscii("NIT"),
                 decimals: Cl.uint(decimals),
                 minter: Cl.buffer(Cl.serialize(Cl.address(address1))),
-              })
-            )
+              }),
+            ),
           ),
         });
         const deployTx = factoryDeployRemoteInterchainToken({
@@ -397,9 +400,112 @@ describe("Interchain Token Service Full Flow", () => {
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
             sender: Cl.address(`${deployer}.interchain-token-service`),
-          })
+          }),
         );
       }
+    });
+
+    describe("Interchain transfer", () => {
+      const amount = 1234;
+      const destAddress = "0x1234";
+      const gasValue = 6789;
+      function transferToChain({ chain, gas }: { chain: string; gas: number }) {
+        const wrappedPayload = Cl.tuple({
+          type: Cl.uint(MessageType.INTERCHAIN_TRANSFER),
+          "token-id": tokenId,
+          "source-address": Cl.address(address1),
+          "destination-address": Cl.bufferFromHex(destAddress),
+          amount: Cl.uint(amount),
+          data: Cl.bufferFromHex("0x"),
+        });
+        const payload = Cl.tuple({
+          "destination-chain": Cl.stringAscii(chain),
+          type: Cl.uint(MessageType.SEND_TO_HUB),
+          payload: Cl.buffer(Cl.serialize(wrappedPayload)),
+        });
+        const payloadHash = keccak256(Cl.serialize(payload));
+
+        const transferTx = interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationChain: Cl.stringAscii(chain),
+          destinationAddress: Cl.bufferFromHex(destAddress),
+          gasValue: Cl.uint(gas),
+          tokenAddress: Cl.address(`${deployer}.native-interchain-token`),
+          tokenId: tokenId,
+          tokenManagerAddress: Cl.address(
+            `${deployer}.native-interchain-token`,
+          ),
+          metadata: {
+            data: Cl.bufferFromHex("0x"),
+            version: Cl.uint(MetadataVersion.ContractCall),
+          },
+          caller: address1,
+        });
+        expect(transferTx.result).toBeOk(Cl.bool(true));
+
+        const [
+          tokenBurnEvent,
+          interchainTransferNotification,
+          gasStxTransferEvent,
+          gasPaidNotification,
+          gmpMessage,
+        ] = transferTx.events;
+        expect(tokenBurnEvent).toStrictEqual({
+          event: "ft_burn_event",
+          data: {
+            amount: String(amount),
+            asset_identifier: `${deployer}.native-interchain-token::itscoin`,
+            sender: address1,
+          },
+        });
+        expect(interchainTransferNotification.data.value).toBeTuple({
+          amount: Cl.uint(amount),
+          data: Cl.bufferFromHex("0x" + "0".repeat(64)),
+          "destination-address": Cl.bufferFromHex(destAddress),
+          "destination-chain": Cl.stringAscii(chain),
+          "source-address": Cl.principal(address1),
+          "token-id": tokenId,
+          type: Cl.stringAscii("interchain-transfer"),
+        });
+        expect(gasStxTransferEvent).toStrictEqual({
+          event: "stx_transfer_event",
+          data: {
+            amount: String(gas),
+            memo: "",
+            recipient: `${deployer}.gas-service`,
+            sender: address1,
+          },
+        });
+        expect(gasPaidNotification.data.value).toBeTuple({
+          amount: Cl.uint(gas),
+          "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
+          "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
+          "payload-hash": Cl.buffer(payloadHash),
+          "refund-address": Cl.address(address1),
+          sender: Cl.address(`${deployer}.interchain-token-service`),
+          type: Cl.stringAscii("native-gas-paid-for-contract-call"),
+        });
+
+        expect(gmpMessage.data.value).toBeTuple(
+          buildOutgoingGMPMessage({
+            destinationChain: TRUSTED_CHAIN,
+            destinationContractAddress: TRUSTED_ADDRESS,
+            payload,
+            sender: Cl.address(`${deployer}.interchain-token-service`),
+          }),
+        );
+      }
+      it("Should send some tokens to another chain via ITS", async () => {
+        const destChain = otherChains[0];
+
+        transferToChain({ chain: destChain, gas: gasValue });
+      });
+
+      it("Should send some tokens to multiple chains via ITS", async () => {
+        for (let i = 0; i < otherChains.length; i++) {
+          transferToChain({ chain: otherChains[i], gas: gasValues[i] });
+        }
+      });
     });
   });
 });
