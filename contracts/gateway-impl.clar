@@ -2,9 +2,9 @@
 
 (define-constant NULL-PUB 0x00)
 
-(define-constant proxy .gateway)
+(define-constant PROXY .gateway)
 
-(define-read-only (is-proxy) (is-eq contract-caller proxy))
+(define-read-only (is-proxy) (is-eq contract-caller PROXY))
 
 (define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
 
