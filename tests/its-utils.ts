@@ -187,7 +187,7 @@ export function enableTokenManager({
   expect(enableTokenTx.result).toBeOk(Cl.bool(true));
   expect(
     simnet.callReadOnlyFn(
-      "gateway",
+      "gateway-impl",
       "is-message-executed",
       [Cl.stringAscii("stacks"), Cl.stringAscii(messageId)],
       address1

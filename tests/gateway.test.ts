@@ -137,7 +137,7 @@ describe("gateway tests", () => {
       const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
-      const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
@@ -152,7 +152,7 @@ describe("gateway tests", () => {
       const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
-      const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // should not re-validate
@@ -196,7 +196,7 @@ describe("gateway tests", () => {
       const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
-      const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
       // re-approval should be a no-op
@@ -207,7 +207,7 @@ describe("gateway tests", () => {
       const isApprovedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore2).toBeOk(boolCV(true));
 
-      const isExecutedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore2).toBeOk(boolCV(false));
 
       // execute message
@@ -223,7 +223,7 @@ describe("gateway tests", () => {
       const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
-      const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // re-approving same message after execution should be a no-op as well
@@ -234,7 +234,7 @@ describe("gateway tests", () => {
       const isApprovedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter2).toBeOk(boolCV(false));
 
-      const isExecutedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter2).toBeOk(boolCV(true));
     });
 

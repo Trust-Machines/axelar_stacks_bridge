@@ -66,17 +66,6 @@
 
 
 
-;; Checks if a message is executed.
-;; Determines whether a given message, identified by the source-chain and message-id is executed.
-;; @param source-chain; The name of the source chain.
-;; @param message-id; The unique identifier of the message.
-;; @returns (response bool)
-(define-read-only (is-message-executed
-    (source-chain (string-ascii 20))
-    (message-id (string-ascii 128))
-)
-    (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))
-)
 
 ;; Message getter with the command-id. Returns an empty buffer if no message matched.
 ;; @param command-id
