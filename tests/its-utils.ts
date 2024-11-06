@@ -48,7 +48,7 @@ export function setupTokenManager({
       Cl.address(itsAddress),
       operator ? Cl.some(Cl.standardPrincipal(operator)) : Cl.none(),
     ],
-    sender
+    sender,
   );
 }
 
@@ -105,13 +105,13 @@ export function deployTokenManager({
           Cl.tuple({
             operator: Cl.some(Cl.address(address1)),
             "token-address": tokenAddress,
-          })
-        )
+          }),
+        ),
       ),
       tokenManagerAddress,
       Cl.uint(gas),
     ],
-    address1
+    address1,
   );
 }
 
@@ -138,13 +138,13 @@ export function enableTokenManager({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
         sourceAddress: Cl.stringAscii("interchain-token-service"),
         sourceChain: Cl.stringAscii("stacks"),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -158,13 +158,13 @@ export function enableTokenManager({
         buildIncomingGMPMessage({
           contractAddress: Cl.contractPrincipal(
             deployer,
-            "interchain-token-service"
+            "interchain-token-service",
           ),
           messageId: wrappedPayload["message-id"],
           payload: Cl.deserialize(wrappedPayload.payload.buffer),
           sourceAddress: wrappedPayload["source-address"],
           sourceChain: wrappedPayload["source-chain"],
-        })
+        }),
       ),
     ]);
     signAndApproveMessages({
@@ -183,7 +183,7 @@ export function enableTokenManager({
       Cl.stringAscii("interchain-token-service"),
       Cl.buffer(Cl.serialize(payload)),
     ],
-    address1
+    address1,
   );
   expect(enableTokenTx.result).toBeOk(Cl.bool(true));
   expect(
@@ -191,8 +191,8 @@ export function enableTokenManager({
       "gateway-impl",
       "is-message-executed",
       [Cl.stringAscii("stacks"), Cl.stringAscii(messageId)],
-      address1
-    ).result
+      address1,
+    ).result,
   ).toBeOk(Cl.bool(true));
   return {
     enableTokenTx,
@@ -201,13 +201,13 @@ export function enableTokenManager({
 
 export function getTokenId(
   salt: Uint8Array | Buffer,
-  deployer: string = address1
+  deployer: string = address1,
 ) {
   return simnet.callReadOnlyFn(
     "interchain-token-service",
     "interchain-token-id",
     [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
-    address1
+    address1,
   );
 }
 
@@ -258,7 +258,7 @@ export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
     "gateway-impl",
     "data-hash-from-messages",
     [messages],
-    address1
+    address1,
   );
   return cvToJSON(result).value.replace("0x", "");
 }
@@ -267,7 +267,7 @@ export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
     "gateway-impl",
     "get-signers-hash",
     [signersToCv(proofSigners)],
-    address1
+    address1,
   );
   return cvToJSON(result).value;
 }
@@ -283,7 +283,7 @@ export const getMessageHashToSign = ({
     "gateway-impl",
     "message-hash-to-sign",
     [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
-    address1
+    address1,
   );
   return cvToJSON(result).value;
 };
@@ -303,7 +303,7 @@ export function signAndApproveMessages({
       "gateway-impl",
       "message-hash-to-sign",
       [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
-      address1
+      address1,
     );
     return cvToJSON(result).value;
   })();
@@ -313,7 +313,7 @@ export function signAndApproveMessages({
     "gateway",
     "approve-messages",
     [gatewayImplCV, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
-    address1
+    address1,
   );
 
   return expect(approveResult).toBeOk(Cl.bool(true));
@@ -324,7 +324,7 @@ export function setPaused({ paused }: { paused: boolean }) {
     "interchain-token-service",
     "set-paused",
     [Cl.bool(paused)],
-    deployer
+    deployer,
   );
 }
 
@@ -361,7 +361,7 @@ export function deployRemoteInterchainToken({
       Cl.buffer(minter),
       Cl.uint(gasValue),
     ],
-    address1
+    address1,
   );
 }
 
@@ -392,7 +392,7 @@ export function executeDeployInterchainToken({
       Cl.buffer(payload),
       Cl.uint(gasValue),
     ],
-    address1
+    address1,
   );
 }
 export function buildVerifyInterchainTokenPayload({
@@ -444,15 +444,15 @@ export function approveRemoteInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
-          "approved-interchain-token-deployment-message"
+          "approved-interchain-token-deployment-message",
         ),
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -489,7 +489,7 @@ export function deployInterchainToken({
       minter ? Cl.some(minter) : Cl.none(),
       Cl.uint(gasValue),
     ],
-    address1
+    address1,
   );
 }
 
@@ -529,7 +529,7 @@ export function executeDeployTokenManager({
       tokenManager,
       Cl.uint(gasValue),
     ],
-    address1
+    address1,
   );
 }
 
@@ -576,7 +576,7 @@ export function interchainTransfer({
           }),
       gasValue,
     ],
-    caller
+    caller,
   );
 }
 
@@ -656,7 +656,7 @@ export function executeReceiveInterchainToken({
       payload,
       destinationContract ? Cl.some(destinationContract) : Cl.none(),
     ],
-    address1
+    address1,
   );
 }
 
@@ -702,13 +702,13 @@ export function approveReceiveInterchainTransfer({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -732,7 +732,7 @@ export function getSip010Balance({
     contractAddress,
     "get-balance",
     [Cl.address(address)],
-    address1
+    address1,
   ).result as ResponseOkCV<UIntCV>;
   return result.value.value;
 }
@@ -774,7 +774,7 @@ export function setupNIT({
       Cl.none(),
       minter ? Cl.some(Cl.address(minter)) : Cl.none(),
     ],
-    deployer
+    deployer,
   );
 }
 
@@ -809,15 +809,15 @@ export function approveDeployNativeInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
-          "approved-native-interchain-token-deployment-message"
+          "approved-native-interchain-token-deployment-message",
         ),
         payload,
         sourceAddress: Cl.stringAscii("interchain-token-service"),
         sourceChain: Cl.stringAscii("stacks"),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -846,7 +846,7 @@ export function mintNIT({
     NITAddress,
     "mint",
     [Cl.address(recipient ?? minter), Cl.uint(amount)],
-    minter
+    minter,
   );
 }
 
@@ -866,7 +866,7 @@ export function burnNIT({
     NITAddress,
     "burn",
     [Cl.address(recipient ?? minter), Cl.uint(amount)],
-    minter
+    minter,
   );
 }
 
@@ -917,7 +917,7 @@ export function callContractWithInterchainToken({
           }),
       gasValue,
     ],
-    caller
+    caller,
   );
 }
 
@@ -948,8 +948,8 @@ export function setupService(proofSigners: Signers) {
         ]),
         Cl.stringAscii(TRUSTED_CHAIN),
       ],
-      deployer
-    ).result
+      deployer,
+    ).result,
   ).toBeOk(Cl.bool(true));
   deployGateway(proofSigners);
 }
@@ -967,7 +967,7 @@ export function setFlowLimit({
     "interchain-token-service",
     "set-flow-limit",
     [tokenId, tokenManagerAddress, limit],
-    deployer
+    deployer,
   );
 }
 
@@ -988,7 +988,7 @@ export function giveToken({
     contractName,
     "give-token",
     [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
-    sender
+    sender,
   );
 }
 export function takeToken({
@@ -1008,7 +1008,7 @@ export function takeToken({
     contractName,
     "take-token",
     [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
-    sender
+    sender,
   );
 }
 
@@ -1017,7 +1017,7 @@ export function getTokenFlowIn(contractName: string) {
     contractName,
     "get-flow-in-amount",
     [],
-    address1
+    address1,
   );
 }
 export function getTokenFlowOut(contractName: string) {
@@ -1025,20 +1025,20 @@ export function getTokenFlowOut(contractName: string) {
     contractName,
     "get-flow-out-amount",
     [],
-    address1
+    address1,
   );
 }
 
 export function setTokenFlowLimit(
   contractName: string,
   limit: number,
-  sender = address1
+  sender = address1,
 ) {
   return simnet.callPublicFn(
     contractName,
     "set-flow-limit",
     [Cl.uint(limit)],
-    sender
+    sender,
   );
 }
 
@@ -1063,7 +1063,7 @@ export function addFlowLimiter({
     contractName,
     "add-flow-limiter",
     [Cl.address(limiterAddress)],
-    operator
+    operator,
   );
 }
 
@@ -1080,7 +1080,7 @@ export function removeFlowLimiter({
     contractName,
     "remove-flow-limiter",
     [Cl.address(limiterAddress)],
-    operator
+    operator,
   );
 }
 
@@ -1096,7 +1096,7 @@ export function isFlowLimiter({
     contractName,
     "is-flow-limiter",
     [Cl.address(limiterAddress)],
-    address1
+    address1,
   );
 }
 
@@ -1111,7 +1111,7 @@ export function isOperator({
     contractName,
     "is-operator",
     [Cl.address(operator)],
-    address1
+    address1,
   );
 }
 
@@ -1128,7 +1128,7 @@ export function transferOperatorShip({
     contractName,
     "transfer-operatorship",
     [Cl.address(newOperator)],
-    operator
+    operator,
   );
 }
 
@@ -1147,6 +1147,27 @@ export function transferSip010({
     contractAddress,
     "transfer",
     [Cl.uint(amount), Cl.address(sender), Cl.address(recipient), Cl.none()],
-    sender
+    sender,
   );
+}
+
+export function getHelloWorldValue() {
+  return simnet.callReadOnlyFn("hello-world", "get-value", [], address1)
+    .result as TupleCV<{
+    "source-chain": StringAsciiCV;
+    "message-id": StringAsciiCV;
+    "source-address": StringAsciiCV;
+    "source-address-its": BufferCV;
+    payload: BufferCV;
+  }>;
+}
+
+export function getCommandId({
+  sourceChain,
+  messageId,
+}: {
+  sourceChain: string;
+  messageId: string;
+}) {
+  return keccak256(Cl.serialize(Cl.stringAscii(`${sourceChain}_${messageId}`)));
 }

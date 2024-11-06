@@ -223,7 +223,7 @@
 (define-read-only (is-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (is-eq address (default-to "" (map-get? trusted-chain-address chain-name))))
 
-(define-read-only (is-trusted-chain (chain-name (string-ascii 20))) 
+(define-read-only (is-trusted-chain (chain-name (string-ascii 20)))
     (is-some (map-get? trusted-chain-address chain-name)))
 
 ;; Sets the trusted address and its hash for a remote chain
@@ -235,8 +235,8 @@
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts!  (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
-        (asserts! 
-            (or 
+        (asserts!
+            (or
                 (is-eq (var-get its-hub-chain) chain-name)
                 (is-eq address ITS-HUB-ROUTING-IDENTIFIER)
                 ) ERR-INVALID-DESTINATION-ADDRESS)
@@ -970,7 +970,8 @@
     (print {
         type: "interchain-transfer-received",
         token-id: token-id,
-        source-chain: source-chain,
+        ;; TODO: ask rares about the source chain in the notif (hub or wrapped chain?)
+        source-chain: (get source-chain payload-decoded),
         source-address: sender-address,
         destination-address: recipient,
         amount: amount,
@@ -984,7 +985,8 @@
             (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
             (as-contract
                 (contract-call? destination-contract-unwrapped execute-with-interchain-token
-                    source-chain message-id sender-address data token-id (contract-of token) amount))))))
+                    ;; TODO: ask rares about the source chain routed to the executable (hub or wrapped chain?)
+                    (get source-chain payload-decoded) message-id sender-address data token-id (contract-of token) amount))))))
 
 
 ;; ######################
