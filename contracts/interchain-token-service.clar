@@ -821,7 +821,7 @@
             })))
     )
     (asserts! (not (is-eq (get source-chain payload-decoded) (var-get its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-    (asserts! (unwrap! (contract-call? .gateway-impl is-message-approved
+    (asserts! (unwrap! (contract-call? gateway-impl is-message-approved
             source-chain message-id source-address (as-contract tx-sender) (keccak256 payload))
                 ERR-GATEWAY-NOT-DEPLOYED)
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
