@@ -626,6 +626,10 @@
 ;; #########################
 ;; #########################
 
-(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000))) 
-    (ok true)
+(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (ok true)
+    )
 )

@@ -6,14 +6,20 @@
 ;; ######################
 ;; ######################
 
+(define-constant ERR-INVALID-IMPL (err u10211))
+
+(define-private (is-correct-impl (gateway-impl <gateway-trait>)) (is-eq (contract-call? .gateway-storage get-impl) (contract-of gateway-impl)))
+
 (define-public (call-contract
     (gateway-impl <gateway-trait>)
     (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
 )
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
+    (begin 
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
+    )
 )
 
 (define-public (approve-messages
@@ -21,8 +27,10 @@
     (messages (buff 4096))
     (proof (buff 16384))
 )
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl approve-messages messages proof)
+    (begin
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl approve-messages messages proof)
+    )
 )
 
 (define-public (validate-message
@@ -32,8 +40,10 @@
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
 )
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
+    (begin
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
+    )
 )
 
 (define-public (rotate-signers
@@ -41,19 +51,25 @@
     (new-signers (buff 8192))
     (proof (buff 16384))
 )
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl rotate-signers new-signers proof)
+    (begin
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl rotate-signers new-signers proof)
+    )
 )
 
 (define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl transfer-operatorship new-operator)
+    (begin
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl transfer-operatorship new-operator)
+    )
 )
 
-;; General purose proxy call for the future
+;; General purose proxy call 
 (define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
-    ;; TODO: gateway-impl address validation
-    (contract-call? gateway-impl dispatch fn data)
+    (begin 
+        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl dispatch fn data)
+    )
 )
 
 ;; ######################
