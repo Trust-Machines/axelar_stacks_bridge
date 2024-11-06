@@ -16,7 +16,7 @@ const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { deployGateway, makeProofCV, signersToCv } from "./util";
+import { deployGateway, gatewayImplCV, makeProofCV, signersToCv } from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -96,6 +96,7 @@ export function deployTokenManager({
     "interchain-token-service",
     "deploy-token-manager",
     [
+      gatewayImplCV,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
@@ -176,6 +177,7 @@ export function enableTokenManager({
     "interchain-token-service",
     "process-deploy-token-manager-from-stacks",
     [
+      gatewayImplCV,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
@@ -186,7 +188,7 @@ export function enableTokenManager({
   expect(enableTokenTx.result).toBeOk(Cl.bool(true));
   expect(
     simnet.callReadOnlyFn(
-      "gateway",
+      "gateway-impl",
       "is-message-executed",
       [Cl.stringAscii("stacks"), Cl.stringAscii(messageId)],
       address1,
@@ -253,7 +255,7 @@ export function buildIncomingGMPMessage({
 }
 export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "data-hash-from-messages",
     [messages],
     address1,
@@ -262,7 +264,7 @@ export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
 }
 export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "get-signers-hash",
     [signersToCv(proofSigners)],
     address1,
@@ -278,7 +280,7 @@ export const getMessageHashToSign = ({
   dataHash: string;
 }) => {
   const { result } = simnet.callReadOnlyFn(
-    "gateway",
+    "gateway-impl",
     "message-hash-to-sign",
     [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
     address1,
@@ -298,7 +300,7 @@ export function signAndApproveMessages({
   const signersHash = getSignersHash({ proofSigners });
   const messageHashToSign = (() => {
     const { result } = simnet.callReadOnlyFn(
-      "gateway",
+      "gateway-impl",
       "message-hash-to-sign",
       [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
       address1,
@@ -310,7 +312,7 @@ export function signAndApproveMessages({
   const { result: approveResult } = simnet.callPublicFn(
     "gateway",
     "approve-messages",
-    [Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    [gatewayImplCV, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
     address1,
   );
 
@@ -350,6 +352,7 @@ export function deployRemoteInterchainToken({
     "interchain-token-service",
     "deploy-remote-interchain-token",
     [
+      gatewayImplCV,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.stringAscii(name),
@@ -381,6 +384,7 @@ export function executeDeployInterchainToken({
     "interchain-token-service",
     "execute-deploy-interchain-token",
     [
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -478,6 +482,7 @@ export function deployInterchainToken({
     "interchain-token-service",
     "deploy-interchain-token",
     [
+      gatewayImplCV,
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
@@ -515,6 +520,7 @@ export function executeDeployTokenManager({
     "interchain-token-service",
     "execute-deploy-token-manager",
     [
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -555,6 +561,7 @@ export function interchainTransfer({
     "interchain-token-service",
     "interchain-transfer",
     [
+      gatewayImplCV,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -640,6 +647,7 @@ export function executeReceiveInterchainToken({
     "interchain-token-service",
     "execute-receive-interchain-token",
     [
+      gatewayImplCV,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -894,6 +902,7 @@ export function callContractWithInterchainToken({
     "interchain-token-service",
     "call-contract-with-interchain-token",
     [
+      gatewayImplCV,
       tokenManagerAddress,
       tokenAddress,
       tokenId,

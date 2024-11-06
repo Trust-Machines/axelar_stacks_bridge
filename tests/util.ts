@@ -2,6 +2,7 @@ import {
     boolCV,
     bufferCV,
     bufferCVFromString,
+    contractPrincipalCV,
     createStacksPrivateKey,
     cvToJSON,
     hexToCV,
@@ -210,9 +211,9 @@ export const transferOperatorshipEventToObj = (rawHex: string): TransferOperator
 }
 
 const accounts = simnet.getAccounts();
+export const deployerAddress = accounts.get("deployer")!;
 export const operatorAddress = accounts.get("wallet_1")!;
 export const contractCaller = accounts.get("wallet_2")!;
-
 
 export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: number, previousSignersRetention?: number, domainSeparator?: string }) => {
     const operator = principalCV(operatorAddress);
@@ -220,7 +221,10 @@ export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: 
     const minimumRotationDelay = uintCV(conf?.minimumRotationDelay ?? 0);
     const previousSignersRetention = uintCV(conf?.previousSignersRetention ?? 15);
 
-    expect(simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contractCaller).result).toBeOk(boolCV(true));
+    const {result} = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contractCaller)
+    expect(result).toBeOk(boolCV(true));
 
     return signers;
 }
+
+export const gatewayImplCV = contractPrincipalCV(accounts.get("deployer")!, "gateway-impl");

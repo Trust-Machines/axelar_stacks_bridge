@@ -1,8 +1,8 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, contractPrincipalCV, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
-import { beforeEach, describe, expect, it } from "vitest";
-import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj } from "./util";
+import { describe, expect, it } from "vitest";
+import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV, deployerAddress } from "./util";
 import { Signers } from "./types";
 
 describe("gateway tests", () => {
@@ -12,17 +12,17 @@ describe("gateway tests", () => {
     const proofSigners = getSigners(0, 1, 1, 2, "1")
 
     const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
       return cvToJSON(result).value;
     })();
 
     const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
       return cvToJSON(result).value;
     })();
 
     const messageHashToSign = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
       return cvToJSON(result).value
     })();
 
@@ -38,26 +38,26 @@ describe("gateway tests", () => {
       })
     ]);
 
-    expect(simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "validate-message", [stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
   });
 
   it("queries", () => {
-    const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller);
+    const { result: getIsStarted1 } = simnet.callReadOnlyFn("gateway-impl", "get-is-started", [], contractCaller);
     expect(getIsStarted1).toBeBool(false);
 
     deployGateway(getSigners(0, 10, 1, 10, "1"));
 
     // check init values 
-    expect(simnet.callReadOnlyFn("gateway", "get-operator", [], operatorAddress).result).toBePrincipal(operatorAddress);
-    expect(Buffer.from((simnet.callReadOnlyFn("gateway", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
-    expect(simnet.callReadOnlyFn("gateway", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
-    expect(simnet.callReadOnlyFn("gateway", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
-    expect(simnet.callReadOnlyFn("gateway", "get-is-started", [], contractCaller).result).toBeBool(true);
-    expect(simnet.callReadOnlyFn("gateway", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-operator", [], operatorAddress).result).toBePrincipal(operatorAddress);
+    expect(Buffer.from((simnet.callReadOnlyFn("gateway-impl", "get-domain-separator", [], contractCaller).result as BufferCV).buffer).toString("ascii")).toBe("stacks-axelar-1");
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-minimum-rotation-delay", [], contractCaller).result).toBeUint(0);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-previous-signers-retention", [], contractCaller).result).toBeUint(15);
+    expect(simnet.callReadOnlyFn("gateway-impl", "get-is-started", [], contractCaller).result).toBeBool(true);
+    expect(simnet.callReadOnlyFn("gateway-impl", "message-to-command-id", [stringAsciiCV('Source'), stringAsciiCV('1')], contractCaller).result).toBeBuff(bufferFromHex("0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae").buffer);
   });
 
   it("should not run setup func again", () => {
@@ -73,8 +73,9 @@ describe("gateway tests", () => {
     const destinationAddress = '0x123abc';
     const payload = operatorAddress;
 
-    const { result, events } = simnet.callPublicFn("gateway", "call-contract", [stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
+    const { result, events } = simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
     expect(result).toBeOk(boolCV(true));
+    expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage');
     expect(contractCallEventToObj(events[0].data.raw_value!)).toStrictEqual({
       type: 'contract-call',
       sender: contractCaller,
@@ -106,24 +107,25 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-messages", [messages], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -134,14 +136,15 @@ describe("gateway tests", () => {
         payloadHash: cvToValue(payloadHash)
       });
 
-      const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
-      const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
-      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -149,14 +152,14 @@ describe("gateway tests", () => {
         messageId: cvToValue(messageId),
       });
 
-      const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
-      const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // should not re-validate
-      const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult2).toBeErr(uintCV(9052));
     });
 
@@ -165,24 +168,25 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-messages", [messages], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -193,26 +197,27 @@ describe("gateway tests", () => {
         payloadHash: cvToValue(payloadHash)
       });
 
-      const isApprovedBefore = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore).toBeOk(boolCV(true));
 
-      const isExecutedBefore = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore).toBeOk(boolCV(false));
 
       // re-approval should be a no-op
-      const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult2).toBeOk(boolCV(true));
       expect(approveEvents2.length).toBe(0);
 
-      const isApprovedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedBefore2).toBeOk(boolCV(true));
 
-      const isExecutedBefore2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedBefore2).toBeOk(boolCV(false));
 
       // execute message
-      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
+      const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
+      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -220,21 +225,21 @@ describe("gateway tests", () => {
         messageId: cvToValue(messageId),
       });
 
-      const isApprovedAfter = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter).toBeOk(boolCV(false));
 
-      const isExecutedAfter = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
       // re-approving same message after execution should be a no-op as well
-      const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
+      const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult3).toBeOk(boolCV(true));
       expect(approveEvents3.length).toBe(0);
 
-      const isApprovedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
+      const isApprovedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
       expect(isApprovedAfter2).toBeOk(boolCV(false));
 
-      const isExecutedAfter2 = simnet.callReadOnlyFn("gateway", "is-message-executed", [sourceChain, messageId], contractCaller).result;
+      const isExecutedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter2).toBeOk(boolCV(true));
     });
 
@@ -247,24 +252,25 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
+      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'signers-rotated',
         epoch: 2,
@@ -279,23 +285,23 @@ describe("gateway tests", () => {
       const newSigners = { ...proofSigners }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(5054));
     });
 
@@ -305,40 +311,40 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contractCaller);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contractCaller);
       expect(result2).toBeErr(uintCV(5055));
     });
 
@@ -348,40 +354,40 @@ describe("gateway tests", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"));
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       const newSigners2 = getSigners(21, 30, 1, 3, "3");
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash2)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeOk(boolCV(true));
     });
 
@@ -393,23 +399,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
     });
 
@@ -419,23 +425,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(5051));
     });
 
@@ -445,23 +451,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2")
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operatorAddress);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], operatorAddress);
       expect(result).toBeOk(boolCV(true));
     });
   });
@@ -475,23 +481,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(0, 0, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2051))
     });
 
@@ -522,23 +528,23 @@ describe("gateway tests", () => {
       }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2053));
     });
 
@@ -569,23 +575,23 @@ describe("gateway tests", () => {
       }
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2054));
     });
 
@@ -594,23 +600,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 15, 1, 0, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2055));
     });
 
@@ -619,23 +625,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 15, 1, 6, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2056));
     });
   });
@@ -654,7 +660,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3051));
     });
 
@@ -665,17 +671,17 @@ describe("gateway tests", () => {
       const newSigners = getSigners(25, 30, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
@@ -686,7 +692,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3053));
     });
 
@@ -696,17 +702,17 @@ describe("gateway tests", () => {
       const newSigners = getSigners(25, 30, 1, 3, "1");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
@@ -717,7 +723,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(3055));
     });
 
@@ -750,17 +756,17 @@ describe("gateway tests", () => {
       const newSigners = getSigners(10, 20, 1, 6, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
@@ -773,7 +779,7 @@ describe("gateway tests", () => {
         ])
       });
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeErr(uintCV(2054));
     });
   });
@@ -786,23 +792,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       // -------------
@@ -810,23 +816,23 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(22, 30, 1, 3, "3")
 
       const signersHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash2), bufferFromHex(dataHash2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash2), bufferFromHex(dataHash2)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeOk(boolCV(true));
     });
 
@@ -836,23 +842,23 @@ describe("gateway tests", () => {
       const newSigners = getSigners(11, 15, 1, 3, "2");
 
       const signersHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash), bufferFromHex(dataHash)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
-      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
 
       // -------------
@@ -860,32 +866,50 @@ describe("gateway tests", () => {
       const newSigners2 = getSigners(22, 30, 1, 3, "3")
 
       const signersHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const dataHash2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(newSigners2)], contractCaller);
         return cvToJSON(result).value;
       })();
 
       const messageHashToSign2 = (() => {
-        const { result } = simnet.callReadOnlyFn("gateway", "message-hash-to-sign", [bufferFromHex(signersHash2), bufferFromHex(dataHash2)], contractCaller);
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [bufferFromHex(signersHash2), bufferFromHex(dataHash2)], contractCaller);
         return cvToJSON(result).value
       })();
 
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
-      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
+      const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
       expect(result2).toBeErr(uintCV(4051));
+    });
+  });
+
+  describe("gateway proxy calls", () => {
+    it("should validate impl address", () => {
+      expect(simnet.callPublicFn("gateway", "call-contract", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "approve-messages", [contractPrincipalCV(deployerAddress, "traits"), bufferFromHex("0x00"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "validate-message", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "rotate-signers", [contractPrincipalCV(deployerAddress, "traits"), bufferFromHex("0x00"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "transfer-operatorship", [contractPrincipalCV(deployerAddress, "traits"), principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "call", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+    });
+
+    it("dynamic dispatch", () => {
+      deployGateway(getSigners(0, 10, 1, 10, "1"));
+      const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller);
+      expect(result).toBeOk(boolCV(true));
     });
   });
 
   describe("operatorship", () => {
     it("should allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
-      const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(contractCaller)], operatorAddress);
+      const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
+      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
       expect(transferOperatorshipEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'transfer-operatorship',
         newOperator: contractCaller
@@ -894,7 +918,7 @@ describe("gateway tests", () => {
 
     it("should not allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
-      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [principalCV(operatorAddress)], contractCaller);
+      const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller);
       expect(result).toBeErr(uintCV(1051));
     });
   });

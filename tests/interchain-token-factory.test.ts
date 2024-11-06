@@ -54,6 +54,7 @@ describe("interchain-token-factory", () => {
       const tokenId = getCanonicalInterChainTokenId({}).value;
 
       const deployTx = registerCanonicalInterchainToken({});
+
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
       enableTokenManager({
@@ -118,6 +119,7 @@ describe("interchain-token-factory", () => {
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
       });
+
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
     });
 

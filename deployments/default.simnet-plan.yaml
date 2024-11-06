@@ -65,6 +65,16 @@ plan:
             path: contracts/gas-service.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: gateway-storage
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gateway-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: gateway-impl
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gateway-impl.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: gateway
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/gateway.clar

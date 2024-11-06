@@ -10,6 +10,7 @@
 (use-trait sip-010-trait .traits.sip-010-trait)
 (use-trait token-manager-trait .traits.token-manager-trait)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
+(use-trait gateway-trait .traits.gateway-trait)
 ;; token definitions
 ;;
 
@@ -99,6 +100,7 @@
 ;; @param tokenAddress The address of the canonical token.
 ;; @return tokenId The tokenId corresponding to the registered canonical token.
 (define-public (register-canonical-interchain-token
+        (gateway-impl <gateway-trait>)
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
         (gas-value uint)
@@ -106,7 +108,8 @@
     (begin
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
-            .interchain-token-service deploy-token-manager
+            .interchain-token-service deploy-token-manager 
+                gateway-impl
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
                 TOKEN-TYPE-LOCK-UNLOCK
@@ -125,7 +128,7 @@
 ;; @param gasValue The gas amount to be sent for deployment.
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-canonical-interchain-token (token <sip-010-trait>) (destination-chain (string-ascii 20)) (gas-value uint))
+(define-public (deploy-remote-canonical-interchain-token (gateway-impl <gateway-trait>) (token <sip-010-trait>) (destination-chain (string-ascii 20)) (gas-value uint))
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
@@ -136,12 +139,13 @@
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
             (token_ (try! (contract-call? .interchain-token-service valid-token-address token-id)))
         )
-        (contract-call? .interchain-token-service deploy-remote-interchain-token salt destination-chain name symbol decimals NULL-BYTES gas-value)
+        (contract-call? .interchain-token-service deploy-remote-interchain-token gateway-impl salt destination-chain name symbol decimals NULL-BYTES gas-value)
     )
 )
 
 
 (define-public (deploy-interchain-token
+        (gateway-impl <gateway-trait>)
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
@@ -161,13 +165,14 @@
                             NULL-ADDRESS)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
-    (contract-call? .interchain-token-service deploy-interchain-token salt token initial-supply (some minter) gas-value)))
+    (contract-call? .interchain-token-service deploy-interchain-token gateway-impl salt token initial-supply (some minter) gas-value)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
 ;; basically getting themself rekt
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-interchain-token
+    (gateway-impl <gateway-trait>)
     (salt_ (buff 32))
     (minter_ (buff 128))
     (destination-chain (string-ascii 20))
@@ -193,6 +198,7 @@
         ))
     )
         (contract-call? .interchain-token-service deploy-remote-interchain-token
+            gateway-impl
             salt
             destination-chain
             name
