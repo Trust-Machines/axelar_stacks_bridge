@@ -27,7 +27,7 @@
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
     (gas-amount uint)
-    (gateway <gateway-trait>)
+    (gateway-impl <gateway-trait>)
     (gas-service <gas-service-trait>)
 )
     (begin
@@ -42,7 +42,7 @@
                 contract-caller
             )
         )
-        (try! (contract-call? gateway call-contract destination-chain destination-contract-address payload))
+        (try! (contract-call? .gateway call-contract gateway-impl destination-chain destination-contract-address payload))
         (ok true)
     )
 )
@@ -52,10 +52,10 @@
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload (buff 64000))
-    (gateway <gateway-trait>)
+    (gateway-impl <gateway-trait>)
 )
     (begin
-        (try! (contract-call? gateway validate-message source-chain message-id source-address (keccak256 payload)))
+        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
         (var-set value (merge (var-get value) {
             source-chain: source-chain,
             message-id: message-id,
