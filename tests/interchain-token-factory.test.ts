@@ -9,7 +9,7 @@ import {
   setupTokenManager,
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
-import { gatewayImplCV, getSigners } from "./util";
+import { getSigners } from "./util";
 import {
   factoryDeployInterchainToken,
   deployRemoteCanonicalInterchainToken,
