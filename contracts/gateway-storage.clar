@@ -143,14 +143,14 @@
 
 (define-public (insert-message (command-id (buff 32)) (message-hash (buff 32)) ) 
     (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (ok (map-insert messages command-id message-hash))
     )
 )
 
 (define-public (set-message (command-id (buff 32)) (message-hash (buff 32)) ) 
     (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set messages command-id message-hash))
     )
 )
