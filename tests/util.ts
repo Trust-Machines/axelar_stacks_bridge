@@ -211,9 +211,9 @@ export const transferOperatorshipEventToObj = (rawHex: string): TransferOperator
 }
 
 const accounts = simnet.getAccounts();
+export const deployerAddress = accounts.get("deployer")!;
 export const operatorAddress = accounts.get("wallet_1")!;
 export const contractCaller = accounts.get("wallet_2")!;
-
 
 export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: number, previousSignersRetention?: number, domainSeparator?: string }) => {
     const operator = principalCV(operatorAddress);

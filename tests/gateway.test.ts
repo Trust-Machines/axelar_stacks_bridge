@@ -1,8 +1,8 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, contractPrincipalCV, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { describe, expect, it } from "vitest";
-import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV } from "./util";
+import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV, deployerAddress } from "./util";
 import { Signers } from "./types";
 
 describe("gateway tests", () => {
@@ -887,10 +887,21 @@ describe("gateway tests", () => {
     });
   });
 
-  it("dynamic dispatch test", () => {
-    deployGateway(getSigners(0, 10, 1, 10, "1"));
-    const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller);
-    expect(result).toBeOk(boolCV(true));
+  describe("gateway proxy calls", () => {
+    it("should validate impl address", () => {
+      expect(simnet.callPublicFn("gateway", "call-contract", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), stringAsciiCV("bar"), bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "approve-messages", [contractPrincipalCV(deployerAddress, "traits"), bufferFromHex("0x00"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "validate-message", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "rotate-signers", [contractPrincipalCV(deployerAddress, "traits"), bufferFromHex("0x00"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "transfer-operatorship", [contractPrincipalCV(deployerAddress, "traits"), principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "call", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+    });
+
+    it("dynamic dispatch", () => {
+      deployGateway(getSigners(0, 10, 1, 10, "1"));
+      const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller);
+      expect(result).toBeOk(boolCV(true));
+    });
   });
 
   describe("operatorship", () => {
