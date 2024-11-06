@@ -887,6 +887,12 @@ describe("gateway tests", () => {
     });
   });
 
+  it("dynamic dispatch test", () => {
+    deployGateway(getSigners(0, 10, 1, 10, "1"));
+    const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), bufferFromHex("0x00")], contractCaller);
+    expect(result).toBeOk(boolCV(true));
+  });
+
   describe("operatorship", () => {
     it("should allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
