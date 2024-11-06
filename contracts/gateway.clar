@@ -83,9 +83,19 @@
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
 (define-public (updgrade-impl (gateway-impl <gateway-trait>))
-    (begin 
+    (let
+        (
+            (prev (contract-call? .gateway-storage get-impl))
+            (new (contract-of gateway-impl))
+        ) 
         (asserts! (is-eq contract-caller GOVERNANCE) ERR-UNAUTHORIZED)
-        (contract-call? .gateway-storage set-impl (contract-of gateway-impl))
+        (try! (contract-call? .gateway-storage set-impl new))
+        (print {
+            type: "gateway-impl-updgraded",
+            prev: prev,
+            new: new
+        })
+        (ok true)
     )
 )
 
