@@ -4,7 +4,7 @@
 
 (define-constant PROXY .gateway)
 
-(define-read-only (is-proxy) (is-eq contract-caller PROXY))
+(define-private (is-proxy) (is-eq contract-caller PROXY))
 
 (define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
 
@@ -428,7 +428,7 @@
 ;; A helper function to determine whether the provided signer is an error.
 ;; @param signer;
 ;; @returns bool
-(define-read-only (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
+(define-private (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
   (is-err signer)
 )
 
