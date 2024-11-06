@@ -70,7 +70,7 @@
 
 (define-public (set-last-rotation-timestamp (new-timestamp uint)) 
     (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (ok (var-set last-rotation-timestamp new-timestamp))
     )
 )
@@ -82,7 +82,7 @@
 
 (define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32))) 
     (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (ok (map-set signer-hash-by-epoch epoch- signers-hash))
     )
 )
