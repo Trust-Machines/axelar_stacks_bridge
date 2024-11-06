@@ -1,10 +1,10 @@
-(define-data-var proxy principal .gateway)
+(define-constant PROXY .gateway)
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
-(define-read-only (is-proxy-or-impl) (or (is-eq contract-caller (var-get proxy)) (is-eq contract-caller (var-get impl))))
+(define-read-only (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 
-(define-read-only (is-proxy) (is-eq contract-caller (var-get proxy)))
+(define-read-only (is-proxy) (is-eq contract-caller PROXY))
 
 (define-read-only (is-impl) (is-eq contract-caller (var-get impl)))
 

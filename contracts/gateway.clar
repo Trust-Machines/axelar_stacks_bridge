@@ -74,6 +74,23 @@
 
 ;; ######################
 ;; ######################
+;; ### Upgradability ####
+;; ######################
+;; ######################
+
+(define-constant GOVERNANCE .governance)
+
+(define-constant ERR-UNAUTHORIZED (err u10111))
+
+(define-public (updgrade-impl (gateway-impl <gateway-trait>))
+    (begin 
+        (asserts! (is-eq contract-caller GOVERNANCE) ERR-UNAUTHORIZED)
+        (contract-call? .gateway-storage set-impl (contract-of gateway-impl))
+    )
+)
+
+;; ######################
+;; ######################
 ;; ### Initialization ###
 ;; ######################
 ;; ######################
