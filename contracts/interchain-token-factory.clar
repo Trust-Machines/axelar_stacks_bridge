@@ -161,20 +161,11 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
-        (minter_ principal)
+        (minter principal)
         (gas-value uint))
     (let
         (
             (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
-            ;; TODO: ask rares about minter being the factory this behavior is not valid here: yes
-            (minter
-                (if
-                    (> initial-supply u0)
-                    (as-contract tx-sender)
-                    (if
-                        (not (is-eq NULL-ADDRESS minter_))
-                            minter_
-                            NULL-ADDRESS)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token

@@ -1005,7 +1005,6 @@
     (print {
         type: "interchain-transfer-received",
         token-id: token-id,
-        ;; TODO: ask rares about the source chain in the notif (hub or wrapped chain?): yes
         source-chain: (get source-chain payload-decoded),
         source-address: sender-address,
         destination-address: recipient,
@@ -1020,7 +1019,6 @@
             (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
             (as-contract
                 (contract-call? destination-contract-unwrapped execute-with-interchain-token
-                    ;; TODO: ask rares about the source chain routed to the executable (hub or wrapped chain?) yes
                     (get source-chain payload-decoded) message-id sender-address data token-id (contract-of token) amount))))))
 
 

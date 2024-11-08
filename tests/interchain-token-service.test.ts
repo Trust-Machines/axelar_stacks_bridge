@@ -467,24 +467,6 @@ describe("Interchain Token Service", () => {
       expect(gatewayContractCall.data.value).toBeTuple(message);
     });
 
-    // FIXME: remove this test too if not possible to execute
-    it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {
-      // will always fail since the VM won't be able to read the interface of a contract that doesn't exist
-      // const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      // expect(
-      //   deployTokenManager({
-      //     salt,
-      //     destinationChain: "ethereum",
-      //     gas: 100,
-      //     tokenAddress,
-      //     tokenManagerAddress: Cl.contractPrincipal(
-      //       deployer,
-      //       "nonexistent-token-manager"
-      //     ),
-      //   })
-      // );
-    });
-
     it("Should revert on remote custom token manager deployment if paused", () => {
       setPaused({ paused: true });
       setupTokenManager({});
@@ -979,15 +961,6 @@ describe("Interchain Token Service", () => {
         }).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
     });
-  });
-
-  // FIXME: remove these tests if eventually they're not needed
-  describe("Execute with token checks", () => {
-    it("Should revert on execute with token if remote address validation fails", () => {});
-
-    it("Should revert on execute with token if the service is paused", () => {});
-
-    it("Should revert on execute with token with invalid messageType", () => {});
   });
 
   describe("Receive Remote Tokens", () => {
