@@ -1,9 +1,10 @@
-# Gateway Contract
+# Gateway 
 
-## Interface
+##  Gateway proxy interface
 
 ```clarity
 (define-public (call-contract
+    (gateway-impl <gateway-trait>)
     (destination-chain (string-ascii 32))
     (destination-contract-address (string-ascii 128))
     (payload (buff 10240))
@@ -12,6 +13,7 @@
 
 ```clarity
 (define-public (approve-messages
+    (gateway-impl <gateway-trait>)
     (messages (buff 4096)) ;; Serialized buff data from Messages type
     (proof (buff 16384)) ;; Serialized buff data from Proof type
 )
@@ -19,12 +21,23 @@
 
 ```clarity
 (define-public (validate-message
+    (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 32))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
 )
 ```
+
+```clarity
+(define-public (rotate-signers
+    (gateway-impl <gateway-trait>)
+    (new-signers (buff 8192)) ;; Serialized buff data from Signers type
+    (proof (buff 16384)) ;; Serialized buff data from Proof type
+)
+```
+
+##  Gateway implementation interface
 
 ```clarity
 (define-read-only (is-message-approved
@@ -43,12 +56,6 @@
 )
 ```
 
-```clarity
-(define-public (rotate-signers
-    (new-signers (buff 8192)) ;; Serialized buff data from Signers type
-    (proof (buff 16384)) ;; Serialized buff data from Proof type
-)
-```
 
 ## Types
 
