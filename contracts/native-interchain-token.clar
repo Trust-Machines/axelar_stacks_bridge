@@ -359,7 +359,8 @@
 
 (define-public (transfer-mintership (new-minter principal))
     (begin
-        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (var-get minter) contract-caller) ERR-NOT-AUTHORIZED)
+        (asserts! (not (is-eq (get-its-impl) new-minter)) ERR-NOT-AUTHORIZED)
         (var-set minter new-minter)
         (print {action: "transfer-mintership", new-minter: new-minter})
         (ok true)))
