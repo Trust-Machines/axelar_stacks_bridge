@@ -66,17 +66,10 @@
     )
 )
 
-(define-private (execute-inner
-        (command-id (buff 32))
-        (source-chain (string-ascii 20))
-        (source-address (string-ascii 128))
-        (payload (buff 64000))
-) 
-    (ok true)
-)
 
+(define-constant ERR-PAYLOAD-DATA (err u13021))
 
-(define-public (execute
+(define-public (set-gateway-impl
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
@@ -86,8 +79,14 @@
     (let
         (
             (command-id (contract-call? .gateway-impl message-to-command-id source-chain message-id))
+            (data (unwrap! (from-consensus-buff? {
+                target: principal,
+                eta: uint
+            } payload) ERR-PAYLOAD-DATA))
+            (payload-hash (keccak256 payload))
         )
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
-        (execute-inner command-id source-chain source-address payload)
+        (ok (schedule-timelock payload-hash (get eta data)))
     )
 )
+
