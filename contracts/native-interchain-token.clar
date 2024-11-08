@@ -74,11 +74,11 @@
 ;; ##########################
 ;; ##########################
 
-(define-read-only (get-token-id) 
+(define-read-only (get-token-id)
     (ok (var-get token-id)))
 
 (define-public (burn (from principal) (amount uint))
-    (begin 
+    (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)
@@ -87,7 +87,7 @@
 )
 
 (define-public (mint (to principal) (amount uint))
-    (begin 
+    (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)
@@ -103,7 +103,7 @@
 (define-read-only (get-token-type)
     (ok TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
 
-;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself 
+;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself
 ;; the flow would still be handled by the ITS
 ;; subject to change
 (define-public (take-token (token <sip-010-trait>) (from principal) (amount uint))
@@ -120,12 +120,12 @@
         (mint to amount)))
 
 
-(define-read-only (is-minter-raw (address principal)) 
-    (or 
+(define-read-only (is-minter-raw (address principal))
+    (or
         (is-eq address (var-get minter))
         (is-eq address (get-its-impl))))
 
-(define-read-only (is-minter (address principal)) 
+(define-read-only (is-minter (address principal))
     (ok (is-minter-raw address)))
 
 (define-map roles principal {
@@ -167,7 +167,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
-        (match (map-get? roles address) 
+        (match (map-get? roles address)
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
             (ok true))))
@@ -178,16 +178,16 @@
 (define-read-only (is-flow-limiter (addr principal))
     (ok (default-to false (get flow-limiter (map-get? roles addr)))))
 
-;;     
+;;
 ;; Returns the current flow limit.
 ;; @return The current flow limit value.
-;;      
-(define-read-only (get-flow-limit) 
+;;
+(define-read-only (get-flow-limit)
     (ok (var-get flow-limit)))
 
 ;; This function sets the flow limit for this TokenManager.
 ;; Can only be called by the flow limiters.
-;; @param flowLimit_ The maximum difference between the tokens 
+;; @param flowLimit_ The maximum difference between the tokens
 ;; flowing in and/or out at any given interval of time (6h).
 ;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
@@ -284,7 +284,7 @@
     (decimals_ uint)
     (token-uri_ (optional (string-utf8 256)))
     (minter_ (optional principal))
-) 
+)
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
@@ -299,7 +299,7 @@
         (map-set roles (get-its-impl) {
             flow-limiter: true,
         })
-        (match operator-address op 
+        (match operator-address op
             (map-set roles op {
                 flow-limiter: true,
             })
@@ -329,20 +329,20 @@
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
-(define-read-only (get-its-impl) 
+(define-read-only (get-its-impl)
     (contract-call? .interchain-token-service-storage get-impl))
 
-(define-read-only (is-operator-raw (address principal)) 
+(define-read-only (is-operator-raw (address principal))
     (or
         (is-eq address (var-get operator))
         (is-eq address (get-its-impl))
     ))
 
-(define-read-only (is-operator (address principal)) 
+(define-read-only (is-operator (address principal))
     (ok (is-operator-raw address)))
 
-(define-read-only (get-operators) 
-    (ok (list 
+(define-read-only (get-operators)
+    (ok (list
             (get-its-impl)
             (var-get operator))))
 
@@ -356,3 +356,10 @@
         (ok true)
     )
 )
+
+(define-public (transfer-mintership (new-minter principal))
+    (begin
+        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (var-set minter new-minter)
+        (print {action: "transfer-mintership", new-minter: new-minter})
+        (ok true)))
