@@ -85,9 +85,19 @@ plan:
             path: contracts/hello-world.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: interchain-token-service-storage
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-service-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: interchain-token-service
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-service.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: interchain-token-service-impl
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-service-impl.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: interchain-token-factory

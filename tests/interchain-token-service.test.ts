@@ -31,6 +31,7 @@ import {
   interchainTransfer,
   isFlowLimiter,
   isOperator,
+  itsImpl,
   keccak256,
   mintNIT,
   removeFlowLimiter,
@@ -40,7 +41,8 @@ import {
   setupNIT,
   setupService,
   setupTokenManager,
-  transferOperatorShip,
+  transferITSOperatorShip,
+  transferTokenOperatorShip,
 } from "./its-utils";
 import { getSigners } from "./util";
 import {
@@ -80,7 +82,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-paused",
-          [Cl.bool(true)],
+          [itsImpl, Cl.bool(true)],
           address1,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -92,6 +94,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii("ethereum"),
             Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           ],
@@ -105,7 +108,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
+          [itsImpl, Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
           deployer,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-DESTINATION-ADDRESS"]);
@@ -115,6 +118,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii("ethereum"),
             Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           ],
@@ -129,6 +133,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii(TRUSTED_CHAIN),
             Cl.stringAscii("any arbitrary address"),
           ],
@@ -142,7 +147,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [Cl.stringAscii("ethereum")],
+          [itsImpl, Cl.stringAscii("ethereum")],
           address1,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -153,7 +158,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [Cl.stringAscii("ethereum")],
+          [itsImpl, Cl.stringAscii("ethereum")],
           deployer,
         ).result,
       ).toBeOk(Cl.bool(true));
@@ -181,7 +186,7 @@ describe("Interchain Token Service", () => {
         payload,
         destinationChain: "stacks",
         destinationContractAddress: "interchain-token-service",
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
       });
       expect(deployTx.events[3].event).toBe("print_event");
       expect(Cl.deserialize(deployTx.events[3].data.raw_value!)).toBeTuple(
@@ -447,13 +452,13 @@ describe("Interchain Token Service", () => {
             ),
           ),
         }),
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
       };
       const message = buildOutgoingGMPMessage(messageData);
       expect(nativeGasPaidForContractCall.data.value).toBeTuple({
         type: Cl.stringAscii("native-gas-paid-for-contract-call"),
         amount: Cl.uint(100),
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
         "refund-address": Cl.address(address1),
         "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
         "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
@@ -545,7 +550,7 @@ describe("Interchain Token Service", () => {
         payload: verifyPayload,
         destinationChain: "stacks",
         destinationContractAddress: "interchain-token-service",
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
       });
       expect(deployTx.events[2].event).toBe("print_event");
       expect(Cl.deserialize(deployTx.events[2].data.raw_value!)).toBeTuple(
@@ -717,7 +722,7 @@ describe("Interchain Token Service", () => {
         buildOutgoingGMPMessage({
           destinationChain: TRUSTED_CHAIN,
           destinationContractAddress: TRUSTED_ADDRESS,
-          sender: Cl.address(`${deployer}.interchain-token-service`),
+          sender: Cl.address(`${deployer}.interchain-token-service-impl`),
           payload: Cl.tuple({
             "destination-chain": Cl.stringAscii(destinationChain),
             type: Cl.uint(MessageType.SEND_TO_HUB),
@@ -1419,7 +1424,6 @@ describe("Interchain Token Service", () => {
         ) as ContractPrincipalCV,
       };
       beforeEach(() => {
-        // setupService();
         setupTokenManager({});
         deployTokenManager({
           salt: lockUnlockSalt,
@@ -2428,14 +2432,16 @@ describe("Interchain Token Service", () => {
           }).result,
         ).toBeOk(Cl.bool(true));
 
-        setFlowLimit({
-          tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(
-            deployer,
-            "native-interchain-token",
-          ),
-          limit: Cl.uint(5),
-        });
+        expect(
+          setFlowLimit({
+            tokenId,
+            tokenManagerAddress: Cl.contractPrincipal(
+              deployer,
+              "native-interchain-token",
+            ),
+            limit: Cl.uint(5),
+          }).result,
+        ).toBeOk(Cl.bool(true));
         expect(getFlowLimit("native-interchain-token").result).toBeOk(
           Cl.uint(5),
         );
@@ -2552,7 +2558,11 @@ describe("Interchain Token Service", () => {
     });
 
     describe("Should be able to transfer the operator", () => {
-      function runCurrentTests(contractName: string, operator = address1) {
+      function runCurrentTests(
+        contractName: string,
+        operator = address1,
+        ERROR_CODE = NIT_ERRORS["ERR-ONLY-OPERATOR"],
+      ) {
         expect(isOperator({ contractName, operator: address2 }).result).toBeOk(
           Cl.bool(false),
         );
@@ -2560,7 +2570,7 @@ describe("Interchain Token Service", () => {
           Cl.bool(true),
         );
         expect(
-          transferOperatorShip({
+          transferTokenOperatorShip({
             contractName,
             operator: operator,
             newOperator: address2,
@@ -2574,12 +2584,12 @@ describe("Interchain Token Service", () => {
         );
 
         expect(
-          transferOperatorShip({
+          transferTokenOperatorShip({
             contractName,
             operator: operator,
             newOperator: address2,
           }).result,
-        ).toBeErr(NIT_ERRORS["ERR-ONLY-OPERATOR"]);
+        ).toBeErr(ERROR_CODE);
       }
       it("lock unlock", () => {
         setupTokenManager({});
@@ -2594,7 +2604,39 @@ describe("Interchain Token Service", () => {
 
       it("its", () => {
         const contractName = "interchain-token-service";
-        runCurrentTests(contractName, deployer);
+        const implContractName = "interchain-token-service-impl";
+        const operator = deployer;
+
+        expect(
+          isOperator({ contractName: implContractName, operator: address2 })
+            .result,
+        ).toBeOk(Cl.bool(false));
+        expect(
+          isOperator({ contractName: implContractName, operator }).result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          transferITSOperatorShip({
+            contractName,
+            operator,
+            newOperator: address2,
+          }).result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isOperator({ contractName: implContractName, operator: address2 })
+            .result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isOperator({ contractName: implContractName, operator: operator })
+            .result,
+        ).toBeOk(Cl.bool(false));
+
+        expect(
+          transferITSOperatorShip({
+            contractName,
+            operator: operator,
+            newOperator: address2,
+          }).result,
+        ).toBeErr(ITS_ERROR_CODES["ERR-ONLY-OPERATOR"]);
       });
     });
   });

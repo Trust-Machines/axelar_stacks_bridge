@@ -48,8 +48,8 @@
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
-(define-constant CHAIN-NAME-HASH (unwrap! (contract-call? .interchain-token-service get-chain-name-hash) ERR-SERVICE-NOT-DEPLOYED))
-(define-constant GATEWAY (unwrap! (contract-call? .interchain-token-service get-gateway) ERR-GATEWAY-NOT-DEPLOYED))
+(define-constant CHAIN-NAME-HASH (unwrap! (contract-call? .interchain-token-service-impl get-chain-name-hash) ERR-SERVICE-NOT-DEPLOYED))
+(define-constant GATEWAY (contract-call? .interchain-token-service-storage get-gateway))
 ;; The address of the interchain token service.
 (define-constant ITS .interchain-token-service)
 
@@ -86,14 +86,14 @@
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
 (define-read-only (get-interchain-token-id (deployer principal) (salt (buff 32)))
-    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+    (ok (contract-call? .interchain-token-service-impl interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
 
 
 ;; Computes the ID for a canonical interchain token based on its address.
 ;; @param tokenAddress The address of the canonical interchain token.
 ;; @return tokenId The ID of the canonical interchain token.
 (define-read-only (get-canonical-interchain-token-id (token-address principal))
-    (ok (contract-call? .interchain-token-service interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address))))
+    (ok (contract-call? .interchain-token-service-impl interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address))))
 
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
@@ -108,8 +108,10 @@
     (begin
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
-            .interchain-token-service deploy-token-manager 
+            .interchain-token-service
+                deploy-token-manager 
                 gateway-impl
+                .interchain-token-service-impl
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
                 TOKEN-TYPE-LOCK-UNLOCK
@@ -137,9 +139,19 @@
             (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
             (decimals (unwrap! (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
-            (token_ (try! (contract-call? .interchain-token-service valid-token-address token-id)))
+            (token_ (try! (contract-call? .interchain-token-service-impl valid-token-address token-id)))
         )
-        (contract-call? .interchain-token-service deploy-remote-interchain-token gateway-impl salt destination-chain name symbol decimals NULL-BYTES gas-value)
+        (contract-call? .interchain-token-service
+            deploy-remote-interchain-token
+            gateway-impl
+            .interchain-token-service-impl
+            salt
+            destination-chain
+            name
+            symbol
+            decimals
+            NULL-BYTES
+            gas-value)
     )
 )
 
@@ -154,7 +166,7 @@
     (let
         (
             (salt (get-interchain-token-salt CHAIN-NAME-HASH contract-caller salt_))
-            ;; TODO: ask rares about minter being the factory this behavior is not valid here
+            ;; TODO: ask rares about minter being the factory this behavior is not valid here: yes
             (minter
                 (if
                     (> initial-supply u0)
@@ -165,7 +177,15 @@
                             NULL-ADDRESS)))
         )
         (asserts! (not (is-eq ITS minter)) ERR-INVALID-MINTER)
-    (contract-call? .interchain-token-service deploy-interchain-token gateway-impl salt token initial-supply (some minter) gas-value)))
+    (contract-call? .interchain-token-service deploy-interchain-token
+    gateway-impl
+    .interchain-token-service-impl
+    salt
+    token
+    initial-supply
+    (some
+    minter)
+    gas-value)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
@@ -199,6 +219,7 @@
     )
         (contract-call? .interchain-token-service deploy-remote-interchain-token
             gateway-impl
+            .interchain-token-service-impl
             salt
             destination-chain
             name

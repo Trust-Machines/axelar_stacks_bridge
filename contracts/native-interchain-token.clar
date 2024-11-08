@@ -123,7 +123,7 @@
 (define-read-only (is-minter-raw (address principal)) 
     (or 
         (is-eq address (var-get minter))
-        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))))
+        (is-eq address (get-its-impl))))
 
 (define-read-only (is-minter (address principal)) 
     (ok (is-minter-raw address)))
@@ -270,7 +270,6 @@
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
 (define-constant OWNER tx-sender)
 
-(define-data-var interchain-token-service (optional principal) none)
 (define-data-var token-type (optional uint) none)
 
 (define-data-var is-started bool false)
@@ -279,7 +278,6 @@
 (define-public (setup
     (token-id_ (buff 32))
     (token-type_ uint)
-    (its-address principal)
     (operator-address (optional principal))
     (name_ (string-ascii 32))
     (symbol_ (string-ascii 32))
@@ -294,14 +292,11 @@
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
-        (asserts! (not (is-eq its-address (default-to NULL-ADDRESS minter_))) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
         ;; #[allow(unchecked_data)]
-        (var-set interchain-token-service (some its-address))
-        ;; #[allow(unchecked_data)]
-        (map-set roles its-address {
+        (map-set roles (get-its-impl) {
             flow-limiter: true,
         })
         (match operator-address op 
@@ -334,11 +329,13 @@
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 (define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
+(define-read-only (get-its-impl) 
+    (contract-call? .interchain-token-service-storage get-impl))
 
 (define-read-only (is-operator-raw (address principal)) 
     (or
         (is-eq address (var-get operator))
-        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))
+        (is-eq address (get-its-impl))
     ))
 
 (define-read-only (is-operator (address principal)) 
@@ -346,7 +343,7 @@
 
 (define-read-only (get-operators) 
     (ok (list 
-            (default-to NULL-ADDRESS (var-get interchain-token-service))
+            (get-its-impl)
             (var-get operator))))
 
 ;; Transfers operatorship to a new account

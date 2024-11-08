@@ -11,9 +11,6 @@ import {
   UIntCV,
 } from "@stacks/transactions";
 
-const accounts = simnet.getAccounts();
-const deployer = accounts.get("deployer")!;
-const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
 import { deployGateway, gatewayImplCV, makeProofCV, signersToCv } from "./util";
@@ -28,14 +25,17 @@ import {
   BURN_ADDRESS,
 } from "./constants";
 
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const address1 = accounts.get("wallet_1")!;
+export const itsImpl = Cl.address(`${deployer}.interchain-token-service-impl`);
+
 export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
-  itsAddress = `${deployer}.interchain-token-service`,
   operator = address1,
   sender = deployer,
 }: {
   tokenType?: TokenType;
-  itsAddress?: string;
   operator?: string | null;
   sender?: string;
 }) {
@@ -45,7 +45,6 @@ export function setupTokenManager({
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
       Cl.uint(tokenType),
-      Cl.address(itsAddress),
       operator ? Cl.some(Cl.standardPrincipal(operator)) : Cl.none(),
     ],
     sender,
@@ -97,6 +96,7 @@ export function deployTokenManager({
     "deploy-token-manager",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
@@ -138,7 +138,7 @@ export function enableTokenManager({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service",
+          "interchain-token-service-impl",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
@@ -158,7 +158,7 @@ export function enableTokenManager({
         buildIncomingGMPMessage({
           contractAddress: Cl.contractPrincipal(
             deployer,
-            "interchain-token-service",
+            "interchain-token-service-impl",
           ),
           messageId: wrappedPayload["message-id"],
           payload: Cl.deserialize(wrappedPayload.payload.buffer),
@@ -178,6 +178,7 @@ export function enableTokenManager({
     "process-deploy-token-manager-from-stacks",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
@@ -204,7 +205,7 @@ export function getTokenId(
   deployer: string = address1,
 ) {
   return simnet.callReadOnlyFn(
-    "interchain-token-service",
+    "interchain-token-service-impl",
     "interchain-token-id",
     [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
     address1,
@@ -312,7 +313,11 @@ export function signAndApproveMessages({
   const { result: approveResult } = simnet.callPublicFn(
     "gateway",
     "approve-messages",
-    [gatewayImplCV, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    [
+      gatewayImplCV,
+      Cl.buffer(Cl.serialize(messages)),
+      Cl.buffer(Cl.serialize(proof)),
+    ],
     address1,
   );
 
@@ -323,7 +328,7 @@ export function setPaused({ paused }: { paused: boolean }) {
   return simnet.callPublicFn(
     "interchain-token-service",
     "set-paused",
-    [Cl.bool(paused)],
+    [itsImpl, Cl.bool(paused)],
     deployer,
   );
 }
@@ -353,6 +358,7 @@ export function deployRemoteInterchainToken({
     "deploy-remote-interchain-token",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.stringAscii(name),
@@ -385,6 +391,7 @@ export function executeDeployInterchainToken({
     "execute-deploy-interchain-token",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -444,7 +451,7 @@ export function approveRemoteInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service",
+          "interchain-token-service-impl",
         ),
         messageId: Cl.stringAscii(
           "approved-interchain-token-deployment-message",
@@ -483,6 +490,7 @@ export function deployInterchainToken({
     "deploy-interchain-token",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
@@ -521,6 +529,7 @@ export function executeDeployTokenManager({
     "execute-deploy-token-manager",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -562,6 +571,7 @@ export function interchainTransfer({
     "interchain-transfer",
     [
       gatewayImplCV,
+      itsImpl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -648,6 +658,7 @@ export function executeReceiveInterchainToken({
     "execute-receive-interchain-token",
     [
       gatewayImplCV,
+      itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -702,7 +713,7 @@ export function approveReceiveInterchainTransfer({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service",
+          "interchain-token-service-impl",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
@@ -743,14 +754,12 @@ export function setupNIT({
   operator,
   name = "Nitter",
   symbol = "NIT",
-  itsAddress = `${deployer}.interchain-token-service`,
 }: {
   tokenId: BufferCV;
   minter?: string;
   operator?: string;
   name?: string;
   symbol?: string;
-  itsAddress?: string;
 }) {
   return simnet.callPublicFn(
     "native-interchain-token",
@@ -760,8 +769,6 @@ export function setupNIT({
       tokenId,
       // (token-type_ uint)
       Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
-      // (its-address principal)
-      Cl.address(itsAddress),
       // (operator-address (optional principal))
       operator ? Cl.some(Cl.address(operator)) : Cl.none(),
       // (name_ (string-ascii 32))
@@ -809,7 +816,7 @@ export function approveDeployNativeInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service",
+          "interchain-token-service-impl",
         ),
         messageId: Cl.stringAscii(
           "approved-native-interchain-token-deployment-message",
@@ -903,6 +910,7 @@ export function callContractWithInterchainToken({
     "call-contract-with-interchain-token",
     [
       gatewayImplCV,
+      itsImpl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -921,7 +929,7 @@ export function callContractWithInterchainToken({
   );
 }
 
-export function setupService(proofSigners: Signers) {
+export function setupService(proofSigners: Signers, customITSImpl?: string) {
   expect(
     simnet.callPublicFn(
       "interchain-token-service",
@@ -947,6 +955,7 @@ export function setupService(proofSigners: Signers) {
           }),
         ]),
         Cl.stringAscii(TRUSTED_CHAIN),
+        customITSImpl ? Cl.some(Cl.address(customITSImpl)) : Cl.none(),
       ],
       deployer,
     ).result,
@@ -966,7 +975,7 @@ export function setFlowLimit({
   return simnet.callPublicFn(
     "interchain-token-service",
     "set-flow-limit",
-    [tokenId, tokenManagerAddress, limit],
+    [itsImpl, tokenId, tokenManagerAddress, limit],
     deployer,
   );
 }
@@ -1115,7 +1124,7 @@ export function isOperator({
   );
 }
 
-export function transferOperatorShip({
+export function transferTokenOperatorShip({
   contractName,
   operator,
   newOperator,
@@ -1128,6 +1137,21 @@ export function transferOperatorShip({
     contractName,
     "transfer-operatorship",
     [Cl.address(newOperator)],
+    operator,
+  );
+}
+export function transferITSOperatorShip({
+  operator,
+  newOperator,
+}: {
+  contractName: string;
+  operator: string;
+  newOperator: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "transfer-operatorship",
+    [itsImpl, Cl.address(newOperator)],
     operator,
   );
 }

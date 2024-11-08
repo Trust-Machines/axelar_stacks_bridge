@@ -23,16 +23,18 @@
 (define-data-var token-address (optional principal) none)
 (define-data-var token-type (optional uint) none)
 
-(define-data-var interchain-token-service (optional principal) none)
+
 
 (define-map roles principal {
     flow-limiter: bool,
 })
+(define-read-only (get-its-impl) 
+    (contract-call? .interchain-token-service-storage get-impl))
 
 
 ;; Checks that the sender is the interchain-token-service contract
 (define-read-only (is-its-sender) 
-    (is-eq contract-caller (default-to NULL-ADDRESS (var-get interchain-token-service))))
+    (is-eq contract-caller (get-its-impl)))
 
 ;; Getter for the contract id.
 ;; @return (buff 32) The contract id.
@@ -191,7 +193,7 @@
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (unwrap! (var-get interchain-token-service) ERR-NOT-STARTED)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
         (as-contract (transfer-token-from sip-010-token contract-caller to amount))))
 
@@ -204,7 +206,7 @@
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (unwrap! (var-get interchain-token-service) ERR-NOT-STARTED)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
@@ -238,23 +240,19 @@
 (define-public (setup 
     (token-address_ principal)
     (token-type_ uint)
-    (its-address principal)
     (operator-address (optional principal))
 ) 
     (begin
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         ;; (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)
-        (asserts! (not (is-eq its-address NULL-ADDRESS)) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-address (some token-address_))
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
         ;; #[allow(unchecked_data)]
-        (var-set interchain-token-service (some its-address))
-        ;; #[allow(unchecked_data)]
-        (map-set roles its-address {
+        (map-set roles (get-its-impl) {
             flow-limiter: true,
         })
         (var-set operator (default-to NULL-ADDRESS operator-address))
@@ -290,7 +288,7 @@
 (define-read-only (is-operator-raw (address principal)) 
     (or
         (is-eq address (var-get operator))
-        (is-eq address (default-to NULL-ADDRESS (var-get interchain-token-service)))
+        (is-eq address (get-its-impl))
     ))
 
 (define-read-only (is-operator (address principal)) 
@@ -298,7 +296,7 @@
 
 (define-read-only (get-operators) 
     (ok (list 
-            (default-to NULL-ADDRESS (var-get interchain-token-service))
+            (get-its-impl)
             (var-get operator))))
 
 ;; Transfers operatorship to a new account

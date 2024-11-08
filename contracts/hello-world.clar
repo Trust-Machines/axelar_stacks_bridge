@@ -75,7 +75,7 @@
         (tokenAddress principal)
         (amount uint))
     (begin
-        (asserts! (is-eq contract-caller .interchain-token-service) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller .interchain-token-service-impl) ERR-NOT-AUTHORIZED)
         (var-set value (merge (var-get value) {
             source-chain: source-chain,
             message-id: message-id,

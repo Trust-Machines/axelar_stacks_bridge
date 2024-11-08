@@ -33,7 +33,7 @@
         (tokenAddress principal)
         (amount uint))
     (begin
-        (asserts! (is-eq contract-caller .interchain-token-service) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller .interchain-token-service-impl) ERR-NOT-AUTHORIZED)
         (try! (if true (err u8051) (ok u0)))
         (ok (keccak256 (unwrap-panic (to-consensus-buff? "its-execute-success"))))))
 ;; read only functions

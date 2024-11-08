@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   keccak256,
   setTokenFlowLimit,
+  setupService,
   setupTokenManager,
   transferSip010,
 } from "./its-utils";
 import { BURN_ADDRESS, TOKEN_MANAGER_ERRORS } from "./constants";
 import { Cl } from "@stacks/transactions";
 import { runFlowLimitsSuite } from "./token-manager-utils";
+import { getSigners } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -18,25 +20,16 @@ const deployer = accounts.get("deployer")!;
   https://docs.hiro.so/stacks/clarinet-js-sdk
 */
 
-describe("example tests", () => {
-  it("Should revert on token manager deployment with invalid service address", async () => {
-    expect(
-      setupTokenManager({
-        itsAddress: BURN_ADDRESS,
-        operator: null,
-      }).result
-    ).toBeErr(TOKEN_MANAGER_ERRORS["ERR-INVALID-PARAMS"]);
-  });
-
+describe("Token Manager", () => {
   it("Should return the correct contract id", async () => {
     const expectedContractid = keccak256(
-      Cl.serialize(Cl.stringAscii("token-manager"))
+      Cl.serialize(Cl.stringAscii("token-manager")),
     );
     const contractId = simnet.callReadOnlyFn(
       "token-manager",
       "contract-id",
       [],
-      address1
+      address1,
     ).result;
     expect(contractId).toBeOk(Cl.buffer(expectedContractid));
   });
@@ -45,14 +38,14 @@ describe("example tests", () => {
     expect(
       setupTokenManager({
         sender: address1,
-      }).result
+      }).result,
     ).toBeErr(TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]);
   });
 
   it("Should revert on setFlowLimit if not called by the operator", async () => {
     const flowLimit = 100;
     expect(
-      setTokenFlowLimit("token-manager", flowLimit, address1).result
+      setTokenFlowLimit("token-manager", flowLimit, address1).result,
     ).toBeErr(TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]);
   });
 
@@ -61,14 +54,14 @@ describe("example tests", () => {
       Cl.tuple({
         operator: Cl.some(Cl.address(address1)),
         "token-address": Cl.address(`${deployer}.sample-sip-010`),
-      })
+      }),
     );
 
     const params = simnet.callReadOnlyFn(
       "token-manager",
       "get-params",
       [Cl.some(Cl.address(address1)), Cl.address(`${deployer}.sample-sip-010`)],
-      address1
+      address1,
     );
     expect(params.result).toBeOk(Cl.buffer(expectedParams));
   });
@@ -77,15 +70,16 @@ describe("example tests", () => {
     const flowLimit = 5;
 
     beforeEach(() => {
+      const proofSigners = getSigners(0, 10, 1, 10, "1");
+      setupService(proofSigners, address1);
       expect(
         setupTokenManager({
           operator: address1,
-          itsAddress: address1,
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       expect(setTokenFlowLimit("token-manager", flowLimit).result).toBeOk(
-        Cl.bool(true)
+        Cl.bool(true),
       );
 
       expect(
@@ -94,7 +88,7 @@ describe("example tests", () => {
           sender: deployer,
           recipient: address1,
           contractAddress: `${deployer}.sample-sip-010`,
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
       expect(
         transferSip010({
@@ -102,7 +96,7 @@ describe("example tests", () => {
           sender: deployer,
           recipient: `${deployer}.token-manager`,
           contractAddress: `${deployer}.sample-sip-010`,
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
     });
     runFlowLimitsSuite({

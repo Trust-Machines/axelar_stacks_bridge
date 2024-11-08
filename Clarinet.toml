@@ -45,6 +45,16 @@ path = 'contracts/interchain-token-service.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.interchain-token-service-impl]
+path = 'contracts/interchain-token-service-impl.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.interchain-token-service-storage]
+path = 'contracts/interchain-token-service-storage.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.native-interchain-token]
 path = 'contracts/native-interchain-token.clar'
 clarity_version = 2
