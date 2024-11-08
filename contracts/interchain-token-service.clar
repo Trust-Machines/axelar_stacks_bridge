@@ -261,6 +261,31 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl set-flow-limit token-id token-manager limit contract-caller)))
 
+;; ######################
+;; ######################
+;; ### Upgradability ####
+;; ######################
+;; ######################
+
+(define-constant GOVERNANCE .governance)
+
+(define-public (updgrade-impl (its-impl <its-trait>))
+    (let
+        (
+            (prev (contract-call? .interchain-token-service-storage get-impl))
+            (new (contract-of its-impl))
+        ) 
+        (asserts! (is-eq contract-caller GOVERNANCE) ERR-NOT-AUTHORIZED)
+        (try! (contract-call? .interchain-token-service-storage set-impl new))
+        (print {
+            type: "interchain-token-service-impl-updgraded",
+            prev: prev,
+            new: new
+        })
+        (ok true)
+    )
+)
+
 
 ;; ######################
 ;; ######################
