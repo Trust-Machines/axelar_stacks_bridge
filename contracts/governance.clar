@@ -108,7 +108,7 @@
 
 ;; Finalizes scheduled gateway upgrade task
 ;; @gateway-impl; Trait reference of the new gateway implementation. 
-;; @payload-hash; Hash to find the scheduled task
+;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the upgrade.
 ;; @returns (response true) or reverts
 (define-public (upgrade-gateway-impl-execute 
     (gateway-impl <gateway-trait>)
