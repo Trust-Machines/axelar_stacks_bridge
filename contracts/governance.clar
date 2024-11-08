@@ -1,11 +1,26 @@
 (use-trait gateway-trait .traits.gateway-trait)
 
-(define-constant MIN-TIMELOCK-DELAY u3600) ;; 1 hour
+;; ######################
+;; ######################
+;; ###### Timelock ######
+;; ######################
+;; ######################
+
+(define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
 (define-map timelock-map (buff 32) uint)
 
+;; Returns the timestamp after which the timelock may be executed.
+;; @params hash; The hash of the timelock
+;; @returns uint
 (define-read-only (get-timelock (hash (buff 32))) (default-to u0 (map-get? timelock-map hash)))
 
+;; Schedules a new timelock.
+;; The timestamp will be set to the current block timestamp + minimum time delay, 
+;; if the provided timestamp is less than that.
+;; @params hash; The hash of the new timelock
+;; @params eta; The proposed Unix timestamp (in secs) after which the new timelock can be executed
+;; @returns (response true) or reverts
 (define-private (schedule-timelock (hash (buff 32)) (eta uint)) 
     (let 
         (
@@ -18,10 +33,23 @@
     )
 )
 
+;; Cancels an existing timelock by setting its eta to zero.
+;; @params hash; The hash of the timelock to cancel
+;; @returns (response true) or reverts
 (define-private (cancel-timelock (hash (buff 32))) 
-     (ok (map-set timelock-map hash u0))
+    (let
+        (
+            (eta (get-timelock hash))
+        )
+        (asserts! (> eta u0) (err u5437))
+        (ok (map-set timelock-map hash u0))
+    )
 )
 
+;; Finalizes an existing timelock and sets its eta back to zero.
+;; To finalize, the timelock must currently exist and the required time delay must have passed.
+;; @params hash; The hash of the timelock to finalize
+;; @returns (response true) or reverts
 (define-private (finalize-timelock (hash (buff 32))) 
     (let
         (
