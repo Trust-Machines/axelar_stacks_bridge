@@ -66,10 +66,15 @@
     )
 )
 
+;; ######################
+;; ######################
+;; ###### Gateway #######
+;; ######################
+;; ######################
 
 (define-constant ERR-PAYLOAD-DATA (err u13021))
 
-(define-public (set-gateway-impl
+(define-public (upgrade-gateway-impl
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
@@ -85,8 +90,17 @@
             } payload) ERR-PAYLOAD-DATA))
             (payload-hash (keccak256 payload))
         )
-        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
+        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
         (ok (schedule-timelock payload-hash (get eta data)))
     )
 )
 
+(define-public (upgrade-gateway-impl-execute 
+    (gateway-impl <gateway-trait>)
+    (payload-hash (buff 32))
+)
+    (begin 
+        (try! (finalize-timelock payload-hash))
+        (contract-call? .gateway updgrade-impl gateway-impl)
+    )
+)
