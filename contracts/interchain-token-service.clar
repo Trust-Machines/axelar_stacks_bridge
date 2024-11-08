@@ -306,7 +306,6 @@
 (define-public (setup
     (its-contract-address-name (string-ascii 128))
     (interchain-token-factory-address principal)
-    (gateway-address principal)
     (gas-service-address principal)
     (operator-address principal)
     (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
