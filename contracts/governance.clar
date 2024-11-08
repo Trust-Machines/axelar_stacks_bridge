@@ -1,5 +1,7 @@
 (use-trait gateway-trait .traits.gateway-trait)
 
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+
 ;; ######################
 ;; ######################
 ;; ###### Timelock ######
@@ -12,28 +14,29 @@
 
 (define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
-(define-map timelock-map (buff 32) uint)
+(define-map timelock-map (buff 32) {target: principal, eta: uint})
 
 ;; Returns the timestamp after which the timelock may be executed.
 ;; @params hash; The hash of the timelock
 ;; @returns uint
-(define-read-only (get-timelock (hash (buff 32))) (default-to u0 (map-get? timelock-map hash)))
+(define-read-only (get-timelock (hash (buff 32))) (default-to {target: NULL-ADDRESS, eta: u0} (map-get? timelock-map hash)))
 
 ;; Schedules a new timelock.
 ;; The timestamp will be set to the current block timestamp + minimum time delay, 
 ;; if the provided timestamp is less than that.
 ;; @params hash; The hash of the new timelock
+;; @params target; The target principal address to be interacted with
 ;; @params eta; The proposed Unix timestamp (in secs) after which the new timelock can be executed
 ;; @returns (response true) or reverts
-(define-private (schedule-timelock (hash (buff 32)) (eta uint)) 
+(define-private (schedule-timelock (hash (buff 32)) (target principal) (eta uint)) 
     (let 
         (
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
             (min-eta (+ current-ts MIN-TIMELOCK-DELAY))
             (eta- (if (< eta min-eta) min-eta eta))
         ) 
-        (asserts! (is-eq (get-timelock hash) u0) ERR-TIMELOCK-EXISTS)
-        (ok (map-set timelock-map hash eta-))
+        (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
+        (ok (map-set timelock-map hash {target: target, eta: eta}))
     )
 )
 
@@ -43,10 +46,10 @@
 (define-private (cancel-timelock (hash (buff 32))) 
     (let
         (
-            (eta (get-timelock hash))
+            (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
-        (ok (map-set timelock-map hash u0))
+        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
     )
 )
 
@@ -58,11 +61,11 @@
     (let
         (
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
-            (eta (get-timelock hash))
+            (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
         (asserts! (>= current-ts eta) ERR-TIMELOCK-NOT-READY)
-        (ok (map-set timelock-map hash u0))
+        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
     )
 )
 
@@ -73,7 +76,15 @@
 ;; ######################
 
 (define-constant ERR-PAYLOAD-DATA (err u13021))
+(define-constant ERR-INVALID-TARGET (err u13031))
 
+;; Schedules a new proposal to upgrade gateway implementation
+;; @gateway-impl; Trait reference of the current gateway implementation. 
+;; @param source-chain; The name of the source chain.
+;; @param message-id; The unique identifier of the message.
+;; @param source-address; The address of the sender on the source chain.
+;; @param payload; The payload that contains the new impl address and eta.
+;; @returns (response true) or reverts
 (define-public (upgrade-gateway-impl
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
@@ -91,15 +102,23 @@
             (payload-hash (keccak256 payload))
         )
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
-        (ok (schedule-timelock payload-hash (get eta data)))
+        (ok (schedule-timelock payload-hash (get target data) (get eta data)))
     )
 )
 
+;; Finalizes scheduled gateway upgrade task
+;; @gateway-impl; Trait reference of the new gateway implementation. 
+;; @payload-hash; Hash to find the scheduled task
+;; @returns (response true) or reverts
 (define-public (upgrade-gateway-impl-execute 
     (gateway-impl <gateway-trait>)
     (payload-hash (buff 32))
 )
-    (begin 
+    (let
+        (
+            (target (get target (get-timelock payload-hash)))
+        )
+        (asserts! (is-eq (contract-of gateway-impl) target) ERR-INVALID-TARGET)
         (try! (finalize-timelock payload-hash))
         (contract-call? .gateway updgrade-impl gateway-impl)
     )
