@@ -35,16 +35,16 @@ describe("interchain-token-factory", () => {
   });
   it("Should return the correct contract ID", () => {
     const contractId = simnet.callReadOnlyFn(
-      "interchain-token-factory",
+      "interchain-token-factory-impl",
       "get-contract-id",
       [],
-      address1
+      address1,
     ).result as ResponseOkCV<BufferCV>;
 
     expect(contractId).toBeOk(
       Cl.buffer(
-        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory")))
-      )
+        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory"))),
+      ),
     );
   });
   describe("Canonical Interchain Token Factory", () => {
@@ -71,14 +71,14 @@ describe("interchain-token-factory", () => {
   describe("Interchain token factory", () => {
     const originalSalt = randomBytes(32);
     const salt = simnet.callReadOnlyFn(
-      "interchain-token-factory",
+      "interchain-token-factory-impl",
       "get-interchain-token-salt",
       [
         Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
         Cl.address(address1),
         Cl.buffer(originalSalt),
       ],
-      address1
+      address1,
     ).result as BufferCV;
 
     const tokenId = getInterchainTokenId({
@@ -110,7 +110,7 @@ describe("interchain-token-factory", () => {
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
@@ -130,7 +130,7 @@ describe("interchain-token-factory", () => {
       const deployTx = factoryDeployInterchainToken({
         salt: randomBytes(32),
         sender: address1,
-        minterAddress: `${deployer}.interchain-token-service`,
+        minterAddress: `${deployer}.interchain-token-service-impl`,
       });
 
       expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
@@ -188,7 +188,7 @@ describe("interchain-token-factory", () => {
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({

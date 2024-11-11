@@ -29,7 +29,7 @@
     flow-limiter: bool,
 })
 (define-read-only (get-its-impl) 
-    (contract-call? .interchain-token-service-storage get-impl))
+    (contract-call? .interchain-token-service-storage get-service-impl))
 
 
 ;; Checks that the sender is the interchain-token-service contract

@@ -161,6 +161,10 @@
         (response (buff 32) uint)
     )
     (set-flow-limit ((buff 32) <token-manager-trait> uint principal) (response bool uint))
+    (valid-token-address ((buff 32)) (response {
+        manager-address: principal,
+        token-type: uint,
+    } uint))
 ))
 
 (define-trait sip-010-trait
@@ -254,3 +258,46 @@
     <gateway-trait>
   ) (response bool uint)))
 )
+
+(define-trait interchain-token-factory-trait
+    ((register-canonical-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                <sip-010-trait>
+                <token-manager-trait>
+                uint
+            )
+            (response bool uint))
+    (deploy-remote-canonical-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                <sip-010-trait>
+                (string-ascii 20)
+                uint
+            )
+            (response bool uint))
+    (deploy-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                (buff 32)
+                <native-interchain-token-trait>
+                uint
+                principal
+                uint
+            )
+            (response bool uint))
+    (deploy-remote-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                (buff 32)
+                (buff 128)
+                (string-ascii 20)
+                uint
+                <sip-010-trait>
+                <token-manager-trait>
+            )
+            (response bool uint))))

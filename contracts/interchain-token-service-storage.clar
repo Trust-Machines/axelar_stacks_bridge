@@ -1,7 +1,8 @@
 
 ;; title: interchain-token-service-storage
 (define-constant OWNER tx-sender)
-(define-constant PROXY .interchain-token-service)
+(define-constant SERVICE-PROXY .interchain-token-service)
+(define-constant FACTORY-PROXY .interchain-token-factory)
 (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 
 (define-constant ERR-UNAUTHORIZED (err u20111))
@@ -13,10 +14,10 @@
 (define-constant ERR-INVALID-DESTINATION-ADDRESS (err u22068))
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
-(define-private (is-proxy) (is-eq contract-caller PROXY))
-(define-private (is-impl) (is-eq contract-caller (var-get impl)))
+(define-private (is-service-proxy) (is-eq contract-caller SERVICE-PROXY))
+(define-private (is-service-impl) (is-eq contract-caller (var-get service-impl)))
 
-(define-private (is-proxy-or-impl) (or (is-proxy) (is-impl)))
+(define-private (is-proxy-or-service-impl) (or (is-service-proxy) (is-service-impl)))
 
 
 
@@ -33,7 +34,7 @@
 
 (define-public (start) 
     (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
         (ok (var-set is-started true))
     )
 )
@@ -41,16 +42,34 @@
 
 
 ;; ITS implementation contract address 
-(define-data-var impl principal .interchain-token-service-impl)
+(define-data-var service-impl principal .interchain-token-service-impl)
 
-(define-read-only (get-impl) (var-get impl))
-(define-read-only (get-proxy) PROXY)
+(define-read-only (get-service-impl) (var-get service-impl))
+(define-read-only (get-service-proxy) SERVICE-PROXY)
 
 
-(define-public (set-impl (new-impl principal)) 
+(define-public (set-service-impl (new-service-impl principal)) 
     (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (ok (var-set impl new-impl))
+        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+        (ok (var-set service-impl new-service-impl))
+    )
+)
+
+
+
+;; ITF implementation contract address 
+(define-data-var factory-impl principal .interchain-token-factory-impl)
+
+(define-read-only (get-factory-impl) (var-get factory-impl))
+(define-read-only (get-factory-proxy) FACTORY-PROXY)
+
+(define-private (is-factory-proxy) (is-eq contract-caller FACTORY-PROXY))
+
+
+(define-public (set-factory-impl (new-factory-impl principal)) 
+    (begin
+        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+        (ok (var-set factory-impl new-factory-impl))
     )
 )
 
@@ -62,7 +81,7 @@
 
 (define-public (set-operator (new-operator principal)) 
     (begin
-        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-UNAUTHORIZED)
         (ok (var-set operator new-operator))
     )
 )
@@ -71,7 +90,7 @@
 
 (define-public (set-paused (status bool))
     (begin
-        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-UNAUTHORIZED)
         (ok (var-set is-paused status))))
 
 (define-read-only (get-is-paused)
@@ -120,7 +139,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (set-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (begin
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-set trusted-chain-address chain-name address))))
 
 ;; Remove the trusted address of the chain.
@@ -128,7 +147,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address  (chain-name  (string-ascii 20)))
     (begin
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-delete trusted-chain-address chain-name))))
 
 (define-private (extract-and-set-trusted-address
@@ -137,7 +156,7 @@
 
 (define-public (set-trusted-addresses (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)})))
     (begin 
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
         (map extract-and-set-trusted-address trusted-chain-names-addresses)
         (ok true))
 )
@@ -158,7 +177,7 @@
 
 (define-public (insert-token-manager (token-id (buff 32)) (manager-address principal) (token-type uint))
     (begin
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-insert token-managers token-id {
             manager-address: manager-address,
             token-type: token-type
@@ -166,7 +185,6 @@
     ))
 
 
-(define-data-var interchain-token-factory principal NULL-ADDRESS)
 (define-data-var gas-service principal NULL-ADDRESS)
 (define-data-var its-contract-name (string-ascii 128) "")
 (define-data-var its-hub-chain (string-ascii 20) "axelarnet")
@@ -176,20 +194,14 @@
     (contract-call? .gateway-storage get-impl)) 
 
 (define-read-only (get-token-factory)
-    (var-get interchain-token-factory))
-
-(define-public (set-token-factory (factory principal)) 
-    (begin 
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
-        (var-set interchain-token-factory factory)
-        (ok true)))
+    (var-get factory-impl))
 
 (define-read-only (get-gas-service)
     (var-get gas-service)) 
 
 (define-public (set-gas-service (address principal)) 
     (begin 
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set gas-service address)
         (ok true)))
 
@@ -199,7 +211,7 @@
 
 (define-public (set-its-hub-chain (chain-name (string-ascii 20))) 
     (begin 
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-hub-chain chain-name)
         (ok true)))
 
@@ -208,6 +220,6 @@
 
 (define-public (set-its-contract-name (contract-name (string-ascii 128))) 
     (begin 
-        (asserts! (is-proxy-or-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-contract-name contract-name)
         (ok true)))

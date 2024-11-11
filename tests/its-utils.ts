@@ -937,7 +937,6 @@ export function setupService(proofSigners: Signers, customITSImpl?: string) {
       "setup",
       [
         Cl.stringAscii("interchain-token-service"),
-        Cl.contractPrincipal(deployer, "interchain-token-factory"),
         Cl.contractPrincipal(deployer, "gas-service"),
         Cl.standardPrincipal(deployer),
         Cl.list([
@@ -1144,7 +1143,6 @@ export function transferITSOperatorShip({
   operator,
   newOperator,
 }: {
-  contractName: string;
   operator: string;
   newOperator: string;
 }) {

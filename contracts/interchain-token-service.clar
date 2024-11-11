@@ -15,7 +15,7 @@
 
 (define-private (is-correct-impl (interchain-token-service-impl <its-trait>)) 
     (is-eq 
-        (contract-call? .interchain-token-service-storage get-impl) 
+        (contract-call? .interchain-token-service-storage get-service-impl) 
         (contract-of interchain-token-service-impl)))
 
 ;; traits
@@ -272,11 +272,11 @@
 (define-public (updgrade-impl (its-impl <its-trait>))
     (let
         (
-            (prev (contract-call? .interchain-token-service-storage get-impl))
+            (prev (contract-call? .interchain-token-service-storage get-service-impl))
             (new (contract-of its-impl))
         ) 
         (asserts! (is-eq contract-caller GOVERNANCE) ERR-NOT-AUTHORIZED)
-        (try! (contract-call? .interchain-token-service-storage set-impl new))
+        (try! (contract-call? .interchain-token-service-storage set-service-impl new))
         (print {
             type: "interchain-token-service-impl-updgraded",
             prev: prev,
@@ -305,7 +305,6 @@
 ;; @returns (response true) or reverts
 (define-public (setup
     (its-contract-address-name (string-ascii 128))
-    (interchain-token-factory-address principal)
     (gas-service-address principal)
     (operator-address principal)
     (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
@@ -316,12 +315,11 @@
         (asserts! (not (get-is-started)) ERR-STARTED)
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-its-contract-name its-contract-address-name))
-        (try! (contract-call? .interchain-token-service-storage set-token-factory interchain-token-factory-address))
         (try! (contract-call? .interchain-token-service-storage set-gas-service gas-service-address))
         (try! (contract-call? .interchain-token-service-storage set-operator operator-address))
         (try! (contract-call? .interchain-token-service-storage set-its-hub-chain hub-chain))
         (try! (contract-call? .interchain-token-service-storage set-trusted-addresses trusted-chain-names-addresses))
-        (try! (match its-impl impl (contract-call? .interchain-token-service-storage set-impl impl) (ok true)))
+        (try! (match its-impl impl (contract-call? .interchain-token-service-storage set-service-impl impl) (ok true)))
         (try! (contract-call? .interchain-token-service-storage start))
         (ok true)
     )

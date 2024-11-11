@@ -330,7 +330,7 @@
 (define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-its-impl)
-    (contract-call? .interchain-token-service-storage get-impl))
+    (contract-call? .interchain-token-service-storage get-service-impl))
 
 (define-read-only (is-operator-raw (address principal))
     (or

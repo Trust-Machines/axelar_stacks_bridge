@@ -2589,7 +2589,6 @@ describe("Interchain Token Service", () => {
         ).toBeOk(Cl.bool(true));
         expect(
           transferITSOperatorShip({
-            contractName,
             operator,
             newOperator: address2,
           }).result,
