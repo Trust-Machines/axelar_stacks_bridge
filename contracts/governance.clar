@@ -14,7 +14,7 @@
 
 (define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
-(define-map timelock-map (buff 32) {target: principal, eta: uint})
+(define-map timelock-map (buff 32) {target: principal, eta: uint, type: uint})
 
 ;; Returns the timestamp after which the timelock may be executed.
 ;; @params hash; The hash of the timelock
@@ -22,13 +22,13 @@
 (define-read-only (get-timelock (hash (buff 32))) (default-to {target: NULL-ADDRESS, eta: u0} (map-get? timelock-map hash)))
 
 ;; Schedules a new timelock.
-;; The timestamp will be set to the current block timestamp + minimum time delay, 
-;; if the provided timestamp is less than that.
-;; @params hash; The hash of the new timelock
-;; @params target; The target principal address to be interacted with
-;; @params eta; The proposed Unix timestamp (in secs) after which the new timelock can be executed
+;; The timestamp will be set to the current block timestamp + minimum time delay, if the provided timestamp is less than that.
+;; @params hash; The hash of the new timelock.
+;; @params target; The target principal address to be interacted with.
+;; @params eta; The proposed Unix timestamp (in secs) after which the new timelock can be executed.
+;; @params type; Task type.
 ;; @returns (response true) or reverts
-(define-private (schedule-timelock (hash (buff 32)) (target principal) (eta uint)) 
+(define-private (schedule-timelock (hash (buff 32)) (target principal) (eta uint) (type uint)) 
     (let 
         (
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
@@ -36,7 +36,7 @@
             (eta- (if (< eta min-eta) min-eta eta))
         ) 
         (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
-        (ok (map-set timelock-map hash {target: target, eta: eta}))
+        (ok (map-set timelock-map hash {target: target, eta: eta, type: type}))
     )
 )
 
@@ -49,7 +49,7 @@
             (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
-        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
+        (ok (map-delete timelock-map hash))
     )
 )
 
@@ -65,7 +65,7 @@
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
         (asserts! (>= current-ts eta) ERR-TIMELOCK-NOT-READY)
-        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
+        (ok (map-delete timelock-map hash))
     )
 )
 
@@ -85,7 +85,7 @@
 ;; @param source-address; The address of the sender on the source chain.
 ;; @param payload; The payload that contains the new impl address and eta.
 ;; @returns (response true) or reverts
-(define-public (upgrade-gateway-impl
+(define-public (gateway-execute
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
@@ -97,12 +97,13 @@
             (command-id (contract-call? .gateway-impl message-to-command-id source-chain message-id))
             (data (unwrap! (from-consensus-buff? {
                 target: principal,
-                eta: uint
+                eta: uint,
+                type: uint
             } payload) ERR-PAYLOAD-DATA))
             (payload-hash (keccak256 payload))
         )
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
-        (ok (schedule-timelock payload-hash (get target data) (get eta data)))
+        (ok (schedule-timelock payload-hash (get target data) (get eta data) (get type data)))
     )
 )
 
@@ -110,7 +111,7 @@
 ;; @gateway-impl; Trait reference of the new gateway implementation. 
 ;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the upgrade.
 ;; @returns (response true) or reverts
-(define-public (upgrade-gateway-impl-execute 
+(define-public (gateway-execute-finalize
     (gateway-impl <gateway-trait>)
     (payload-hash (buff 32))
 )
