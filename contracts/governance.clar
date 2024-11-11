@@ -110,28 +110,29 @@
 
 ;; Finalizes scheduled gateway task
 ;; @gateway-impl; Trait reference of the new gateway implementation. 
-;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the upgrade.
+;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the task.
 ;; @returns (response true) or reverts
 (define-public (gateway-execute-finalize
     (gateway-impl <gateway-trait>)
-    (payload-hash (buff 32))
+    (payload (buff 64000))
 )
     (let
         (
+            (payload-hash (keccak256 payload))
             (timelock (get-timelock payload-hash))
             (target (get target timelock))
             (type (get type timelock))
         )
         (asserts! (is-eq (contract-of gateway-impl) target) ERR-INVALID-TARGET)
         (try! (finalize-timelock payload-hash))
-        (asserts! (is-ok 
-            (if (is-eq type u1)
+        (asserts! (is-eq (unwrap-panic  
+            (if (is-eq type u1) ;; Gateway implementation update
                 (contract-call? .gateway updgrade-impl gateway-impl)
-                (if (is-eq type u2)
-                    (contract-call? .gateway updgrade-impl gateway-impl)
+                (if (is-eq type u2) ;; Gateway governance update
+                    (contract-call? .gateway set-governance target)
                     (ok false)
             )
-        )) ERR-INVALID-TYPE)
+        )) true) ERR-INVALID-TYPE)
         (ok true)
     )
 )

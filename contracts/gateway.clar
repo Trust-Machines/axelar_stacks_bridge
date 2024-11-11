@@ -99,6 +99,10 @@
     )
 )
 
+(define-public (set-governance (new principal))
+    (ok true)
+)
+
 ;; ######################
 ;; ######################
 ;; ### Initialization ###
