@@ -1,3 +1,4 @@
+(impl-trait .traits.proxy-trait)
 (use-trait gateway-trait .traits.gateway-trait)
 
 ;; ######################
@@ -82,11 +83,10 @@
 
 (define-private (is-governance) (is-eq contract-caller (contract-call? .gateway-storage get-governance)))
 
-(define-public (set-impl (gateway-impl <gateway-trait>))
+(define-public (set-impl (new principal))
     (let
         (
             (prev (contract-call? .gateway-storage get-impl))
-            (new (contract-of gateway-impl))
         ) 
         (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-impl new))

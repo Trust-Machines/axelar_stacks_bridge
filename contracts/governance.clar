@@ -1,4 +1,5 @@
 (use-trait gateway-trait .traits.gateway-trait)
+(use-trait proxy-trait .traits.proxy-trait)
 
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
@@ -71,7 +72,7 @@
 
 ;; ######################
 ;; ######################
-;; ###### Gateway #######
+;; ##### Governance #####
 ;; ######################
 ;; ######################
 
@@ -79,14 +80,14 @@
 (define-constant ERR-INVALID-TARGET (err u13031))
 (define-constant ERR-INVALID-TYPE (err u13041))
 
-;; Schedules a new task to run a gateway function
+;; Schedules a new task
 ;; @gateway-impl; Trait reference of the current gateway implementation. 
 ;; @param source-chain; The name of the source chain.
 ;; @param message-id; The unique identifier of the message.
 ;; @param source-address; The address of the sender on the source chain.
 ;; @param payload; The payload that contains the new impl address and eta.
 ;; @returns (response true) or reverts
-(define-public (gateway-execute
+(define-public (execute
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
@@ -108,12 +109,12 @@
     )
 )
 
-;; Finalizes scheduled gateway task
-;; @gateway-impl; Trait reference of the new gateway implementation. 
+;; Finalizes a scheduled task
+;; @proxy; Proxy trait reference to run task with. 
 ;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the task.
 ;; @returns (response true) or reverts
-(define-public (gateway-execute-finalize
-    (gateway-impl <gateway-trait>)
+(define-public (finalize
+    (proxy <proxy-trait>)
     (payload (buff 64000))
 )
     (let
@@ -123,13 +124,12 @@
             (target (get target timelock))
             (type (get type timelock))
         )
-        (asserts! (is-eq (contract-of gateway-impl) target) ERR-INVALID-TARGET)
         (try! (finalize-timelock payload-hash))
         (asserts! (is-eq (unwrap-panic  
-            (if (is-eq type u1) ;; Gateway implementation update
-                (contract-call? .gateway set-impl gateway-impl)
-                (if (is-eq type u2) ;; Gateway governance update
-                    (contract-call? .gateway set-governance target)
+            (if (is-eq type u1) 
+                (contract-call? proxy set-impl target)
+                (if (is-eq type u2) 
+                    (contract-call? proxy set-governance target)
                     (ok false)
             )
         )) true) ERR-INVALID-TYPE)

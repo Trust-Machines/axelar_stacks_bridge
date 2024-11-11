@@ -1,3 +1,10 @@
+(define-trait proxy-trait 
+  (
+    (set-impl (principal) (response bool uint))
+    (set-governance (principal) (response bool uint))
+  )
+)
+
 (define-trait gateway-trait
 	(
 		(call-contract ((string-ascii 20) (string-ascii 128) (buff 64000)) (response bool uint))
