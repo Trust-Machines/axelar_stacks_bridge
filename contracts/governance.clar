@@ -19,7 +19,7 @@
 ;; Returns the timestamp after which the timelock may be executed.
 ;; @params hash; The hash of the timelock
 ;; @returns uint
-(define-read-only (get-timelock (hash (buff 32))) (default-to {target: NULL-ADDRESS, eta: u0} (map-get? timelock-map hash)))
+(define-read-only (get-timelock (hash (buff 32))) (default-to {target: NULL-ADDRESS, eta: u0, type: u0} (map-get? timelock-map hash)))
 
 ;; Schedules a new timelock.
 ;; The timestamp will be set to the current block timestamp + minimum time delay, if the provided timestamp is less than that.
@@ -77,8 +77,9 @@
 
 (define-constant ERR-PAYLOAD-DATA (err u13021))
 (define-constant ERR-INVALID-TARGET (err u13031))
+(define-constant ERR-INVALID-TYPE (err u13041))
 
-;; Schedules a new proposal to upgrade gateway implementation
+;; Schedules a new task to run a gateway function
 ;; @gateway-impl; Trait reference of the current gateway implementation. 
 ;; @param source-chain; The name of the source chain.
 ;; @param message-id; The unique identifier of the message.
@@ -107,7 +108,7 @@
     )
 )
 
-;; Finalizes scheduled gateway upgrade task
+;; Finalizes scheduled gateway task
 ;; @gateway-impl; Trait reference of the new gateway implementation. 
 ;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the upgrade.
 ;; @returns (response true) or reverts
@@ -117,10 +118,20 @@
 )
     (let
         (
-            (target (get target (get-timelock payload-hash)))
+            (timelock (get-timelock payload-hash))
+            (target (get target timelock))
+            (type (get type timelock))
         )
         (asserts! (is-eq (contract-of gateway-impl) target) ERR-INVALID-TARGET)
         (try! (finalize-timelock payload-hash))
-        (contract-call? .gateway updgrade-impl gateway-impl)
+        (asserts! (is-ok 
+            (if (is-eq type u1)
+                (contract-call? .gateway updgrade-impl gateway-impl)
+                (if (is-eq type u2)
+                    (contract-call? .gateway updgrade-impl gateway-impl)
+                    (ok false)
+            )
+        )) ERR-INVALID-TYPE)
+        (ok true)
     )
 )
