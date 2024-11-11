@@ -1,5 +1,7 @@
 (use-trait gateway-trait .traits.gateway-trait)
 
+(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+
 ;; ######################
 ;; ######################
 ;; ###### Timelock ######
@@ -12,13 +14,12 @@
 
 (define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
-(define-map timelock-eta (buff 32) uint)
-(define-map timelock-target (buff 32) principal)
+(define-map timelock-map (buff 32) {target: principal, eta: uint})
 
 ;; Returns the timestamp after which the timelock may be executed.
 ;; @params hash; The hash of the timelock
 ;; @returns uint
-(define-read-only (get-timelock (hash (buff 32))) (default-to u0 (map-get? timelock-eta hash)))
+(define-read-only (get-timelock (hash (buff 32))) (default-to {target: NULL-ADDRESS, eta: u0} (map-get? timelock-map hash)))
 
 ;; Schedules a new timelock.
 ;; The timestamp will be set to the current block timestamp + minimum time delay, 
@@ -34,9 +35,8 @@
             (min-eta (+ current-ts MIN-TIMELOCK-DELAY))
             (eta- (if (< eta min-eta) min-eta eta))
         ) 
-        (asserts! (is-eq (get-timelock hash) u0) ERR-TIMELOCK-EXISTS)
-        (map-set timelock-target hash target)
-        (ok (map-set timelock-eta hash eta))
+        (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
+        (ok (map-set timelock-map hash {target: target, eta: eta}))
     )
 )
 
@@ -46,11 +46,10 @@
 (define-private (cancel-timelock (hash (buff 32))) 
     (let
         (
-            (eta (get-timelock hash))
+            (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
-        (map-delete timelock-target hash)
-        (ok (map-set timelock-eta hash u0))
+        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
     )
 )
 
@@ -62,12 +61,11 @@
     (let
         (
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
-            (eta (get-timelock hash))
+            (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)
         (asserts! (>= current-ts eta) ERR-TIMELOCK-NOT-READY)
-        (map-delete timelock-target hash)
-        (ok (map-set timelock-eta hash u0))
+        (ok (map-set timelock-map hash {target: NULL-ADDRESS, eta: u0}))
     )
 )
 
@@ -118,7 +116,7 @@
 )
     (let
         (
-            (target (unwrap! (map-get? timelock-target payload-hash) ERR-INVALID-TARGET))
+            (target (get target (get-timelock payload-hash)))
         )
         (asserts! (is-eq (contract-of gateway-impl) target) ERR-INVALID-TARGET)
         (try! (finalize-timelock payload-hash))
