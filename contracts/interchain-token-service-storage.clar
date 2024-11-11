@@ -5,7 +5,6 @@
 (define-constant FACTORY-PROXY .interchain-token-factory)
 (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 
-(define-constant ERR-UNAUTHORIZED (err u20111))
 
 (define-constant ERR-STARTED (err u24051))
 (define-constant ERR-NOT-STARTED (err u24052))
@@ -13,6 +12,7 @@
 (define-constant ERR-PAUSED (err u21052))
 (define-constant ERR-INVALID-DESTINATION-ADDRESS (err u22068))
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
+
 
 (define-private (is-service-proxy) (is-eq contract-caller SERVICE-PROXY))
 (define-private (is-service-impl) (is-eq contract-caller (var-get service-impl)))
@@ -32,32 +32,32 @@
 
 (define-read-only (get-is-started) (var-get is-started))
 
-(define-public (start) 
+(define-public (start)
     (begin
-        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
         (ok (var-set is-started true))
     )
 )
 
 
 
-;; ITS implementation contract address 
+;; ITS implementation contract address
 (define-data-var service-impl principal .interchain-token-service-impl)
 
 (define-read-only (get-service-impl) (var-get service-impl))
 (define-read-only (get-service-proxy) SERVICE-PROXY)
 
 
-(define-public (set-service-impl (new-service-impl principal)) 
+(define-public (set-service-impl (new-service-impl principal))
     (begin
-        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
         (ok (var-set service-impl new-service-impl))
     )
 )
 
 
 
-;; ITF implementation contract address 
+;; ITF implementation contract address
 (define-data-var factory-impl principal .interchain-token-factory-impl)
 
 (define-read-only (get-factory-impl) (var-get factory-impl))
@@ -66,9 +66,9 @@
 (define-private (is-factory-proxy) (is-eq contract-caller FACTORY-PROXY))
 
 
-(define-public (set-factory-impl (new-factory-impl principal)) 
+(define-public (set-factory-impl (new-factory-impl principal))
     (begin
-        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
         (ok (var-set factory-impl new-factory-impl))
     )
 )
@@ -79,9 +79,9 @@
 
 (define-read-only (get-operator) (var-get operator))
 
-(define-public (set-operator (new-operator principal)) 
+(define-public (set-operator (new-operator principal))
     (begin
-        (asserts! (is-proxy-or-service-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (var-set operator new-operator))
     )
 )
@@ -90,7 +90,7 @@
 
 (define-public (set-paused (status bool))
     (begin
-        (asserts! (is-proxy-or-service-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (var-set is-paused status))))
 
 (define-read-only (get-is-paused)
@@ -155,8 +155,8 @@
         (map-set trusted-chain-address (get chain-name entry) (get address entry)))
 
 (define-public (set-trusted-addresses (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)})))
-    (begin 
-        (asserts! (is-service-proxy) ERR-UNAUTHORIZED)
+    (begin
+        (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
         (map extract-and-set-trusted-address trusted-chain-names-addresses)
         (ok true))
 )
@@ -191,35 +191,177 @@
 
 
 (define-read-only (get-gateway)
-    (contract-call? .gateway-storage get-impl)) 
+    (contract-call? .gateway-storage get-impl))
 
 (define-read-only (get-token-factory)
     (var-get factory-impl))
 
 (define-read-only (get-gas-service)
-    (var-get gas-service)) 
+    (var-get gas-service))
 
-(define-public (set-gas-service (address principal)) 
-    (begin 
+(define-public (set-gas-service (address principal))
+    (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set gas-service address)
         (ok true)))
 
 
 (define-read-only (get-its-hub-chain)
-    (var-get its-hub-chain)) 
+    (var-get its-hub-chain))
 
-(define-public (set-its-hub-chain (chain-name (string-ascii 20))) 
-    (begin 
+(define-public (set-its-hub-chain (chain-name (string-ascii 20)))
+    (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-hub-chain chain-name)
         (ok true)))
 
 (define-read-only (get-its-contract-name)
-    (var-get its-contract-name)) 
+    (var-get its-contract-name))
 
-(define-public (set-its-contract-name (contract-name (string-ascii 128))) 
-    (begin 
+(define-public (set-its-contract-name (contract-name (string-ascii 128)))
+    (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-contract-name contract-name)
         (ok true)))
+
+
+;; EVENTS
+
+(define-public (emit-transfer-operatorship (new-operator principal))
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {action: "transfer-operatorship", new-operator: new-operator})
+        (ok true)))
+
+(define-public (emit-trusted-address-set
+        (chain-name (string-ascii 20))
+        (address (string-ascii 128))) 
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+                    type: "trusted-address-set",
+                    chain: chain-name,
+                    address: address
+                })
+        (ok true)))
+
+(define-public (emit-trusted-address-removed
+        (chain-name (string-ascii 20)))
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+                    type: "trusted-address-removed",
+                    chain: chain-name,
+                })
+        (ok true)))
+
+(define-public (emit-interchain-token-id-claimed
+        (token-id (buff 32))
+        (deployer principal)
+        (salt (buff 32))) 
+    (begin 
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "interchain-token-id-claimed",
+            token-id: token-id,
+            deployer: deployer,
+            salt: salt,
+        })
+        (ok true)))
+
+(define-public (emit-token-manager-deployment-started
+        (token-id (buff 32))
+        (destination-chain (string-ascii 20))
+        (token-manager-type uint)
+        (params (buff 62000))) 
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+                type: "token-manager-deployment-started",
+                token-id: token-id,
+                destination-chain: destination-chain,
+                token-manager-type: token-manager-type,
+                params: params,
+            })
+        (ok true)))
+
+(define-public (emit-token-manager-deployed
+        (token-id  (buff 32))
+        (token-manager-address principal)
+        (token-type uint)
+        ) 
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "token-manager-deployed",
+            token-id: token-id,
+            token-manager: token-manager-address,
+            token-type: token-type,
+        })
+        (ok true)))
+
+(define-public (emit-interchain-token-deployment-started
+        (token-id  (buff 32))
+        (destination-chain (string-ascii 20))
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
+        (minter (buff 128))
+        ) 
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type:"interchain-token-deployment-started",
+            destination-chain: destination-chain,
+            token-id: token-id,
+            name: name,
+            symbol: symbol,
+            decimals: decimals,
+            minter: minter,
+        })
+        (ok true)))
+
+
+(define-public (emit-interchain-transfer
+        (token-id  (buff 32))
+        (source-address principal)
+        (destination-chain (string-ascii 20))
+        (destination-address (buff 128))
+        (amount uint)
+        (data (buff 32))
+        )
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "interchain-transfer",
+            token-id: token-id,
+            source-address: source-address,
+            destination-chain: destination-chain,
+            destination-address: destination-address,
+            amount: amount,
+            data: data
+        })
+        (ok true)))
+
+(define-public (emit-interchain-transfer-received
+        (token-id  (buff 32))
+        (source-chain (string-ascii 20))
+        (source-address (buff 128))
+        (destination-address principal)
+        (amount uint)
+        (data (buff 32))
+        )
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "interchain-transfer-received",
+            token-id: token-id,
+            source-chain: source-chain,
+            source-address: source-address,
+            destination-address: destination-address,
+            amount: amount,
+            data: data,
+        })
+        (ok true)))
+
+
