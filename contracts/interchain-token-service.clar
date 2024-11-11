@@ -294,11 +294,8 @@
 ;; ######################
 
 (define-constant ERR-STARTED (err u24051))
-(define-constant ERR-NOT-STARTED (err u24052))
 
 
-(define-read-only (get-is-started) 
-    (contract-call? .interchain-token-service-storage get-is-started))
 
 
 ;; Constructor function
@@ -312,7 +309,7 @@
     (its-impl (optional principal))
 )
     (begin
-        (asserts! (not (get-is-started)) ERR-STARTED)
+        (asserts! (not (contract-call? .interchain-token-service-storage get-is-started)) ERR-STARTED)
         (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-its-contract-name its-contract-address-name))
         (try! (contract-call? .interchain-token-service-storage set-gas-service gas-service-address))

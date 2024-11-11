@@ -995,7 +995,7 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u24051))
+
 (define-constant ERR-NOT-STARTED (err u24052))
 
 (define-read-only (get-is-started) 
