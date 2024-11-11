@@ -105,6 +105,11 @@ plan:
             path: contracts/interchain-token-service-impl.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: interchain-token-factory-impl
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/interchain-token-factory-impl.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: native-interchain-token
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/native-interchain-token.clar
@@ -120,11 +125,3 @@ plan:
             path: contracts/token-manager.clar
             clarity-version: 2
       epoch: "2.5"
-    - id: 1
-      transactions:
-        - emulated-contract-publish:
-            contract-name: interchain-token-factory-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/interchain-token-factory-impl.clar
-            clarity-version: 3
-      epoch: "3.0"

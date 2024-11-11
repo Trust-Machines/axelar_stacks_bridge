@@ -42,8 +42,8 @@ epoch = 2.5
 
 [contracts.interchain-token-factory-impl]
 path = 'contracts/interchain-token-factory-impl.clar'
-clarity_version = 3
-epoch = 3.0
+clarity_version = 2
+epoch = 2.5
 
 [contracts.interchain-token-service]
 path = 'contracts/interchain-token-service.clar'
