@@ -89,21 +89,7 @@ Starts the verification process for a token manager contract deployment before d
         (gas-value uint))
 ```
 
-### 8. `process-deploy-token-manager-from-stacks`
-
-Validates the token manager was vereified and ready to be deployed on stacks.
-
-```clarity
-(define-public (process-deploy-token-manager-from-stacks
-        (gateway-impl <gateway-trait>)
-        (its-impl <its-trait>)
-        (message-id (string-ascii 128))
-        (source-chain (string-ascii 20))
-        (source-address (string-ascii 128))
-        (payload (buff 64000)))
-```
-
-### 9. `deploy-remote-interchain-token`
+### 8. `deploy-remote-interchain-token`
 
 Deploys an interchain token on a destination chain.
 
@@ -120,7 +106,7 @@ Deploys an interchain token on a destination chain.
         (gas-value uint))
 ```
 
-### 10. `deploy-interchain-token`
+### 9. `deploy-interchain-token`
 
 Deploys an interchain token on a destination chain.
 
@@ -137,7 +123,7 @@ Deploys an interchain token on a destination chain.
         (gas-value uint)))
 ```
 
-### 11. `interchain-transfer`
+### 10. `interchain-transfer`
 
 Initiates an interchain transfer of a specified token to a destination chain.
 
@@ -158,7 +144,7 @@ Initiates an interchain transfer of a specified token to a destination chain.
         (gas-value uint)))
 ```
 
-### 12. `call-contract-with-interchain-token`
+### 11. `call-contract-with-interchain-token`
 
 Calls a contract on a destination chain with an interchain token.
 
@@ -179,7 +165,7 @@ Calls a contract on a destination chain with an interchain token.
         (gas-value uint)))
 ```
 
-### 13. `execute-deploy-token-manager`
+### 12. `execute-deploy-token-manager`
 
 Based on the source chain deteremines whethere to verify or validate token manager deployment.
 
@@ -196,7 +182,7 @@ Based on the source chain deteremines whethere to verify or validate token manag
         (gas-value uint))
 ```
 
-### 14. `execute-deploy-interchain-token`
+### 13. `execute-deploy-interchain-token`
 
 Executes the deployment of an interchain token.
 
@@ -211,7 +197,7 @@ Executes the deployment of an interchain token.
         (payload (buff 1024))))
 ```
 
-### 15. `execute-receive-interchain-token`
+### 14. `execute-receive-interchain-token`
 
 Executes the receipt of an interchain token.
 
@@ -227,7 +213,7 @@ Executes the receipt of an interchain token.
         (payload (buff 1024))))
 ```
 
-### 16. `set-flow-limit`
+### 15. `set-flow-limit`
 
 Sets the flow limit for a specific token manager.
 
@@ -239,7 +225,7 @@ Sets the flow limit for a specific token manager.
     (limit uint))
 ```
 
-### 17. `upgrade-impl`
+### 16. `upgrade-impl`
 
 Upgrades the implementation of the interchain token service contract.
 
@@ -248,18 +234,18 @@ Upgrades the implementation of the interchain token service contract.
     (its-impl <its-trait>))
 ```
 
-### 18. `setup`
+### 17. `setup`
 
 Sets up the interchain token service contract.
 
 ```clarity
 (define-public (setup
     (its-contract-address-name (string-ascii 128))
-    (interchain-token-factory-address principal)
-    (gateway-address principal)
     (gas-service-address principal)
     (operator-address principal)
-    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 32), address: (string-ascii 128)}))
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
+    (hub-chain (string-ascii 20))
+    (its-impl (optional principal))
 ))
 ```
 
