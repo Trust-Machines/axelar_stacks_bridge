@@ -18,6 +18,11 @@
 
 ;; constants
 ;;
+
+
+(define-constant PROXY .interchain-token-factory)
+
+(define-private (is-proxy) (is-eq contract-caller PROXY))
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
@@ -34,13 +39,15 @@
 ;; @notice rares: maybe will not be used
 (define-constant TOKEN-TYPE-MINT-BURN u4)
 
-(define-constant ERR-TOKEN-NOT-ENABLED (err u1051))
-(define-constant ERR-INVALID-MINTER (err u1052))
-(define-constant ERR-NOT-MINTER (err u1053))
-(define-constant ERR-SERVICE-NOT-DEPLOYED (err u1054))
-(define-constant ERR-GATEWAY-NOT-DEPLOYED (err u1055))
-(define-constant ERR-TOKEN-NOT-DEPLOYED (err u1056))
-(define-constant ERR-MANAGER-NOT-DEPLOYED (err u1057))
+(define-constant ERR-TOKEN-NOT-ENABLED (err u211051))
+(define-constant ERR-INVALID-MINTER (err u211052))
+(define-constant ERR-NOT-MINTER (err u211053))
+(define-constant ERR-SERVICE-NOT-DEPLOYED (err u211054))
+(define-constant ERR-GATEWAY-NOT-DEPLOYED (err u211055))
+(define-constant ERR-TOKEN-NOT-DEPLOYED (err u211056))
+(define-constant ERR-MANAGER-NOT-DEPLOYED (err u211057))
+(define-constant ERR-NOT-PROXY (err u211058))
+
 
 
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
@@ -108,6 +115,7 @@
         (gas-value uint)
     )
     (begin
+        (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
             .interchain-token-service
@@ -148,6 +156,7 @@
             ;; This ensures that the token manager has been deployed by this address, so it's safe to trust it.
             (token_ (try! (contract-call? interchain-token-service-impl valid-token-address token-id)))
         )
+        (asserts! (is-proxy) ERR-NOT-PROXY)
         (contract-call? .interchain-token-service
             deploy-remote-interchain-token
             gateway-impl
@@ -174,16 +183,17 @@
         (
             (salt (get-interchain-token-salt CHAIN-NAME-HASH tx-sender salt_))
         )
-        (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
+        (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)        
     (contract-call? .interchain-token-service deploy-interchain-token
-    gateway-impl
-    interchain-token-service-impl
-    salt
-    token
-    initial-supply
-    (some
-    minter)
-    gas-value)))
+        gateway-impl
+        interchain-token-service-impl
+        salt
+        token
+        initial-supply
+        (some
+        minter)
+        gas-value)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
@@ -218,6 +228,7 @@
                 NULL-BYTES
         ))
     )
+        (asserts! (is-proxy) ERR-NOT-PROXY)
         (contract-call? .interchain-token-service deploy-remote-interchain-token
             gateway-impl
             interchain-token-service-impl

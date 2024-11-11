@@ -97,9 +97,9 @@ export const NIT_ERRORS = {
 };
 
 export const ITF_ERRORS = {
-  "ERR-TOKEN-NOT-ENABLED": Cl.uint(1051),
-  "ERR-INVALID-MINTER": Cl.uint(1052),
-  "ERR-NOT-MINTER": Cl.uint(1053),
+  "ERR-TOKEN-NOT-ENABLED": Cl.uint(211051),
+  "ERR-INVALID-MINTER": Cl.uint(211052),
+  "ERR-NOT-MINTER": Cl.uint(211053),
 };
 
 export const BURN_ADDRESS = "ST000000000000000000002AMW42H";
