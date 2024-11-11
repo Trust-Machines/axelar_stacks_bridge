@@ -127,7 +127,7 @@
         (try! (finalize-timelock payload-hash))
         (asserts! (is-eq (unwrap-panic  
             (if (is-eq type u1) ;; Gateway implementation update
-                (contract-call? .gateway updgrade-impl gateway-impl)
+                (contract-call? .gateway set-impl gateway-impl)
                 (if (is-eq type u2) ;; Gateway governance update
                     (contract-call? .gateway set-governance target)
                     (ok false)
