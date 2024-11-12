@@ -42,7 +42,7 @@
 ;; Governance contract address
 (define-data-var governance principal .governance)
 
-(define-read-only (get-governance) (var-get impl))
+(define-read-only (get-governance) (var-get governance))
 
 (define-public (set-governance (new principal)) 
     (begin

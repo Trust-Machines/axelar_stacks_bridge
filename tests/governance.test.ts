@@ -10,13 +10,14 @@ const address1 = accounts.get("wallet_1")!;
 
 describe("governance tests", () => {
 
+  const eta = Math.floor(Date.now() / 1000) + 86400;
   const sourceChain = stringAsciiCV("Source");
   const messageId = stringAsciiCV("1");
   const sourceAddress = stringAsciiCV("address0x123");
   const contractAddress = principalCV(address1);
   const payload = tupleCV({
     target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl'),
-    eta: uintCV(Math.floor(Date.now()/1000) + 86400),
+    eta: uintCV(eta),
     type: uintCV(1)
   })
   const payloadHash = bufferCV(keccak256(serializeCV(payload)));
@@ -31,8 +32,7 @@ describe("governance tests", () => {
     })
   ]);
 
-  it("execute", () => {
-
+  it("Should update gateway implementation", () => {
     const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
 
     const signersHash = (() => {
@@ -59,18 +59,17 @@ describe("governance tests", () => {
     // Execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
     expect(resultExecute).toBeOk(boolCV(true));
-    
+
     // Check timelock
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
-    expect(timelock).toStrictEqual(tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl'),
-      eta: uintCV(Math.floor(Date.now()/1000) + 86400),
-      type: uintCV(1)
-    }));
+    expect(timelock).toStrictEqual(payload);
 
-    // Try to finalize
-    // const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    // expect(resultExecute).toBeOk(boolCV(true));
+    while (Number(simnet.getBlockTime()) < eta) {
+      simnet.mineBlock([]);
+    }
 
+    // Finalize
+    const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
+    expect(resultFinalize).toBeOk(boolCV(true));
   });
 });

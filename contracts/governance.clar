@@ -127,9 +127,15 @@
         (try! (finalize-timelock payload-hash))
         (asserts! (is-eq (unwrap-panic  
             (if (is-eq type u1) 
-                (contract-call? proxy set-impl target)
+                (begin 
+                    (try! (contract-call? proxy set-impl target))
+                    (ok true)
+                 )
                 (if (is-eq type u2) 
-                    (contract-call? proxy set-governance target)
+                    (begin 
+                        (try! (contract-call? proxy set-governance target))
+                        (ok true)
+                    )
                     (ok false)
             )
         )) true) ERR-INVALID-TYPE)
