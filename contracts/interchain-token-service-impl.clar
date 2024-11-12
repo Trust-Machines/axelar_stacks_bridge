@@ -168,10 +168,13 @@
 ;;  @param sender The address of the TokenManager deployer.
 ;;  @param salt The salt that the deployer uses for the deployment.
 ;;  @return tokenId The tokenId that the custom TokenManager would get (or has gotten).
-(define-read-only (interchain-token-id (sender principal) (salt (buff 32)))
+(define-read-only (interchain-token-id-raw (sender principal) (salt (buff 32)))
     (keccak256 (concat
         (concat PREFIX-INTERCHAIN-TOKEN-ID (unwrap-panic (to-consensus-buff? sender)))
     salt)))
+
+(define-read-only (interchain-token-id (sender principal) (salt (buff 32)))
+    (ok (interchain-token-id-raw sender salt)))
 
 ;; ####################
 ;; ####################
@@ -332,7 +335,7 @@
     )
     (let (
             (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
-            (token-id (interchain-token-id deployer salt))
+            (token-id (interchain-token-id-raw deployer salt))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
@@ -514,7 +517,7 @@
         (caller principal))
     (let (
         (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
-        (token-id (interchain-token-id deployer salt))
+        (token-id (interchain-token-id-raw deployer salt))
         (payload (unwrap-panic (to-consensus-buff? {
             type: MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN,
             token-id: token-id,
@@ -552,7 +555,7 @@
         (caller principal))
     (let (
             (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
-            (token-id (interchain-token-id deployer salt))
+            (token-id (interchain-token-id-raw deployer salt))
             (payload (unwrap-panic (to-consensus-buff? {
                 type: "verify-interchain-token",
                 token-address: (contract-of token),

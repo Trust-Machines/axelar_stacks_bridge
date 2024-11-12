@@ -166,6 +166,7 @@
         token-type: uint,
     } uint))
     (dispatch ((string-ascii 32) (buff 65000)) (response bool uint))
+    (interchain-token-id (principal (buff 32)) (response (buff 32) uint))
 ))
 
 (define-trait sip-010-trait

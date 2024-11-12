@@ -58,7 +58,8 @@
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
-(define-constant CHAIN-NAME-HASH (unwrap! (contract-call? .interchain-token-service-impl get-chain-name-hash) ERR-SERVICE-NOT-DEPLOYED))
+(define-constant CHAIN-NAME "stacks")
+(define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
 (define-constant GATEWAY (contract-call? .interchain-token-service-storage get-gateway))
 ;; The address of the interchain token service.
 
@@ -94,15 +95,15 @@
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
-(define-read-only (get-interchain-token-id (deployer principal) (salt (buff 32)))
-    (ok (contract-call? .interchain-token-service-impl interchain-token-id TOKEN-FACTORY-DEPLOYER salt)))
+(define-private (get-interchain-token-id (its-impl <its-trait>) (deployer principal) (salt (buff 32)))
+    (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER salt))
 
 
 ;; Computes the ID for a canonical interchain token based on its address.
 ;; @param tokenAddress The address of the canonical interchain token.
 ;; @return tokenId The ID of the canonical interchain token.
-(define-read-only (get-canonical-interchain-token-id (token-address principal))
-    (ok (contract-call? .interchain-token-service-impl interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address))))
+(define-private (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
+    (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-salt CHAIN-NAME-HASH token-address)))
 
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
@@ -150,7 +151,7 @@
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
-            (token-id (unwrap! (get-canonical-interchain-token-id (contract-of token)) ERR-SERVICE-NOT-DEPLOYED))
+            (token-id (unwrap! (get-canonical-interchain-token-id interchain-token-service-impl (contract-of token)) ERR-SERVICE-NOT-DEPLOYED))
             (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
             (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
             (decimals (unwrap! (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))

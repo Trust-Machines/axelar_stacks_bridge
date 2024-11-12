@@ -46,10 +46,10 @@ export function getCanonicalInterChainTokenId({
 }: {
   tokenAddress?: string;
 }) {
-  return simnet.callReadOnlyFn(
+  return simnet.callPrivateFn(
     "interchain-token-factory-impl",
     "get-canonical-interchain-token-id",
-    [Cl.address(tokenAddress)],
+    [itsImpl, Cl.address(tokenAddress)],
     address1,
   ).result as ResponseOkCV<BufferCV>;
 }
@@ -113,10 +113,10 @@ export function getInterchainTokenId({
   salt: BufferCV;
   sender: string;
 }) {
-  return simnet.callReadOnlyFn(
+  return simnet.callPrivateFn(
     "interchain-token-factory-impl",
     "get-interchain-token-id",
-    [deployer, salt],
+    [itsImpl, deployer, salt],
     sender,
   ).result as ResponseOkCV<BufferCV>;
 }

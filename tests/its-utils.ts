@@ -207,7 +207,7 @@ export function getTokenId(
 ) {
   return simnet.callReadOnlyFn(
     "interchain-token-service-impl",
-    "interchain-token-id",
+    "interchain-token-id-raw",
     [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
     address1,
   );

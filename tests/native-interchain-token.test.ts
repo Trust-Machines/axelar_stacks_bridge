@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getTokenId, mintNIT, setupNIT, setTokenFlowLimit } from "./its-utils";
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
-import { BURN_ADDRESS, NIT_ERRORS } from "./constants";
+import { NIT_ERRORS } from "./constants";
 import { runFlowLimitsSuite } from "./token-manager-utils";
 
 const accounts = simnet.getAccounts();

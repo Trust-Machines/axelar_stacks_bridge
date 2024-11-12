@@ -2576,7 +2576,6 @@ describe("Interchain Token Service", () => {
       });
 
       it("its", () => {
-        const contractName = "interchain-token-service";
         const implContractName = "interchain-token-service-impl";
         const operator = deployer;
 
@@ -2604,7 +2603,6 @@ describe("Interchain Token Service", () => {
 
         expect(
           transferITSOperatorShip({
-            contractName,
             operator: operator,
             newOperator: address2,
           }).result,
