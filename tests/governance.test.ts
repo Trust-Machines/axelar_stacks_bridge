@@ -193,6 +193,11 @@ describe("governance tests", () => {
 
     // should not finalize before eta
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
-    expect(resultFinalize).toBeErr(uintCV(12011)); 
+    expect(resultFinalize).toBeErr(uintCV(12011));
+  });
+
+  it("should revert with incorrect payload", () => {
+    const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(tupleCV({ foo: stringAsciiCV("bar") })))], address1);
+    expect(resultFinalize).toBeErr(uintCV(12021));
   });
 });
