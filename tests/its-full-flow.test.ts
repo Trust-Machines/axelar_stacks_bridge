@@ -148,7 +148,7 @@ describe("Interchain Token Service Full Flow", () => {
           cvToHex(
             Cl.tuple({
               type: Cl.stringAscii("native-gas-paid-for-contract-call"),
-              sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+              sender: Cl.address(`${deployer}.interchain-token-service`),
               amount: Cl.uint(1000),
               "refund-address": Cl.address(address1),
               "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
@@ -166,7 +166,7 @@ describe("Interchain Token Service Full Flow", () => {
                 destinationChain: TRUSTED_CHAIN,
                 destinationContractAddress: TRUSTED_ADDRESS,
                 payload,
-                sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+                sender: Cl.address(`${deployer}.interchain-token-service`),
               }),
             ),
           ),
@@ -258,7 +258,7 @@ describe("Interchain Token Service Full Flow", () => {
           type: Cl.stringAscii("native-gas-paid-for-contract-call"),
           "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
           "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
-          sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+          sender: Cl.address(`${deployer}.interchain-token-service`),
           "refund-address": Cl.address(address1),
           "payload-hash": Cl.buffer(payloadHash),
           amount: Cl.uint(gasValue),
@@ -269,7 +269,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationChain: TRUSTED_CHAIN,
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
-            sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+            sender: Cl.address(`${deployer}.interchain-token-service`),
           }),
         );
       });
@@ -386,7 +386,7 @@ describe("Interchain Token Service Full Flow", () => {
           "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
           "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
           "refund-address": Cl.address(address1),
-          sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+          sender: Cl.address(`${deployer}.interchain-token-service`),
           type: Cl.stringAscii("native-gas-paid-for-contract-call"),
         });
 
@@ -410,7 +410,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationChain: TRUSTED_CHAIN,
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
-            sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+            sender: Cl.address(`${deployer}.interchain-token-service`),
           }),
         );
       }
@@ -493,7 +493,7 @@ describe("Interchain Token Service Full Flow", () => {
           "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
           "payload-hash": Cl.buffer(payloadHash),
           "refund-address": Cl.address(address1),
-          sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+          sender: Cl.address(`${deployer}.interchain-token-service`),
           type: Cl.stringAscii("native-gas-paid-for-contract-call"),
         });
 
@@ -502,7 +502,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationChain: TRUSTED_CHAIN,
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
-            sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+            sender: Cl.address(`${deployer}.interchain-token-service`),
           }),
         );
       }

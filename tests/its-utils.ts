@@ -30,6 +30,7 @@ const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 export const itsImpl = Cl.address(`${deployer}.interchain-token-service-impl`);
+export const itsProxy = Cl.address(`${deployer}.interchain-token-service`);
 
 export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
@@ -97,6 +98,7 @@ export function deployTokenManager({
     "deploy-token-manager",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
@@ -139,7 +141,7 @@ export function enableTokenManager({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service-impl",
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
@@ -159,7 +161,7 @@ export function enableTokenManager({
         buildIncomingGMPMessage({
           contractAddress: Cl.contractPrincipal(
             deployer,
-            "interchain-token-service-impl",
+            "interchain-token-service",
           ),
           messageId: wrappedPayload["message-id"],
           payload: Cl.deserialize(wrappedPayload.payload.buffer),
@@ -179,6 +181,7 @@ export function enableTokenManager({
     "process-deploy-token-manager-from-stacks",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
@@ -359,6 +362,7 @@ export function deployRemoteInterchainToken({
     "deploy-remote-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
@@ -392,6 +396,7 @@ export function executeDeployInterchainToken({
     "execute-deploy-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
@@ -452,7 +457,7 @@ export function approveRemoteInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service-impl",
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
           "approved-interchain-token-deployment-message",
@@ -491,6 +496,7 @@ export function deployInterchainToken({
     "deploy-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.buffer(salt),
       token,
@@ -530,6 +536,7 @@ export function executeDeployTokenManager({
     "execute-deploy-token-manager",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
@@ -572,6 +579,7 @@ export function interchainTransfer({
     "interchain-transfer",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       tokenManagerAddress,
       tokenAddress,
@@ -659,6 +667,7 @@ export function executeReceiveInterchainToken({
     "execute-receive-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
@@ -714,7 +723,7 @@ export function approveReceiveInterchainTransfer({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service-impl",
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
@@ -817,7 +826,7 @@ export function approveDeployNativeInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service-impl",
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
           "approved-native-interchain-token-deployment-message",
@@ -911,6 +920,7 @@ export function callContractWithInterchainToken({
     "call-contract-with-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
       itsImpl,
       tokenManagerAddress,
       tokenAddress,

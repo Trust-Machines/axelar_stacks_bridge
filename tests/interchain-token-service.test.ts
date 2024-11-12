@@ -186,7 +186,7 @@ describe("Interchain Token Service", () => {
         payload,
         destinationChain: "stacks",
         destinationContractAddress: "interchain-token-service",
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
       expect(deployTx.events[3].event).toBe("print_event");
       expect(Cl.deserialize(deployTx.events[3].data.raw_value!)).toBeTuple(
@@ -452,13 +452,13 @@ describe("Interchain Token Service", () => {
             ),
           ),
         }),
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       };
       const message = buildOutgoingGMPMessage(messageData);
       expect(nativeGasPaidForContractCall.data.value).toBeTuple({
         type: Cl.stringAscii("native-gas-paid-for-contract-call"),
         amount: Cl.uint(100),
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
         "refund-address": Cl.address(address1),
         "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
         "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
@@ -532,7 +532,7 @@ describe("Interchain Token Service", () => {
         payload: verifyPayload,
         destinationChain: "stacks",
         destinationContractAddress: "interchain-token-service",
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service-impl"),
+        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
       });
       expect(deployTx.events[2].event).toBe("print_event");
       expect(Cl.deserialize(deployTx.events[2].data.raw_value!)).toBeTuple(
@@ -704,7 +704,7 @@ describe("Interchain Token Service", () => {
         buildOutgoingGMPMessage({
           destinationChain: TRUSTED_CHAIN,
           destinationContractAddress: TRUSTED_ADDRESS,
-          sender: Cl.address(`${deployer}.interchain-token-service-impl`),
+          sender: Cl.address(`${deployer}.interchain-token-service`),
           payload: Cl.tuple({
             "destination-chain": Cl.stringAscii(destinationChain),
             type: Cl.uint(MessageType.SEND_TO_HUB),

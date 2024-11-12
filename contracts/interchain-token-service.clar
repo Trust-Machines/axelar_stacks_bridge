@@ -4,7 +4,8 @@
 ;; summary:
 ;; description:
 (use-trait its-trait .traits.interchain-token-service-trait)
-
+(impl-trait .traits.interchain-token-service-proxy-trait)
+(use-trait its-proxy-trait .traits.interchain-token-service-proxy-trait)
 ;; ######################
 ;; ######################
 ;; ### Proxy Calls ######
@@ -12,10 +13,18 @@
 ;; ######################
 
 (define-constant ERR-INVALID-IMPL (err u20211))
+(define-constant ERR-UNTRUSTED-CHAIN (err u22051))
+(define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u22087))
 
-(define-private (is-correct-impl (interchain-token-service-impl <its-trait>)) 
+(define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
+
+(define-private (is-correct-impl-raw (impl principal)) 
     (is-eq 
         (contract-call? .interchain-token-service-storage get-service-impl) 
+        impl))
+
+(define-private (is-correct-impl (interchain-token-service-impl <its-trait>)) 
+    (is-correct-impl-raw 
         (contract-of interchain-token-service-impl)))
 
 ;; traits
@@ -78,8 +87,102 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl remove-trusted-address chain-name contract-caller)))
 
+;; TODO: cross chain messages must be sent/received to/from the proxy
+;; Move messaging logic to the proxy since that will never change
+;;  that means any messages going to the gateway must be sent from the proxy
+;; and any messages coming to the its must be received by the proxy
+(define-read-only (get-its-hub-chain)
+    (contract-call? .interchain-token-service-storage get-its-hub-chain))
+(define-read-only (get-trusted-address (chain (string-ascii 20)))
+    (contract-call? .interchain-token-service-storage get-trusted-address chain))
+
+
+(define-private (get-call-params (destination-chain (string-ascii 20)) (payload (buff 63000)))
+    (let (
+            (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
+            (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address))))
+            (hub-chain (get-its-hub-chain)))
+        ;; Prevent sending directly to the ITS Hub chain. This is not supported yet,
+        ;; so fail early to prevent the user from having their funds stuck.
+        (asserts! (not (is-eq destination-chain hub-chain)) ERR-UNTRUSTED-CHAIN)
+        (ok
+            {
+                ;; Wrap ITS message in an ITS Hub message
+                destination-address: (unwrap! (get-trusted-address hub-chain) ERR-HUB-TRUSTED-ADDRESS-MISSING),
+                destination-chain: hub-chain,
+                payload: (unwrap-panic (to-consensus-buff? {
+                    type: MESSAGE-TYPE-SEND-TO-HUB,
+                    destination-chain: destination-chain,
+                    payload: payload,
+                })),
+            })))
+
+(define-private (pay-native-gas-for-contract-call
+        (amount uint)
+        (refund-address principal)
+        (destination-chain (string-ascii 20))
+        (destination-address (string-ascii 128))
+        (payload (buff 64000)))
+    (if
+        (> amount u0)
+            (contract-call? .gas-service pay-native-gas-for-contract-call
+                amount
+                (as-contract tx-sender)
+                destination-chain
+                destination-address
+                payload
+                refund-address)
+        (ok true)))
+
+
+
+;; Calls a contract on a specific destination chain with the given payload
+;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
+;; If the `(is-eq (get-trusted-address destination-chain) "hub")`, then the call is wrapped and routed to the ITS Hub destination.
+;; Right now only ITS hub payloads are supported
+;; @param destination-chain The target chain where the contract will be called.
+;; @param payload The data payload for the transaction.
+;; @param metadata-version The version of the metadata to be used, currently only contract-call is supported.
+;; @param gas-value The amount of gas to be paid for the transaction.
+(define-public (its-hub-call-contract (gateway-impl <gateway-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
+    (let
+        (
+            (params (try! (get-call-params destination-chain payload)))
+            (destination-chain_ (get destination-chain params))
+            (destination-address_ (get destination-address params))
+            (payload_ (get payload params))
+        )
+        (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
+        (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
+        (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain_ destination-address_ payload_))
+    )
+)
+
+(define-public (gateway-call-contract
+    (gateway-impl <gateway-trait>)
+    (destination-chain (string-ascii 20))
+    (destination-address (string-ascii 128))
+    (payload (buff 64000))
+    (gas-value uint))
+    (begin 
+        (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
+        (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain destination-address payload))
+        (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain destination-address payload))))
+
+(define-public (gateway-validate-message
+    (gateway-impl <gateway-trait>)
+    (source-chain (string-ascii 20))
+    (message-id (string-ascii 128))
+    (source-address (string-ascii 128))
+    (payload-hash (buff 32)))
+    (begin 
+        (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
+        (as-contract (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))))
+
+
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -90,7 +193,16 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl deploy-token-manager gateway-impl salt destination-chain token-manager-type params token-manager gas-value contract-caller)))
+        (contract-call? its-impl deploy-token-manager
+            gateway-impl
+            its-proxy
+            salt
+            destination-chain
+            token-manager-type
+            params
+            token-manager
+            gas-value
+            contract-caller)))
 ;; Used to deploy remote custom TokenManagers.
 ;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
 ;; part of a multicall involving multiple functions that could make remote contract calls.
@@ -102,6 +214,7 @@
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (payload (buff 63000))
@@ -114,11 +227,19 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl process-deploy-token-manager-from-external-chain gateway-impl token-manager payload wrapped-payload gas-value contract-caller)))
+        (contract-call? its-impl process-deploy-token-manager-from-external-chain
+            gateway-impl
+            its-proxy
+            token-manager
+            payload
+            wrapped-payload
+            gas-value
+            contract-caller)))
 
 
 (define-public (process-deploy-token-manager-from-stacks
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>) 
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
@@ -126,7 +247,14 @@
         (payload (buff 64000)))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl process-deploy-token-manager-from-stacks gateway-impl message-id source-chain source-address payload contract-caller)))
+        (contract-call? its-impl process-deploy-token-manager-from-stacks
+            gateway-impl
+            its-proxy
+            message-id
+            source-chain
+            source-address
+            payload
+            contract-caller)))
 
 ;; Deploys an interchain token on a destination chain.
 ;; @param salt The salt to be used during deployment.
@@ -138,6 +266,7 @@
 ;; @param gasValue The amount of gas to be paid for the transaction.
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -148,10 +277,21 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl deploy-remote-interchain-token gateway-impl salt destination-chain name symbol decimals minter gas-value contract-caller)))
+        (contract-call? its-impl deploy-remote-interchain-token
+            gateway-impl
+            its-proxy
+            salt
+            destination-chain
+            name
+            symbol
+            decimals
+            minter
+            gas-value
+            contract-caller)))
 
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (token <native-interchain-token-trait>)
@@ -160,7 +300,15 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl deploy-interchain-token gateway-impl salt token supply minter gas-value contract-caller)))
+        (contract-call? its-impl deploy-interchain-token
+            gateway-impl
+            its-proxy
+            salt
+            token
+            supply
+            minter
+            gas-value
+            contract-caller)))
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
 ;; @dev The function retrieves the TokenManager associated with the tokenId.
@@ -171,6 +319,7 @@
 ;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -186,10 +335,22 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl interchain-transfer gateway-impl token-manager token token-id destination-chain destination-address amount metadata gas-value contract-caller)))
+        (contract-call? its-impl interchain-transfer
+            gateway-impl
+            its-proxy
+            token-manager
+            token
+            token-id
+            destination-chain
+            destination-address
+            amount
+            metadata
+            gas-value
+            contract-caller)))
 
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -204,13 +365,25 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl call-contract-with-interchain-token gateway-impl token-manager token token-id destination-chain destination-address amount metadata gas-value contract-caller)))
+        (contract-call? its-impl call-contract-with-interchain-token
+            gateway-impl
+            its-proxy
+            token-manager
+            token
+            token-id
+            destination-chain
+            destination-address
+            amount
+            metadata
+            gas-value
+            contract-caller)))
 
 
 
 
 (define-public (execute-deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -221,10 +394,21 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl execute-deploy-token-manager gateway-impl source-chain message-id source-address payload token token-manager gas-value contract-caller)))
+        (contract-call? its-impl execute-deploy-token-manager
+            gateway-impl
+            its-proxy
+            source-chain
+            message-id
+            source-address
+            payload
+            token
+            token-manager
+            gas-value
+            contract-caller)))
 
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -234,10 +418,20 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl execute-deploy-interchain-token gateway-impl source-chain message-id source-address token-address payload gas-value contract-caller)))
+        (contract-call? its-impl execute-deploy-interchain-token
+            gateway-impl
+            its-proxy
+            source-chain
+            message-id
+            source-address
+            token-address
+            payload
+            gas-value
+            contract-caller)))
 
 (define-public (execute-receive-interchain-token
         (gateway-impl <gateway-trait>)
+        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -249,7 +443,17 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl execute-receive-interchain-token gateway-impl source-chain message-id source-address token-manager token payload destination-contract contract-caller)))
+        (contract-call? its-impl execute-receive-interchain-token
+            gateway-impl
+            its-proxy
+            source-chain
+            message-id
+            source-address
+            token-manager
+            token
+            payload
+            destination-contract
+            contract-caller)))
 
 
 (define-public (set-flow-limit 
@@ -260,6 +464,7 @@
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl set-flow-limit token-id token-manager limit contract-caller)))
+
 
 ;; ######################
 ;; ######################
@@ -302,7 +507,6 @@
 ;; ######################
 
 (define-constant ERR-STARTED (err u24051))
-
 
 
 

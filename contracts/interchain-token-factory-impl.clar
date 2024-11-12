@@ -123,6 +123,7 @@
             .interchain-token-service
                 deploy-token-manager 
                 gateway-impl
+                .interchain-token-service
                 interchain-token-service-impl
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
@@ -162,6 +163,7 @@
         (contract-call? .interchain-token-service
             deploy-remote-interchain-token
             gateway-impl
+            .interchain-token-service
             interchain-token-service-impl
             salt
             destination-chain
@@ -189,6 +191,7 @@
         (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)        
     (contract-call? .interchain-token-service deploy-interchain-token
         gateway-impl
+        .interchain-token-service
         interchain-token-service-impl
         salt
         token
@@ -233,6 +236,7 @@
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (contract-call? .interchain-token-service deploy-remote-interchain-token
             gateway-impl
+            .interchain-token-service
             interchain-token-service-impl
             salt
             destination-chain

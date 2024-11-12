@@ -47,6 +47,7 @@
     (remove-trusted-address  ((string-ascii 20) principal) (response bool uint))
     (deploy-token-manager
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (buff 32)
         (string-ascii 20)
         uint
@@ -57,6 +58,7 @@
     (response bool uint))
     (process-deploy-token-manager-from-external-chain
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         <token-manager-trait>
         (buff 63000)
         (optional {
@@ -70,6 +72,7 @@
         (response bool uint))
     (process-deploy-token-manager-from-stacks
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (string-ascii 128)
         (string-ascii 20)
         (string-ascii 128)
@@ -78,6 +81,7 @@
         (response bool uint))
     (deploy-remote-interchain-token
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (buff 32)
         (string-ascii 20)
         (string-ascii 32)
@@ -89,6 +93,7 @@
         (response bool uint))
     (deploy-interchain-token
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (buff 32)
         <native-interchain-token-trait>
         uint
@@ -98,6 +103,7 @@
         (response bool uint))
     (interchain-transfer
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
@@ -114,6 +120,7 @@
     )
     (call-contract-with-interchain-token
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
@@ -129,6 +136,7 @@
         (response bool uint))
     (execute-deploy-token-manager
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
@@ -140,6 +148,7 @@
         (response bool uint))
     (execute-deploy-interchain-token
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
@@ -150,6 +159,7 @@
         (response bool uint))
     (execute-receive-interchain-token
         (<gateway-trait>
+        <interchain-token-service-proxy-trait>
         (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
@@ -305,3 +315,43 @@
             (response bool uint))
     (dispatch ((string-ascii 32) (buff 65000)) (response bool uint)))
 )
+
+(define-trait interchain-token-service-proxy-trait (
+    (its-hub-call-contract (
+            ;; gateway impl
+            <gateway-trait>
+            ;; destination-chain
+            (string-ascii 20)
+            ;; payload
+            (buff 63000)
+            ;; metadata version
+            uint
+            ;; gas-value
+            uint
+        ) (response bool uint))
+    (gateway-call-contract (
+            ;; gateway impl
+            <gateway-trait>
+            ;; destination-chain
+            (string-ascii 20)
+            ;; destination-address
+            (string-ascii 128)
+            ;; payload
+            (buff 64000)
+            ;; gas-value
+            uint
+        ) (response bool uint))
+    (gateway-validate-message (
+        ;; gateway-impl
+        <gateway-trait>
+        ;; source-chain
+        (string-ascii 20)
+        ;; message-id
+        (string-ascii 128)
+        ;; source-address
+        (string-ascii 128)
+        ;; payload-hash
+        (buff 32)
+    ) 
+        (response bool uint))
+))
