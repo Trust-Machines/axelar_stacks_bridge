@@ -16,7 +16,7 @@ describe("governance tests", () => {
   const sourceAddress = stringAsciiCV("address0x123");
   const contractAddress = principalCV(address1);
   const payload = tupleCV({
-    target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl'),
+    target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
     eta: uintCV(eta),
     type: uintCV(1)
   })
@@ -33,6 +33,9 @@ describe("governance tests", () => {
   ]);
 
   it("Should update gateway implementation", () => {
+    const {result: impl} = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
+    expect(impl).toStrictEqual(gatewayImplCV);
+
     const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
 
     const signersHash = (() => {
@@ -71,5 +74,9 @@ describe("governance tests", () => {
     // Finalize
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
     expect(resultFinalize).toBeOk(boolCV(true));
+
+    // Gateway impl should be updated
+    const {result: impl2} = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
+    expect(impl2).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "gateway-impl-2"));
   });
 });
