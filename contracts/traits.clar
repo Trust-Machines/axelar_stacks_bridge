@@ -1,8 +1,8 @@
 (define-trait gateway-trait
 	(
-		(call-contract ((string-ascii 20) (string-ascii 128) (buff 64000)) (response bool uint))
+		(call-contract ((string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (approve-messages ((buff 4096) (buff 16384)) (response bool uint))
-        (validate-message ((string-ascii 20) (string-ascii 128) (string-ascii 128) (buff 32)) (response bool uint))
+        (validate-message ((string-ascii 20) (string-ascii 128) (string-ascii 128) (buff 32) principal) (response bool uint))
         (is-message-approved  ((string-ascii 20) (string-ascii 128) (string-ascii 128) principal (buff 32)) (response bool uint))
         (is-message-executed  ((string-ascii 20) (string-ascii 128)) (response bool uint))
         (rotate-signers ((buff 8192) (buff 16384)) (response bool uint))

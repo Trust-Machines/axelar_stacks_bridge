@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
-import { boolCV, bufferCV, cvToJSON, Cl, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
+import { boolCV, bufferCV, cvToJSON, Cl, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV, contractPrincipalCV } from "@stacks/transactions";
 
 import { keccak256 } from "./its-utils";
 
@@ -11,7 +11,7 @@ describe("hello-world tests", () => {
   const sourceChain = stringAsciiCV("avalanche-fuji");
   const messageId = stringAsciiCV("0x896169e4ce82f5b90b1799cbf117b8f02ff8feebf80e853064826f3eeb25f433-0");
   const sourceAddress = stringAsciiCV("0xcE4103867CC4Bfb2382E6D0B7F88e6E3F8D563D6");
-  const contractAddress = principalCV(address1);
+  const contractAddress = contractPrincipalCV(accounts.get("deployer")!, "hello-world");
   const payload = tupleCV({
     foo: stringAsciiCV("bar"),
     lorem: stringAsciiCV("ipsum")
