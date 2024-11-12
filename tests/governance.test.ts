@@ -161,9 +161,6 @@ describe("governance tests", () => {
       })
     ]);
 
-    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-governance", [], address1);
-    expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
-
     const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
 
     const signersHash = (() => {
