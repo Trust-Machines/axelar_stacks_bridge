@@ -187,6 +187,9 @@
 
 (define-data-var gas-service principal NULL-ADDRESS)
 (define-data-var its-contract-name (string-ascii 128) "")
+
+;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
+;; This is set as a constant, since the ITS Hub will exist on Axelar.
 (define-data-var its-hub-chain (string-ascii 20) "axelarnet")
 
 

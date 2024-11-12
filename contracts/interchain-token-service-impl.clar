@@ -71,7 +71,7 @@
 
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
-;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be locked/unlocked at the token manager.
@@ -96,13 +96,10 @@
 
 
 (define-constant CA (as-contract tx-sender))
-;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
-;; This is set as a constant, since the ITS Hub will exist on Axelar.
 
 ;; @dev Special identifier that the trusted address for a chain should be set to, which indicates if the ITS call
 ;; for that chain should be routed via the ITS hub.
 (define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
-;; (define-constant ITS-HUB-ROUTING-IDENTIFIER-HASH (keccak256 (unwrap-panic (to-consensus-buff? "hub"))))
 
 (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
 (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
@@ -110,7 +107,6 @@
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 ;; (define-constant MESSAGE-TYPE-RECEIVE-FROM-HUB u4)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
-;; (define-constant ITS .interchain-token-service)
 
 
 (define-read-only (get-token-info (token-id (buff 32)))
@@ -154,20 +150,10 @@
         ;; (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
         (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK)))
 
-;; ;; data vars
-;;
-;; data maps
-;;
-
-;; public functions
-;;
-
-;; read only functions
-;;
-;;  Calculates the tokenId that would correspond to a link for a given deployer with a specified salt.
+;;  Calculates the token-id that would correspond to a link for a given deployer with a specified salt.
 ;;  @param sender The address of the TokenManager deployer.
 ;;  @param salt The salt that the deployer uses for the deployment.
-;;  @return tokenId The tokenId that the custom TokenManager would get (or has gotten).
+;;  @return token-id The token-id that the custom TokenManager would get (or has gotten).
 (define-read-only (interchain-token-id-raw (sender principal) (salt (buff 32)))
     (keccak256 (concat
         (concat PREFIX-INTERCHAIN-TOKEN-ID (unwrap-panic (to-consensus-buff? sender)))
@@ -214,7 +200,7 @@
 
 ;; Gets the trusted address at a remote chain
 ;; @param chain Chain name of the remote chain
-;; @return trustedAddress_ The trusted address for the chain. Returns '' if the chain is untrusted
+;; @return The trusted address for the chain. Returns none if the chain is untrusted
 (define-read-only (get-trusted-address (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage get-trusted-address chain))
 
@@ -228,16 +214,14 @@
 
 ;; Checks whether the interchain sender is a trusted address
 ;; @param chain Chain name of the sender
-;; @param address_ Address of the sender
+;; @param address Address of the sender
 ;; @return bool true if the sender chain/address are trusted, false otherwise
-
 (define-read-only (is-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (is-eq address (default-to "" (get-trusted-address chain-name))))
 
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
-;; @param address_ the string representation of the trusted address
-;; #[allow(unchecked_data)]
+;; @param address the string representation of the trusted address
 (define-public (set-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
@@ -254,7 +238,6 @@
 
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
-;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address  (chain-name (string-ascii 20)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
@@ -264,6 +247,9 @@
         (try! (contract-call? .interchain-token-service-storage emit-trusted-address-removed chain-name))
         (contract-call? .interchain-token-service-storage remove-trusted-address chain-name)))
 
+;; Check if the chain is trusted
+;; @param chain Chain name that should be checked for trust
+;; @return true, if the chain is trusted
 (define-read-only (is-trusted-chain (chain (string-ascii 20))) 
     (contract-call? .interchain-token-service-storage is-trusted-chain chain))
 
@@ -304,12 +290,14 @@
                 refund-address)
         (ok true)))
 
-;; @notice Calls a contract on a specific destination chain with the given payload
+;; Calls a contract on a specific destination chain with the given payload
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
-;; If the `trustedAddress(destinationChain) == 'hub'`, then the call is wrapped and routed to the ITS Hub destination.
-;; @param destinationChain The target chain where the contract will be called.
+;; If the `(is-eq (get-trusted-address destination-chain) "hub")`, then the call is wrapped and routed to the ITS Hub destination.
+;; Right now only ITS hub payloads are supported
+;; @param destination-chain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
-;; @param gasValue The amount of gas to be paid for the transaction.
+;; @param metadata-version The version of the metadata to be used, currently only contract-call is supported.
+;; @param gas-value The amount of gas to be paid for the transaction.
 (define-private (call-contract (gateway-impl <gateway-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
     (let
         (
@@ -323,6 +311,17 @@
     )
 )
 
+
+;; Used to deploy local and remote custom TokenManagers.
+;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because validators
+;; would check the contract code for validity before deployment locally
+;; @param gateway-impl The implementation of the gateway contract
+;; @param salt The salt to be used during deployment.
+;; @param destination-chain The name of the chain to deploy the TokenManager and standardized token to.
+;; @param token-manager-type The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
+;; @param params The params that will be used to initialize the TokenManager.
+;; @param gas-value The amount of native tokens to be used to pay for gas for the remote deployment.
+;; @param caller the contract caller passed by the proxy
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
         (salt (buff 32))
@@ -343,7 +342,6 @@
         (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
         (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
         (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
-        (asserts! (is-proxy) ERR-NOT-PROXY)
         (if (is-eq (len destination-chain) u0)
             (process-deploy-token-manager-from-external-chain
                 gateway-impl
@@ -358,7 +356,7 @@
                 none
                 gas-value
                 caller)
-            ;; #[filter(token, token-manager, params, gas-value)]
+            ;; #[filter(gateway-impl, token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager gateway-impl token-id destination-chain token-manager-type params gas-value token-manager caller)
         )))
 
@@ -384,15 +382,7 @@
             (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
             (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployment-started token-id destination-chain token-manager-type params))
             (call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
-;; Used to deploy remote custom TokenManagers.
-;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
-;; part of a multicall involving multiple functions that could make remote contract calls.
-;; @param salt The salt to be used during deployment.
-;; @param destinationChain The name of the chain to deploy the TokenManager and standardized token to.
-;; @param tokenManagerType The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
-;; @param params The params that will be used to initialize the TokenManager.
-;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
-;; @return tokenId The tokenId corresponding to the deployed TokenManager.
+
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
         (token-manager <token-manager-trait>)
@@ -498,13 +488,15 @@
     ))
 
 ;; Deploys an interchain token on a destination chain.
+;; @param gateway-impl the gateway implementation contract address.
 ;; @param salt The salt to be used during deployment.
+;; @param destination-chain the destination chain name.
 ;; @param name The name of the token.
 ;; @param symbol The symbol of the token.
 ;; @param decimals The number of decimals of the token.
 ;; @param minter The minter address for the token.
-;; @param destinationChain The destination chain where the token will be deployed.
-;; @param gasValue The amount of gas to be paid for the transaction.
+;; @param gas-value The amount of gas to be paid for the transaction.
+;; @param caller the contract caller passed by the proxy
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
         (salt (buff 32))
@@ -542,9 +534,21 @@
         symbol
         decimals
         minter))
-    ;; #[allow(unchecked_data)]
+    ;; #[filter(gateway-impl, gas-value)]
     (call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
+
+;; Used to deploy a native interchain token on stacks
+;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because 
+;; validators will need to verify the contract code and parameters
+;; If minter is none, no additional minter is set on the token, only ITS is allowed to mint.
+;; @param gateway-impl the gateway implementation contract address.
+;; @param salt The salt to be used during deployment.
+;; @param token the deployed native interchain token contract address
+;; @param supply The already minted supply of the deployed token.
+;; @param minter The address that will be able to mint and burn the deployed token.
+;; @param gas-value The amount of native tokens to be used to pay for gas for the remote deployment.
+;; @param caller the contract caller passed by the proxy
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
         (salt (buff 32))
@@ -591,12 +595,17 @@
 
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
-;; @dev The function retrieves the TokenManager associated with the tokenId.
-;; @param tokenId The unique identifier of the token to be transferred.
-;; @param destinationChain The destination chain to send the tokens to.
-;; @param destinationAddress The address on the destination chain to send the tokens to.
+;; @dev The function retrieves the TokenManager associated with the token-id.
+;; @param gateway-impl the gateway implementation contract address.
+;; @param token-manager the token manager contract address.
+;; @param token the token contract address
+;; @param token-id The unique identifier of the token to be transferred.
+;; @param destination-chain The destination chain to send the tokens to.
+;; @param destination-address The address on the destination chain to send the tokens to.
 ;; @param amount The amount of tokens to be transferred.
 ;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
+;; @param gas-value The amount of native tokens to be used to pay for gas for the remote transfer.
+;; @param caller the contract caller passed by the proxy
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
         (token-manager <token-manager-trait>)
@@ -630,6 +639,18 @@
             (get data metadata)
             gas-value)))
 
+
+;; Initiates an interchain call contract with interchain token to a destination chain.
+;; @param gateway-impl the gateway implementation contract address.
+;; @param token-manager the token manager contract address.
+;; @param token the token contract address
+;; @param token-id The unique identifier of the token to be transferred.
+;; @param destination-chain The destination chain to send the tokens to.
+;; @param destination-address The address on the destination chain to send the tokens to.
+;; @param amount The amount of tokens to be transferred.
+;; @param metadata Additional data to be passed along with the transfer.
+;; @param gas-value The amount of native tokens to be used to pay for gas for the remote transfer.
+;; @param caller the contract caller passed by the proxy
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
         (token-manager <token-manager-trait>)
@@ -686,14 +707,16 @@
         (asserts! (> (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
         (asserts! (> (len destination-address) u0) ERR-INVALID-DESTINATION-ADDRESS)
         (ok true)))
-;; Transmit a callContractWithInterchainToken for the given tokenId.
-;; @param tokenId The tokenId of the TokenManager (which must be the msg.sender).
-;; @param sourceAddress The address where the token is coming from, which will also be used for gas reimbursement.
-;; @param destinationChain The name of the chain to send tokens to.
-;; @param destinationAddress The destinationAddress for the interchainTransfer.
+
+;; Transmit a callContractWithInterchainToken for the given token-id.
+;; @param token-id The token-id of the TokenManager (which must be the msg.sender).
+;; @param source-address The address where the token is coming from, which will also be used for gas reimbursement.
+;; @param destination-chain The name of the chain to send tokens to.
+;; @param destination-address The destination-address for the interchain-transfer.
 ;; @param amount The amount of tokens to send.
-;; @param metadataVersion The version of the metadata.
+;; @param metadata-version The version of the metadata.
 ;; @param data The data to be passed with the token transfer.
+;; @param gas-value The amount of native tokens to be used to pay for gas for the remote transfer.
 (define-private (transmit-interchain-transfer
         (gateway-impl <gateway-trait>)
         (token-id (buff 32))
