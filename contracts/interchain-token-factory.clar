@@ -118,3 +118,12 @@
             gas-value
             token
             token-manager)))
+
+
+;; General purose proxy call 
+(define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
+    (begin 
+        (asserts! (is-eq (is-correct-impl itf-impl) true) ERR-INVALID-IMPL)
+        (contract-call? itf-impl dispatch fn data)
+    )
+)

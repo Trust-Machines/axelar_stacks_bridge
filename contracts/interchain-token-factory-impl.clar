@@ -50,6 +50,7 @@
 
 
 
+
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
 (define-constant PREFIX-CANONICAL-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
@@ -240,3 +241,18 @@
             minter
             gas-value
         )))
+
+
+
+;; #########################
+;; #########################
+;; #### Dynamic Dispatch ###
+;; #########################
+;; #########################
+
+(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-NOT-PROXY)
+        (ok true)
+    )
+)

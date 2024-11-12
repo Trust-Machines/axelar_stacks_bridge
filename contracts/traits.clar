@@ -260,8 +260,8 @@
   ) (response bool uint)))
 )
 
-(define-trait interchain-token-factory-trait
-    ((register-canonical-interchain-token
+(define-trait interchain-token-factory-trait (
+    (register-canonical-interchain-token
             (
                 <gateway-trait>
                 <interchain-token-service-trait>
@@ -301,4 +301,6 @@
                 <sip-010-trait>
                 <token-manager-trait>
             )
-            (response bool uint))))
+            (response bool uint))
+    (dispatch ((string-ascii 32) (buff 65000)) (response bool uint)))
+)
