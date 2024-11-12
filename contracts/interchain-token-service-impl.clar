@@ -1017,3 +1017,19 @@
         (asserts! (is-eq (get-operator) caller) ERR-ONLY-OPERATOR)
         (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
         (as-contract (contract-call? token-manager set-flow-limit limit))))
+
+
+
+;; #########################
+;; #########################
+;; #### Dynamic Dispatch ###
+;; #########################
+;; #########################
+
+(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (ok true)
+    )
+)

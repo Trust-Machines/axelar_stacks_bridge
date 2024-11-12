@@ -165,6 +165,7 @@
         manager-address: principal,
         token-type: uint,
     } uint))
+    (dispatch ((string-ascii 32) (buff 65000)) (response bool uint))
 ))
 
 (define-trait sip-010-trait
