@@ -19,7 +19,7 @@
 )
     (begin 
         (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
-        (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload)
+        (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload contract-caller)
     )
 )
 
@@ -43,7 +43,7 @@
 )
     (begin
         (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
-        (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash)
+        (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash contract-caller)
     )
 )
 
