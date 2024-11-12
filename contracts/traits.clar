@@ -387,3 +387,17 @@
     ) 
         (response bool uint))
 ))
+
+;; Add this new trait for gas service implementation
+(define-trait gas-service-impl-trait
+    (
+        (pay-native-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
+        (add-native-gas (uint (buff 32) uint principal) (response bool uint))
+        (refund ((buff 32) uint principal uint) (response bool uint))
+        (collect-fees (principal uint) (response bool uint))
+        (transfer-ownership (principal) (response bool uint))
+        (get-balance () (response uint uint))
+        (is-owner () (response bool uint))
+        (get-owner () (response principal uint))
+    )
+)
