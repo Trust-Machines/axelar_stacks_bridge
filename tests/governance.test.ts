@@ -9,30 +9,30 @@ const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 
 describe("governance tests", () => {
-
   const eta = Math.floor(Date.now() / 1000) + 86400;
   const sourceChain = stringAsciiCV("Source");
   const messageId = stringAsciiCV("1");
   const sourceAddress = stringAsciiCV("address0x123");
-  const contractAddress = principalCV(address1);
-  const payload = tupleCV({
-    target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
-    eta: uintCV(eta),
-    type: uintCV(1)
-  })
-  const payloadHash = bufferCV(keccak256(serializeCV(payload)));
+  const contractAddress = contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance');
 
-  const messages = listCV([
-    tupleCV({
-      "source-chain": sourceChain,
-      "message-id": messageId,
-      "source-address": sourceAddress,
-      "contract-address": contractAddress,
-      "payload-hash": payloadHash
+  it("should update gateway implementation", () => {
+    const payload = tupleCV({
+      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
+      eta: uintCV(eta),
+      type: uintCV(1)
     })
-  ]);
+    const payloadHash = bufferCV(keccak256(serializeCV(payload)));
+  
+    const messages = listCV([
+      tupleCV({
+        "source-chain": sourceChain,
+        "message-id": messageId,
+        "source-address": sourceAddress,
+        "contract-address": contractAddress,
+        "payload-hash": payloadHash
+      })
+    ]);
 
-  it("Should update gateway implementation", () => {
     const {result: impl} = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
     expect(impl).toStrictEqual(gatewayImplCV);
 
