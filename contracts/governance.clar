@@ -37,7 +37,7 @@
             (eta- (if (< eta min-eta) min-eta eta))
         ) 
         (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
-        (ok (map-set timelock-map hash {target: target, eta: eta, type: type}))
+        (ok (map-set timelock-map hash {target: target, eta: eta-, type: type}))
     )
 )
 
@@ -105,7 +105,7 @@
             (payload-hash (keccak256 payload))
         )
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
-        (ok (schedule-timelock payload-hash (get target data) (get eta data) (get type data)))
+        (schedule-timelock payload-hash (get target data) (get eta data) (get type data))
     )
 )
 
