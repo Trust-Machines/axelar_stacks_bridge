@@ -77,7 +77,6 @@
 ;; ######################
 
 (define-constant ERR-PAYLOAD-DATA (err u13021))
-(define-constant ERR-INVALID-TARGET (err u13031))
 (define-constant ERR-INVALID-TYPE (err u13041))
 
 ;; Schedules a new task
