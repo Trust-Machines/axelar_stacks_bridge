@@ -1,19 +1,15 @@
-;; Storage contract for gas service
+;; Error constants
+(define-constant err-unauthorized (err u1000))
 
 ;; Data vars
 (define-data-var owner principal tx-sender)
-
-;; Proxy contract reference
-(define-constant PROXY .gas-service)
-
-;; Error constants
-(define-constant err-unauthorized (err u1000))
+(define-data-var is-started bool false)
 
 ;; Check if caller is authorized (proxy or impl)
 (define-private (is-authorized)
     (or
-        (is-eq contract-caller PROXY)
-        (is-eq contract-caller .gas.impl)))
+        (is-eq contract-caller .gas-service)
+        (is-eq contract-caller .gas-impl)))
 
 ;; Owner management
 (define-public (get-owner)
@@ -88,4 +84,13 @@
             receiver: receiver,
             amount: amount
         })
-        (ok true))) 
+        (ok true)))
+
+;; Started status management
+(define-read-only (get-is-started)
+    (var-get is-started))
+
+(define-public (start)
+    (begin
+        (asserts! (is-authorized) err-unauthorized)
+        (ok (var-set is-started true)))) 

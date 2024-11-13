@@ -401,3 +401,17 @@
         (get-owner () (response principal uint))
     )
 )
+
+;; Add this new trait for gas storage
+(define-trait gas-storage-trait
+    (
+        (get-owner () (response principal uint))
+        (set-owner (principal) (response bool uint))
+        (get-is-started () (response bool uint))
+        (start () (response bool uint))
+        (emit-gas-paid-event (principal uint principal (string-ascii 20) (string-ascii 128) (buff 32)) (response bool uint))
+        (emit-gas-added-event (uint principal (buff 32) uint) (response bool uint))
+        (emit-refund-event ((buff 32) uint principal uint) (response bool uint))
+        (emit-fees-collected-event (principal uint) (response bool uint))
+    )
+)

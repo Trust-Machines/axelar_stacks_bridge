@@ -1,19 +1,37 @@
-;; Gas Service Contract
+(impl-trait .traits.gas-service-impl-trait)
+(use-trait gas-impl-trait .traits.gas-service-impl-trait)
 
-(impl-trait .traits.gas-service-trait)
-
-;; Define constants
+;; Error constants
 (define-constant err-owner-only (err u100))
-(define-constant err-insufficient-balance (err u101))
-(define-constant err-invalid-amount (err u102))
-(define-constant err-not-implemented (err u103))
-(define-constant err-invalid-sender (err u104))
+(define-constant err-already-initialized (err u101))
+(define-constant ERR-INVALID-IMPL (err u102))
 
-;; Define data variables
-(define-data-var owner principal tx-sender)
+;; Only keep implementation reference for future upgrades
+(define-data-var implementation principal .gas-impl)
 
-;; Public function for native gas payment for contract call
+;; Helper function to validate implementation
+(define-private (is-valid-impl (impl <gas-impl-trait>))
+    (is-eq (var-get implementation) (contract-of impl)))
+
+;; Initialize the contract
+(define-public (initialize (impl principal))
+    (begin
+        ;; Check owner through storage contract
+        (asserts! (is-eq tx-sender (unwrap! (contract-call? .gas-storage get-owner) err-owner-only)) err-owner-only)
+        (var-set implementation impl)
+        (ok true)))
+
+;; Upgrade the implementation
+(define-public (upgrade (new-impl principal))
+    (begin
+        ;; Check owner through storage contract
+        (asserts! (is-eq tx-sender (unwrap! (contract-call? .gas-storage get-owner) err-owner-only)) err-owner-only)
+        (var-set implementation new-impl)
+        (ok true)))
+
+;; Proxy all gas service functions to implementation
 (define-public (pay-native-gas-for-contract-call
+    (impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 20))
@@ -21,94 +39,85 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (> amount u0) err-invalid-amount)
-        ;; Transfer STX from the caller to the contract
-        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (print {
-            type: "native-gas-paid-for-contract-call",
-            sender: sender,
-            amount: amount,
-            refund-address: refund-address,
-            destination-chain: destination-chain,
-            destination-address: destination-address,
-            payload-hash: (keccak256 payload)
-        })
-        (ok true)
-    )
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl
+            pay-native-gas-for-contract-call
+            amount
+            sender
+            destination-chain
+            destination-address
+            payload
+            refund-address))
 )
 
-;; Public function to add native gas (deduct from contract balance)
 (define-public (add-native-gas
+    (impl <gas-impl-trait>)
     (amount uint)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (> amount u0) err-invalid-amount)
-        ;; Transfer STX from the caller to the contract
-        (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-        (print {
-            type: "native-gas-added",
-            amount: amount,
-            refund-address: refund-address,
-            tx-hash: tx-hash,
-            log-index: log-index
-        })
-        (ok true)
-    )
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl
+            add-native-gas
+            amount
+            tx-hash
+            log-index
+            refund-address))
 )
 
-;; Function to refund gas (transfer from contract balance to receiver)
 (define-public (refund
+    (impl <gas-impl-trait>)
     (tx-hash (buff 32))
     (log-index uint)
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
-        (asserts! (> amount u0) err-invalid-amount)
-        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
-        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
-        (print {
-            type: "refunded",
-            tx-hash: tx-hash,
-            log-index: log-index,
-            receiver: receiver,
-            amount: amount
-        })
-        (ok true)
-    )
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl
+            refund
+            tx-hash
+            log-index
+            receiver
+            amount))
 )
 
-;; Public function to collect fees (transfer STX from contract to receiver)
 (define-public (collect-fees
+    (impl <gas-impl-trait>)
     (receiver principal)
     (amount uint))
     (begin
-        ;; Ensure only the owner can call this function
-        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
-
-        ;; Ensure the amount is greater than zero
-        (asserts! (> amount u0) err-invalid-amount)
-
-        ;; Ensure the contract has sufficient balance
-        (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) err-insufficient-balance)
-
-        ;; Transfer STX from the contract to the receiver
-        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
-
-        ;; Log the fee collection
-        (print {
-            type: "fees-collected",
-            receiver: receiver,
-            amount: amount
-        })
-
-        (ok true)
-    )
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl
+            collect-fees
+            receiver
+            amount))
 )
 
-;; Placeholder for future implementation: pay gas for contract call
+(define-public (transfer-ownership
+    (impl <gas-impl-trait>)
+    (new-owner principal))
+    (begin
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl
+            transfer-ownership
+            new-owner))
+)
+
+;; Read-only functions
+(define-public (get-balance (impl <gas-impl-trait>))
+    (begin
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl get-balance))
+)
+
+(define-public (get-owner (impl <gas-impl-trait>))
+    (begin
+        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
+        (contract-call? impl get-owner))
+)
+
+;; Add unimplemented functions from the trait
 (define-public (pay-gas-for-contract-call
     (amount uint)
     (sender principal)
@@ -116,20 +125,16 @@
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
-    (err err-not-implemented)
-)
+    (err u103))  ;; err-not-implemented
 
-;; Placeholder for future implementation: add gas
 (define-public (add-gas
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
-    (err err-not-implemented)
-)
+    (err u103))  ;; err-not-implemented
 
-;; Placeholder for future implementation: pay native gas for express call
 (define-public (pay-native-gas-for-express-call
     (amount uint)
     (sender principal)
@@ -137,40 +142,12 @@
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
-    (err err-not-implemented)
-)
+    (err u103))  ;; err-not-implemented
 
-;; Placeholder for future implementation: add native express gas
 (define-public (add-native-express-gas
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
-    (err err-not-implemented)
-)
-
-;; Public function to transfer ownership
-(define-public (transfer-ownership (new-owner principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get owner)) err-owner-only)
-        (var-set owner new-owner)
-        (print {type: "ownership-transferred", new-owner: new-owner})
-        (ok true)
-    )
-)
-
-;; Read-only function to get the current balance
-(define-read-only (get-balance)
-    (ok (stx-get-balance (as-contract tx-sender)))
-)
-
-;; Read-only function to check if the caller is the contract owner
-(define-read-only (is-owner)
-    (ok (is-eq tx-sender (var-get owner)))
-)
-
-;; Read-only function to get the current contract owner
-(define-read-only (get-owner)
-    (ok (var-get owner))
-)
+    (err u103))  ;; err-not-implemented 
