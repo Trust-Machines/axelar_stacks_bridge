@@ -68,7 +68,7 @@
 
 (define-public (set-factory-impl (new-factory-impl principal))
     (begin
-        (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
+        (asserts! (is-factory-proxy) ERR-NOT-AUTHORIZED)
         (ok (var-set factory-impl new-factory-impl))
     )
 )
@@ -238,7 +238,7 @@
 
 (define-public (emit-trusted-address-set
         (chain-name (string-ascii 20))
-        (address (string-ascii 128))) 
+        (address (string-ascii 128)))
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
@@ -261,8 +261,8 @@
 (define-public (emit-interchain-token-id-claimed
         (token-id (buff 32))
         (deployer principal)
-        (salt (buff 32))) 
-    (begin 
+        (salt (buff 32)))
+    (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
             type: "interchain-token-id-claimed",
@@ -276,7 +276,7 @@
         (token-id (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
-        (params (buff 62000))) 
+        (params (buff 62000)))
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
@@ -292,7 +292,7 @@
         (token-id  (buff 32))
         (token-manager-address principal)
         (token-type uint)
-        ) 
+        )
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
@@ -310,7 +310,7 @@
         (symbol (string-ascii 32))
         (decimals uint)
         (minter (buff 128))
-        ) 
+        )
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
@@ -366,5 +366,3 @@
             data: data,
         })
         (ok true)))
-
-

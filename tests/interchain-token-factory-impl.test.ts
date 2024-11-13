@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { deployGateway, gatewayImplCV, getSigners } from "./util";
+import { gatewayImplCV, getSigners } from "./util";
 import {
   enableTokenManager,
-  getTokenId,
   itsImpl,
   setupNIT,
   setupService,
   setupTokenManager,
 } from "./its-utils";
-import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
+import { Cl, randomBytes } from "@stacks/transactions";
 import { ITF_ERRORS } from "./constants";
 import { getCanonicalInterChainTokenId } from "./itf-utils";
 

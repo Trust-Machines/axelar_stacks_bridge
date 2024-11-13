@@ -87,10 +87,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl remove-trusted-address chain-name contract-caller)))
 
-;; TODO: cross chain messages must be sent/received to/from the proxy
-;; Move messaging logic to the proxy since that will never change
-;;  that means any messages going to the gateway must be sent from the proxy
-;; and any messages coming to the its must be received by the proxy
 (define-read-only (get-its-hub-chain)
     (contract-call? .interchain-token-service-storage get-its-hub-chain))
 (define-read-only (get-trusted-address (chain (string-ascii 20)))
