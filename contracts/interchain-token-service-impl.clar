@@ -113,7 +113,7 @@
 (define-read-only (get-token-info (token-id (buff 32)))
     (contract-call? .interchain-token-service-storage get-token-info token-id))
 
-(define-private (insert-token-manager (token-id (buff 32)) (manager-address principal) (token-type uint)) 
+(define-private (insert-token-manager (token-id (buff 32)) (manager-address principal) (token-type uint))
     (contract-call? .interchain-token-service-storage insert-token-manager token-id manager-address token-type))
 
 (define-public (set-paused (status bool) (caller principal))
@@ -140,10 +140,10 @@
 (define-read-only (get-its-hub-chain)
     (contract-call? .interchain-token-service-storage get-its-hub-chain))
 
-(define-read-only (get-token-factory) 
+(define-read-only (get-token-factory)
     (contract-call? .interchain-token-service-storage get-token-factory))
-    
-(define-read-only (get-its-contract-name) 
+
+(define-read-only (get-its-contract-name)
     (contract-call? .interchain-token-service-storage get-its-contract-name))
 
 (define-read-only (is-valid-token-type (token-type uint))
@@ -251,7 +251,7 @@
 ;; Check if the chain is trusted
 ;; @param chain Chain name that should be checked for trust
 ;; @return true, if the chain is trusted
-(define-read-only (is-trusted-chain (chain (string-ascii 20))) 
+(define-read-only (is-trusted-chain (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage is-trusted-chain chain))
 
 
@@ -353,7 +353,6 @@
         (gas-value uint)
         (caller principal))
     (let (
-
         (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
         (payload-decoded (unwrap! (from-consensus-buff? {
             source-chain: (string-ascii 20),
@@ -438,7 +437,7 @@
                 (get source-address wrapped-payload)
                 (keccak256 (get payload wrapped-payload))))
             (ok true)))
-        (asserts! 
+        (asserts!
             (unwrap! (insert-token-manager token-id token-manager-address token-type) ERR-NOT-AUTHORIZED)
         ERR-TOKEN-EXISTS)
         (contract-call? .interchain-token-service-storage emit-token-manager-deployed token-id token-manager-address token-type)
@@ -485,7 +484,7 @@
             (is-eq destination-chain CHAIN-NAME)
             (> (len destination-chain) u0))
         ERR-INVALID-DESTINATION-CHAIN)
-    (try! (contract-call? .interchain-token-service-storage emit-interchain-token-deployment-started 
+    (try! (contract-call? .interchain-token-service-storage emit-interchain-token-deployment-started
         token-id
         destination-chain
         name
@@ -497,7 +496,7 @@
 
 
 ;; Used to deploy a native interchain token on stacks
-;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because 
+;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because
 ;; validators will need to verify the contract code and parameters
 ;; If minter is none, no additional minter is set on the token, only ITS is allowed to mint.
 ;; @param gateway-impl the gateway implementation contract address.
@@ -927,12 +926,12 @@
                     (get source-address wrapped-payload)
                     (keccak256 (get payload wrapped-payload)))))
             (ok true)))
-        (asserts! 
+        (asserts!
             (unwrap! (insert-token-manager  token-id (get token-address payload-decoded) token-type) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
-        (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployed 
-            token-id 
-            (get token-address payload-decoded) 
+        (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployed
+            token-id
+            (get token-address payload-decoded)
             token-type))
         (ok true)
     ))
@@ -979,7 +978,7 @@
         (contract-call? its-proxy gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
     ))
     (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
-    (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received 
+    (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received
         token-id
         (get source-chain payload-decoded)
         sender-address
@@ -1006,7 +1005,7 @@
 
 (define-constant ERR-NOT-STARTED (err u24052))
 
-(define-read-only (get-is-started) 
+(define-read-only (get-is-started)
     (contract-call? .interchain-token-service-storage get-is-started))
 
 
@@ -1036,7 +1035,7 @@
 
 (define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-NOT-PROXY)
+        (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
         (ok true)
     )

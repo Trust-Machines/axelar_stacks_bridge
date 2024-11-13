@@ -64,11 +64,6 @@ const deployer = accounts.get("deployer")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
-
 describe("Interchain Token Service", () => {
   const salt = randomBytes(32);
   const tokenId = getTokenId(salt).result as BufferCV;

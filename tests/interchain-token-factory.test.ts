@@ -24,10 +24,6 @@ const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 describe("interchain-token-factory", () => {
   beforeEach(() => {

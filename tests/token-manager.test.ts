@@ -15,11 +15,6 @@ const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
-
 describe("Token Manager", () => {
   it("Should return the correct contract id", async () => {
     const expectedContractid = keccak256(
@@ -105,9 +100,4 @@ describe("Token Manager", () => {
       tokenManagerAddress: `${deployer}.token-manager`,
     });
   });
-
-  // it("shows an example", () => {
-  //   const { result } = simnet.callReadOnlyFn("counter", "get-counter", [], address1);
-  //   expect(result).toBeUint(0);
-  // });
 });
