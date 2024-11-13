@@ -115,6 +115,7 @@
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
         (gas-value uint)
+        (caller principal)
     )
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
@@ -144,11 +145,12 @@
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-canonical-interchain-token
-    (gateway-impl <gateway-trait>)
-    (interchain-token-service-impl <its-trait>)
-    (token <sip-010-trait>)
-    (destination-chain (string-ascii 20))
-    (gas-value uint))
+        (gateway-impl <gateway-trait>)
+        (interchain-token-service-impl <its-trait>)
+        (token <sip-010-trait>)
+        (destination-chain (string-ascii 20))
+        (gas-value uint)
+        (caller principal))
     (let
         (
             (salt (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token)))
@@ -182,10 +184,11 @@
         (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter principal)
-        (gas-value uint))
+        (gas-value uint)
+        (caller principal))
     (let
         (
-            (salt (get-interchain-token-salt CHAIN-NAME-HASH tx-sender salt_))
+            (salt (get-interchain-token-salt CHAIN-NAME-HASH caller salt_))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
@@ -215,9 +218,10 @@
         (gas-value uint)
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>)
+        (caller principal)
 )
     (let (
-        (salt (get-interchain-token-salt CHAIN-NAME-HASH tx-sender salt_))
+        (salt (get-interchain-token-salt CHAIN-NAME-HASH caller salt_))
         (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
         (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
         (decimals (unwrap!  (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
@@ -226,7 +230,7 @@
                 (not (is-eq NULL-BYTES minter_))
                 (begin
                     (asserts! (unwrap!
-                                (contract-call? token-manager is-minter tx-sender)
+                                (contract-call? token-manager is-minter caller)
                             ERR-MANAGER-NOT-DEPLOYED)
                         ERR-NOT-MINTER)
                     minter_)

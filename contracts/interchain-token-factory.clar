@@ -43,7 +43,8 @@
                 its-impl
                 token-address
                 token-manager-address
-                gas-value)
+                gas-value
+                contract-caller)
     ))
 
 
@@ -67,7 +68,8 @@
             its-impl
             token
             destination-chain
-            gas-value)
+            gas-value
+            contract-caller)
     )
 )
 
@@ -88,7 +90,9 @@
             salt_
             token
             initial-supply
-            minter gas-value)))
+            minter
+            gas-value
+            contract-caller)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
@@ -117,7 +121,8 @@
             destination-chain
             gas-value
             token
-            token-manager)))
+            token-manager
+            contract-caller)))
 
 
 ;; General purose proxy call 

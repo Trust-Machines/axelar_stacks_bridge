@@ -286,6 +286,7 @@
                 <sip-010-trait>
                 <token-manager-trait>
                 uint
+                principal
             )
             (response bool uint))
     (deploy-remote-canonical-interchain-token
@@ -295,6 +296,7 @@
                 <sip-010-trait>
                 (string-ascii 20)
                 uint
+                principal
             )
             (response bool uint))
     (deploy-interchain-token
@@ -306,6 +308,7 @@
                 uint
                 principal
                 uint
+                principal
             )
             (response bool uint))
     (deploy-remote-interchain-token
@@ -318,6 +321,7 @@
                 uint
                 <sip-010-trait>
                 <token-manager-trait>
+                principal
             )
             (response bool uint))
     (dispatch ((string-ascii 32) (buff 65000)) (response bool uint)))
