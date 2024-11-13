@@ -348,4 +348,55 @@ describe("governance tests", () => {
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(tupleCV({ foo: stringAsciiCV("bar") })))], address1);
     expect(resultFinalize).toBeErr(uintCV(12021));
   });
+
+  it("eta can't be smaller than min-eta", () => {
+    let eta = Math.floor(Date.now() / 1000) + 600;
+    const payload = tupleCV({
+      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
+      eta: uintCV(eta),
+      type: uintCV(1)
+    })
+    const payloadHash = bufferCV(keccak256(serializeCV(payload)));
+
+    const messages = listCV([
+      tupleCV({
+        "source-chain": sourceChain,
+        "message-id": messageId,
+        "source-address": sourceAddress,
+        "contract-address": contractAddress,
+        "payload-hash": payloadHash
+      })
+    ]);
+
+    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+
+    const signersHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
+      return cvToJSON(result).value;
+    })();
+
+    const dataHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], address1);
+      return cvToJSON(result).value;
+    })();
+
+    const messageHashToSign = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)], address1);
+      return cvToJSON(result).value
+    })();
+
+    const proof = makeProofCV(proofSigners, messageHashToSign);
+
+    // approve message on the gateway
+    const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
+    expect(resultApprove).toBeOk(boolCV(true));
+
+    // execute on the governance
+    const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
+    expect(resultExecute).toBeOk(boolCV(true));
+
+    // check timelock. adjusted eta should be bigger than the provided eta
+    const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
+    expect(Number(cvToJSON(timelock).value.eta.value)).toBeGreaterThan(eta);
+  });
 });
