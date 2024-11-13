@@ -163,10 +163,9 @@
                 hash: (buff 32),
                 type: uint
             } payload) ERR-PAYLOAD-DATA))
-            (payload-hash (keccak256 payload))
         )
         (asserts! (is-eq (get type data) u3) ERR-INVALID-TYPE)
-        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
-        (cancel-timelock payload-hash)
+        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
+        (cancel-timelock (get hash data))
     )
 )
