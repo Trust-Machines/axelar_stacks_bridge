@@ -12,6 +12,7 @@
 (define-constant ERR-TIMELOCK-EXISTS (err u12001))
 (define-constant ERR-TIMELOCK-NOT-READY (err u12011))
 (define-constant ERR-TIMELOCK-HASH (err u12021))
+(define-constant ERR-TIMELOCK-MIN-ETA (err u12031))
 
 (define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
@@ -34,10 +35,10 @@
         (
             (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
             (min-eta (+ current-ts MIN-TIMELOCK-DELAY))
-            (eta- (if (< eta min-eta) min-eta eta))
         ) 
         (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
-        (ok (map-set timelock-map hash {target: target, eta: eta-, type: type}))
+        (asserts! (>= eta min-eta) ERR-TIMELOCK-MIN-ETA)
+        (ok (map-set timelock-map hash {target: target, eta: eta, type: type}))
     )
 )
 

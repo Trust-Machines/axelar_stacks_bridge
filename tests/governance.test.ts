@@ -393,10 +393,6 @@ describe("governance tests", () => {
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    expect(resultExecute).toBeOk(boolCV(true));
-
-    // check timelock. adjusted eta should be bigger than the provided eta
-    const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
-    expect(Number(cvToJSON(timelock).value.eta.value)).toBeGreaterThan(eta);
+    expect(resultExecute).toBeErr(uintCV(12031));
   });
 });
