@@ -1,3 +1,4 @@
+(impl-trait .traits.proxy-trait)
 (use-trait gateway-trait .traits.gateway-trait)
 
 ;; ######################
@@ -78,20 +79,35 @@
 ;; ######################
 ;; ######################
 
-(define-constant GOVERNANCE .governance)
-
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
-(define-public (updgrade-impl (gateway-impl <gateway-trait>))
+(define-private (is-governance) (is-eq contract-caller (contract-call? .gateway-storage get-governance)))
+
+(define-public (set-impl (new principal))
     (let
         (
             (prev (contract-call? .gateway-storage get-impl))
-            (new (contract-of gateway-impl))
         ) 
-        (asserts! (is-eq contract-caller GOVERNANCE) ERR-UNAUTHORIZED)
+        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-impl new))
         (print {
-            type: "gateway-impl-updgraded",
+            type: "gateway-impl-updated",
+            prev: prev,
+            new: new
+        })
+        (ok true)
+    )
+)
+
+(define-public (set-governance (new principal))
+    (let
+        (
+            (prev (contract-call? .gateway-storage get-governance))
+        ) 
+        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gateway-storage set-governance new))
+        (print {
+            type: "gateway-governance-updated",
             prev: prev,
             new: new
         })

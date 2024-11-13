@@ -39,6 +39,19 @@
     )
 )
 
+;; Governance contract address
+(define-data-var governance principal .governance)
+
+(define-read-only (get-governance) (var-get governance))
+
+(define-public (set-governance (new principal)) 
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set governance new))
+    )
+)
+
+
 ;; Gateway operator
 (define-data-var operator principal contract-caller)
 
