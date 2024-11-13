@@ -1,6 +1,6 @@
 # Governance
 
-The Governance contract combines timelock execution and finalization logic. It is responsible for managing contract-level updates for the Gateway and ITS contracts. 
+The Governance contract combines timelock execution and finalization logic with Axelar's message validation. It is responsible for managing contract-level updates for the Gateway and ITS contracts. 
 
 ##  Interface
 
