@@ -141,3 +141,32 @@
         (ok true)
     )
 )
+
+;; Cancels a scheduled task
+;; @gateway-impl; Trait reference of the current gateway implementation. 
+;; @param source-chain; The name of the source chain.
+;; @param message-id; The unique identifier of the message.
+;; @param source-address; The address of the sender on the source chain.
+;; @param payload; The payload that contains the new impl address and eta.
+;; @returns (response true) or reverts
+(define-public (cancel
+    (gateway-impl <gateway-trait>)
+    (source-chain (string-ascii 20))
+    (message-id (string-ascii 128))
+    (source-address (string-ascii 128))
+    (payload (buff 64000))
+)
+    (let
+        (
+            (command-id (contract-call? .gateway-impl message-to-command-id source-chain message-id))
+            (data (unwrap! (from-consensus-buff? {
+                hash: (buff 32),
+                type: uint
+            } payload) ERR-PAYLOAD-DATA))
+            (payload-hash (keccak256 payload))
+        )
+        (asserts! (is-eq (get type data) u3) ERR-INVALID-TYPE)
+        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
+        (cancel-timelock payload-hash)
+    )
+)
