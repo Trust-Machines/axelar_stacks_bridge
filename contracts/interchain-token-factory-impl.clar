@@ -121,7 +121,7 @@
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
             .interchain-token-service
-                deploy-token-manager 
+                deploy-token-manager
                 gateway-impl
                 .interchain-token-service
                 interchain-token-service-impl
@@ -143,7 +143,7 @@
 ;; @param gasValue The gas amount to be sent for deployment.
 ;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-canonical-interchain-token 
+(define-public (deploy-remote-canonical-interchain-token
     (gateway-impl <gateway-trait>)
     (interchain-token-service-impl <its-trait>)
     (token <sip-010-trait>)
@@ -188,7 +188,7 @@
             (salt (get-interchain-token-salt CHAIN-NAME-HASH tx-sender salt_))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)        
+        (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token
         gateway-impl
         .interchain-token-service
@@ -225,9 +225,9 @@
             (if
                 (not (is-eq NULL-BYTES minter_))
                 (begin
-                    (asserts! (unwrap! 
-                                (contract-call? token-manager is-minter tx-sender) 
-                            ERR-MANAGER-NOT-DEPLOYED) 
+                    (asserts! (unwrap!
+                                (contract-call? token-manager is-minter tx-sender)
+                            ERR-MANAGER-NOT-DEPLOYED)
                         ERR-NOT-MINTER)
                     minter_)
                 NULL-BYTES
@@ -257,7 +257,7 @@
 
 (define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-NOT-PROXY)
+        (asserts! (is-proxy) ERR-NOT-PROXY)
         (ok true)
     )
 )
