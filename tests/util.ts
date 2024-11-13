@@ -12,8 +12,8 @@ import {
     signMessageHashRsv,
     tupleCV,
     uintCV,
+    Cl
 } from "@stacks/transactions";
-import { bufferFromAscii, bufferFromHex } from "@stacks/transactions/dist/cl";
 import { ContractCallEvent, MessageApprovedEvent, MessageExecutedEvent, Signers, SignersRotatedEvent, TransferOperatorshipEvent } from "./types";
 import { expect } from "vitest";
 
@@ -116,13 +116,13 @@ export const signersToCv = (data: Signers) => {
     return tupleCV({
         "signers": listCV([
             ...data.signers.map(x => tupleCV({
-                "signer": bufferFromHex(x.signer),
+                "signer": Cl.bufferFromHex(x.signer),
                 "weight": uintCV(x.weight)
             }))
 
         ]),
         "threshold": uintCV(data.threshold),
-        "nonce": bufferFromAscii(data.nonce)
+        "nonce": Cl.bufferFromAscii(data.nonce)
     })
 }
 
@@ -130,7 +130,7 @@ export const makeProofCV = (data: Signers, messageHashToSign: string) => {
     return tupleCV({
         "signers": signersToCv(data),
         "signatures": listCV([
-            ...data.signers.map((x) => bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
+            ...data.signers.map((x) => Cl.bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), x.signer)))
         ])
     });
 }
@@ -154,7 +154,7 @@ export const contractCallEventToObj = (rawHex: string): ContractCallEvent => {
         sender: json.value.sender.value,
         destinationChain: json.value['destination-chain'].value,
         destinationContractAddress: json.value['destination-contract-address'].value,
-        payload: Buffer.from(bufferFromHex(json.value.payload.value).buffer).toString('ascii'),
+        payload: Buffer.from(Cl.bufferFromHex(json.value.payload.value).buffer).toString('ascii'),
         payloadHash: json.value['payload-hash'].value
     }
 }
@@ -190,7 +190,7 @@ export const signersRotatedEventToObj = (rawHex: string): SignersRotatedEvent =>
     const signers: Signers = {
         signers: json.value['signers'].value.signers.value.map((s: any) => ({ signer: s.value.signer.value.replace('0x', ''), weight: Number(s.value.weight.value) })),
         threshold: Number(json.value['signers'].value.threshold.value),
-        nonce: Buffer.from(bufferFromHex(json.value['signers'].value.nonce.value).buffer).toString('ascii')
+        nonce: Buffer.from(Cl.bufferFromHex(json.value['signers'].value.nonce.value).buffer).toString('ascii')
     }
 
     return {

@@ -20,11 +20,12 @@
     (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
+    (sender principal)
 )
     (begin
         (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
-        (try! (contract-call? .gateway-storage emit-contract-call tx-sender destination-chain destination-contract-address payload (keccak256 payload)))
+        (try! (contract-call? .gateway-storage emit-contract-call sender destination-chain destination-contract-address payload (keccak256 payload)))
         (ok true)
     )
 )
@@ -146,6 +147,7 @@
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
+    (sender principal)
 )
     (let (
         (command-id (message-to-command-id source-chain message-id))
@@ -153,7 +155,7 @@
                 message-id: message-id,
                 source-chain: source-chain,
                 source-address: source-address,
-                contract-address: tx-sender,
+                contract-address: sender,
                 payload-hash: payload-hash
             }))
     )
