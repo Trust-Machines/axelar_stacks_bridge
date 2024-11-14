@@ -18,13 +18,6 @@
 	)
 )
 
-(define-trait gas-service-trait
-	(
-		(pay-native-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
-        (add-native-gas (uint (buff 32) uint principal) (response bool uint))
-	)
-)
-
 (define-trait interchain-token-executable-trait (
   ;; MUST check that the caller is the ITS and only the ITS in contracts that impl this trait
     (execute-with-interchain-token (
