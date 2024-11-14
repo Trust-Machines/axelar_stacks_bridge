@@ -47,46 +47,142 @@
 ))
 
 (define-trait interchain-token-service-trait (
-    (get-chain-name-hash () (response (buff 32) uint))
-    (interchain-transfer ((buff 32) (string-ascii 20) (string-ascii 128) uint (buff 32) uint) (response bool uint))
-    ;;     /**
-    ;;      * @notice Initiates an interchain call contract with interchain token to a destination chain.
-    ;;      * @param tokenId The unique identifier of the token to be transferred.
-    ;;      * @param destinationChain The destination chain to send the tokens to.
-    ;;      * @param destinationAddress The address on the destination chain to send the tokens to.
-    ;;      * @param amount The amount of tokens to be transferred.
-    ;;      * @param data Additional data to be passed along with the transfer.
-    ;;      */
-    (call-contract-with-interchain-token ((buff 32) (string-ascii 20) (buff 128) uint (buff 32) uint) (response bool uint))
-    ;;     /**
-    ;;      * @notice Sets the flow limits for multiple tokens.
-    ;;      * @param tokenIds An array of tokenIds.
-    ;;      * @param flowLimits An array of flow limits corresponding to the tokenIds.
-    ;;      */
-    (set-flow-limits ((list 32  (buff 32)) (list 32 uint)) (response bool uint))
-    ;;     /**
-    ;;      * @notice Returns the flow limit for a specific token.
-    ;;      * @param tokenId The tokenId of the token.
-    ;;      * @return flowLimit_ The flow limit for the token.
-    ;;      */
-    (get-flow-limit ((buff 32)) (response uint uint))
-    ;;     /**
-    ;;      * @notice Returns the total amount of outgoing flow for a specific token.
-    ;;      * @param tokenId The tokenId of the token.
-    ;;      * @return flowOutAmount_ The total amount of outgoing flow for the token.
-    ;;      */
-    (get-flow-out-amount ((buff 32))  (response uint uint))
-    ;;     /**
-    ;;      * @notice Returns the total amount of incoming flow for a specific token.
-    ;;      * @param tokenId The tokenId of the token.
-    ;;      * @return flowInAmount_ The total amount of incoming flow for the token.
-    ;;      */
-    (get-flow-in-amount ((buff 32))  (response uint uint))
-    ;;     /**
-    ;;      * @notice Allows the owner to pause/unpause the token service.
-    ;;      * @param paused whether to pause or unpause.
-    ;;      */
-    (set-pause-status (bool) (response bool uint))
+    (set-paused (bool principal) (response bool uint))
+    (transfer-operatorship (principal principal) (response bool uint))
+    (set-trusted-address ((string-ascii 20) (string-ascii 128) principal) (response bool uint))
+    (remove-trusted-address  ((string-ascii 20) principal) (response bool uint))
+    (deploy-token-manager
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (buff 32)
+        (string-ascii 20)
+        uint
+        (buff 62000)
+        <token-manager-trait>
+        uint
+        principal)
+    (response bool uint))
+    (process-deploy-token-manager-from-external-chain
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        <token-manager-trait>
+        (buff 63000)
+        (optional {
+            source-chain: (string-ascii 20),
+            source-address: (string-ascii 128),
+            message-id: (string-ascii 128),
+            payload: (buff 63000),
+        })
+        uint
+        principal)
+        (response bool uint))
+    (process-deploy-token-manager-from-stacks
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (string-ascii 128)
+        (string-ascii 20)
+        (string-ascii 128)
+        (buff 64000)
+        principal)
+        (response bool uint))
+    (deploy-remote-interchain-token
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (buff 32)
+        (string-ascii 20)
+        (string-ascii 32)
+        (string-ascii 32)
+        uint
+        (buff 128)
+        uint
+        principal)
+        (response bool uint))
+    (deploy-interchain-token
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (buff 32)
+        <native-interchain-token-trait>
+        uint
+        (optional principal)
+        uint
+        principal)
+        (response bool uint))
+    (interchain-transfer
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        <token-manager-trait>
+        <sip-010-trait>
+        (buff 32)
+        (string-ascii 20)
+        (buff 128)
+        uint
+        {
+            version: uint,
+            data: (buff 62000)
+        }
+        uint
+        principal)
+        (response bool uint)
+    )
+    (call-contract-with-interchain-token
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        <token-manager-trait>
+        <sip-010-trait>
+        (buff 32)
+        (string-ascii 20)
+        (buff 128)
+        uint
+        {
+            version: uint,
+            data: (buff 62000)
+        }
+        uint
+        principal)
+        (response bool uint))
+    (execute-deploy-token-manager
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (string-ascii 20)
+        (string-ascii 128)
+        (string-ascii 128)
+        (buff 63000)
+        <sip-010-trait>
+        <token-manager-trait>
+        uint
+        principal)
+        (response bool uint))
+    (execute-deploy-interchain-token
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (string-ascii 20)
+        (string-ascii 128)
+        (string-ascii 128)
+        <native-interchain-token-trait>
+        (buff 62000)
+        uint
+        principal)
+        (response bool uint))
+    (execute-receive-interchain-token
+        (<gateway-trait>
+        <interchain-token-service-proxy-trait>
+        (string-ascii 20)
+        (string-ascii 128)
+        (string-ascii 128)
+        <token-manager-trait>
+        <sip-010-trait>
+        (buff 64000)
+        (optional <interchain-token-executable-trait>)
+        principal)
+        (response (buff 32) uint)
+    )
+    (set-flow-limit ((buff 32) <token-manager-trait> uint principal) (response bool uint))
+    (valid-token-address ((buff 32)) (response {
+        manager-address: principal,
+        token-type: uint,
+    } uint))
+    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint))
+    (interchain-token-id (principal (buff 32)) (response (buff 32) uint))
 ))
 
 (define-trait sip-010-trait
@@ -180,3 +276,92 @@
     <gateway-trait>
   ) (response bool uint)))
 )
+
+(define-trait interchain-token-factory-trait (
+    (register-canonical-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                <sip-010-trait>
+                <token-manager-trait>
+                uint
+                principal
+            )
+            (response bool uint))
+    (deploy-remote-canonical-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                <sip-010-trait>
+                (string-ascii 20)
+                uint
+                principal
+            )
+            (response bool uint))
+    (deploy-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                (buff 32)
+                <native-interchain-token-trait>
+                uint
+                principal
+                uint
+                principal
+            )
+            (response bool uint))
+    (deploy-remote-interchain-token
+            (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                (buff 32)
+                (buff 128)
+                (string-ascii 20)
+                uint
+                <sip-010-trait>
+                <token-manager-trait>
+                principal
+            )
+            (response bool uint))
+    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint)))
+)
+
+(define-trait interchain-token-service-proxy-trait (
+    (its-hub-call-contract (
+            ;; gateway impl
+            <gateway-trait>
+            ;; destination-chain
+            (string-ascii 20)
+            ;; payload
+            (buff 63000)
+            ;; metadata version
+            uint
+            ;; gas-value
+            uint
+        ) (response bool uint))
+    (gateway-call-contract (
+            ;; gateway impl
+            <gateway-trait>
+            ;; destination-chain
+            (string-ascii 20)
+            ;; destination-address
+            (string-ascii 128)
+            ;; payload
+            (buff 64000)
+            ;; gas-value
+            uint
+        ) (response bool uint))
+    (gateway-validate-message (
+        ;; gateway-impl
+        <gateway-trait>
+        ;; source-chain
+        (string-ascii 20)
+        ;; message-id
+        (string-ascii 128)
+        ;; source-address
+        (string-ascii 128)
+        ;; payload-hash
+        (buff 32)
+    ) 
+        (response bool uint))
+))

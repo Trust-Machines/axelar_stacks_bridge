@@ -31,6 +31,8 @@ import {
   interchainTransfer,
   isFlowLimiter,
   isOperator,
+  itsImpl,
+  itsProxy,
   keccak256,
   mintNIT,
   removeFlowLimiter,
@@ -40,9 +42,10 @@ import {
   setupNIT,
   setupService,
   setupTokenManager,
-  transferOperatorShip,
+  transferITSOperatorShip,
+  transferTokenOperatorShip,
 } from "./its-utils";
-import { getSigners } from "./util";
+import { gatewayImplCV, getSigners } from "./util";
 import {
   ITS_ERROR_CODES,
   ITS_HUB_ROUTING_IDENTIFIER,
@@ -62,25 +65,66 @@ const deployer = accounts.get("deployer")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
-
 describe("Interchain Token Service", () => {
   const salt = randomBytes(32);
   const tokenId = getTokenId(salt).result as BufferCV;
 
+  const evilImpl = Cl.address(`${address2}.interchain-token-service-impl`);
   beforeEach(() => {
+    const implCode = simnet
+      .getContractSource(`interchain-token-service-impl`)!
+      .replace(/ \./g, ` '${deployer}.`);
+    expect(
+      simnet.deployContract(
+        "interchain-token-service-impl",
+        implCode,
+        { clarityVersion: 2 },
+        address2,
+      ).result,
+    ).toBeBool(true);
     setupService(proofSigners);
   });
   describe("Owner functions", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const deployTx = setPaused({
+        impl: evilImpl,
+        paused: true,
+      });
+
+      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+
+      const setTrustedAddressTx = simnet.callPublicFn(
+        "interchain-token-service",
+        "set-trusted-address",
+        [
+          evilImpl,
+          Cl.stringAscii("ethereum"),
+          Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
+        ],
+        deployer,
+      );
+
+      expect(setTrustedAddressTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
+
+      const removeTrustedAddressTx = simnet.callPublicFn(
+        "interchain-token-service",
+        "remove-trusted-address",
+        [evilImpl, Cl.stringAscii("ethereum")],
+        deployer,
+      );
+
+      expect(removeTrustedAddressTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
+    });
     it("Should revert on set pause status when not called by the owner", () => {
       expect(
         simnet.callPublicFn(
           "interchain-token-service",
           "set-paused",
-          [Cl.bool(true)],
+          [itsImpl, Cl.bool(true)],
           address1,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -92,6 +136,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii("ethereum"),
             Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           ],
@@ -105,7 +150,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "set-trusted-address",
-          [Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
+          [itsImpl, Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
           deployer,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-DESTINATION-ADDRESS"]);
@@ -115,6 +160,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii("ethereum"),
             Cl.stringAscii(ITS_HUB_ROUTING_IDENTIFIER),
           ],
@@ -129,6 +175,7 @@ describe("Interchain Token Service", () => {
           "interchain-token-service",
           "set-trusted-address",
           [
+            itsImpl,
             Cl.stringAscii(TRUSTED_CHAIN),
             Cl.stringAscii("any arbitrary address"),
           ],
@@ -142,7 +189,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [Cl.stringAscii("ethereum")],
+          [itsImpl, Cl.stringAscii("ethereum")],
           address1,
         ).result,
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
@@ -153,7 +200,7 @@ describe("Interchain Token Service", () => {
         simnet.callPublicFn(
           "interchain-token-service",
           "remove-trusted-address",
-          [Cl.stringAscii("ethereum")],
+          [itsImpl, Cl.stringAscii("ethereum")],
           deployer,
         ).result,
       ).toBeOk(Cl.bool(true));
@@ -161,6 +208,61 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Deploy and Register Interchain Token", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const deployTokenManagerTx = deployTokenManager({
+        impl: evilImpl,
+        salt,
+        gas: 1000,
+      });
+
+      expect(deployTokenManagerTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
+      const enableTokenTx = simnet.callPublicFn(
+        "interchain-token-service",
+        "process-deploy-token-manager-from-stacks",
+        [
+          gatewayImplCV,
+          itsProxy,
+          evilImpl,
+          Cl.stringAscii("0x00"),
+          Cl.stringAscii("stacks"),
+          Cl.stringAscii("interchain-token-service"),
+          Cl.bufferFromHex("0x00"),
+        ],
+        address1,
+      );
+
+      expect(enableTokenTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+
+      const deployInterchainTokenTx = deployInterchainToken({
+        impl: evilImpl,
+        salt,
+        gasValue: 1000,
+      });
+
+      expect(deployInterchainTokenTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
+
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-native-interchain-token-deployment-message",
+          payload: Cl.serialize(
+            approveDeployNativeInterchainToken({
+              proofSigners,
+              tokenId,
+              minter: deployer,
+            }).payload,
+          ),
+          sourceAddress: "interchain-token-service",
+          sourceChain: "stacks",
+          tokenAddress: `${deployer}.native-interchain-token`,
+          gasValue: 1000,
+          impl: evilImpl,
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should register an existing token with its manager", () => {
       setupTokenManager({});
       const deployTx = deployTokenManager({
@@ -245,6 +347,18 @@ describe("Interchain Token Service", () => {
           name: "sample",
           minter: Buffer.from([0]),
           symbol: "sample",
+          impl: evilImpl,
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      expect(
+        deployRemoteInterchainToken({
+          salt,
+          decimals: 6,
+          destinationChain: "ethereum",
+          gasValue: 10_000_000,
+          name: "sample",
+          minter: Buffer.from([0]),
+          symbol: "sample",
         }).result,
       ).toBeOk(Cl.bool(true));
     });
@@ -300,6 +414,20 @@ describe("Interchain Token Service", () => {
 
   describe("Receive Remote Interchain Token Deployment", () => {
     const tokenId = getTokenId(salt).result as BufferCV;
+
+    it("Should revert if an invalid impl is provided", () => {
+      expect(
+        executeDeployInterchainToken({
+          messageId: "approved-interchain-token-deployment-message",
+          payload: Buffer.from([0]),
+          sourceAddress: TRUSTED_ADDRESS,
+          sourceChain: TRUSTED_CHAIN,
+          tokenAddress: `${deployer}.sample-sip-010`,
+          gasValue: 1000,
+          impl: evilImpl,
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
       expect(
         executeDeployInterchainToken({
@@ -462,24 +590,6 @@ describe("Interchain Token Service", () => {
       expect(gatewayContractCall.data.value).toBeTuple(message);
     });
 
-    // FIXME: remove this test too if not possible to execute
-    it("Should revert on a remote custom token manager deployment if the token manager does does not exist", () => {
-      // will always fail since the VM won't be able to read the interface of a contract that doesn't exist
-      // const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      // expect(
-      //   deployTokenManager({
-      //     salt,
-      //     destinationChain: "ethereum",
-      //     gas: 100,
-      //     tokenAddress,
-      //     tokenManagerAddress: Cl.contractPrincipal(
-      //       deployer,
-      //       "nonexistent-token-manager"
-      //     ),
-      //   })
-      // );
-    });
-
     it("Should revert on remote custom token manager deployment if paused", () => {
       setPaused({ paused: true });
       setupTokenManager({});
@@ -497,6 +607,41 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Receive Remote Token Manager Deployment", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const messageId = "remote-token-manager-deployment";
+      const wrappedMessageId = "wrapped-" + messageId;
+      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
+      const tokenManagerAddress = Cl.contractPrincipal(
+        deployer,
+        "token-manager",
+      );
+      const payload = {
+        type: Cl.uint(3),
+        "source-chain": Cl.stringAscii("ethereum"),
+        "token-id": tokenId,
+        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
+        params: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              operator: Cl.some(Cl.address(address1)),
+              "token-address": tokenAddress,
+            }),
+          ),
+        ),
+      };
+      const deployTx = executeDeployTokenManager({
+        messageId: wrappedMessageId,
+        payload: payload,
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        token: tokenAddress,
+        tokenManager: tokenManagerAddress,
+        gasValue: 1000,
+        impl: evilImpl,
+      });
+
+      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should be able to receive a remote lock/unlock token manager deployment", () => {
       setupTokenManager({});
       const messageId = "remote-token-manager-deployment";
@@ -641,6 +786,26 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Send Token", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const amount = 100;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${deployer}.token-manager`;
+      const transferTx = interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii(destinationAddress),
+        destinationChain: Cl.stringAscii(destinationChain),
+        gasValue: Cl.uint(gasValue),
+        tokenAddress: Cl.address(tokenAddress),
+        tokenId,
+        tokenManagerAddress: Cl.address(managerAddress),
+        caller: deployer,
+        impl: evilImpl,
+      });
+      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should be able to initiate an interchain token transfer for lockUnlock with a normal SIP-010 token", () => {
       setupTokenManager({});
       deployTokenManager({
@@ -976,16 +1141,20 @@ describe("Interchain Token Service", () => {
     });
   });
 
-  // FIXME: remove these tests if eventually they're not needed
-  describe("Execute with token checks", () => {
-    it("Should revert on execute with token if remote address validation fails", () => {});
-
-    it("Should revert on execute with token if the service is paused", () => {});
-
-    it("Should revert on execute with token with invalid messageType", () => {});
-  });
-
   describe("Receive Remote Tokens", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      expect(
+        executeReceiveInterchainToken({
+          messageId: "approved-interchain-transfer-message",
+          sourceChain: TRUSTED_CHAIN,
+          sourceAddress: TRUSTED_ADDRESS,
+          tokenManager: Cl.contractPrincipal(deployer, "token-manager"),
+          token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+          payload: Cl.bufferFromHex("0x"),
+          impl: evilImpl,
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should be able to receive lock/unlock token", () => {
       setupTokenManager({});
       deployTokenManager({
@@ -1166,6 +1335,48 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Send Token With Data", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const amount = 100;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.native-interchain-token`;
+
+      const transferTx = interchainTransfer({
+        amount: Cl.uint(amount),
+        destinationAddress: Cl.bufferFromAscii(destinationAddress),
+        destinationChain: Cl.stringAscii(destinationChain),
+        gasValue: Cl.uint(gasValue),
+        tokenAddress: Cl.address(tokenAddress),
+        tokenId,
+        tokenManagerAddress: Cl.address(tokenAddress),
+        caller: deployer,
+        metadata: {
+          data: Cl.bufferFromAscii("some data"),
+          version: Cl.uint(MetadataVersion.ContractCall),
+        },
+        impl: evilImpl,
+      });
+      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+
+      expect(
+        callContractWithInterchainToken({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          caller: deployer,
+          metadata: {
+            data: Cl.bufferFromAscii("some data"),
+            version: Cl.uint(MetadataVersion.ContractCall),
+          },
+          impl: evilImpl,
+          tokenId,
+          tokenManagerAddress: Cl.address(tokenAddress),
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
     it("Should revert on an interchain transfer if service is paused", () => {
       const amount = 100;
       const destinationAddress = "some eth address";
@@ -1419,7 +1630,6 @@ describe("Interchain Token Service", () => {
         ) as ContractPrincipalCV,
       };
       beforeEach(() => {
-        // setupService();
         setupTokenManager({});
         deployTokenManager({
           salt: lockUnlockSalt,
@@ -2239,6 +2449,17 @@ describe("Interchain Token Service", () => {
       });
     }
 
+    it("Should revert if an invalid implementation is provided", () => {
+      const setFlowTx = setFlowLimit({
+        tokenId,
+        tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+        limit: Cl.uint(500),
+        impl: evilImpl,
+      });
+
+      expect(setFlowTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    });
+
     it("Should be able to send token only if it does not trigger the mint limit", () => {
       setupTokenManager({});
       deployTokenManager({
@@ -2428,14 +2649,16 @@ describe("Interchain Token Service", () => {
           }).result,
         ).toBeOk(Cl.bool(true));
 
-        setFlowLimit({
-          tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(
-            deployer,
-            "native-interchain-token",
-          ),
-          limit: Cl.uint(5),
-        });
+        expect(
+          setFlowLimit({
+            tokenId,
+            tokenManagerAddress: Cl.contractPrincipal(
+              deployer,
+              "native-interchain-token",
+            ),
+            limit: Cl.uint(5),
+          }).result,
+        ).toBeOk(Cl.bool(true));
         expect(getFlowLimit("native-interchain-token").result).toBeOk(
           Cl.uint(5),
         );
@@ -2552,7 +2775,11 @@ describe("Interchain Token Service", () => {
     });
 
     describe("Should be able to transfer the operator", () => {
-      function runCurrentTests(contractName: string, operator = address1) {
+      function runCurrentTests(
+        contractName: string,
+        operator = address1,
+        ERROR_CODE = NIT_ERRORS["ERR-ONLY-OPERATOR"],
+      ) {
         expect(isOperator({ contractName, operator: address2 }).result).toBeOk(
           Cl.bool(false),
         );
@@ -2560,7 +2787,7 @@ describe("Interchain Token Service", () => {
           Cl.bool(true),
         );
         expect(
-          transferOperatorShip({
+          transferTokenOperatorShip({
             contractName,
             operator: operator,
             newOperator: address2,
@@ -2574,12 +2801,12 @@ describe("Interchain Token Service", () => {
         );
 
         expect(
-          transferOperatorShip({
+          transferTokenOperatorShip({
             contractName,
             operator: operator,
             newOperator: address2,
           }).result,
-        ).toBeErr(NIT_ERRORS["ERR-ONLY-OPERATOR"]);
+        ).toBeErr(ERROR_CODE);
       }
       it("lock unlock", () => {
         setupTokenManager({});
@@ -2593,9 +2820,63 @@ describe("Interchain Token Service", () => {
       });
 
       it("its", () => {
-        const contractName = "interchain-token-service";
-        runCurrentTests(contractName, deployer);
+        const implContractName = "interchain-token-service-impl";
+        const operator = deployer;
+
+        expect(
+          isOperator({ contractName: implContractName, operator: address2 })
+            .result,
+        ).toBeOk(Cl.bool(false));
+        expect(
+          isOperator({ contractName: implContractName, operator }).result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          transferITSOperatorShip({
+            operator,
+            newOperator: address2,
+            impl: evilImpl,
+          }).result,
+        ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+        expect(
+          transferITSOperatorShip({
+            operator,
+            newOperator: address2,
+          }).result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isOperator({ contractName: implContractName, operator: address2 })
+            .result,
+        ).toBeOk(Cl.bool(true));
+        expect(
+          isOperator({ contractName: implContractName, operator: operator })
+            .result,
+        ).toBeOk(Cl.bool(false));
+
+        expect(
+          transferITSOperatorShip({
+            operator: operator,
+            newOperator: address2,
+          }).result,
+        ).toBeErr(ITS_ERROR_CODES["ERR-ONLY-OPERATOR"]);
       });
     });
+  });
+  it("dynamic dispatch", () => {
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "call",
+        [evilImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+        address1,
+      ).result,
+    ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "call",
+        [itsImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+        address1,
+      ).result,
+    ).toBeOk(Cl.bool(true));
   });
 });

@@ -33,6 +33,7 @@ export function runFlowLimitsSuite({
       [Cl.uint(flowLimit)],
       address1
     );
+
     expect(tx.result).toBeOk(Cl.bool(true));
     const flowLimitValue = getFlowLimit(tokenManagerAddress);
     expect(flowLimitValue.result).toBeOk(Cl.uint(flowLimit));

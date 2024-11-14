@@ -17,37 +17,55 @@ import {
   getCanonicalInterChainTokenId,
   getInterchainTokenId,
   registerCanonicalInterchainToken,
+  itfImpl,
 } from "./itf-utils";
 import { BURN_ADDRESS, ITF_ERRORS } from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/stacks/clarinet-js-sdk
-*/
 const proofSigners = getSigners(0, 10, 1, 10, "1");
 describe("interchain-token-factory", () => {
+  const evilImpl = Cl.address(`${address2}.interchain-token-factory-impl`);
+
   beforeEach(() => {
+    const implCode = simnet
+      .getContractSource(`interchain-token-factory-impl`)!
+      .replace(/ \./g, ` '${deployer}.`);
+    expect(
+      simnet.deployContract(
+        "interchain-token-factory-impl",
+        implCode,
+        { clarityVersion: 2 },
+        address2,
+      ).result,
+    ).toBeBool(true);
     setupService(proofSigners);
   });
   it("Should return the correct contract ID", () => {
     const contractId = simnet.callReadOnlyFn(
-      "interchain-token-factory",
+      "interchain-token-factory-impl",
       "get-contract-id",
       [],
-      address1
+      address1,
     ).result as ResponseOkCV<BufferCV>;
 
     expect(contractId).toBeOk(
       Cl.buffer(
-        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory")))
-      )
+        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory"))),
+      ),
     );
   });
   describe("Canonical Interchain Token Factory", () => {
+    it("Should revert if an invalid impl is provided", () => {
+      const deployTx = registerCanonicalInterchainToken({
+        impl: evilImpl,
+      });
+
+      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+    });
     it("deploys a lock unlock token with its manager", () => {
       setupTokenManager({});
 
@@ -71,14 +89,14 @@ describe("interchain-token-factory", () => {
   describe("Interchain token factory", () => {
     const originalSalt = randomBytes(32);
     const salt = simnet.callReadOnlyFn(
-      "interchain-token-factory",
+      "interchain-token-factory-impl",
       "get-interchain-token-salt",
       [
         Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
         Cl.address(address1),
         Cl.buffer(originalSalt),
       ],
-      address1
+      address1,
     ).result as BufferCV;
 
     const tokenId = getInterchainTokenId({
@@ -86,6 +104,25 @@ describe("interchain-token-factory", () => {
       deployer: Cl.address(address1),
       sender: address1,
     }).value;
+    it("Should revert if an invalid impl is provided", () => {
+      const deployTx = factoryDeployInterchainToken({
+        impl: evilImpl,
+        salt: originalSalt,
+        sender: address1,
+      });
+
+      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+
+      const remoteDeployTx = factoryDeployRemoteInterchainToken({
+        salt: originalSalt,
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.token-manager`,
+        sender: address1,
+        impl: evilImpl,
+      });
+
+      expect(remoteDeployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+    });
     it("deploys a mint burn token", () => {
       setupNIT({
         tokenId,
@@ -110,7 +147,7 @@ describe("interchain-token-factory", () => {
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
@@ -130,7 +167,7 @@ describe("interchain-token-factory", () => {
       const deployTx = factoryDeployInterchainToken({
         salt: randomBytes(32),
         sender: address1,
-        minterAddress: `${deployer}.interchain-token-service`,
+        minterAddress: `${deployer}.interchain-token-service-impl`,
       });
 
       expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
@@ -188,7 +225,7 @@ describe("interchain-token-factory", () => {
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
-        }).result
+        }).result,
       ).toBeOk(Cl.bool(true));
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
@@ -199,6 +236,16 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it("dynamic dispatch", () => {
+      const { result } = simnet.callPublicFn(
+        "interchain-token-factory",
+        "call",
+        [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+        address1,
+      );
+      expect(result).toBeOk(Cl.bool(true));
     });
   });
 });

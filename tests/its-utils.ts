@@ -1,4 +1,5 @@
 import {
+  BooleanCV,
   BufferCV,
   Cl,
   ContractPrincipalCV,
@@ -11,9 +12,6 @@ import {
   UIntCV,
 } from "@stacks/transactions";
 
-const accounts = simnet.getAccounts();
-const deployer = accounts.get("deployer")!;
-const address1 = accounts.get("wallet_1")!;
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
 import { deployGateway, gatewayImplCV, makeProofCV, signersToCv } from "./util";
@@ -28,14 +26,18 @@ import {
   BURN_ADDRESS,
 } from "./constants";
 
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const address1 = accounts.get("wallet_1")!;
+export const itsImpl = Cl.address(`${deployer}.interchain-token-service-impl`);
+export const itsProxy = Cl.address(`${deployer}.interchain-token-service`);
+
 export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
-  itsAddress = `${deployer}.interchain-token-service`,
   operator = address1,
   sender = deployer,
 }: {
   tokenType?: TokenType;
-  itsAddress?: string;
   operator?: string | null;
   sender?: string;
 }) {
@@ -45,7 +47,6 @@ export function setupTokenManager({
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
       Cl.uint(tokenType),
-      Cl.address(itsAddress),
       operator ? Cl.some(Cl.standardPrincipal(operator)) : Cl.none(),
     ],
     sender,
@@ -84,7 +85,9 @@ export function deployTokenManager({
   tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010"),
   tokenManagerAddress = Cl.contractPrincipal(deployer, "token-manager"),
   gas = 0,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   salt: Buffer | Uint8Array;
   destinationChain?: string;
   tokenType?: 0 | 2;
@@ -97,6 +100,8 @@ export function deployTokenManager({
     "deploy-token-manager",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.uint(tokenType),
@@ -120,7 +125,9 @@ export function enableTokenManager({
   proofSigners,
   wrappedPayload,
   messageId = "0x00",
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   tokenId: BufferCV;
   proofSigners: Signers;
   wrappedPayload?: {
@@ -178,6 +185,8 @@ export function enableTokenManager({
     "process-deploy-token-manager-from-stacks",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.stringAscii(messageId),
       Cl.stringAscii("stacks"),
       Cl.stringAscii("interchain-token-service"),
@@ -204,8 +213,8 @@ export function getTokenId(
   deployer: string = address1,
 ) {
   return simnet.callReadOnlyFn(
-    "interchain-token-service",
-    "interchain-token-id",
+    "interchain-token-service-impl",
+    "interchain-token-id-raw",
     [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
     address1,
   );
@@ -312,18 +321,28 @@ export function signAndApproveMessages({
   const { result: approveResult } = simnet.callPublicFn(
     "gateway",
     "approve-messages",
-    [gatewayImplCV, Cl.buffer(Cl.serialize(messages)), Cl.buffer(Cl.serialize(proof))],
+    [
+      gatewayImplCV,
+      Cl.buffer(Cl.serialize(messages)),
+      Cl.buffer(Cl.serialize(proof)),
+    ],
     address1,
   );
 
   return expect(approveResult).toBeOk(Cl.bool(true));
 }
 
-export function setPaused({ paused }: { paused: boolean }) {
+export function setPaused({
+  paused,
+  impl = itsImpl,
+}: {
+  impl?: PrincipalCV;
+  paused: boolean;
+}) {
   return simnet.callPublicFn(
     "interchain-token-service",
     "set-paused",
-    [Cl.bool(paused)],
+    [impl, Cl.bool(paused)],
     deployer,
   );
 }
@@ -339,7 +358,9 @@ export function deployRemoteInterchainToken({
   decimals,
   minter,
   gasValue,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   salt: Buffer | Uint8Array;
   destinationChain: string;
   name: string;
@@ -353,6 +374,8 @@ export function deployRemoteInterchainToken({
     "deploy-remote-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
       Cl.stringAscii(name),
@@ -372,7 +395,9 @@ export function executeDeployInterchainToken({
   sourceChain,
   tokenAddress,
   gasValue,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
@@ -385,6 +410,8 @@ export function executeDeployInterchainToken({
     "execute-deploy-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -471,7 +498,9 @@ export function deployInterchainToken({
   supply = 0,
   minter,
   gasValue,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   salt: Uint8Array | Buffer;
   gasValue: number;
   token?: ContractPrincipalCV;
@@ -483,6 +512,8 @@ export function deployInterchainToken({
     "deploy-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
@@ -501,7 +532,9 @@ export function executeDeployTokenManager({
   token,
   tokenManager,
   gasValue,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
@@ -521,6 +554,8 @@ export function executeDeployTokenManager({
     "execute-deploy-token-manager",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -543,7 +578,9 @@ export function interchainTransfer({
   tokenManagerAddress,
   metadata,
   caller,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   tokenManagerAddress: PrincipalCV;
   tokenAddress: PrincipalCV;
   tokenId: BufferCV;
@@ -562,6 +599,8 @@ export function interchainTransfer({
     "interchain-transfer",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -634,7 +673,9 @@ export function executeReceiveInterchainToken({
   token,
   payload,
   destinationContract,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   messageId: string;
   sourceChain: string;
   sourceAddress: string;
@@ -648,6 +689,8 @@ export function executeReceiveInterchainToken({
     "execute-receive-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
       Cl.stringAscii(sourceAddress),
@@ -743,14 +786,12 @@ export function setupNIT({
   operator,
   name = "Nitter",
   symbol = "NIT",
-  itsAddress = `${deployer}.interchain-token-service`,
 }: {
   tokenId: BufferCV;
   minter?: string;
   operator?: string;
   name?: string;
   symbol?: string;
-  itsAddress?: string;
 }) {
   return simnet.callPublicFn(
     "native-interchain-token",
@@ -760,8 +801,6 @@ export function setupNIT({
       tokenId,
       // (token-type_ uint)
       Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
-      // (its-address principal)
-      Cl.address(itsAddress),
       // (operator-address (optional principal))
       operator ? Cl.some(Cl.address(operator)) : Cl.none(),
       // (name_ (string-ascii 32))
@@ -884,7 +923,9 @@ export function callContractWithInterchainToken({
   tokenManagerAddress,
   metadata,
   caller,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   tokenManagerAddress: PrincipalCV;
   tokenAddress: PrincipalCV;
   tokenId: BufferCV;
@@ -903,6 +944,8 @@ export function callContractWithInterchainToken({
     "call-contract-with-interchain-token",
     [
       gatewayImplCV,
+      itsProxy,
+      impl,
       tokenManagerAddress,
       tokenAddress,
       tokenId,
@@ -921,15 +964,13 @@ export function callContractWithInterchainToken({
   );
 }
 
-export function setupService(proofSigners: Signers) {
+export function setupService(proofSigners: Signers, customITSImpl?: string) {
   expect(
     simnet.callPublicFn(
       "interchain-token-service",
       "setup",
       [
         Cl.stringAscii("interchain-token-service"),
-        Cl.contractPrincipal(deployer, "interchain-token-factory"),
-        Cl.contractPrincipal(deployer, "gateway"),
         Cl.contractPrincipal(deployer, "gas-service"),
         Cl.standardPrincipal(deployer),
         Cl.list([
@@ -947,6 +988,7 @@ export function setupService(proofSigners: Signers) {
           }),
         ]),
         Cl.stringAscii(TRUSTED_CHAIN),
+        customITSImpl ? Cl.some(Cl.address(customITSImpl)) : Cl.none(),
       ],
       deployer,
     ).result,
@@ -958,7 +1000,9 @@ export function setFlowLimit({
   tokenId,
   tokenManagerAddress,
   limit,
+  impl = itsImpl,
 }: {
+  impl?: PrincipalCV;
   tokenId: BufferCV;
   tokenManagerAddress: ContractPrincipalCV;
   limit: UIntCV;
@@ -966,7 +1010,7 @@ export function setFlowLimit({
   return simnet.callPublicFn(
     "interchain-token-service",
     "set-flow-limit",
-    [tokenId, tokenManagerAddress, limit],
+    [impl, tokenId, tokenManagerAddress, limit],
     deployer,
   );
 }
@@ -1115,7 +1159,7 @@ export function isOperator({
   );
 }
 
-export function transferOperatorShip({
+export function transferTokenOperatorShip({
   contractName,
   operator,
   newOperator,
@@ -1128,6 +1172,22 @@ export function transferOperatorShip({
     contractName,
     "transfer-operatorship",
     [Cl.address(newOperator)],
+    operator,
+  );
+}
+export function transferITSOperatorShip({
+  operator,
+  newOperator,
+  impl = itsImpl,
+}: {
+  impl?: PrincipalCV;
+  operator: string;
+  newOperator: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "transfer-operatorship",
+    [impl, Cl.address(newOperator)],
     operator,
   );
 }
@@ -1170,4 +1230,28 @@ export function getCommandId({
   messageId: string;
 }) {
   return keccak256(Cl.serialize(Cl.stringAscii(`${sourceChain}_${messageId}`)));
+}
+
+export function isMinter({ address }: { address: string }) {
+  return simnet.callReadOnlyFn(
+    "native-interchain-token",
+    "is-minter",
+    [Cl.address(address)],
+    address1,
+  ).result as ResponseOkCV<BooleanCV>;
+}
+
+export function transferMinterShip({
+  newMinter,
+  sender,
+}: {
+  newMinter: string;
+  sender: string;
+}) {
+  return simnet.callPublicFn(
+    "native-interchain-token",
+    "transfer-mintership",
+    [Cl.address(newMinter)],
+    sender,
+  );
 }

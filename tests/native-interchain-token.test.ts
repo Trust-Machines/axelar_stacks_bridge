@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getTokenId, mintNIT, setupNIT, setTokenFlowLimit } from "./its-utils";
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
-import { BURN_ADDRESS, NIT_ERRORS } from "./constants";
+import { NIT_ERRORS } from "./constants";
 import { runFlowLimitsSuite } from "./token-manager-utils";
 
 const accounts = simnet.getAccounts();
@@ -34,19 +34,11 @@ describe("Native Interchain Token", () => {
     });
   });
   describe("Interchain Token", () => {
-    it("revert on init if service is address(0)", () => {
-      expect(
-        setupNIT({
-          itsAddress: BURN_ADDRESS,
-          tokenId,
-        }).result
-      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
-    });
     it("revert on init if tokenId is 0", () => {
       expect(
         setupNIT({
           tokenId: Cl.bufferFromHex("0x"),
-        }).result
+        }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });
     it("revert on init if token name is invalid", () => {
@@ -54,7 +46,7 @@ describe("Native Interchain Token", () => {
         setupNIT({
           tokenId,
           name: "",
-        }).result
+        }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });
     it("revert on init if token symbol is invalid", () => {
@@ -62,7 +54,7 @@ describe("Native Interchain Token", () => {
         setupNIT({
           tokenId,
           symbol: "",
-        }).result
+        }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });
   });
