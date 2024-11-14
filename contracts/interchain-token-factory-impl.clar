@@ -259,7 +259,7 @@
 ;; #########################
 ;; #########################
 
-(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
+(define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (ok true)

@@ -13,10 +13,12 @@
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait itf-trait .traits.interchain-token-factory-trait)
 (use-trait its-trait .traits.interchain-token-service-trait)
+(impl-trait .traits.proxy-trait)
 ;; token definitions
 ;;
 
 (define-constant ERR-INVALID-IMPL (err u210211))
+(define-constant ERR-NOT-AUTHORIZED (err u210212))
 
 (define-private (is-correct-impl (interchain-token-factory-impl <itf-trait>)) 
     (is-eq 
@@ -125,10 +127,36 @@
             contract-caller)))
 
 
+;; ######################
+;; ######################
+;; ### Upgradability ####
+;; ######################
+;; ######################
+
+(define-public (set-impl (itf-impl principal))
+    (let
+        (
+            (governance-impl (contract-call? .gateway-storage get-governance))
+            (prev (contract-call? .interchain-token-service-storage get-factory-impl))
+        ) 
+        (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
+        (try! (contract-call? .interchain-token-service-storage set-factory-impl itf-impl))
+        (print {
+            type: "interchain-token-factory-impl-updgraded",
+            prev: prev,
+            new: itf-impl
+        })
+        (ok true)
+    )
+)
+
+(define-public (set-governance (governance principal))
+    (ok true))
+
 ;; General purose proxy call 
 (define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
         (asserts! (is-eq (is-correct-impl itf-impl) true) ERR-INVALID-IMPL)
-        (contract-call? itf-impl dispatch fn data)
+        (contract-call? itf-impl dispatch fn data contract-caller)
     )
 )

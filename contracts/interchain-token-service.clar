@@ -5,6 +5,7 @@
 ;; description:
 (use-trait its-trait .traits.interchain-token-service-trait)
 (impl-trait .traits.interchain-token-service-proxy-trait)
+(impl-trait .traits.proxy-trait)
 (use-trait its-proxy-trait .traits.interchain-token-service-proxy-trait)
 ;; ######################
 ;; ######################
@@ -468,24 +469,27 @@
 ;; ######################
 ;; ######################
 
-(define-constant GOVERNANCE .governance)
-
-(define-public (updgrade-impl (its-impl <its-trait>))
+(define-public (set-impl (its-impl principal))
     (let
         (
+            (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .interchain-token-service-storage get-service-impl))
-            (new (contract-of its-impl))
+            
         ) 
-        (asserts! (is-eq contract-caller GOVERNANCE) ERR-NOT-AUTHORIZED)
-        (try! (contract-call? .interchain-token-service-storage set-service-impl new))
+        (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
+        (try! (contract-call? .interchain-token-service-storage set-service-impl its-impl))
         (print {
             type: "interchain-token-service-impl-updgraded",
             prev: prev,
-            new: new
+            new: its-impl
         })
         (ok true)
     )
 )
+
+(define-public (set-governance (governance principal))
+    (ok true))
+
 
 
 ;; General purose proxy call 
