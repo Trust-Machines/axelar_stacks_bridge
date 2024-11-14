@@ -182,7 +182,7 @@
         manager-address: principal,
         token-type: uint,
     } uint))
-    (dispatch ((string-ascii 32) (buff 65000)) (response bool uint))
+    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint))
     (interchain-token-id (principal (buff 32)) (response (buff 32) uint))
 ))
 
@@ -324,7 +324,7 @@
                 principal
             )
             (response bool uint))
-    (dispatch ((string-ascii 32) (buff 65000)) (response bool uint)))
+    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint)))
 )
 
 (define-trait interchain-token-service-proxy-trait (

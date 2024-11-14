@@ -492,7 +492,7 @@
 (define-public (call (its-impl <its-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
         (asserts! (is-eq (is-correct-impl its-impl) true) ERR-INVALID-IMPL)
-        (contract-call? its-impl dispatch fn data)
+        (contract-call? its-impl dispatch fn data contract-caller)
     )
 )
 

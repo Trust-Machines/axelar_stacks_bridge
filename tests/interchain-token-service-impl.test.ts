@@ -321,7 +321,7 @@ describe("Interchain Token Service impl", () => {
       simnet.callPublicFn(
         "interchain-token-service-impl",
         "dispatch",
-        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x")],
+        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x"), Cl.address(address1)],
         address1,
       ).result,
     ).toBeErr(ERR_NOT_PROXY);

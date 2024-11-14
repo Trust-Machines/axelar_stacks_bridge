@@ -10,6 +10,7 @@ import {
 import { Cl, randomBytes } from "@stacks/transactions";
 import { ITF_ERRORS } from "./constants";
 import { getCanonicalInterChainTokenId } from "./itf-utils";
+import { address } from "@stacks/transactions/dist/cl";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -27,6 +28,7 @@ describe("Interchain token factory impl", () => {
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.address(`${deployer}.token-manager`),
           Cl.uint(1000),
+          Cl.address(address1),
         ],
         address1,
       ).result,
@@ -52,6 +54,7 @@ describe("Interchain token factory impl", () => {
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.stringAscii("ethereum"),
           Cl.uint(1000),
+          Cl.address(address1),
         ],
         address1,
       ).result,
@@ -67,8 +70,9 @@ describe("Interchain token factory impl", () => {
           Cl.buffer(salt),
           Cl.address(`${deployer}.native-interchain-token`),
           Cl.uint(1000),
-          Cl.principal(deployer),
+          Cl.address(deployer),
           Cl.uint(1000),
+          Cl.address(address1),
         ],
         address1,
       ).result,
@@ -88,6 +92,7 @@ describe("Interchain token factory impl", () => {
           Cl.uint(1000),
           Cl.address(`${deployer}.native-interchain-token`),
           Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(address1),
         ],
         address1,
       ).result,
@@ -96,7 +101,7 @@ describe("Interchain token factory impl", () => {
       simnet.callPublicFn(
         "interchain-token-factory-impl",
         "dispatch",
-        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x")],
+        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x"), Cl.address(address1)],
         address1,
       ).result,
     ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);

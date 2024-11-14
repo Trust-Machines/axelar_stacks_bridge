@@ -1,16 +1,8 @@
-
 ;; title: interchain-token-service-storage
-(define-constant OWNER tx-sender)
 (define-constant SERVICE-PROXY .interchain-token-service)
 (define-constant FACTORY-PROXY .interchain-token-factory)
-(define-constant ITS-HUB-ROUTING-IDENTIFIER "hub")
 
-
-(define-constant ERR-STARTED (err u24051))
-(define-constant ERR-NOT-STARTED (err u24052))
 (define-constant ERR-NOT-AUTHORIZED (err u21051))
-(define-constant ERR-PAUSED (err u21052))
-(define-constant ERR-INVALID-DESTINATION-ADDRESS (err u22068))
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 
