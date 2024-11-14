@@ -7,7 +7,7 @@ const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const address1 = accounts.get("wallet_1")!;
 
-const itfImpl = Cl.address(`${deployer}.interchain-token-factory-impl`);
+export const itfImpl = Cl.address(`${deployer}.interchain-token-factory-impl`);
 
 export function factoryDeployInterchainToken({
   sender,

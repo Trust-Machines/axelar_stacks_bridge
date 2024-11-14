@@ -26,24 +26,14 @@
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
-(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
-;; The token will be minted/burned on transfers. The token needs to give mint permission to the token manager, but burning happens via an approval.
-;; @notice rares: maybe will not be used
-(define-constant TOKEN-TYPE-MINT-BURN-FROM u1)
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
-;; The token will be locked/unlocked at the token manager, which will account for any fee-on-transfer behaviour.
-;; @notice rares: will not be used
-(define-constant TOKEN-TYPE-LOCK-UNLOCK-FEE u3)
-;; The token will be minted/burned on transfers. The token needs to give mint and burn permission to the token manager.
-;; @notice rares: maybe will not be used
-(define-constant TOKEN-TYPE-MINT-BURN u4)
 
 (define-constant ERR-TOKEN-NOT-ENABLED (err u211051))
 (define-constant ERR-INVALID-MINTER (err u211052))
 (define-constant ERR-NOT-MINTER (err u211053))
 (define-constant ERR-SERVICE-NOT-DEPLOYED (err u211054))
-(define-constant ERR-GATEWAY-NOT-DEPLOYED (err u211055))
+
 (define-constant ERR-TOKEN-NOT-DEPLOYED (err u211056))
 (define-constant ERR-MANAGER-NOT-DEPLOYED (err u211057))
 (define-constant ERR-NOT-PROXY (err u211058))
@@ -54,13 +44,11 @@
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-factory"))))
 (define-constant PREFIX-CANONICAL-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 (define-constant PREFIX-INTERCHAIN-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-salt"))))
-(define-constant PREFIX-GATEWAY-TOKEN-SALT (keccak256 (unwrap-panic (to-consensus-buff? "gateway-token-salt"))))
 (define-constant NULL-BYTES 0x0000000000000000000000000000000000000000)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) NULL-BYTES)))
 (define-constant TOKEN-FACTORY-DEPLOYER NULL-ADDRESS)
 (define-constant CHAIN-NAME "stacks")
 (define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
-(define-constant GATEWAY (contract-call? .interchain-token-service-storage get-gateway))
 ;; The address of the interchain token service.
 
 ;; Getter for the contract id.

@@ -31,14 +31,11 @@
 
 (define-constant ERR-UNTRUSTED-CHAIN (err u22051))
 (define-constant ERR-TOKEN-NOT-FOUND (err u22052))
-(define-constant ERR-TOKEN-NOT-ENABLED (err u22053))
 (define-constant ERR-TOKEN-EXISTS (err u22054))
-(define-constant ERR-GAS-NOT-PAID (err u22055))
 (define-constant ERR-TOKEN-NOT-DEPLOYED (err u22056))
 (define-constant ERR-TOKEN-MANAGER-NOT-DEPLOYED (err u22057))
 (define-constant ERR-TOKEN-MANAGER-MISMATCH (err u22058))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u22059))
-(define-constant ERR-UNSUPPORTED (err u22060))
 (define-constant ERR-INVALID-PAYLOAD (err u22061))
 (define-constant ERR-INVALID-DESTINATION-CHAIN (err u22062))
 (define-constant ERR-INVALID-SOURCE-CHAIN (err u22063))
@@ -51,8 +48,6 @@
 (define-constant ERR-TOKEN-DEPLOYMENT-NOT-APPROVED (err u22070))
 (define-constant ERR-INVALID-MESSAGE-TYPE (err u22071))
 (define-constant ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF (err u22072))
-(define-constant ERR-TOKEN-REQUIRED (err u22073))
-(define-constant ERR-TOKEN-METADATA-INVALID (err u22074))
 (define-constant ERR-NOT-REMOTE-SERVICE (err u22075))
 (define-constant ERR-TOKEN-METADATA-NAME-INVALID (err u22076))
 (define-constant ERR-TOKEN-METADATA-SYMBOL-INVALID (err u22077))
@@ -65,7 +60,6 @@
 (define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u22084))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u22085))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u22086))
-(define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u22087))
 (define-constant ERR-INVALID-PARAMS (err u22088))
 (define-constant ERR-GATEWAY-NOT-DEPLOYED (err u22089))
 
@@ -105,8 +99,6 @@
 (define-constant MESSAGE-TYPE-INTERCHAIN-TRANSFER u0)
 (define-constant MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN u1)
 (define-constant MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER u2)
-(define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
-;; (define-constant MESSAGE-TYPE-RECEIVE-FROM-HUB u4)
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 
@@ -128,14 +120,6 @@
 
 (define-private (require-not-paused)
     (ok (asserts! (not (unwrap-panic (get-is-paused))) ERR-PAUSED)))
-
-
-
-(define-read-only (get-chain-name-hash)
-    (ok CHAIN-NAME-HASH))
-
-(define-read-only (get-gateway)
-    (contract-call? .interchain-token-service-storage get-gateway))
 
 (define-read-only (get-its-hub-chain)
     (contract-call? .interchain-token-service-storage get-its-hub-chain))
@@ -204,15 +188,6 @@
 ;; @return The trusted address for the chain. Returns none if the chain is untrusted
 (define-read-only (get-trusted-address (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage get-trusted-address chain))
-
-;; Gets the trusted address hash for a chain
-;; @param chain Chain name
-;; @return trustedAddressHash_ the hash of the trusted address for that chain
-(define-read-only (get-trusted-address-hash (chain (string-ascii 20)))
-    (ok (match (get-trusted-address chain)
-            trusted-address (some (keccak256 (unwrap-panic (to-consensus-buff? trusted-address))))
-            none)))
-
 ;; Checks whether the interchain sender is a trusted address
 ;; @param chain Chain name of the sender
 ;; @param address Address of the sender

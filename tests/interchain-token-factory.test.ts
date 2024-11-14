@@ -17,6 +17,7 @@ import {
   getCanonicalInterChainTokenId,
   getInterchainTokenId,
   registerCanonicalInterchainToken,
+  itfImpl,
 } from "./itf-utils";
 import { BURN_ADDRESS, ITF_ERRORS } from "./constants";
 
@@ -195,6 +196,16 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it("dynamic dispatch", () => {
+      const { result } = simnet.callPublicFn(
+        "interchain-token-factory",
+        "call",
+        [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+        address1,
+      );
+      expect(result).toBeOk(Cl.bool(true));
     });
   });
 });

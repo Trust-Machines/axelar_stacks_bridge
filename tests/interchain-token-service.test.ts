@@ -2605,4 +2605,13 @@ describe("Interchain Token Service", () => {
       });
     });
   });
+  it("dynamic dispatch", () => {
+    const { result } = simnet.callPublicFn(
+      "interchain-token-service",
+      "call",
+      [itsImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+      address1,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
 });

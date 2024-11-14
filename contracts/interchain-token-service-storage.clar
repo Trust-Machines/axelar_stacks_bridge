@@ -106,22 +106,6 @@
 (define-read-only (get-trusted-address (chain (string-ascii 20)))
     (map-get? trusted-chain-address chain))
 
-;; Gets the trusted address hash for a chain
-;; @param chain Chain name
-;; @return trustedAddressHash_ the hash of the trusted address for that chain
-(define-read-only (get-trusted-address-hash (chain (string-ascii 20)))
-    (ok (match (map-get? trusted-chain-address chain)
-            trusted-address (some (keccak256 (unwrap-panic (to-consensus-buff? trusted-address))))
-            none)))
-
-;; Checks whether the interchain sender is a trusted address
-;; @param chain Chain name of the sender
-;; @param address_ Address of the sender
-;; @return bool true if the sender chain/address are trusted, false otherwise
-
-(define-read-only (is-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
-    (is-eq address (default-to "" (map-get? trusted-chain-address chain-name))))
-
 (define-read-only (is-trusted-chain (chain-name (string-ascii 20)))
     (is-some (map-get? trusted-chain-address chain-name)))
 
