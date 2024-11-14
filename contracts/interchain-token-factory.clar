@@ -156,7 +156,7 @@
 ;; General purose proxy call 
 (define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
-        (asserts! (is-eq (is-correct-impl itf-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl dispatch fn data contract-caller)
     )
 )

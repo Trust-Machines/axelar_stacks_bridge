@@ -290,7 +290,7 @@
                 caller)
         )))
 
-(define-private (process-deploy-remote-token-manager
+(define-public (process-deploy-remote-token-manager
         (gateway-impl <gateway-trait>)
         (its-proxy <its-proxy-trait>)
         (token-id (buff 32))
@@ -301,6 +301,7 @@
         (token-manager <token-manager-trait>)
         (caller principal))
         (let (
+            ;; #[filter(token-manager)]
             (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
             (payload (unwrap-panic (to-consensus-buff? {
                 type: MESSAGE-TYPE-DEPLOY-TOKEN-MANAGER,
@@ -1011,7 +1012,7 @@
 (define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (ok true)
     )
 )
