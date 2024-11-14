@@ -10,7 +10,6 @@ import {
 import { Cl, randomBytes } from "@stacks/transactions";
 import { ITF_ERRORS } from "./constants";
 import { getCanonicalInterChainTokenId } from "./itf-utils";
-import { address } from "@stacks/transactions/dist/cl";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
