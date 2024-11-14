@@ -31,11 +31,11 @@ export function upgradeITSBasedContract(suffix: string) {
   const currentImplCA = `${deployer}.${currentImpl}`;
   const newImpl = `${prefix}-impl-2`;
   const newImplCA = `${address2}.${newImpl}`;
-  const itsImplCode = simnet
+  const implCode = simnet
     .getContractSource(`${prefix}-impl`)!
     .replace(/ \./g, ` '${deployer}.`);
 
-  simnet.deployContract(newImpl, itsImplCode, { clarityVersion: 2 }, address2);
+  simnet.deployContract(newImpl, implCode, { clarityVersion: 2 }, address2);
 
   const payload = Cl.tuple({
     target: Cl.address(newImplCA),
@@ -154,4 +154,5 @@ export function upgradeITSBasedContract(suffix: string) {
     address1,
   );
   expect(impl2).toBePrincipal(newImplCA);
+  return newImplCA;
 }

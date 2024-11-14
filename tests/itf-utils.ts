@@ -16,7 +16,9 @@ export function factoryDeployInterchainToken({
   gasValue = 100,
   initialSupply = 0,
   minterAddress = BURN_ADDRESS,
+  impl = itfImpl,
 }: {
+  impl?: PrincipalCV;
   sender: string;
   salt: Buffer | Uint8Array;
   tokenAddress?: string;
@@ -28,7 +30,7 @@ export function factoryDeployInterchainToken({
     "interchain-token-factory",
     "deploy-interchain-token",
     [
-      itfImpl,
+      impl,
       gatewayImplCV,
       itsImpl,
       Cl.buffer(salt),
@@ -58,7 +60,9 @@ export function registerCanonicalInterchainToken({
   sender = address1,
   tokenAddress = `${deployer}.sample-sip-010`,
   tokenManagerAddress = `${deployer}.token-manager`,
+  impl = itfImpl,
 }: {
+  impl?: PrincipalCV;
   sender?: string;
   tokenAddress?: string;
   tokenManagerAddress?: string;
@@ -67,7 +71,7 @@ export function registerCanonicalInterchainToken({
     "interchain-token-factory",
     "register-canonical-interchain-token",
     [
-      itfImpl,
+      impl,
       gatewayImplCV,
       itsImpl,
       Cl.address(tokenAddress),
@@ -83,7 +87,9 @@ export function deployRemoteCanonicalInterchainToken({
   tokenAddress = `${deployer}.sample-sip-010`,
   destinationChain = "ethereum",
   gasValue = 100,
+  impl = itfImpl,
 }: {
+  impl?: PrincipalCV;
   sender?: string;
   tokenAddress?: string;
   destinationChain?: string;
@@ -93,7 +99,7 @@ export function deployRemoteCanonicalInterchainToken({
     "interchain-token-factory",
     "deploy-remote-canonical-interchain-token",
     [
-      itfImpl,
+      impl,
       gatewayImplCV,
       itsImpl,
       Cl.address(tokenAddress),
@@ -129,7 +135,9 @@ export function factoryDeployRemoteInterchainToken({
   tokenAddress,
   tokenManagerAddress,
   sender = address1,
+  impl = itfImpl,
 }: {
+  impl?: PrincipalCV;
   salt: Buffer | Uint8Array;
   minterHex?: string;
   destinationChain?: string;
@@ -142,7 +150,7 @@ export function factoryDeployRemoteInterchainToken({
     "interchain-token-factory",
     "deploy-remote-interchain-token",
     [
-      itfImpl,
+      impl,
       gatewayImplCV,
       itsImpl,
       Cl.buffer(salt),
