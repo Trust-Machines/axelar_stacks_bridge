@@ -107,7 +107,7 @@
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
-        (minter_ (buff 128))
+        (minter_ principal)
         (destination-chain (string-ascii 20))
         (gas-value uint)
         (token <sip-010-trait>)
@@ -125,6 +125,73 @@
             token
             token-manager
             contract-caller)))
+
+(define-public (deploy-remote-interchain-token-with-minter
+        (itf-impl <itf-trait>)
+        (gateway-impl <gateway-trait>)
+        (its-impl <its-trait>)
+        (salt_ (buff 32))
+        (minter_ principal)
+        (destination-chain (string-ascii 20))
+        (destination-minter (optional (buff 128)))
+        (gas-value uint)
+        (token <sip-010-trait>)
+        (token-manager <token-manager-trait>)
+)
+    (begin
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl deploy-remote-interchain-token-with-minter
+            gateway-impl
+            its-impl
+            salt_
+            minter_
+            destination-chain
+            destination-minter
+            gas-value
+            token
+            token-manager
+            contract-caller)))
+
+;; Allow the minter to approve the deployer for a remote interchain token deployment that uses a custom destinationMinter address.
+;; This ensures that a token deployer can't choose the destinationMinter itself, and requires the approval of the minter to reduce trust assumptions on the deployer.
+(define-public (approve-deploy-remote-interchain-token
+    (itf-impl <itf-trait>)
+    (its-impl <its-trait>)
+    (deployer principal)
+    (salt_ (buff 32))
+    (destination-chain (string-ascii 20))
+    (destination-minter (buff 128))
+    (token <native-interchain-token-trait>)
+)
+    (begin
+        (asserts!  (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl approve-deploy-remote-interchain-token
+            its-impl
+            deployer
+            salt_
+            destination-chain
+            destination-minter
+            token
+            contract-caller)
+    ))
+
+
+;; Allows the minter to revoke a deployer's approval for a remote interchain token deployment that uses a custom destinationMinter address.
+(define-public (revoke-deploy-remote-interchain-token
+        (itf-impl <itf-trait>)
+        (its-impl <its-trait>)
+        (deployer principal)
+        (salt_ (buff 32))
+        (destination-chain (string-ascii 20)))
+    (begin
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl revoke-deploy-remote-interchain-token
+            its-impl
+            deployer
+            salt_
+            destination-chain
+            contract-caller
+        )))
 
 
 ;; ######################

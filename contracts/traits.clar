@@ -315,7 +315,7 @@
                 <gateway-trait>
                 <interchain-token-service-trait>
                 (buff 32)
-                (buff 128)
+                principal
                 (string-ascii 20)
                 uint
                 <sip-010-trait>
@@ -323,8 +323,40 @@
                 principal
             )
             (response bool uint))
-    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint)))
-)
+    (dispatch ((string-ascii 32) (buff 65000) principal) (response bool uint))
+    (deploy-remote-interchain-token-with-minter
+        (
+                <gateway-trait>
+                <interchain-token-service-trait>
+                (buff 32)
+                principal
+                (string-ascii 20)
+                (optional (buff 128))
+                uint
+                <sip-010-trait>
+                <token-manager-trait>
+                principal
+            )
+            (response bool uint))
+    (approve-deploy-remote-interchain-token (
+        <interchain-token-service-trait>
+        principal
+        (buff 32)
+        (string-ascii 20)
+        (buff 128)
+        <native-interchain-token-trait>
+        principal
+    ) (response bool uint))
+
+
+    (revoke-deploy-remote-interchain-token (
+        <interchain-token-service-trait>
+        principal
+        (buff 32)
+        (string-ascii 20)
+        principal
+        ) (response bool uint))
+))
 
 (define-trait interchain-token-service-proxy-trait (
     (its-hub-call-contract (

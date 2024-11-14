@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   approveDeployNativeInterchainToken,
+  buildOutgoingGMPMessage,
   enableTokenManager,
   executeDeployInterchainToken,
   keccak256,
@@ -18,8 +19,17 @@ import {
   getInterchainTokenId,
   registerCanonicalInterchainToken,
   itfImpl,
+  factoryDeployRemoteInterchainTokenWithMinter,
+  approveDeployRemoteInterchainToken,
+  revokeDeployRemoteInterchainToken,
 } from "./itf-utils";
-import { BURN_ADDRESS, ITF_ERRORS } from "./constants";
+import {
+  BURN_ADDRESS,
+  ITF_ERRORS,
+  MessageType,
+  TRUSTED_ADDRESS,
+  TRUSTED_CHAIN,
+} from "./constants";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -150,11 +160,19 @@ describe("interchain-token-factory", () => {
         }).result,
       ).toBeOk(Cl.bool(true));
 
+      approveDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        sender: address1,
+        destinationMinter: "0x" + "00".repeat(20),
+        destinationChain: "untrusted-chain",
+      });
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
         tokenAddress: `${deployer}.native-interchain-token`,
-        tokenManagerAddress: `${deployer}.token-manager`,
+        tokenManagerAddress: `${deployer}.native-interchain-token`,
         sender: address1,
+        minter: BURN_ADDRESS,
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
@@ -211,7 +229,7 @@ describe("interchain-token-factory", () => {
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
-      const { payload } = approveDeployNativeInterchainToken({
+      const { payload: approvalPayload } = approveDeployNativeInterchainToken({
         tokenId,
         proofSigners,
         minter: address1,
@@ -221,21 +239,179 @@ describe("interchain-token-factory", () => {
         executeDeployInterchainToken({
           messageId: "approved-native-interchain-token-deployment-message",
           gasValue: 100,
-          payload: Cl.serialize(payload),
+          payload: Cl.serialize(approvalPayload),
           tokenAddress: `${deployer}.native-interchain-token`,
           sourceChain: "stacks",
           sourceAddress: "interchain-token-service",
         }).result,
       ).toBeOk(Cl.bool(true));
 
-      const remoteDeployTx = factoryDeployRemoteInterchainToken({
+      let remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
+        salt: originalSalt,
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.native-interchain-token`,
+        sender: address1,
+        minter: address1,
+        destinationMinter: "0x" + "00".repeat(20),
+      });
+
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+      );
+      remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
         tokenAddress: `${deployer}.native-interchain-token`,
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
+        minter: BURN_ADDRESS,
+        destinationMinter: "0x" + "00".repeat(20),
+      });
+
+      expect(remoteDeployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
+      let approvalTx = approveDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        sender: address1,
+        destinationMinter: "0x" + "00".repeat(20),
+        destinationChain: "untrusted-chain",
+      });
+
+      expect(approvalTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-CHAIN-NAME"]);
+
+      approvalTx = approveDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        sender: address2,
+        destinationMinter: "0x" + "00".repeat(20),
+        destinationChain: "ethereum",
+      });
+
+      expect(approvalTx.result).toBeErr(ITF_ERRORS["ERR-NOT-MINTER"]);
+      approvalTx = approveDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        sender: address1,
+        destinationMinter: "0xdeadbeef",
+        destinationChain: "ethereum",
+      });
+
+      expect(approvalTx.result).toBeOk(Cl.bool(true));
+
+      const [approvalEvent] = approvalTx.events;
+      expect(approvalEvent.data.value).toBeTuple({
+        type: Cl.stringAscii("deploy-remote-interchain-token-approval"),
+        minter: Cl.address(address1),
+        deployer: Cl.address(address1),
+        "token-id": tokenId,
+        "destination-chain": Cl.stringAscii("ethereum"),
+        "destination-minter": Cl.bufferFromHex("0xdeadbeef"),
+      });
+
+      let revokeTx = revokeDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        destinationChain: "ethereum",
+        sender: address1,
+      });
+
+      expect(revokeTx.result).toBeOk(Cl.bool(true));
+
+      const [revokeEvent] = revokeTx.events;
+      expect(revokeEvent.data.value).toBeTuple({
+        type: Cl.stringAscii("revoked-deploy-remote-interchain-token-approval"),
+        minter: Cl.address(address1),
+        deployer: Cl.address(address1),
+        "token-id": tokenId,
+        "destination-chain": Cl.stringAscii("ethereum"),
+      });
+
+      remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
+        salt: originalSalt,
+        sender: address1,
+        destinationChain: "ethereum",
+        destinationMinter: "0xdeadbeef",
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.native-interchain-token`,
+      });
+
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+      );
+
+      approvalTx = approveDeployRemoteInterchainToken({
+        deployer: address1,
+        salt: originalSalt,
+        sender: address1,
+        destinationMinter: "0xdeadbeef",
+        destinationChain: "ethereum",
+      });
+
+      expect(approvalTx.result).toBeOk(Cl.bool(true));
+
+      remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
+        salt: originalSalt,
+        sender: address1,
+        destinationChain: "ethereum",
+        destinationMinter: "0xdeadbeef",
+        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenManagerAddress: `${deployer}.native-interchain-token`,
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
+      const payload = Cl.tuple({
+        "destination-chain": Cl.stringAscii("ethereum"),
+        type: Cl.uint(MessageType.SEND_TO_HUB),
+        payload: Cl.buffer(
+          Cl.serialize(
+            Cl.tuple({
+              type: Cl.uint(MessageType.DEPLOY_INTERCHAIN_TOKEN),
+              "token-id": tokenId,
+              name: Cl.stringAscii("Nitter"),
+              symbol: Cl.stringAscii("NIT"),
+              decimals: Cl.uint(6),
+              minter: Cl.bufferFromHex("0xdeadbeef"),
+            }),
+          ),
+        ),
+      });
+      const [
+        deploymentNotification,
+        gasStxTransferEvent,
+        gasPaidNotification,
+        gmpMessage,
+      ] = remoteDeployTx.events;
+      expect(deploymentNotification.data.value).toBeTuple({
+        type: Cl.stringAscii("interchain-token-deployment-started"),
+        name: Cl.stringAscii("Nitter"),
+        symbol: Cl.stringAscii("NIT"),
+        minter: Cl.bufferFromHex("0xdeadbeef"),
+        "token-id": tokenId,
+        "destination-chain": Cl.stringAscii("ethereum"),
+        decimals: Cl.uint(6),
+      });
+      expect(gasStxTransferEvent.data).toStrictEqual({
+        amount: "100",
+        memo: "",
+        recipient: `${deployer}.gas-service`,
+        sender: address1,
+      });
+      expect(gasPaidNotification.data.value).toBeTuple({
+        amount: Cl.uint(100),
+        "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
+        "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
+        "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
+        "refund-address": Cl.address(address1),
+        sender: Cl.address(`${deployer}.interchain-token-service`),
+        type: Cl.stringAscii("native-gas-paid-for-contract-call"),
+      });
+      expect(gmpMessage.data.value).toBeTuple(
+        buildOutgoingGMPMessage({
+          destinationChain: TRUSTED_CHAIN,
+          destinationContractAddress: TRUSTED_ADDRESS,
+          payload,
+          sender: Cl.address(`${deployer}.interchain-token-service`),
+        }),
+      );
     });
 
     it("dynamic dispatch", () => {

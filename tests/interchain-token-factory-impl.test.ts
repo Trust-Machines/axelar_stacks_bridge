@@ -86,7 +86,7 @@ describe("Interchain token factory impl", () => {
           gatewayImplCV,
           itsImpl,
           Cl.buffer(salt),
-          Cl.bufferFromHex("0xdeadbeef"),
+          Cl.address(address1),
           Cl.stringAscii("ethereum"),
           Cl.uint(1000),
           Cl.address(`${deployer}.native-interchain-token`),

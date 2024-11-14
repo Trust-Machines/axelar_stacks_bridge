@@ -56,6 +56,8 @@
 (define-read-only (get-factory-proxy) FACTORY-PROXY)
 
 (define-private (is-factory-proxy) (is-eq contract-caller FACTORY-PROXY))
+(define-private (is-factory-impl) (is-eq contract-caller (var-get factory-impl)))
+(define-private (is-proxy-or-factory-impl) (or (is-factory-proxy) (is-factory-impl)))
 
 
 (define-public (set-factory-impl (new-factory-impl principal))
@@ -203,6 +205,22 @@
         (var-set its-contract-name contract-name)
         (ok true)))
 
+(define-map approved-destination-minters (buff 32) (buff 32))
+
+(define-public (set-approved-destination-minter (approval-key (buff 32)) (hashed-destination-minter (buff 32))) 
+    (begin
+        (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
+        (ok (map-set approved-destination-minters approval-key hashed-destination-minter))
+    ))
+
+(define-public (remove-approved-destination-minter (approval-key (buff 32))) 
+    (begin
+        (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
+        (ok (map-delete approved-destination-minters approval-key))
+    ))
+
+(define-read-only (get-approved-destination-minter (approval-key (buff 32)))
+    (map-get? approved-destination-minters approval-key))
 
 ;; EVENTS
 
