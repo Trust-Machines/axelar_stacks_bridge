@@ -4,7 +4,7 @@
 ;; summary:
 ;; description:
 (use-trait its-trait .traits.interchain-token-service-trait)
-(impl-trait .traits.interchain-token-service-proxy-trait)
+(use-trait gas-service-trait .traits.gas-service-impl-trait)
 (impl-trait .traits.proxy-trait)
 
 ;; ######################
@@ -116,6 +116,7 @@
             })))
 
 (define-private (pay-native-gas-for-contract-call
+        (gas-service-impl <gas-service-trait>)
         (amount uint)
         (refund-address principal)
         (destination-chain (string-ascii 20))
@@ -124,6 +125,7 @@
     (if
         (> amount u0)
             (contract-call? .gas-service pay-native-gas-for-contract-call
+                gas-service-impl
                 amount
                 (as-contract tx-sender)
                 destination-chain
@@ -142,7 +144,7 @@
 ;; @param payload The data payload for the transaction.
 ;; @param metadata-version The version of the metadata to be used, currently only contract-call is supported.
 ;; @param gas-value The amount of gas to be paid for the transaction.
-(define-public (its-hub-call-contract (gateway-impl <gateway-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
+(define-public (its-hub-call-contract (gateway-impl <gateway-trait>) (gas-service-impl <gas-service-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
     (let
         (
             ;; payload can be any arbitrary bytes doesn't need to be checked
@@ -154,13 +156,14 @@
         )
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-        (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
+        (try! (pay-native-gas-for-contract-call gas-service-impl gas-value tx-sender destination-chain_ destination-address_ payload_))
         (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain_ destination-address_ payload_))
     )
 )
 
 (define-public (gateway-call-contract
     (gateway-impl <gateway-trait>)
+    (gas-service-impl <gas-service-trait>)
     (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
@@ -169,7 +172,7 @@
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
         ;; This needs to be generic but guards must be implemented in the impl
         ;; #[allow(unchecked_data)]
-        (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain destination-address payload))
+        (try! (pay-native-gas-for-contract-call gas-service-impl gas-value tx-sender destination-chain destination-address payload))
         (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain destination-address payload))))
 
 (define-public (gateway-validate-message
@@ -185,6 +188,7 @@
 
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -197,6 +201,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-token-manager
             gateway-impl
+            gas-service-impl
             salt
             destination-chain
             token-manager-type
@@ -215,6 +220,7 @@
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (payload (buff 63000))
@@ -229,6 +235,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl process-deploy-token-manager-from-external-chain
             gateway-impl
+            gas-service-impl
             token-manager
             payload
             wrapped-payload
@@ -263,6 +270,7 @@
 ;; @param gasValue The amount of gas to be paid for the transaction.
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -275,6 +283,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-remote-interchain-token
             gateway-impl
+            gas-service-impl
             salt
             destination-chain
             name
@@ -286,6 +295,7 @@
 
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (token <native-interchain-token-trait>)
@@ -296,6 +306,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-interchain-token
             gateway-impl
+            gas-service-impl
             salt
             token
             supply
@@ -312,6 +323,7 @@
 ;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -329,6 +341,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl interchain-transfer
             gateway-impl
+            gas-service-impl
             token-manager
             token
             token-id
@@ -341,6 +354,7 @@
 
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -357,6 +371,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl call-contract-with-interchain-token
             gateway-impl
+            gas-service-impl
             token-manager
             token
             token-id
@@ -372,6 +387,7 @@
 
 (define-public (execute-deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -384,6 +400,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-token-manager
             gateway-impl
+            gas-service-impl
             source-chain
             message-id
             source-address
@@ -395,6 +412,7 @@
 
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -406,6 +424,7 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-interchain-token
             gateway-impl
+            gas-service-impl
             source-chain
             message-id
             source-address

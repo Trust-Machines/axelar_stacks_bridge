@@ -4,7 +4,7 @@
 ;; summary:
 ;; description:
 (use-trait interchain-token-service-trait .traits.interchain-token-service-trait)
-
+(use-trait gas-service-trait .traits.gas-service-impl-trait)
 (impl-trait .traits.interchain-token-service-trait)
 
 ;; traits
@@ -242,6 +242,7 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
@@ -263,6 +264,7 @@
         (if (is-eq (len destination-chain) u0)
             (process-deploy-token-manager-from-external-chain
                 gateway-impl
+                gas-service-impl
                 token-manager
                 (unwrap-panic (to-consensus-buff? {
                     source-chain: destination-chain,
@@ -277,6 +279,7 @@
             ;; #[filter(gateway-impl, token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager
                 gateway-impl
+                gas-service-impl
                 token-id
                 destination-chain
                 token-manager-type
@@ -288,6 +291,7 @@
 
 (define-public (process-deploy-remote-token-manager
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (token-id (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
@@ -308,10 +312,11 @@
             (asserts! (not (is-eq destination-chain CHAIN-NAME)) ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF)
             (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
             (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployment-started token-id destination-chain token-manager-type params))
-            (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+            (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (token-manager <token-manager-trait>)
         (payload (buff 63000))
         (wrapped-payload  (optional {
@@ -358,6 +363,7 @@
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
     (contract-call? .interchain-token-service gateway-call-contract
         gateway-impl
+        gas-service-impl
         CHAIN-NAME
         (get-its-contract-name)
         verify-payload
@@ -424,6 +430,7 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
         (name (string-ascii 32))
@@ -460,7 +467,7 @@
         decimals
         minter))
     ;; #[filter(gateway-impl, gas-value)]
-    (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+    (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
 
 ;; Used to deploy a native interchain token on stacks
@@ -476,6 +483,7 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
         (token <native-interchain-token-trait>)
         (supply uint)
@@ -508,6 +516,7 @@
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
         (contract-call? .interchain-token-service gateway-call-contract
             gateway-impl
+            gas-service-impl
             CHAIN-NAME
             (get-its-contract-name)
             payload
@@ -532,6 +541,7 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
@@ -556,6 +566,7 @@
         ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
+            gas-service-impl
             token-id
             caller
             destination-chain
@@ -579,6 +590,7 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
@@ -604,6 +616,7 @@
         ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
+            gas-service-impl
             token-id
             caller
             destination-chain
@@ -648,6 +661,7 @@
 ;; @param gas-value The amount of native tokens to be used to pay for gas for the remote transfer.
 (define-private (transmit-interchain-transfer
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (token-id (buff 32))
         (source-address principal)
         (destination-chain (string-ascii 20))
@@ -675,11 +689,12 @@
             destination-address
             amount
             (if (is-eq u0 (len data)) EMPTY-32-BYTES (keccak256 data))))
-        (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload metadata-version gas-value)
+        (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload metadata-version gas-value)
     ))
 
 (define-public (execute-deploy-token-manager
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -703,6 +718,7 @@
                 caller)
             (process-deploy-token-manager-from-external-chain
                 gateway-impl
+                gas-service-impl
                 token-manager
                 payload
                 (some {
@@ -716,6 +732,7 @@
 
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -745,6 +762,7 @@
             (process-deploy-interchain-from-external-chain
             ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
                 gateway-impl
+                gas-service-impl
                 message-id
                 source-chain
                 source-address
@@ -757,6 +775,7 @@
 ;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-external-chain
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -803,6 +822,7 @@
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
     (contract-call? .interchain-token-service gateway-call-contract
         gateway-impl
+        gas-service-impl
         CHAIN-NAME
         (get-its-contract-name)
         verify-payload

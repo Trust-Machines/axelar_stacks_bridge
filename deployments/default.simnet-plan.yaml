@@ -48,7 +48,42 @@ genesis:
 plan:
   batches:
     - id: 0
+      transactions: []
+      epoch: "2.05"
+    - id: 1
       transactions:
+        - emulated-contract-publish:
+            contract-name: traits
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/traits.clar
+            clarity-version: 1
+      epoch: "2.1"
+    - id: 2
+      transactions: []
+      epoch: "2.1"
+    - id: 3
+      transactions: []
+      epoch: "2.1"
+    - id: 4
+      transactions: []
+      epoch: "2.1"
+    - id: 5
+      transactions:
+        - emulated-contract-publish:
+            contract-name: gas-storage
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: gas-impl
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-impl.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: gas-service
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-service.clar
+            clarity-version: 2
         - emulated-contract-publish:
             contract-name: gateway-storage
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
@@ -114,24 +149,13 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/token-manager.clar
             clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: gas-storage
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas-storage.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: traits
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/traits.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: gas-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas-impl.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: gas-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas-service.clar
-            clarity-version: 2
+      epoch: "2.5"
+    - id: 6
+      transactions: []
+      epoch: "2.5"
+    - id: 7
+      transactions: []
+      epoch: "2.5"
+    - id: 8
+      transactions: []
       epoch: "2.5"

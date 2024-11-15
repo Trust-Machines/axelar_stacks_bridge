@@ -1,4 +1,3 @@
-(impl-trait .traits.gas-service-impl-trait)
 (use-trait gas-impl-trait .traits.gas-service-impl-trait)
 
 ;; Error constants

@@ -46,6 +46,7 @@
     (remove-trusted-address  ((string-ascii 20) principal) (response bool uint))
     (deploy-token-manager
         (<gateway-trait>
+        <gas-service-impl-trait>
         (buff 32)
         (string-ascii 20)
         uint
@@ -56,6 +57,7 @@
     (response bool uint))
     (process-deploy-token-manager-from-external-chain
         (<gateway-trait>
+        <gas-service-impl-trait>
         <token-manager-trait>
         (buff 63000)
         (optional {
@@ -77,6 +79,7 @@
         (response bool uint))
     (deploy-remote-interchain-token
         (<gateway-trait>
+        <gas-service-impl-trait>
         (buff 32)
         (string-ascii 20)
         (string-ascii 32)
@@ -88,6 +91,7 @@
         (response bool uint))
     (deploy-interchain-token
         (<gateway-trait>
+        <gas-service-impl-trait>
         (buff 32)
         <native-interchain-token-trait>
         uint
@@ -97,6 +101,7 @@
         (response bool uint))
     (interchain-transfer
         (<gateway-trait>
+        <gas-service-impl-trait>
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
@@ -113,6 +118,7 @@
     )
     (call-contract-with-interchain-token
         (<gateway-trait>
+        <gas-service-impl-trait>
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
@@ -128,6 +134,7 @@
         (response bool uint))
     (execute-deploy-token-manager
         (<gateway-trait>
+        <gas-service-impl-trait>
         (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
@@ -139,6 +146,7 @@
         (response bool uint))
     (execute-deploy-interchain-token
         (<gateway-trait>
+        <gas-service-impl-trait>
         (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
@@ -264,6 +272,7 @@
     (register-canonical-interchain-token
             (
                 <gateway-trait>
+                <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 <sip-010-trait>
                 <token-manager-trait>
@@ -274,6 +283,7 @@
     (deploy-remote-canonical-interchain-token
             (
                 <gateway-trait>
+                <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 <sip-010-trait>
                 (string-ascii 20)
@@ -284,6 +294,7 @@
     (deploy-interchain-token
             (
                 <gateway-trait>
+                <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 (buff 32)
                 <native-interchain-token-trait>
@@ -296,6 +307,7 @@
     (deploy-remote-interchain-token
             (
                 <gateway-trait>
+                <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 (buff 32)
                 principal
@@ -310,6 +322,7 @@
     (deploy-remote-interchain-token-with-minter
         (
                 <gateway-trait>
+                <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 (buff 32)
                 principal
@@ -341,46 +354,6 @@
         ) (response bool uint))
 ))
 
-(define-trait interchain-token-service-proxy-trait (
-    (its-hub-call-contract (
-            ;; gateway impl
-            <gateway-trait>
-            ;; destination-chain
-            (string-ascii 20)
-            ;; payload
-            (buff 63000)
-            ;; metadata version
-            uint
-            ;; gas-value
-            uint
-        ) (response bool uint))
-    (gateway-call-contract (
-            ;; gateway impl
-            <gateway-trait>
-            ;; destination-chain
-            (string-ascii 20)
-            ;; destination-address
-            (string-ascii 128)
-            ;; payload
-            (buff 64000)
-            ;; gas-value
-            uint
-        ) (response bool uint))
-    (gateway-validate-message (
-        ;; gateway-impl
-        <gateway-trait>
-        ;; source-chain
-        (string-ascii 20)
-        ;; message-id
-        (string-ascii 128)
-        ;; source-address
-        (string-ascii 128)
-        ;; payload-hash
-        (buff 32)
-    ) 
-        (response bool uint))
-))
-
 ;; Add this new trait for gas service implementation
 (define-trait gas-service-impl-trait
     (
@@ -390,7 +363,6 @@
         (collect-fees (principal uint) (response bool uint))
         (transfer-ownership (principal) (response bool uint))
         (get-balance () (response uint uint))
-        (is-owner () (response bool uint))
         (get-owner () (response principal uint))
     )
 )
