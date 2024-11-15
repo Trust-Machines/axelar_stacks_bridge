@@ -176,7 +176,12 @@
 ;; @param addr The address to query for.
 ;; @return bool Boolean value representing whether or not the address is a flow limiter.
 (define-read-only (is-flow-limiter (addr principal))
-    (ok (default-to false (get flow-limiter (map-get? roles addr)))))
+    (ok (is-flow-limiter-raw addr)))
+
+(define-read-only (is-flow-limiter-raw (addr principal))
+    (or 
+        (is-eq addr (get-its-impl))
+        (default-to false (get flow-limiter (map-get? roles addr)))))
 
 ;;
 ;; Returns the current flow limit.
@@ -191,14 +196,12 @@
 ;; flowing in and/or out at any given interval of time (6h).
 ;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
-    (let (
-        (perms (unwrap! (map-get? roles contract-caller) ERR-NOT-AUTHORIZED))
-    )
-    (asserts! (var-get is-started) ERR-NOT-STARTED)
-    (asserts! (get flow-limiter perms) ERR-NOT-AUTHORIZED)
-    ;; no need to check can be set to 0 to practically makes it unlimited
-    (var-set flow-limit limit)
-    (ok true))
+    (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (is-flow-limiter-raw contract-caller) ERR-NOT-AUTHORIZED)
+        ;; no need to check can be set to 0 to practically makes it unlimited
+        (var-set flow-limit limit)
+        (ok true))
 )
 
 ;; Returns the current flow out amount.
@@ -296,9 +299,6 @@
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
         ;; #[allow(unchecked_data)]
-        (map-set roles (get-its-impl) {
-            flow-limiter: true,
-        })
         (match operator-address op
             (map-set roles op {
                 flow-limiter: true,
