@@ -270,8 +270,6 @@
                                     } d-minter))
                                 d-minter
                             )
-                            ;; TODO: ask rares about the inconsistency here minter in EVM chains is considered an ETH address
-                            ;; in this instance this is not EVM chain something is lost in translation here
                             (unwrap! (as-max-len? (unwrap-panic (to-consensus-buff? minter_)) u128) ERR-INVALID-MINTER)))
                 (begin
                     (asserts! (is-none destination-minter) ERR-INVALID-MINTER)

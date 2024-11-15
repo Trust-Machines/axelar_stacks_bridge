@@ -101,7 +101,6 @@
 ;; basically getting themself rekt
 ;; #[allow(unchecked_data)]
 
-;; TODO: add destination minter https://github.com/axelarnetwork/interchain-token-service/pull/301/files
 (define-public (deploy-remote-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
