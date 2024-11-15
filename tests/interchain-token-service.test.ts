@@ -32,7 +32,6 @@ import {
   isFlowLimiter,
   isOperator,
   itsImpl,
-  itsProxy,
   keccak256,
   mintNIT,
   removeFlowLimiter,
@@ -223,7 +222,6 @@ describe("Interchain Token Service", () => {
         "process-deploy-token-manager-from-stacks",
         [
           gatewayImplCV,
-          itsProxy,
           evilImpl,
           Cl.stringAscii("0x00"),
           Cl.stringAscii("stacks"),

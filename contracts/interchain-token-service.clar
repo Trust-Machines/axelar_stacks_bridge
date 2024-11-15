@@ -6,7 +6,7 @@
 (use-trait its-trait .traits.interchain-token-service-trait)
 (impl-trait .traits.interchain-token-service-proxy-trait)
 (impl-trait .traits.proxy-trait)
-(use-trait its-proxy-trait .traits.interchain-token-service-proxy-trait)
+
 ;; ######################
 ;; ######################
 ;; ### Proxy Calls ######
@@ -165,7 +165,7 @@
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (gas-value uint))
-    (begin 
+    (begin
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
         ;; This needs to be generic but guards must be implemented in the impl
         ;; #[allow(unchecked_data)]
@@ -185,7 +185,6 @@
 
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -198,7 +197,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-token-manager
             gateway-impl
-            its-proxy
             salt
             destination-chain
             token-manager-type
@@ -217,7 +215,6 @@
 ;; @return tokenId The tokenId corresponding to the deployed TokenManager.
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (payload (buff 63000))
@@ -232,7 +229,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl process-deploy-token-manager-from-external-chain
             gateway-impl
-            its-proxy
             token-manager
             payload
             wrapped-payload
@@ -242,7 +238,6 @@
 
 (define-public (process-deploy-token-manager-from-stacks
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>) 
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
@@ -252,7 +247,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl process-deploy-token-manager-from-stacks
             gateway-impl
-            its-proxy
             message-id
             source-chain
             source-address
@@ -269,7 +263,6 @@
 ;; @param gasValue The amount of gas to be paid for the transaction.
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
@@ -282,7 +275,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-remote-interchain-token
             gateway-impl
-            its-proxy
             salt
             destination-chain
             name
@@ -294,7 +286,6 @@
 
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (token <native-interchain-token-trait>)
@@ -305,7 +296,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-interchain-token
             gateway-impl
-            its-proxy
             salt
             token
             supply
@@ -322,7 +312,6 @@
 ;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -340,7 +329,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl interchain-transfer
             gateway-impl
-            its-proxy
             token-manager
             token
             token-id
@@ -353,7 +341,6 @@
 
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
@@ -370,7 +357,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl call-contract-with-interchain-token
             gateway-impl
-            its-proxy
             token-manager
             token
             token-id
@@ -386,7 +372,6 @@
 
 (define-public (execute-deploy-token-manager
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -399,7 +384,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-token-manager
             gateway-impl
-            its-proxy
             source-chain
             message-id
             source-address
@@ -411,7 +395,6 @@
 
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -423,7 +406,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-interchain-token
             gateway-impl
-            its-proxy
             source-chain
             message-id
             source-address
@@ -434,7 +416,6 @@
 
 (define-public (execute-receive-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (its-impl <its-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
@@ -448,7 +429,6 @@
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-receive-interchain-token
             gateway-impl
-            its-proxy
             source-chain
             message-id
             source-address

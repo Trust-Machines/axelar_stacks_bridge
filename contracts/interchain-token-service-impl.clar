@@ -14,7 +14,6 @@
 (use-trait interchain-token-executable-trait .traits.interchain-token-executable-trait)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
 (use-trait gateway-trait .traits.gateway-trait)
-(use-trait its-proxy-trait .traits.interchain-token-service-proxy-trait)
 
 ;; token definitions
 ;;
@@ -243,7 +242,6 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
@@ -265,7 +263,6 @@
         (if (is-eq (len destination-chain) u0)
             (process-deploy-token-manager-from-external-chain
                 gateway-impl
-                its-proxy
                 token-manager
                 (unwrap-panic (to-consensus-buff? {
                     source-chain: destination-chain,
@@ -280,7 +277,6 @@
             ;; #[filter(gateway-impl, token, token-manager, params, gas-value)]
             (process-deploy-remote-token-manager
                 gateway-impl
-                its-proxy
                 token-id
                 destination-chain
                 token-manager-type
@@ -292,7 +288,6 @@
 
 (define-public (process-deploy-remote-token-manager
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (token-id (buff 32))
         (destination-chain (string-ascii 20))
         (token-manager-type uint)
@@ -313,11 +308,10 @@
             (asserts! (not (is-eq destination-chain CHAIN-NAME)) ERR-CANNOT-DEPLOY-REMOTELY-TO-SELF)
             (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
             (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployment-started token-id destination-chain token-manager-type params))
-            (contract-call? its-proxy its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+            (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
 (define-public (process-deploy-token-manager-from-external-chain
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (token-manager <token-manager-trait>)
         (payload (buff 63000))
         (wrapped-payload  (optional {
@@ -362,7 +356,7 @@
     (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
     (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-    (contract-call? its-proxy gateway-call-contract
+    (contract-call? .interchain-token-service gateway-call-contract
         gateway-impl
         CHAIN-NAME
         (get-its-contract-name)
@@ -372,7 +366,6 @@
 
 (define-public (process-deploy-token-manager-from-stacks
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -402,11 +395,11 @@
         (asserts! (is-eq source-chain CHAIN-NAME) ERR-INVALID-SOURCE-CHAIN)
         (asserts! (is-eq source-address (get-its-contract-name)) ERR-INVALID-SOURCE-ADDRESS)
         (try!
-            (as-contract (contract-call? its-proxy gateway-validate-message gateway-impl CHAIN-NAME message-id
+            (as-contract (contract-call? .interchain-token-service gateway-validate-message gateway-impl CHAIN-NAME message-id
                 (get-its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload data) wrapped-payload
-            (as-contract (contract-call? its-proxy gateway-validate-message
+            (as-contract (contract-call? .interchain-token-service gateway-validate-message
                 gateway-impl
                 (get source-chain wrapped-payload)
                 (get message-id wrapped-payload)
@@ -431,7 +424,6 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
         (name (string-ascii 32))
@@ -468,7 +460,7 @@
         decimals
         minter))
     ;; #[filter(gateway-impl, gas-value)]
-    (contract-call? its-proxy its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+    (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
 
 ;; Used to deploy a native interchain token on stacks
@@ -484,7 +476,6 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (salt (buff 32))
         (token <native-interchain-token-trait>)
         (supply uint)
@@ -515,7 +506,7 @@
         (try! (require-not-paused))
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-        (contract-call? its-proxy gateway-call-contract
+        (contract-call? .interchain-token-service gateway-call-contract
             gateway-impl
             CHAIN-NAME
             (get-its-contract-name)
@@ -541,7 +532,6 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
@@ -566,7 +556,6 @@
         ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
-            its-proxy
             token-id
             caller
             destination-chain
@@ -590,7 +579,6 @@
 ;; @param caller the contract caller passed by the proxy
 (define-public (call-contract-with-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
@@ -616,7 +604,6 @@
         ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
-            its-proxy
             token-id
             caller
             destination-chain
@@ -661,7 +648,6 @@
 ;; @param gas-value The amount of native tokens to be used to pay for gas for the remote transfer.
 (define-private (transmit-interchain-transfer
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (token-id (buff 32))
         (source-address principal)
         (destination-chain (string-ascii 20))
@@ -689,12 +675,11 @@
             destination-address
             amount
             (if (is-eq u0 (len data)) EMPTY-32-BYTES (keccak256 data))))
-        (contract-call? its-proxy its-hub-call-contract gateway-impl destination-chain payload metadata-version gas-value)
+        (contract-call? .interchain-token-service its-hub-call-contract gateway-impl destination-chain payload metadata-version gas-value)
     ))
 
 (define-public (execute-deploy-token-manager
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -711,7 +696,6 @@
         (if (is-eq CHAIN-NAME source-chain)
             (process-deploy-token-manager-from-stacks
                 gateway-impl
-                its-proxy
                 message-id
                 source-chain
                 source-address
@@ -719,7 +703,6 @@
                 caller)
             (process-deploy-token-manager-from-external-chain
                 gateway-impl
-                its-proxy
                 token-manager
                 payload
                 (some {
@@ -733,7 +716,6 @@
 
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -751,11 +733,9 @@
                 (is-eq source-address (get-its-contract-name)))
         (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
         (if (is-eq CHAIN-NAME source-chain)
-            ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
                 gateway-impl
-                its-proxy
                 message-id
                 source-chain
                 source-address
@@ -765,7 +745,6 @@
             (process-deploy-interchain-from-external-chain
             ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
                 gateway-impl
-                its-proxy
                 message-id
                 source-chain
                 source-address
@@ -778,7 +757,6 @@
 ;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-external-chain
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -818,12 +796,12 @@
     )
     (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
     (asserts! (unwrap! (contract-call? gateway-impl is-message-approved
-            source-chain message-id source-address (contract-of its-proxy) (keccak256 payload))
+            source-chain message-id source-address .interchain-token-service (keccak256 payload))
                 ERR-GATEWAY-NOT-DEPLOYED)
         ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
     (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
     (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-    (contract-call? its-proxy gateway-call-contract
+    (contract-call? .interchain-token-service gateway-call-contract
         gateway-impl
         CHAIN-NAME
         (get-its-contract-name)
@@ -836,7 +814,6 @@
 ;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-stacks
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (message-id (string-ascii 128))
         (source-chain (string-ascii 20))
         (source-address (string-ascii 128))
@@ -894,7 +871,7 @@
             (unwrap! (contract-call? deployed-token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
         ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
         (try!
-            (as-contract (contract-call? its-proxy gateway-validate-message gateway-impl CHAIN-NAME message-id
+            (as-contract (contract-call? .interchain-token-service gateway-validate-message gateway-impl CHAIN-NAME message-id
                 (get-its-contract-name)
                 (keccak256 payload))))
         (try! (match (get wrapped-payload payload-decoded) wrapped-payload
@@ -903,7 +880,7 @@
                 (asserts! (is-eq u0
                     (get supply payload-decoded)
                 ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
-                (as-contract (contract-call? its-proxy gateway-validate-message
+                (as-contract (contract-call? .interchain-token-service gateway-validate-message
                     gateway-impl
                     (get source-chain wrapped-payload)
                     (get message-id wrapped-payload)
@@ -922,7 +899,6 @@
 
 (define-public (execute-receive-interchain-token
         (gateway-impl <gateway-trait>)
-        (its-proxy <its-proxy-trait>)
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
@@ -959,7 +935,7 @@
     (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
     (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
     (try! (as-contract
-        (contract-call? its-proxy gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
+        (contract-call? .interchain-token-service gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
     ))
     (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
     (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received
