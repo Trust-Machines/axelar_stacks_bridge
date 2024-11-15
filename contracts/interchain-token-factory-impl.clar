@@ -245,9 +245,13 @@
 )
     (let (
         (salt (get-interchain-token-salt CHAIN-NAME-HASH caller salt_))
+        ;; #[allow(unchecked_data)]
         (token-id (unwrap-panic (get-interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER salt)))
+        ;; #[allow(unchecked_data)]
         (name (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED))
+        ;; #[allow(unchecked_data)]
         (symbol (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED))
+        ;; #[allow(unchecked_data)]
         (decimals (unwrap!  (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED))
         (minter
             (if
@@ -331,6 +335,13 @@
     (asserts! (is-eq (contract-of token) (get manager-address token-info)) ERR-TOKEN-MISMATCH)
     (asserts! (unwrap! (contract-call? token is-minter minter) ERR-TOKEN-NOT-DEPLOYED) ERR-NOT-MINTER)
     (asserts! (is-some (contract-call? .interchain-token-service-storage get-trusted-address destination-chain)) ERR-INVALID-CHAIN-NAME)
+    (try! (contract-call? .interchain-token-service-storage emit-deploy-remote-interchain-token-approval
+        minter
+        deployer
+        token-id
+        destination-chain
+        destination-minter
+    ))
     (print {
         type: "deploy-remote-interchain-token-approval",
         minter: minter,

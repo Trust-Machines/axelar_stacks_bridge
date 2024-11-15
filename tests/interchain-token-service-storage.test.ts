@@ -216,5 +216,19 @@ describe("ITS Storage tests", () => {
         address1,
       ).result,
     ).toBeErr(ERR_NOT_AUTHORIZED);
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service-storage",
+        "emit-deploy-remote-interchain-token-approval",
+        [
+          Cl.address(address1),
+          Cl.address(address1),
+          Cl.bufferFromHex("0x00"),
+          Cl.stringAscii("axelarnet"),
+          Cl.bufferFromHex("0x00"),
+        ],
+        address1,
+      ).result,
+    ).toBeErr(ERR_NOT_AUTHORIZED);
   });
 });

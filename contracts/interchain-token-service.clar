@@ -16,6 +16,7 @@
 (define-constant ERR-INVALID-IMPL (err u20211))
 (define-constant ERR-UNTRUSTED-CHAIN (err u22051))
 (define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u22087))
+(define-constant ERR-ZERO-AMOUNT (err u22088))
 
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 
@@ -144,12 +145,15 @@
 (define-public (its-hub-call-contract (gateway-impl <gateway-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
     (let
         (
+            ;; payload can be any arbitrary bytes doesn't need to be checked
+            ;; #[filter(destination-chain, payload)]
             (params (try! (get-call-params destination-chain payload)))
             (destination-chain_ (get destination-chain params))
             (destination-address_ (get destination-address params))
             (payload_ (get payload params))
         )
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
+        (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
         (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain_ destination-address_ payload_))
         (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain_ destination-address_ payload_))
     )
@@ -163,6 +167,8 @@
     (gas-value uint))
     (begin 
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
+        ;; This needs to be generic but guards must be implemented in the impl
+        ;; #[allow(unchecked_data)]
         (try! (pay-native-gas-for-contract-call gas-value tx-sender destination-chain destination-address payload))
         (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain destination-address payload))))
 
