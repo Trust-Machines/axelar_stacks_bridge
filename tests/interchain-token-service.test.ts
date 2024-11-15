@@ -2460,6 +2460,25 @@ describe("Interchain Token Service", () => {
       expect(setFlowTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
 
+    it("Should revert if the service is paused", () => {
+      setupTokenManager({});
+      deployTokenManager({
+        salt,
+      });
+      enableTokenManager({
+        proofSigners,
+        tokenId,
+      });
+      setPaused({ paused: true });
+      const setFlowTx = setFlowLimit({
+        tokenId,
+        tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
+        limit: Cl.uint(500),
+      });
+
+      expect(setFlowTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+    });
+
     it("Should be able to send token only if it does not trigger the mint limit", () => {
       setupTokenManager({});
       deployTokenManager({

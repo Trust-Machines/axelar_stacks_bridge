@@ -562,6 +562,8 @@
         ;; #[filter(token-manager,token,token-id,destination-chain,destination-address,amount,metadata,gas-value)]
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
         (try! (contract-call? token-manager take-token token caller amount))
+        ;; Proxy is trusted to always pass the correct data
+        ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
             its-proxy
@@ -609,6 +611,9 @@
         (try! (check-interchain-transfer-params token-manager token token-id destination-chain destination-address amount metadata gas-value))
         (asserts! (> (len (get data metadata)) u0) ERR-EMPTY-DATA)
         (try! (contract-call? token-manager take-token token caller amount))
+        ;; Caller is trusted since it will always be passed in the proxy and the gateway impl cannot access the storage
+        ;; without the proxy upgrading to use a new impl
+        ;; #[allow(unchecked_data)]
         (transmit-interchain-transfer
             gateway-impl
             its-proxy
@@ -748,6 +753,7 @@
         (if (is-eq CHAIN-NAME source-chain)
             ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
             (process-deploy-interchain-from-stacks
+            ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
                 gateway-impl
                 its-proxy
                 message-id
@@ -769,6 +775,7 @@
                 caller))))
 
 
+;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-external-chain
         (gateway-impl <gateway-trait>)
         (its-proxy <its-proxy-trait>)
@@ -826,6 +833,7 @@
 ;; A user deploys a native interchain token on their own on stacks
 ;; They want to register it on stacks
 ;; User calls the ITS to verify the contract through sending a gateway message
+;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-stacks
         (gateway-impl <gateway-trait>)
         (its-proxy <its-proxy-trait>)

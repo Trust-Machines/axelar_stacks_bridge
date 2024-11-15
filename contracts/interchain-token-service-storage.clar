@@ -39,7 +39,8 @@
 (define-read-only (get-service-impl) (var-get service-impl))
 (define-read-only (get-service-proxy) SERVICE-PROXY)
 
-
+;; Only proxy through gov will be able to update this, the only check i see here is if it's the same as the old one
+;; #[allow(unchecked_data)]
 (define-public (set-service-impl (new-service-impl principal))
     (begin
         (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
@@ -56,8 +57,12 @@
 (define-read-only (get-factory-proxy) FACTORY-PROXY)
 
 (define-private (is-factory-proxy) (is-eq contract-caller FACTORY-PROXY))
+(define-private (is-factory-impl) (is-eq contract-caller (var-get factory-impl)))
+(define-private (is-proxy-or-factory-impl) (or (is-factory-proxy) (is-factory-impl)))
 
 
+;; Only proxy through gov will be able to update this, the only check i see here is if it's the same as the old one
+;; #[allow(unchecked_data)]
 (define-public (set-factory-impl (new-factory-impl principal))
     (begin
         (asserts! (is-factory-proxy) ERR-NOT-AUTHORIZED)
@@ -71,6 +76,8 @@
 
 (define-read-only (get-operator) (var-get operator))
 
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
 (define-public (set-operator (new-operator principal))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
@@ -151,6 +158,8 @@
 (define-read-only (get-token-info (token-id (buff 32)))
     (map-get? token-managers token-id))
 
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
 (define-public (insert-token-manager (token-id (buff 32)) (manager-address principal) (token-type uint))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
@@ -178,6 +187,8 @@
 (define-read-only (get-gas-service)
     (var-get gas-service))
 
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
 (define-public (set-gas-service (address principal))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
@@ -188,6 +199,8 @@
 (define-read-only (get-its-hub-chain)
     (var-get its-hub-chain))
 
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
 (define-public (set-its-hub-chain (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
@@ -197,12 +210,34 @@
 (define-read-only (get-its-contract-name)
     (var-get its-contract-name))
 
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
 (define-public (set-its-contract-name (contract-name (string-ascii 128)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-contract-name contract-name)
         (ok true)))
 
+(define-map approved-destination-minters (buff 32) (buff 32))
+
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
+(define-public (set-approved-destination-minter (approval-key (buff 32)) (hashed-destination-minter (buff 32))) 
+    (begin
+        (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
+        (ok (map-set approved-destination-minters approval-key hashed-destination-minter))
+    ))
+
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
+(define-public (remove-approved-destination-minter (approval-key (buff 32))) 
+    (begin
+        (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
+        (ok (map-delete approved-destination-minters approval-key))
+    ))
+
+(define-read-only (get-approved-destination-minter (approval-key (buff 32)))
+    (map-get? approved-destination-minters approval-key))
 
 ;; EVENTS
 
@@ -340,5 +375,24 @@
             destination-address: destination-address,
             amount: amount,
             data: data,
+        })
+        (ok true)))
+
+(define-public (emit-deploy-remote-interchain-token-approval
+        (minter principal)
+        (deployer principal)
+        (token-id (buff 32))
+        (destination-chain (string-ascii 20))
+        (destination-minter (buff 128))
+        )
+    (begin
+        (asserts! (is-factory-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "deploy-remote-interchain-token-approval",
+            minter: minter,
+            deployer: deployer,
+            token-id: token-id,
+            destination-chain: destination-chain,
+            destination-minter: destination-minter,
         })
         (ok true)))

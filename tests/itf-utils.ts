@@ -129,7 +129,7 @@ export function getInterchainTokenId({
 
 export function factoryDeployRemoteInterchainToken({
   salt,
-  minterHex = "0x" + "00".repeat(20),
+  minter = address1,
   destinationChain = "ethereum",
   gasValue = 100,
   tokenAddress,
@@ -139,7 +139,7 @@ export function factoryDeployRemoteInterchainToken({
 }: {
   impl?: PrincipalCV;
   salt: Buffer | Uint8Array;
-  minterHex?: string;
+  minter?: string;
   destinationChain?: string;
   gasValue?: number;
   tokenAddress: string;
@@ -154,7 +154,7 @@ export function factoryDeployRemoteInterchainToken({
       gatewayImplCV,
       itsImpl,
       Cl.buffer(salt),
-      Cl.bufferFromHex(minterHex),
+      Cl.address(minter),
       Cl.stringAscii(destinationChain),
       Cl.uint(gasValue),
       Cl.address(tokenAddress),
@@ -181,4 +181,107 @@ export function getInterchainTokenSalt({
     ],
     address1,
   ).result as BufferCV;
+}
+
+export function factoryDeployRemoteInterchainTokenWithMinter({
+  salt,
+  minter = address1,
+  destinationChain = "ethereum",
+  destinationMinter,
+  gasValue = 100,
+  tokenAddress,
+  tokenManagerAddress,
+  sender = address1,
+  impl = itfImpl,
+}: {
+  impl?: PrincipalCV;
+  salt: Buffer | Uint8Array;
+  minter?: string;
+  destinationChain?: string;
+  destinationMinter?: string;
+  gasValue?: number;
+  tokenAddress: string;
+  tokenManagerAddress: string;
+  sender?: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-factory",
+    "deploy-remote-interchain-token-with-minter",
+    [
+      impl,
+      gatewayImplCV,
+      itsImpl,
+      Cl.buffer(salt),
+      Cl.address(minter),
+      Cl.stringAscii(destinationChain),
+      destinationMinter
+        ? Cl.some(Cl.bufferFromHex(destinationMinter))
+        : Cl.none(),
+      Cl.uint(gasValue),
+      Cl.address(tokenAddress),
+      Cl.address(tokenManagerAddress),
+    ],
+    sender,
+  );
+}
+
+const NIT = `${deployer}.native-interchain-token`;
+export function approveDeployRemoteInterchainToken({
+  deployer,
+  salt,
+  destinationChain,
+  destinationMinter,
+  sender,
+  impl = itfImpl,
+  token = NIT,
+}: {
+  impl?: PrincipalCV;
+  deployer: string;
+  salt: Buffer | Uint8Array;
+  destinationChain: string;
+  destinationMinter: string;
+  token?: string;
+  sender: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-factory",
+    "approve-deploy-remote-interchain-token",
+    [
+      impl,
+      itsImpl,
+      Cl.address(deployer),
+      Cl.buffer(salt),
+      Cl.stringAscii(destinationChain),
+      Cl.bufferFromHex(destinationMinter),
+      Cl.address(token),
+    ],
+    sender,
+  );
+}
+
+export function revokeDeployRemoteInterchainToken({
+  deployer,
+  salt,
+  destinationChain,
+  sender,
+  impl = itfImpl,
+}: {
+  impl?: PrincipalCV;
+  deployer: string;
+  salt: Buffer | Uint8Array;
+  destinationChain: string;
+  sender: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-factory",
+    "revoke-deploy-remote-interchain-token",
+    [
+      impl,
+      itsImpl,
+      Cl.address(deployer),
+      Cl.buffer(salt),
+      Cl.stringAscii(destinationChain),
+    ],
+    sender,
+  );
 }
