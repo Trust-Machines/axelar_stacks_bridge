@@ -361,9 +361,7 @@
         (add-native-gas (uint (buff 32) uint principal) (response bool uint))
         (refund ((buff 32) uint principal uint) (response bool uint))
         (collect-fees (principal uint) (response bool uint))
-        (transfer-ownership (principal) (response bool uint))
         (get-balance () (response uint uint))
-        (get-owner () (response principal uint))
     )
 )
 

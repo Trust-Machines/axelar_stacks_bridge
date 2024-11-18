@@ -1,27 +1,72 @@
-;; Error constants
-(define-constant err-unauthorized (err u1000))
+(define-constant PROXY .gas-service)
 
-;; Data vars
-(define-data-var owner principal tx-sender)
+(define-constant ERR-UNAUTHORIZED (err u10111))
+
+(define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
+
+(define-private (is-proxy) (is-eq contract-caller PROXY))
+
+(define-private (is-impl) (is-eq contract-caller (var-get impl)))
+
+;; ######################
+;; ######################
+;; ####### Storage ######
+;; ######################
+;; ######################
+
+;; Constructor flag
 (define-data-var is-started bool false)
 
-;; Check if caller is authorized (proxy or impl)
-(define-private (is-authorized)
-    (or
-        (is-eq contract-caller .gas-service)
-        (is-eq contract-caller .gas-impl)))
+(define-read-only (get-is-started) (var-get is-started))
 
-;; Owner management
-(define-public (get-owner)
-    (ok (var-get owner)))
-
-(define-public (set-owner (new-owner principal))
+(define-public (start) 
     (begin
-        (asserts! (is-authorized) err-unauthorized)
-        (var-set owner new-owner)
-        (ok true)))
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set is-started true))
+    )
+)
 
-;; Event emission functions
+;; Gas Service implementation contract address 
+(define-data-var impl principal .gas-impl)
+
+(define-read-only (get-impl) (var-get impl))
+
+(define-public (set-impl (new-impl principal)) 
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set impl new-impl))
+    )
+)
+
+;; Gas operator
+(define-data-var operator principal contract-caller)
+
+(define-read-only (get-operator) (var-get operator))
+
+(define-public (set-operator (new-operator principal)) 
+    (begin
+        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
+        (ok (var-set operator new-operator))
+    )
+)
+
+;; Governance contract address
+(define-data-var governance principal .governance)
+
+(define-read-only (get-governance) (var-get governance))
+
+(define-public (set-governance (new principal)) 
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (ok (var-set governance new))
+    )
+)
+
+;; ######################
+;; ######################
+;; ####### Events #######
+;; ######################
+;; ######################
 (define-public (emit-gas-paid-event 
     (sender principal)
     (amount uint)
@@ -30,7 +75,7 @@
     (destination-address (string-ascii 128))
     (payload-hash (buff 32)))
     (begin
-        (asserts! (is-authorized) err-unauthorized)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (print {
             type: "native-gas-paid-for-contract-call",
             sender: sender,
@@ -48,7 +93,7 @@
     (tx-hash (buff 32))
     (log-index uint))
     (begin
-        (asserts! (is-authorized) err-unauthorized)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (print {
             type: "native-gas-added",
             amount: amount,
@@ -64,7 +109,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-authorized) err-unauthorized)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (print {
             type: "refunded",
             tx-hash: tx-hash,
@@ -78,19 +123,10 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-authorized) err-unauthorized)
+        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
         (print {
             type: "fees-collected",
             receiver: receiver,
             amount: amount
         })
         (ok true)))
-
-;; Started status management
-(define-read-only (get-is-started)
-    (var-get is-started))
-
-(define-public (start)
-    (begin
-        (asserts! (is-authorized) err-unauthorized)
-        (ok (var-set is-started true)))) 

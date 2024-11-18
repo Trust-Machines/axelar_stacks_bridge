@@ -65,9 +65,6 @@ plan:
       transactions: []
       epoch: "2.1"
     - id: 4
-      transactions: []
-      epoch: "2.1"
-    - id: 5
       transactions:
         - emulated-contract-publish:
             contract-name: gas-storage
@@ -150,12 +147,9 @@ plan:
             path: contracts/token-manager.clar
             clarity-version: 2
       epoch: "2.5"
+    - id: 5
+      transactions: []
+      epoch: "2.5"
     - id: 6
-      transactions: []
-      epoch: "2.5"
-    - id: 7
-      transactions: []
-      epoch: "2.5"
-    - id: 8
       transactions: []
       epoch: "2.5"

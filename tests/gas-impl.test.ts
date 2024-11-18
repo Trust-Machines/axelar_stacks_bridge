@@ -1,68 +1,99 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Cl } from '@stacks/transactions';
-
-const accounts = simnet.getAccounts();
-const deployer = accounts.get('deployer')!;
-const wallet1 = accounts.get('wallet_1')!;
-const wallet2 = accounts.get('wallet_2')!;
-
-describe('gas-impl contract test suite', () => {
-    beforeEach(() => {
-        simnet.mineEmptyBlock();
-        // Start the implementation
-        simnet.callPublicFn('gas-storage', 'start', [], deployer);
+import { 
+    boolCV,
+    bufferCV,
+    principalCV, 
+    stringAsciiCV, 
+    uintCV,
+  } from "@stacks/transactions";
+  import { describe, expect, it } from "vitest";
+import { deployGasService, gasImplContract } from "./util";
+  
+  const accounts = simnet.getAccounts();
+  const address1 = accounts.get("wallet_1")!;
+  const deployer = accounts.get("deployer")!;
+  
+  
+  describe("gas-impl tests", () => {
+    describe("initialization", () => {
+      it("should work correctly after setup", () => {
+        deployGasService();
+        
+        // Test a valid proxy call
+        const { result } = simnet.callPublicFn(
+          "gas-service",
+          "pay-native-gas-for-contract-call",
+          [
+            gasImplContract,
+            uintCV(1000),
+            principalCV(address1),
+            stringAsciiCV("chain"),
+            stringAsciiCV("address"),
+            bufferCV(Buffer.from("payload")),
+            principalCV(address1)
+          ],
+          address1
+        );
+        expect(result).toBeOk(boolCV(true));
+      });
     });
-
-    describe('authorization', () => {
-        it('prevents direct calls to implementation', () => {
-            const directCallTx = simnet.callPublicFn(
-                'gas-impl',
-                'pay-native-gas-for-contract-call',
-                [
-                    Cl.uint(1000),
-                    Cl.principal(wallet1),
-                    Cl.stringAscii('ethereum'),
-                    Cl.stringAscii('0x1234'),
-                    Cl.buffer(Buffer.from('test')),
-                    Cl.principal(wallet1)
-                ],
-                wallet1
-            );
-            expect(directCallTx.result).toBeErr(Cl.uint(103)); // err-unauthorized
-        });
+  
+    it("proxy only public functions", () => {
+      // Test direct calls to pay-native-gas-for-contract-call
+      expect(
+        simnet.callPublicFn(
+          "gas-impl", 
+          "pay-native-gas-for-contract-call", 
+          [
+            uintCV(1000),
+            principalCV(address1),
+            stringAsciiCV("destination-chain"),
+            stringAsciiCV("destination-address"),
+            bufferCV(Buffer.from("payload")),
+            principalCV(address1)
+          ], 
+          address1
+        ).result
+      ).toBeErr(uintCV(10111)); // err-unauthorized
+  
+      // Test direct calls to collect-fees
+      expect(
+        simnet.callPublicFn(
+          "gas-impl",
+          "collect-fees",
+          [
+            principalCV(address1),
+            uintCV(1000)
+          ],
+          address1
+        ).result
+      ).toBeErr(uintCV(10111)); // err-unauthorized
     });
-
-    describe('gas operations', () => {
-        it('validates amount in pay-native-gas', () => {
-            const invalidAmountTx = simnet.callPublicFn(
-                'gas-impl',
-                'pay-native-gas-for-contract-call',
-                [
-                    Cl.uint(0),
-                    Cl.principal(wallet1),
-                    Cl.stringAscii('ethereum'),
-                    Cl.stringAscii('0x1234'),
-                    Cl.buffer(Buffer.from('test')),
-                    Cl.principal(wallet1)
-                ],
-                wallet1
-            );
-            expect(invalidAmountTx.result).toBeErr(Cl.uint(102)); // err-invalid-amount
-        });
-
-        it('validates principal in refund operation', () => {
-            const nullPrincipalTx = simnet.callPublicFn(
-                'gas-impl',
-                'refund',
-                [
-                    Cl.buffer(Buffer.alloc(32)),
-                    Cl.uint(0),
-                    Cl.principal('SP000000000000000000002Q6VF78'),
-                    Cl.uint(1000)
-                ],
-                deployer
-            );
-            expect(nullPrincipalTx.result).toBeErr(Cl.uint(105)); // ERR-INVALID-PRINCIPAL
-        });
+  
+    it("proxy only public functions (refund)", () => {
+      // Test direct calls to refund
+      expect(
+        simnet.callPublicFn(
+          "gas-impl",
+          "refund",
+          [
+            bufferCV(Buffer.from("tx-hash")),
+            uintCV(0), // log-index
+            principalCV(address1),
+            uintCV(1000)
+          ],
+          address1
+        ).result
+      ).toBeErr(uintCV(10111)); // err-unauthorized
     });
-}); 
+  
+    it("should allow reading balance", () => {
+      // Test get-balance function
+      const { result } = simnet.callReadOnlyFn(
+        "gas-impl",
+        "get-balance",
+        [],
+        deployer
+      );
+      expect(result).toBeOk(uintCV(0));
+    });
+  });

@@ -1,229 +1,217 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Cl } from '@stacks/transactions';
+import { describe, expect, it, beforeEach } from "vitest";
+import { boolCV, bufferCV, principalCV, stringAsciiCV, uintCV, contractPrincipalCV } from "@stacks/transactions";
+import { deployGasService } from "./util";
 
 const accounts = simnet.getAccounts();
-const deployer = accounts.get('deployer')!;
-const wallet1 = accounts.get('wallet_1')!;
-const wallet2 = accounts.get('wallet_2')!;
+const address1 = accounts.get("wallet_1")!;
+const address2 = accounts.get("wallet_2")!;
+const deployer = accounts.get("deployer")!;
 
-describe('gas-service contract test suite', () => {
+const gasImplCV = contractPrincipalCV(deployer, "gas-impl");
+
+describe("gas service tests", () => {
+  describe("setup", () => {
+    it("should initialize correctly", () => {
+      const gasImplAddress = `${deployer}.gas-impl`;
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "initialize",
+        [principalCV(gasImplAddress)],
+        deployer
+      );
+      expect(result).toBeOk(boolCV(true));
+      
+      // Verify started status
+      const { result: startedStatus } = simnet.callPublicFn(
+        "gas-storage",
+        "get-is-started",
+        [],
+        deployer
+      );
+      expect(startedStatus).toBeOk(boolCV(true));
+    });
+
+    it("should prevent double initialization", () => {
+      // First setup
+      deployGasService();
+      
+      // Try second setup
+      const gasImplAddress = `${deployer}.gas-impl`;
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "initialize",
+        [principalCV(gasImplAddress)],
+        deployer
+      );
+      expect(result).toBeErr(uintCV(101)); // err-already-initialized
+    });
+  });
+
+  it("should revert all public functions before initialization", () => {
+    expect(simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+      gasImplCV,
+      uintCV(1000),
+      principalCV(address1),
+      stringAsciiCV("chain"),
+      stringAsciiCV("address"),
+      bufferCV(Buffer.from("payload")),
+      principalCV(address1)
+    ], address1).result).toBeErr(uintCV(106));
+
+    expect(simnet.callPublicFn("gas-service", "add-native-gas", [
+      gasImplCV,
+      uintCV(1000),
+      bufferCV(Buffer.from("txhash")),
+      uintCV(0),
+      principalCV(address1)
+    ], address1).result).toBeErr(uintCV(106));
+
+    expect(simnet.callPublicFn("gas-service", "refund", [
+      gasImplCV,
+      bufferCV(Buffer.from("txhash")),
+      uintCV(0),
+      principalCV(address1),
+      uintCV(1000)
+    ], address1).result).toBeErr(uintCV(106));
+
+    expect(simnet.callPublicFn("gas-service", "collect-fees", [
+      gasImplCV,
+      principalCV(address1),
+      uintCV(1000)
+    ], address1).result).toBeErr(uintCV(106));
+  });
+
+  describe("after initialization", () => {
     beforeEach(() => {
-        simnet.mineEmptyBlock();
+      deployGasService();
     });
 
-    it('ensures initial state is correct', () => {
-        const owner = simnet.callReadOnlyFn('gas-service', 'get-owner', [], deployer);
-        const isDeployerOwner = simnet.callReadOnlyFn('gas-service', 'is-owner', [], deployer);
-        const isWallet1Owner = simnet.callReadOnlyFn('gas-service', 'is-owner', [], wallet1);
-
-        expect(owner.result).toBeOk(Cl.principal(deployer));
-        expect(isDeployerOwner.result).toBeOk(Cl.bool(true));
-        expect(isWallet1Owner.result).toBeOk(Cl.bool(false));
+    it("should validate implementation contract", () => {
+      const invalidImpl = contractPrincipalCV(deployer, "traits");
+      
+      expect(simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+        invalidImpl,
+        uintCV(1000),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1).result).toBeErr(uintCV(102));
     });
 
-    it('allows paying native gas for contract call', () => {
-        const amount = 1000n;
-        const sender = wallet2;  // Can be different from tx-sender now
-        const destinationChain = 'ethereum';
-        const destinationAddress = '1234567890123456789012345678901234567890';
-        const payload = Buffer.from('test payload');
-        const refundAddress = wallet2;
+    it("should pay native gas for contract call", () => {
+      const { result } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+        gasImplCV,
+        uintCV(1000),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1);
 
-        const payTx = simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.stringAscii(destinationChain),
-            Cl.stringAscii(destinationAddress),
-            Cl.buffer(payload),
-            Cl.principal(refundAddress)
-        ], wallet1);  // wallet1 is paying for wallet2's transaction
-
-        expect(payTx.result).toBeOk(Cl.bool(true));
+      expect(result).toBeOk(boolCV(true));
     });
 
-    it('allows adding native gas', () => {
-        const amount = 1000n;
-        const txHash = Buffer.alloc(32, 1);
-        const logIndex = 0n;
-        const refundAddress = wallet2;
+    it("should add native gas", () => {
+      const { result } = simnet.callPublicFn("gas-service", "add-native-gas", [
+        gasImplCV,
+        uintCV(1000),
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address1)
+      ], address1);
 
-        const addGasTx = simnet.callPublicFn('gas-service', 'add-native-gas', [
-            Cl.uint(amount),
-            Cl.buffer(txHash),
-            Cl.uint(logIndex),
-            Cl.principal(refundAddress)
-        ], wallet1);
-
-        expect(addGasTx.result).toBeOk(Cl.bool(true));
+      expect(result).toBeOk(boolCV(true));
     });
 
-    it('allows owner to refund', () => {
-        const amount = 1000n;
-        const txHash = Buffer.alloc(32, 1);
-        const logIndex = 0n;
-        const receiver = wallet1;
+    it("should only allow owner to refund", () => {
+      const { result: ownerResult } = simnet.callPublicFn("gas-service", "refund", [
+        gasImplCV,
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address2),
+        uintCV(1000)
+      ], deployer);
 
-        // First, add some STX to the contract
-        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(wallet1),
-            Cl.stringAscii('ethereum'),
-            Cl.stringAscii('1234567890123456789012345678901234567890'),
-            Cl.buffer(Buffer.from('test payload')),
-            Cl.principal(wallet1)
-        ], wallet1);
+      expect(ownerResult).toBeOk(boolCV(true));
 
-        const refundTx = simnet.callPublicFn('gas-service', 'refund', [
-            Cl.buffer(txHash),
-            Cl.uint(logIndex),
-            Cl.principal(receiver),
-            Cl.uint(amount)
-        ], deployer);
+      const { result: nonOwnerResult } = simnet.callPublicFn("gas-service", "refund", [
+        gasImplCV,
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address2),
+        uintCV(1000)
+      ], address1);
 
-        expect(refundTx.result).toBeOk(Cl.bool(true));
+      expect(nonOwnerResult).toBeErr(uintCV(103));
     });
 
-    it('prevents non-owner from refunding', () => {
-        const amount = 1000n;
-        const txHash = Buffer.alloc(32, 1);
-        const logIndex = 0n;
-        const receiver = wallet1;
+    it("should only allow owner to collect fees", () => {
+      const { result: ownerResult } = simnet.callPublicFn("gas-service", "collect-fees", [
+        gasImplCV,
+        principalCV(address2),
+        uintCV(1000)
+      ], deployer);
 
-        const refundTx = simnet.callPublicFn('gas-service', 'refund', [
-            Cl.buffer(txHash),
-            Cl.uint(logIndex),
-            Cl.principal(receiver),
-            Cl.uint(amount)
-        ], wallet1);
+      expect(ownerResult).toBeOk(boolCV(true));
 
-        expect(refundTx.result).toBeErr(Cl.uint(100)); // err-owner-only
+      const { result: nonOwnerResult } = simnet.callPublicFn("gas-service", "collect-fees", [
+        gasImplCV,
+        principalCV(address2),
+        uintCV(1000)
+      ], address1);
+
+      expect(nonOwnerResult).toBeErr(uintCV(103));
     });
 
-    it('allows owner to transfer ownership', () => {
-        const transferTx = simnet.callPublicFn('gas-service', 'transfer-ownership', [Cl.principal(wallet1)], deployer);
-        expect(transferTx.result).toBeOk(Cl.bool(true));
+    it("should validate receiver address for refunds", () => {
+      const { result } = simnet.callPublicFn("gas-service", "refund", [
+        gasImplCV,
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV('SP000000000000000000002Q6VF78'),
+        uintCV(1000)
+      ], deployer);
 
-        const newOwner = simnet.callReadOnlyFn('gas-service', 'get-owner', [], deployer);
-        expect(newOwner.result).toBeOk(Cl.principal(wallet1));
+      expect(result).toBeErr(uintCV(105));
     });
 
-    it('prevents non-owner from transferring ownership', () => {
-        const transferTx = simnet.callPublicFn('gas-service', 'transfer-ownership', [Cl.principal(wallet2)], wallet1);
-        expect(transferTx.result).toBeErr(Cl.uint(100)); // err-owner-only
+    it("should validate receiver address for fee collection", () => {
+      const { result } = simnet.callPublicFn("gas-service", "collect-fees", [
+        gasImplCV,
+        principalCV('SP000000000000000000002Q6VF78'),
+        uintCV(1000)
+      ], deployer);
+
+      expect(result).toBeErr(uintCV(105));
     });
 
-    it('checks contract balance', () => {
-        const balanceBefore = simnet.callReadOnlyFn('gas-service', 'get-balance', [], deployer);
-        expect(balanceBefore.result).toBeOk(Cl.uint(0));
+    it("should validate amount for gas payments", () => {
+      const { result } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+        gasImplCV,
+        uintCV(0),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1);
 
-        // Add some STX to the contract
-        const amount = 1000n;
-        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(wallet1),
-            Cl.stringAscii('ethereum'),
-            Cl.stringAscii('1234567890123456789012345678901234567890'),
-            Cl.buffer(Buffer.from('test payload')),
-            Cl.principal(wallet1)
-        ], wallet1);
-
-        const balanceAfter = simnet.callReadOnlyFn('gas-service', 'get-balance', [], deployer);
-        expect(balanceAfter.result).toBeOk(Cl.uint(amount));
+      expect(result).toBeErr(uintCV(102));
     });
 
-    it('verifies unimplemented functions return expected error', () => {
-        const amount = 100n;
-        const sender = wallet1;
-        const destinationChain = 'ethereum';
-        const destinationAddress = '1234567890123456789012345678901234567890';
-        const payload = Buffer.from('test payload');
-        const refundAddress = wallet2;
-        const txHash = Buffer.alloc(32, 1);
-        const logIndex = 0n;
+    it("should check balance for refunds", () => {
+      const { result } = simnet.callPublicFn("gas-service", "refund", [
+        gasImplCV,
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address2),
+        uintCV(1000000000)
+      ], deployer);
 
-        const payGasTx = simnet.callPublicFn('gas-service', 'pay-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.stringAscii(destinationChain),
-            Cl.stringAscii(destinationAddress),
-            Cl.buffer(payload),
-            Cl.principal(refundAddress)
-        ], wallet1);
-
-        const addGasTx = simnet.callPublicFn('gas-service', 'add-gas', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.buffer(txHash),
-            Cl.uint(logIndex),
-            Cl.principal(refundAddress)
-        ], wallet1);
-
-        const payExpressTx = simnet.callPublicFn('gas-service', 'pay-native-gas-for-express-call', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.stringAscii(destinationChain),
-            Cl.stringAscii(destinationAddress),
-            Cl.buffer(payload),
-            Cl.principal(refundAddress)
-        ], wallet1);
-
-        const addExpressGasTx = simnet.callPublicFn('gas-service', 'add-native-express-gas', [
-            Cl.uint(amount),
-            Cl.principal(sender),
-            Cl.buffer(txHash),
-            Cl.uint(logIndex),
-            Cl.principal(refundAddress)
-        ], wallet1);
-        
-        expect(payGasTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
-        expect(addGasTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
-        expect(payExpressTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
-        expect(addExpressGasTx.result).toBeErr(Cl.error(Cl.uint(103))); // err-not-implemented
+      expect(result).toBeErr(uintCV(101));
     });
-
-    it('allows owner to collect fees', () => {
-        const amount = 1000n;
-        const receiver = wallet2;
-
-        // First, add some STX to the contract
-        simnet.callPublicFn('gas-service', 'pay-native-gas-for-contract-call', [
-            Cl.uint(amount),
-            Cl.principal(wallet1),
-            Cl.stringAscii('ethereum'),
-            Cl.stringAscii('1234567890123456789012345678901234567890'),
-            Cl.buffer(Buffer.from('test payload')),
-            Cl.principal(wallet1)
-        ], wallet1);
-
-        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
-            Cl.principal(receiver),
-            Cl.uint(amount)
-        ], deployer);
-
-        expect(collectFeesTx.result).toBeOk(Cl.bool(true));
-    });
-
-    it('prevents non-owner from collecting fees', () => {
-        const amount = 1000n;
-        const receiver = wallet2;
-
-        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
-            Cl.principal(receiver),
-            Cl.uint(amount)
-        ], wallet1);
-
-        expect(collectFeesTx.result).toBeErr(Cl.uint(100)); // err-owner-only
-    });
-
-    it('prevents collecting fees with insufficient balance', () => {
-        const amount = 1000n;
-        const receiver = wallet2;
-
-        const collectFeesTx = simnet.callPublicFn('gas-service', 'collect-fees', [
-            Cl.principal(receiver),
-            Cl.uint(amount)
-        ], deployer);
-
-        expect(collectFeesTx.result).toBeErr(Cl.uint(101)); // err-insufficient-balance
-    });
-});
+  });
+}); 

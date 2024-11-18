@@ -1,81 +1,67 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Cl } from '@stacks/transactions';
+import { describe, expect, it } from "vitest";
+import { bufferCV, principalCV, stringAsciiCV, uintCV, contractPrincipalCV, boolCV } from "@stacks/transactions";
 
 const accounts = simnet.getAccounts();
-const deployer = accounts.get('deployer')!;
-const wallet1 = accounts.get('wallet_1')!;
+const address1 = accounts.get("wallet_1")!;
+const deployer = accounts.get("deployer")!;
 
-describe('gas-storage contract test suite', () => {
-    beforeEach(() => {
-        simnet.mineEmptyBlock();
-    });
+describe("gas storage tests", () => {
+  it("should only allow authorized contracts", () => {
+    const { result } = simnet.callPublicFn("gas-storage", "set-owner", [
+      principalCV(address1)
+    ], address1);
 
-    describe('authorization', () => {
-        it('only allows authorized contracts to emit events', () => {
-            const unauthorizedEventTx = simnet.callPublicFn(
-                'gas-storage',
-                'emit-gas-paid-event',
-                [
-                    Cl.principal(wallet1),
-                    Cl.uint(1000),
-                    Cl.principal(wallet1),
-                    Cl.stringAscii('ethereum'),
-                    Cl.stringAscii('0x1234'),
-                    Cl.buffer(Buffer.alloc(32))
-                ],
-                wallet1
-            );
-            expect(unauthorizedEventTx.result).toBeErr(Cl.uint(1000)); // err-unauthorized
-        });
+    expect(result).toBeErr(uintCV(1000));
+  });
 
-        it('only allows authorized contracts to set owner', () => {
-            const unauthorizedSetOwnerTx = simnet.callPublicFn(
-                'gas-storage',
-                'set-owner',
-                [Cl.principal(wallet1)],
-                wallet1
-            );
-            expect(unauthorizedSetOwnerTx.result).toBeErr(Cl.uint(1000)); // err-unauthorized
-        });
-    });
+  it("should manage started status", () => {
+    const { result: initialStatus } = simnet.callPublicFn("gas-storage", "get-is-started", [], address1);
+    expect(initialStatus).toBeOk(boolCV(false));
 
-    describe('owner management', () => {
-        it('correctly stores and retrieves owner', () => {
-            const ownerQuery = simnet.callReadOnlyFn(
-                'gas-storage',
-                'get-owner',
-                [],
-                deployer
-            );
-            expect(ownerQuery.result).toBeOk(Cl.principal(deployer));
-        });
-    });
+    const { result: isStarted } = simnet.callPublicFn("gas-storage", "start", [], address1);
+    expect(isStarted).toBeOk(boolCV(true));
 
-    describe('started status', () => {
-        it('correctly manages started status', () => {
-            const beforeStart = simnet.callReadOnlyFn(
-                'gas-storage',
-                'get-is-started',
-                [],
-                deployer
-            );
-            expect(beforeStart.result).toBe(Cl.bool(false));
+    const { result: updatedStatus } = simnet.callPublicFn("gas-storage", "get-is-started", [], address1);
+    expect(updatedStatus).toBeOk(boolCV(true));
+  });
 
-            const startTx = simnet.callPublicFn(
-                'gas-storage',
-                'start',
-                [],
-                deployer
-            );
-            expect(startTx.result).toBeOk(Cl.bool(true));
+  it("should manage owner", () => {
+    const { result: initialOwner } = simnet.callPublicFn("gas-storage", "get-owner", [], address1);
+    expect(initialOwner).toBeOk(principalCV(deployer));
 
-            const afterStart = simnet.callReadOnlyFn(
-                'gas-storage',
-                'get-is-started',
-                [],
-                deployer
-            );
-            expect(afterStart.result).toBe(Cl.bool(true));
-        });
-    });
+    simnet.callPublicFn("gas-service", "transfer-ownership", [
+      contractPrincipalCV(deployer, "gas-impl"),
+      principalCV(address1)
+    ], deployer);
+
+    const { result: updatedOwner } = simnet.callPublicFn("gas-storage", "get-owner", [], address1);
+    expect(updatedOwner).toBeOk(principalCV(address1));
+  });
+
+  it("should emit events", () => {
+    simnet.callPublicFn("gas-storage", "start", [], deployer);
+
+    const { events } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+      contractPrincipalCV(deployer, "gas-impl"),
+      uintCV(1000),
+      principalCV(address1),
+      stringAsciiCV("chain"),
+      stringAsciiCV("address"),
+      bufferCV(Buffer.from("payload")),
+      principalCV(address1)
+    ], address1);
+
+    expect(events[0].data.contract_identifier).toBe(`${deployer}.gas-storage`);
+    expect(events[0].data.topic).toBe("native-gas-paid-for-contract-call");
+  });
+
+  it("should only allow authorized contracts to start", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-storage",
+      "start",
+      [],
+      address1  // Unauthorized caller
+    );
+    expect(result).toBeErr(uintCV(1000)); // err-unauthorized
+  });
 }); 

@@ -1,36 +1,19 @@
+(impl-trait .traits.proxy-trait)
 (use-trait gas-impl-trait .traits.gas-service-impl-trait)
 
-;; Error constants
-(define-constant err-owner-only (err u100))
-(define-constant err-already-initialized (err u101))
-(define-constant ERR-INVALID-IMPL (err u102))
+;; ######################
+;; ######################
+;; ### Proxy Calls ######
+;; ######################
+;; ######################
 
-;; Only keep implementation reference for future upgrades
-(define-data-var implementation principal .gas-impl)
+(define-constant ERR-INVALID-IMPL (err u10211))
 
-;; Helper function to validate implementation
-(define-private (is-valid-impl (impl <gas-impl-trait>))
-    (is-eq (var-get implementation) (contract-of impl)))
-
-;; Initialize the contract
-(define-public (initialize (impl principal))
-    (begin
-        ;; Check owner through storage contract
-        (asserts! (is-eq tx-sender (unwrap! (contract-call? .gas-storage get-owner) err-owner-only)) err-owner-only)
-        (var-set implementation impl)
-        (ok true)))
-
-;; Upgrade the implementation
-(define-public (upgrade (new-impl principal))
-    (begin
-        ;; Check owner through storage contract
-        (asserts! (is-eq tx-sender (unwrap! (contract-call? .gas-storage get-owner) err-owner-only)) err-owner-only)
-        (var-set implementation new-impl)
-        (ok true)))
+(define-private (is-correct-impl (gas-impl <gas-impl-trait>)) (is-eq (contract-call? .gas-storage get-impl) (contract-of gas-impl)))
 
 ;; Proxy all gas service functions to implementation
 (define-public (pay-native-gas-for-contract-call
-    (impl <gas-impl-trait>)
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 20))
@@ -38,8 +21,8 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl
+        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gas-impl
             pay-native-gas-for-contract-call
             amount
             sender
@@ -50,14 +33,14 @@
 )
 
 (define-public (add-native-gas
-    (impl <gas-impl-trait>)
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl
+        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gas-impl
             add-native-gas
             amount
             tx-hash
@@ -66,14 +49,14 @@
 )
 
 (define-public (refund
-    (impl <gas-impl-trait>)
+    (gas-impl <gas-impl-trait>)
     (tx-hash (buff 32))
     (log-index uint)
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl
+        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gas-impl
             refund
             tx-hash
             log-index
@@ -82,38 +65,22 @@
 )
 
 (define-public (collect-fees
-    (impl <gas-impl-trait>)
+    (gas-impl <gas-impl-trait>)
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl
+        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gas-impl
             collect-fees
             receiver
             amount))
 )
 
-(define-public (transfer-ownership
-    (impl <gas-impl-trait>)
-    (new-owner principal))
-    (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl
-            transfer-ownership
-            new-owner))
-)
-
 ;; Read-only functions
-(define-public (get-balance (impl <gas-impl-trait>))
+(define-public (get-balance (gas-impl <gas-impl-trait>))
     (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl get-balance))
-)
-
-(define-public (get-owner (impl <gas-impl-trait>))
-    (begin
-        (asserts! (is-valid-impl impl) ERR-INVALID-IMPL)
-        (contract-call? impl get-owner))
+        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (contract-call? gas-impl get-balance))
 )
 
 ;; Add unimplemented functions from the trait
@@ -150,3 +117,67 @@
     (log-index uint)
     (refund-address principal))
     (err u103))  ;; err-not-implemented 
+
+
+;; ######################
+;; ######################
+;; ### Upgradability ####
+;; ######################
+;; ######################
+
+(define-constant ERR-UNAUTHORIZED (err u10111))
+
+(define-private (is-governance) (is-eq contract-caller (contract-call? .gas-storage get-governance)))
+
+(define-public (set-impl (new principal))
+    (let
+        (
+            (prev (contract-call? .gas-storage get-impl))
+        ) 
+        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gas-storage set-impl new))
+        (print {
+            type: "gas-impl-updated",
+            prev: prev,
+            new: new
+        })
+        (ok true)
+    )
+)
+
+(define-public (set-governance (new principal))
+    (let
+        (
+            (prev (contract-call? .gas-storage get-governance))
+        ) 
+        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gas-storage set-governance new))
+        (print {
+            type: "gas-governance-updated",
+            prev: prev,
+            new: new
+        })
+        (ok true)
+    )
+)
+
+
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-constant ERR-STARTED (err u6051))
+
+;; Constructor function
+(define-public (setup
+    (operator_ principal)
+)
+    (begin
+        (asserts! (is-eq (contract-call? .gas-storage get-is-started) false) ERR-STARTED)
+        (try! (contract-call? .gas-storage set-operator operator_))
+        (try! (contract-call? .gas-storage start))
+        (ok true)
+    )
+)

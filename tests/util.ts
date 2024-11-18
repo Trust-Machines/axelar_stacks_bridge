@@ -221,10 +221,26 @@ export const deployGateway = (signers: Signers, conf?: { minimumRotationDelay?: 
     const minimumRotationDelay = uintCV(conf?.minimumRotationDelay ?? 0);
     const previousSignersRetention = uintCV(conf?.previousSignersRetention ?? 15);
 
-    const {result} = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(signers))), operator, domainSeparator, minimumRotationDelay, previousSignersRetention], contractCaller)
+    const {result} = simnet.callPublicFn("gateway", "setup", [
+        bufferCV(serializeCV(signersToCv(signers))), 
+        operator, 
+        domainSeparator, 
+        minimumRotationDelay, 
+        previousSignersRetention
+    ], contractCaller)
     expect(result).toBeOk(boolCV(true));
 
     return signers;
 }
 
 export const gatewayImplCV = contractPrincipalCV(accounts.get("deployer")!, "gateway-impl");
+export const gasImplContract = contractPrincipalCV(accounts.get("deployer")!, "gas-impl");
+
+export const deployGasService = () => {
+    const operator = principalCV(operatorAddress);
+
+    const {result} = simnet.callPublicFn("gas-service", "setup", [
+        operator, 
+    ], contractCaller)
+    expect(result).toBeOk(boolCV(true));
+};
