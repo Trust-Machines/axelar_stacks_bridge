@@ -5,17 +5,18 @@ import { keccak256 } from "./its-utils";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
+const deployer = accounts.get("deployer")!;
 
 describe("governance tests", () => {
   let eta = Math.floor(Date.now() / 1000) + 86400;
   let sourceChain = stringAsciiCV("Source");
   let messageId = stringAsciiCV("1");
   let sourceAddress = stringAsciiCV("address0x123");
-  let contractAddress = contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance');
+  let contractAddress = contractPrincipalCV(deployer, 'governance');
 
   it("should update gateway implementation", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
+      target: contractPrincipalCV(deployer, 'gateway-impl-2'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -80,7 +81,7 @@ describe("governance tests", () => {
 
   it("should update gateway governance", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance-2'),
+      target: contractPrincipalCV(deployer, 'governance-2'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -145,7 +146,7 @@ describe("governance tests", () => {
 
   it("should update interchain token factory implementation", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'interchain-token-factory-impl-2'),
+      target: contractPrincipalCV(deployer, 'interchain-token-factory-impl-2'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -210,7 +211,7 @@ describe("governance tests", () => {
 
   it("should update interchain token service implementation", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'interchain-token-service-impl-2'),
+      target: contractPrincipalCV(deployer, 'interchain-token-service-impl-2'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -276,7 +277,7 @@ describe("governance tests", () => {
   it("should cancel a scheduled task", () => {
     //-- Schedule task 
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance-2'),
+      target: contractPrincipalCV(deployer, 'governance-2'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -372,7 +373,7 @@ describe("governance tests", () => {
 
   it("should not finalize before eta", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance-2'),
+      target: contractPrincipalCV(deployer, 'governance-2'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -422,7 +423,7 @@ describe("governance tests", () => {
 
   it("should not finalize with invalid type", () => {
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'governance-2'),
+      target: contractPrincipalCV(deployer, 'governance-2'),
       eta: uintCV(eta),
       type: uintCV(11)
     })
@@ -482,7 +483,7 @@ describe("governance tests", () => {
   it("eta can't be smaller than min-eta", () => {
     let eta = Math.floor(Date.now() / 1000) + 600;
     const payload = tupleCV({
-      target: contractPrincipalCV('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', 'gateway-impl-2'),
+      target: contractPrincipalCV(deployer, 'gateway-impl-2'),
       eta: uintCV(eta),
       type: uintCV(1)
     })

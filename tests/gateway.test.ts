@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV, deployerAddress } from "./util";
 import { Signers } from "./types";
 
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+
 describe("gateway tests", () => {
 
   it("should revert all public functions before initialization", () => {
@@ -74,7 +77,7 @@ describe("gateway tests", () => {
 
     const { result, events } = simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV(destinationChain), stringAsciiCV(destinationAddress), bufferCVFromString(payload)], contractCaller)
     expect(result).toBeOk(boolCV(true));
-    expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage');
+    expect(events[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`);
     expect(contractCallEventToObj(events[0].data.raw_value!)).toStrictEqual({
       type: 'contract-call',
       sender: contractCaller,
@@ -124,7 +127,7 @@ describe("gateway tests", () => {
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
-      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -143,7 +146,7 @@ describe("gateway tests", () => {
 
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
-      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -185,7 +188,7 @@ describe("gateway tests", () => {
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
       expect(approveResult).toBeOk(boolCV(true));
-      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -216,7 +219,7 @@ describe("gateway tests", () => {
       // execute message
       const { result: validateResult, events: validateEvents } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult).toBeOk(boolCV(true));
-      expect(approveEvents[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageExecutedEventToObj(validateEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-executed',
         commandId: '0x908b3539125bd138ed0f374862a28328229fb1079bce40efdab1e52f89168fae',
@@ -269,7 +272,7 @@ describe("gateway tests", () => {
 
       const { result, events } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
       expect(result).toBeOk(boolCV(true));
-      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(events[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(signersRotatedEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'signers-rotated',
         epoch: 2,
@@ -915,7 +918,7 @@ describe("gateway tests", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result, events } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(contractCaller)], operatorAddress);
       expect(result).toBeOk(boolCV(true));
-      expect(events[0].data.contract_identifier).toBe('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway-storage')
+      expect(events[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(transferOperatorshipEventToObj(events[0].data.raw_value!)).toStrictEqual({
         type: 'transfer-operatorship',
         newOperator: contractCaller
