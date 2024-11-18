@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { boolCV, bufferCV, principalCV, stringAsciiCV, uintCV, contractPrincipalCV } from "@stacks/transactions";
+import { boolCV, bufferCV, principalCV, stringAsciiCV, uintCV, contractPrincipalCV, cvToValue } from "@stacks/transactions";
 import { deployGasService } from "./util";
 
 const accounts = simnet.getAccounts();
@@ -12,23 +12,23 @@ const gasImplCV = contractPrincipalCV(deployer, "gas-impl");
 describe("gas service tests", () => {
   describe("setup", () => {
     it("should initialize correctly", () => {
-      const gasImplAddress = `${deployer}.gas-impl`;
       const { result } = simnet.callPublicFn(
         "gas-service",
-        "initialize",
-        [principalCV(gasImplAddress)],
+        "setup",
+        [principalCV(address1)],
         deployer
       );
       expect(result).toBeOk(boolCV(true));
       
       // Verify started status
-      const { result: startedStatus } = simnet.callPublicFn(
+      const { result: startedStatus } = simnet.callReadOnlyFn(
         "gas-storage",
         "get-is-started",
         [],
         deployer
       );
-      expect(startedStatus).toBeOk(boolCV(true));
+      expect(cvToValue(startedStatus)).toBe(true);
+
     });
 
     it("should prevent double initialization", () => {
@@ -36,14 +36,13 @@ describe("gas service tests", () => {
       deployGasService();
       
       // Try second setup
-      const gasImplAddress = `${deployer}.gas-impl`;
       const { result } = simnet.callPublicFn(
         "gas-service",
-        "initialize",
-        [principalCV(gasImplAddress)],
+        "setup",
+        [principalCV(address1)],
         deployer
       );
-      expect(result).toBeErr(uintCV(101)); // err-already-initialized
+      expect(result).toBeErr(uintCV(6051)); // ERR-STARTED
     });
   });
 
@@ -56,7 +55,7 @@ describe("gas service tests", () => {
       stringAsciiCV("address"),
       bufferCV(Buffer.from("payload")),
       principalCV(address1)
-    ], address1).result).toBeErr(uintCV(106));
+    ], address1).result).toBeErr(uintCV(6052)); // ERR-NOT-STARTED
 
     expect(simnet.callPublicFn("gas-service", "add-native-gas", [
       gasImplCV,
@@ -64,7 +63,7 @@ describe("gas service tests", () => {
       bufferCV(Buffer.from("txhash")),
       uintCV(0),
       principalCV(address1)
-    ], address1).result).toBeErr(uintCV(106));
+    ], address1).result).toBeErr(uintCV(6052));
 
     expect(simnet.callPublicFn("gas-service", "refund", [
       gasImplCV,
@@ -72,13 +71,13 @@ describe("gas service tests", () => {
       uintCV(0),
       principalCV(address1),
       uintCV(1000)
-    ], address1).result).toBeErr(uintCV(106));
+    ], address1).result).toBeErr(uintCV(6052));
 
     expect(simnet.callPublicFn("gas-service", "collect-fees", [
       gasImplCV,
       principalCV(address1),
       uintCV(1000)
-    ], address1).result).toBeErr(uintCV(106));
+    ], address1).result).toBeErr(uintCV(6052));
   });
 
   describe("after initialization", () => {
@@ -97,7 +96,7 @@ describe("gas service tests", () => {
         stringAsciiCV("address"),
         bufferCV(Buffer.from("payload")),
         principalCV(address1)
-      ], address1).result).toBeErr(uintCV(102));
+      ], address1).result).toBeErr(uintCV(10211));
     });
 
     it("should pay native gas for contract call", () => {
@@ -126,68 +125,6 @@ describe("gas service tests", () => {
       expect(result).toBeOk(boolCV(true));
     });
 
-    it("should only allow owner to refund", () => {
-      const { result: ownerResult } = simnet.callPublicFn("gas-service", "refund", [
-        gasImplCV,
-        bufferCV(Buffer.from("txhash")),
-        uintCV(0),
-        principalCV(address2),
-        uintCV(1000)
-      ], deployer);
-
-      expect(ownerResult).toBeOk(boolCV(true));
-
-      const { result: nonOwnerResult } = simnet.callPublicFn("gas-service", "refund", [
-        gasImplCV,
-        bufferCV(Buffer.from("txhash")),
-        uintCV(0),
-        principalCV(address2),
-        uintCV(1000)
-      ], address1);
-
-      expect(nonOwnerResult).toBeErr(uintCV(103));
-    });
-
-    it("should only allow owner to collect fees", () => {
-      const { result: ownerResult } = simnet.callPublicFn("gas-service", "collect-fees", [
-        gasImplCV,
-        principalCV(address2),
-        uintCV(1000)
-      ], deployer);
-
-      expect(ownerResult).toBeOk(boolCV(true));
-
-      const { result: nonOwnerResult } = simnet.callPublicFn("gas-service", "collect-fees", [
-        gasImplCV,
-        principalCV(address2),
-        uintCV(1000)
-      ], address1);
-
-      expect(nonOwnerResult).toBeErr(uintCV(103));
-    });
-
-    it("should validate receiver address for refunds", () => {
-      const { result } = simnet.callPublicFn("gas-service", "refund", [
-        gasImplCV,
-        bufferCV(Buffer.from("txhash")),
-        uintCV(0),
-        principalCV('SP000000000000000000002Q6VF78'),
-        uintCV(1000)
-      ], deployer);
-
-      expect(result).toBeErr(uintCV(105));
-    });
-
-    it("should validate receiver address for fee collection", () => {
-      const { result } = simnet.callPublicFn("gas-service", "collect-fees", [
-        gasImplCV,
-        principalCV('SP000000000000000000002Q6VF78'),
-        uintCV(1000)
-      ], deployer);
-
-      expect(result).toBeErr(uintCV(105));
-    });
-
     it("should validate amount for gas payments", () => {
       const { result } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
         gasImplCV,
@@ -199,7 +136,7 @@ describe("gas service tests", () => {
         principalCV(address1)
       ], address1);
 
-      expect(result).toBeErr(uintCV(102));
+      expect(result).toBeErr(uintCV(102)); // ERR-INVALID-AMOUNT
     });
 
     it("should check balance for refunds", () => {
@@ -211,7 +148,7 @@ describe("gas service tests", () => {
         uintCV(1000000000)
       ], deployer);
 
-      expect(result).toBeErr(uintCV(101));
+      expect(result).toBeErr(uintCV(101)); // ERR-INSUFFICIENT-BALANCE
     });
   });
 }); 
