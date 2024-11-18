@@ -18,16 +18,16 @@ Schedules a task to be finalized at a later time. The `eta` p(execution time) sp
 )
 ```
 
-**Payload Format for Gateway Implementation Update**
+**Payload Format for a Implementation Update**
 ```
 {
-  target: principal, ;; new gateway implementation contract address
+  target: principal, ;; new implementation contract address
   eta: uint, ;; unix timestamp in seconds
   type: u1  ;; update type
 }
 ```
 
-**Payload Format for Gateway Governance Update**
+**Payload Format for a Governance Update**
 
 ```
 {
