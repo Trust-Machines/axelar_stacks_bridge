@@ -16,9 +16,23 @@ plan:
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
+            contract-name: gas-storage
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 647653
+            path: contracts/gas-storage.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gas-impl
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 647653
+            path: contracts/gas-impl.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
             contract-name: gas-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 53140
+            cost: 647653
             path: contracts/gas-service.clar
             anchor-block-only: true
             clarity-version: 2
@@ -89,6 +103,13 @@ plan:
                 {chain-name: "axelarnet", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "avalanche-fuji", address: "hub"})'
               - '"axelarnet"'
+            cost: 5960
+        - contract-call:
+            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gas-service
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            method: setup
+            parameters:
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
             cost: 5960
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gateway
