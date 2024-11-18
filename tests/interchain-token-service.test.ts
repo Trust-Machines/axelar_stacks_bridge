@@ -553,7 +553,7 @@ describe("Interchain Token Service", () => {
       expect(stxTransfer.data).toStrictEqual({
         amount: "100",
         memo: "",
-        recipient: `${deployer}.gas-service`,
+        recipient: `${deployer}.gas-impl`,
         sender: address1,
       });
       const messageData = {
@@ -863,7 +863,7 @@ describe("Interchain Token Service", () => {
       expect(gasTransfer).toStrictEqual(
         buildSTXTransferEvent({
           amount: gasValue,
-          recipient: `${deployer}.gas-service`,
+          recipient: `${deployer}.gas-impl`,
           sender: deployer,
         }),
       );
@@ -2132,6 +2132,29 @@ describe("Interchain Token Service", () => {
       const amount = 100;
       const sender = deployer;
       const recipient = `${deployer}.failed-interchain-executable`;
+      simnet.deployContract(
+        "failed-interchain-executable",
+        `
+        ;; title: failed-interchain-executable
+        (impl-trait .traits.interchain-token-executable-trait)
+
+        (define-constant ERR-NOT-AUTHORIZED (err u1151))
+        (define-public (execute-with-interchain-token
+                (source-chain (string-ascii 20))
+                (message-id (string-ascii 128))
+                (source-address (buff 128))
+                (payload (buff 64000))
+                (token-id (buff 32))
+                (tokenAddress principal)
+                (amount uint))
+            (begin
+                (asserts! (is-eq contract-caller .interchain-token-service-impl) ERR-NOT-AUTHORIZED)
+                (try! (if true (err u8051) (ok u0)))
+                (ok (keccak256 (unwrap-panic (to-consensus-buff? "its-execute-success"))))))
+        `,
+        { clarityVersion: 2 },
+        deployer,
+      );
       const tokenAddress = `${deployer}.native-interchain-token`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
@@ -2596,14 +2619,20 @@ describe("Interchain Token Service", () => {
         amount: 1000,
         minter: deployer,
       });
-      setFlowLimit({
-        tokenId,
-        tokenManagerAddress: Cl.contractPrincipal(
-          deployer,
-          "native-interchain-token",
-        ),
-        limit: Cl.uint(500),
-      });
+      expect(
+        setFlowLimit({
+          tokenId,
+          tokenManagerAddress: Cl.contractPrincipal(
+            deployer,
+            "native-interchain-token",
+          ),
+          limit: Cl.uint(500),
+        }).result,
+      ).toBeOk(Cl.bool(true));
+
+      expect(getFlowLimit("native-interchain-token").result).toBeOk(
+        Cl.uint(500),
+      );
       expect(receiveMintBurnToken(501).result).toBeErr(
         NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"],
       );

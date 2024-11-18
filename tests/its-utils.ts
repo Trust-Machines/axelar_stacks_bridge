@@ -14,7 +14,14 @@ import {
 
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
-import { deployGateway, gatewayImplCV, makeProofCV, signersToCv } from "./util";
+import {
+  deployGasService,
+  deployGateway,
+  gasImplContract,
+  gatewayImplCV,
+  makeProofCV,
+  signersToCv,
+} from "./util";
 import { Signers } from "./types";
 import {
   TokenType,
@@ -99,6 +106,7 @@ export function deployTokenManager({
     "deploy-token-manager",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
@@ -371,6 +379,7 @@ export function deployRemoteInterchainToken({
     "deploy-remote-interchain-token",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
@@ -406,6 +415,7 @@ export function executeDeployInterchainToken({
     "execute-deploy-interchain-token",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
@@ -507,6 +517,7 @@ export function deployInterchainToken({
     "deploy-interchain-token",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       Cl.buffer(salt),
       token,
@@ -548,6 +559,7 @@ export function executeDeployTokenManager({
     "execute-deploy-token-manager",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       Cl.stringAscii(sourceChain),
       Cl.stringAscii(messageId),
@@ -592,6 +604,7 @@ export function interchainTransfer({
     "interchain-transfer",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       tokenManagerAddress,
       tokenAddress,
@@ -935,6 +948,7 @@ export function callContractWithInterchainToken({
     "call-contract-with-interchain-token",
     [
       gatewayImplCV,
+      gasImplContract,
       impl,
       tokenManagerAddress,
       tokenAddress,
@@ -984,6 +998,7 @@ export function setupService(proofSigners: Signers, customITSImpl?: string) {
     ).result,
   ).toBeOk(Cl.bool(true));
   deployGateway(proofSigners);
+  deployGasService();
 }
 
 export function setFlowLimit({

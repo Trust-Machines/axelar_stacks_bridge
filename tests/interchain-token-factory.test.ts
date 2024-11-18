@@ -392,7 +392,7 @@ describe("interchain-token-factory", () => {
       expect(gasStxTransferEvent.data).toStrictEqual({
         amount: "100",
         memo: "",
-        recipient: `${deployer}.gas-service`,
+        recipient: `${deployer}.gas-impl`,
         sender: address1,
       });
       expect(gasPaidNotification.data.value).toBeTuple({
