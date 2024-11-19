@@ -50,17 +50,14 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
-            contract-name: traits
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/traits.clar
-            clarity-version: 1
-      epoch: "2.05"
-    - id: 1
-      transactions:
-        - emulated-contract-publish:
             contract-name: gas-storage
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/gas-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: traits
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/traits.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: gas-impl

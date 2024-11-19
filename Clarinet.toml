@@ -1,29 +1,28 @@
 [project]
-name = 'axelar'
+name = 'stacks-axelar'
 description = ''
 authors = []
-telemetry = false
+telemetry = true
+cache_dir = './.cache'
 requirements = []
-boot_contracts = ["pox", "costs-v2", "bns"]
 
 [contracts.traits]
 path = 'contracts/traits.clar'
+clarity_version = 2
+epoch = 2.5
 
 [contracts.gas-storage]
 path = 'contracts/gas-storage.clar'
-depends_on = ['traits']
 clarity_version = 2
 epoch = 2.5
 
 [contracts.gas-impl]
 path = 'contracts/gas-impl.clar'
-depends_on = ['traits', 'gas-storage']
 clarity_version = 2
 epoch = 2.5
 
 [contracts.gas-service]
 path = 'contracts/gas-service.clar'
-depends_on = ['traits', 'gas-impl', 'gas-storage']
 clarity_version = 2
 epoch = 2.5
 
@@ -92,6 +91,11 @@ path = 'contracts/token-manager.clar'
 clarity_version = 2
 epoch = 2.5
 
-[repl]
-costs_version = 2
-parser_version = 2
+[repl.analysis]
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
