@@ -13,17 +13,6 @@ const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas storage tests", () => {
-    it("should only allow proxy to set operator", () => {
-        // Direct call from address1 should fail
-        const { result } = simnet.callPublicFn(
-            "gas-storage", 
-            "set-operator", 
-            [principalCV(address1)], 
-            address1
-        );
-        expect(result).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
-    });
-
     it("should manage started status", () => {
         // Check initial status
         const { result: initialStatus } = simnet.callReadOnlyFn(
@@ -47,7 +36,7 @@ describe("gas storage tests", () => {
         simnet.callPublicFn(
             "gas-service",
             "setup",
-            [principalCV(address1)],
+            [],
             deployer
         );
 
@@ -84,7 +73,7 @@ describe("gas storage tests", () => {
         simnet.callPublicFn(
             "gas-service",
             "setup",
-            [principalCV(address1)],
+            [],
             deployer
         );
 

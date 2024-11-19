@@ -15,7 +15,7 @@ describe("gas service tests", () => {
       const { result } = simnet.callPublicFn(
         "gas-service",
         "setup",
-        [principalCV(address1)],
+        [],
         deployer
       );
       expect(result).toBeOk(boolCV(true));
@@ -39,7 +39,7 @@ describe("gas service tests", () => {
       const { result } = simnet.callPublicFn(
         "gas-service",
         "setup",
-        [principalCV(address1)],
+        [],
         deployer
       );
       expect(result).toBeErr(uintCV(6051)); // ERR-STARTED

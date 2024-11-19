@@ -127,39 +127,26 @@
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
-(define-private (is-governance) (is-eq contract-caller (contract-call? .gas-storage get-governance)))
-
-(define-public (set-impl (new principal))
+(define-public (set-impl (gas-impl principal))
     (let
         (
+            (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .gas-storage get-impl))
+            
         ) 
-        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
-        (try! (contract-call? .gas-storage set-impl new))
+        (asserts! (is-eq contract-caller governance-impl) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gas-storage set-impl gas-impl))
         (print {
-            type: "gas-impl-updated",
+            type: "gas-impl-updgraded",
             prev: prev,
-            new: new
+            new: gas-impl
         })
         (ok true)
     )
 )
 
-(define-public (set-governance (new principal))
-    (let
-        (
-            (prev (contract-call? .gas-storage get-governance))
-        ) 
-        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
-        (try! (contract-call? .gas-storage set-governance new))
-        (print {
-            type: "gas-governance-updated",
-            prev: prev,
-            new: new
-        })
-        (ok true)
-    )
-)
+(define-public (set-governance (governance principal))
+    (ok true))
 
 
 ;; ######################
@@ -171,12 +158,9 @@
 (define-constant ERR-STARTED (err u6051))
 
 ;; Constructor function
-(define-public (setup
-    (operator_ principal)
-)
+(define-public (setup)
     (begin
         (asserts! (is-eq (contract-call? .gas-storage get-is-started) false) ERR-STARTED)
-        (try! (contract-call? .gas-storage set-operator operator_))
         (try! (contract-call? .gas-storage start))
         (ok true)
     )

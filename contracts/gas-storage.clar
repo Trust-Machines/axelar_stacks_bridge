@@ -38,30 +38,6 @@
     )
 )
 
-;; Gas operator
-(define-data-var operator principal contract-caller)
-
-(define-read-only (get-operator) (var-get operator))
-
-(define-public (set-operator (new-operator principal)) 
-    (begin
-        (asserts! (is-eq (is-proxy-or-impl) true) ERR-UNAUTHORIZED)
-        (ok (var-set operator new-operator))
-    )
-)
-
-;; Governance contract address
-(define-data-var governance principal .governance)
-
-(define-read-only (get-governance) (var-get governance))
-
-(define-public (set-governance (new principal)) 
-    (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (ok (var-set governance new))
-    )
-)
-
 ;; ######################
 ;; ######################
 ;; ####### Events #######

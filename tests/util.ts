@@ -237,10 +237,6 @@ export const gatewayImplCV = contractPrincipalCV(accounts.get("deployer")!, "gat
 export const gasImplContract = contractPrincipalCV(accounts.get("deployer")!, "gas-impl");
 
 export const deployGasService = () => {
-    const operator = principalCV(operatorAddress);
-
-    const {result} = simnet.callPublicFn("gas-service", "setup", [
-        operator, 
-    ], contractCaller)
+    const {result} = simnet.callPublicFn("gas-service", "setup", [], contractCaller)
     expect(result).toBeOk(boolCV(true));
 };
