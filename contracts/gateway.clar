@@ -18,7 +18,7 @@
     (payload (buff 64000))
 )
     (begin 
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload contract-caller)
     )
 )
@@ -29,7 +29,7 @@
     (proof (buff 16384))
 )
     (begin
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl approve-messages messages proof)
     )
 )
@@ -42,7 +42,7 @@
     (payload-hash (buff 32))
 )
     (begin
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl validate-message source-chain message-id source-address payload-hash contract-caller)
     )
 )
@@ -53,14 +53,14 @@
     (proof (buff 16384))
 )
     (begin
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl rotate-signers new-signers proof)
     )
 )
 
 (define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
     (begin
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl transfer-operatorship new-operator)
     )
 )
@@ -68,7 +68,7 @@
 ;; General purose proxy call 
 (define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
-        (asserts! (is-eq (is-correct-impl gateway-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl dispatch fn data)
     )
 )
@@ -88,7 +88,7 @@
         (
             (prev (contract-call? .gateway-storage get-impl))
         ) 
-        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
+        (asserts! (is-governance) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-impl new))
         (print {
             type: "gateway-impl-updated",
@@ -104,7 +104,7 @@
         (
             (prev (contract-call? .gateway-storage get-governance))
         ) 
-        (asserts! (is-eq (is-governance) true) ERR-UNAUTHORIZED)
+        (asserts! (is-governance) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-governance new))
         (print {
             type: "gateway-governance-updated",
