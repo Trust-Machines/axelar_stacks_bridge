@@ -23,8 +23,8 @@
     (sender principal)
 )
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (contract-call? .gateway-storage emit-contract-call sender destination-chain destination-contract-address payload (keccak256 payload)))
         (ok true)
     )
@@ -128,8 +128,8 @@
             messages) ERR-MESSAGES-DATA))
              (data-hash (data-hash-from-messages messages_)
         ))
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
         (map approve-message messages_)
         (ok true)
@@ -159,8 +159,8 @@
                 payload-hash: payload-hash
             }))
     )
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
         (try! (contract-call? .gateway-storage emit-message-executed command-id source-chain message-id))
@@ -230,8 +230,8 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
         (try! (contract-call? .gateway-storage emit-transfer-operatorship new-operator))
@@ -569,7 +569,7 @@
                 (new-signers-hash (get-signers-hash new-signers))
                 (new-epoch (+ (get-epoch) u1))
             )
-            (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+            (asserts! (is-proxy) ERR-UNAUTHORIZED)
             (asserts! (is-none (get-epoch-by-signer-hash new-signers-hash)) ERR-DUPLICATE-SIGNERS)
             (try! (validate-signers new-signers))
             (try! (update-rotation-timestamp enforce-rotation-delay))
@@ -593,8 +593,8 @@
     (proof (buff 16384))
 )
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (let
             (
                 (new-signers_ (unwrap! (from-consensus-buff? {
@@ -630,8 +630,8 @@
 
 (define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (ok true)
     )
 )
