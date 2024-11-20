@@ -104,3 +104,50 @@
 (define-read-only (get-balance)
     (ok (stx-get-balance (as-contract tx-sender)))
 )
+
+;; Add unimplemented functions from the trait
+(define-public (pay-gas-for-contract-call
+    (amount uint)
+    (sender principal)
+    (destination-chain (string-ascii 20))
+    (destination-address (string-ascii 128))
+    (payload (buff 64000))
+    (refund-address principal))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (err u103))  ;; err-not-implemented
+)
+
+(define-public (add-gas
+    (amount uint)
+    (sender principal)
+    (tx-hash (buff 32))
+    (log-index uint)
+    (refund-address principal))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (err u103))  ;; err-not-implemented
+)
+
+(define-public (pay-native-gas-for-express-call
+    (amount uint)
+    (sender principal)
+    (destination-chain (string-ascii 20))
+    (destination-address (string-ascii 128))
+    (payload (buff 64000))
+    (refund-address principal))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (err u103))  ;; err-not-implemented
+)
+
+(define-public (add-native-express-gas
+    (amount uint)
+    (sender principal)
+    (tx-hash (buff 32))
+    (log-index uint)
+    (refund-address principal))
+    (begin
+        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (err u103))  ;; err-not-implemented
+)
