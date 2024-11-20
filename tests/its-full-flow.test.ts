@@ -370,7 +370,7 @@ describe("Interchain Token Service Full Flow", () => {
           destinationChain: chain,
           gasValue: 100,
           sender: address1,
-          minterHex: cvToHex(Cl.address(address1)),
+          minter: address1,
         });
 
         expect(deployTx.result).toBeOk(Cl.bool(true));
