@@ -193,6 +193,7 @@ describe("gas service tests", () => {
     // Unimplemented function tests
     it("should return not implemented for legacy functions", () => {
       expect(simnet.callPublicFn("gas-service", "pay-gas-for-contract-call", [
+        gasImplContract,
         uintCV(1000),
         principalCV(address1),
         stringAsciiCV("chain"),
@@ -202,6 +203,7 @@ describe("gas service tests", () => {
       ], address1).result).toBeErr(uintCV(103)); // err-not-implemented
       
       expect(simnet.callPublicFn("gas-service", "add-gas", [
+        gasImplContract,
         uintCV(1000),
         principalCV(address1),
         bufferCV(Buffer.from("txhash")),
@@ -210,6 +212,7 @@ describe("gas service tests", () => {
       ], address1).result).toBeErr(uintCV(103));
       
       expect(simnet.callPublicFn("gas-service", "pay-native-gas-for-express-call", [
+        gasImplContract,
         uintCV(1000),
         principalCV(address1),
         stringAsciiCV("chain"),
@@ -219,6 +222,7 @@ describe("gas service tests", () => {
       ], address1).result).toBeErr(uintCV(103));
       
       expect(simnet.callPublicFn("gas-service", "add-native-express-gas", [
+        gasImplContract,
         uintCV(1000),
         principalCV(address1),
         bufferCV(Buffer.from("txhash")),

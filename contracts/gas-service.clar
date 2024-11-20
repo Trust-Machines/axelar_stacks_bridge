@@ -92,38 +92,58 @@
 
 ;; Add unimplemented functions from the trait
 (define-public (pay-gas-for-contract-call
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
-    (err u103))  ;; err-not-implemented
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl pay-gas-for-contract-call amount sender destination-chain destination-address payload refund-address)
+    )
+)
 
 (define-public (add-gas
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
-    (err u103))  ;; err-not-implemented
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl add-gas amount sender tx-hash log-index refund-address)
+    )
+)
 
 (define-public (pay-native-gas-for-express-call
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
-    (err u103))  ;; err-not-implemented
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl pay-native-gas-for-express-call amount sender destination-chain destination-address payload refund-address)
+    )
+)
 
 (define-public (add-native-express-gas
+    (gas-impl <gas-impl-trait>)
     (amount uint)
     (sender principal)
     (tx-hash (buff 32))
     (log-index uint)
     (refund-address principal))
-    (err u103))  ;; err-not-implemented 
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl add-native-express-gas amount sender tx-hash log-index refund-address)
+    )
+)
 
 
 ;; ######################
