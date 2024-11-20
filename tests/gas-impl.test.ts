@@ -116,6 +116,9 @@ describe("gas-impl tests", () => {
   });
 
   describe("refund", () => {
+    // Use deployer address as the owner
+    const deployer = simnet.deployer;
+    
     beforeEach(() => {
       // Add initial balance for refund tests
       simnet.callPublicFn(
@@ -132,7 +135,7 @@ describe("gas-impl tests", () => {
       );
     });
 
-    it("should handle valid refund", () => {
+    it("should handle valid refund when called by owner", () => {
       const { result } = simnet.callPublicFn(
         "gas-service",
         "refund",
@@ -143,9 +146,25 @@ describe("gas-impl tests", () => {
           principalCV(address1),
           uintCV(1000)
         ],
-        address1
+        deployer // Use deployer address
       );
       expect(result).toBeOk(boolCV(true));
+    });
+
+    it("should fail when called by non-owner", () => {
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "refund",
+        [
+          gasImplContract,
+          bufferCV(Buffer.from("tx-hash")),
+          uintCV(0),
+          principalCV(address1),
+          uintCV(1000)
+        ],
+        address2 // Call from non-owner address
+      );
+      expect(result).toBeErr(uintCV(10116)); // ERR-OWNER-ONLY
     });
 
     it("should fail with insufficient balance", () => {
@@ -159,87 +178,73 @@ describe("gas-impl tests", () => {
           principalCV(address1),
           uintCV(10000) // More than available
         ],
-        address1
+        deployer
       );
-      expect(result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
     });
+});
 
-    it("should fail with invalid principal", () => {
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "refund",
-        [
-          gasImplContract,
-          bufferCV(Buffer.from("tx-hash")),
-          uintCV(0),
-          principalCV('SP000000000000000000002Q6VF78'), // NULL principal
-          uintCV(1000)
-        ],
-        address1
-      );
-      expect(result).toBeErr(uintCV(10115)); // ERR-INVALID-PRINCIPAL
-    });
+describe("collect-fees", () => {
+  const deployer = simnet.deployer;
+
+  beforeEach(() => {
+    // Add initial balance for fee collection tests
+    simnet.callPublicFn(
+      "gas-service",
+      "add-native-gas",
+      [
+        gasImplContract,
+        uintCV(5000),
+        bufferCV(Buffer.from("tx-hash")),
+        uintCV(0),
+        principalCV(address1)
+      ],
+      address1
+    );
   });
 
-  describe("collect-fees", () => {
-    beforeEach(() => {
-      // Add initial balance for fee collection tests
-      simnet.callPublicFn(
-        "gas-service",
-        "add-native-gas",
-        [
-          gasImplContract,
-          uintCV(5000),
-          bufferCV(Buffer.from("tx-hash")),
-          uintCV(0),
-          principalCV(address1)
-        ],
-        address1
-      );
-    });
-
-    it("should handle valid fee collection", () => {
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "collect-fees",
-        [
-          gasImplContract,
-          principalCV(address2),
-          uintCV(1000)
-        ],
-        address1
-      );
-      expect(result).toBeOk(boolCV(true));
-    });
-
-    it("should fail with insufficient balance", () => {
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "collect-fees",
-        [
-          gasImplContract,
-          principalCV(address2),
-          uintCV(10000) // More than available
-        ],
-        address1
-      );
-      expect(result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
-    });
-
-    it("should fail with invalid principal", () => {
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "collect-fees",
-        [
-          gasImplContract,
-          principalCV('SP000000000000000000002Q6VF78'), // NULL principal
-          uintCV(1000)
-        ],
-        address1
-      );
-      expect(result).toBeErr(uintCV(10115)); // ERR-INVALID-PRINCIPAL
-    });
+  it("should handle valid fee collection when called by owner", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-service",
+      "collect-fees",
+      [
+        gasImplContract,
+        principalCV(address2),
+        uintCV(1000)
+      ],
+      deployer // Call from owner address
+    );
+    expect(result).toBeOk(boolCV(true));
   });
+
+  it("should fail when called by non-owner", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-service",
+      "collect-fees",
+      [
+        gasImplContract,
+        principalCV(address2),
+        uintCV(1000)
+      ],
+      address1 // Call from non-owner address
+    );
+    expect(result).toBeErr(uintCV(10116)); // ERR-OWNER-ONLY
+  });
+
+  it("should fail with insufficient balance", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-service",
+      "collect-fees",
+      [
+        gasImplContract,
+        principalCV(address2),
+        uintCV(10000) // More than available
+      ],
+      deployer // Call from owner address
+    );
+    expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+  });
+});
 
   describe("get-balance", () => {
     it("should return correct balance", () => {
@@ -275,5 +280,37 @@ describe("gas-impl tests", () => {
       ).result;
       expect(result).toBeOk(uintCV(2000));
     });
+  });
+});
+
+describe("transfer-ownership", () => {
+  beforeEach(() => {
+    deployGasService();
+  });
+  
+  it("should handle valid ownership transfer", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-service",
+      "transfer-ownership",
+      [
+        gasImplContract,
+        principalCV(address2)
+      ],
+      simnet.deployer
+    );
+    expect(result).toBeOk(boolCV(true));
+  });
+
+  it("should fail when called by non-owner", () => {
+    const { result } = simnet.callPublicFn(
+      "gas-service",
+      "transfer-ownership",
+      [
+        gasImplContract,
+        principalCV(address2)
+      ],
+      address1
+    );
+    expect(result).toBeErr(uintCV(10151)); // ERR-ONLY-OWNER
   });
 });

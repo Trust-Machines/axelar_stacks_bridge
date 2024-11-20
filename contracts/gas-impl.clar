@@ -1,13 +1,13 @@
 (impl-trait .traits.gas-service-impl-trait)
 
 ;; Define constants
-(define-constant ERR-INSUFFICIENT-BALANCE (err u10111))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u10114))
 (define-constant ERR-INVALID-AMOUNT (err u10112))
-
-(define-constant NULL-PRINCIPAL 'SP000000000000000000002Q6VF78)
 (define-constant ERR-INVALID-PRINCIPAL (err u10115))
 (define-constant ERR-NOT-STARTED (err u60152))
 (define-constant ERR-UNAUTHORIZED (err u10111))
+(define-constant ERR-OWNER-ONLY (err u10116))
+(define-constant ERR-NOT-IMPLEMENTED (err u10113))
 
 ;; Proxy contract reference
 (define-constant PROXY .gas-service)
@@ -81,11 +81,6 @@
     )
 )
 
-(define-private (validate-principal (address principal))
-    (if (not (is-eq address NULL-PRINCIPAL))
-        (ok true)
-        ERR-INVALID-PRINCIPAL))
-
 (define-public (refund
     (tx-hash (buff 32))
     (log-index uint)
@@ -94,9 +89,9 @@
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
+        (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
-        (try! (validate-principal receiver))
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))
         (try! (contract-call? .gas-storage emit-refund-event
             tx-hash
@@ -114,9 +109,10 @@
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
+        ;; Ensure only the owner can call this function
+        (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
-        (try! (validate-principal receiver))
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))
         (try! (contract-call? .gas-storage emit-fees-collected-event receiver amount))
         (ok true)
@@ -137,7 +133,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u103))  ;; err-not-implemented
+        (err u10113))  ;; err-not-implemented
 )
 
 (define-public (add-gas
@@ -148,7 +144,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u103))  ;; err-not-implemented
+        (err u10113))  ;; err-not-implemented
 )
 
 (define-public (pay-native-gas-for-express-call
@@ -160,7 +156,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u103))  ;; err-not-implemented
+        (err u10113))  ;; err-not-implemented
 )
 
 (define-public (add-native-express-gas
@@ -171,5 +167,5 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u103))  ;; err-not-implemented
+        (err u10113))  ;; err-not-implemented
 )
