@@ -1,13 +1,11 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { boolCV, bufferCV, principalCV, stringAsciiCV, uintCV, contractPrincipalCV, cvToValue } from "@stacks/transactions";
-import { deployGasService } from "./util";
+import { deployGasService, gasImplContract } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
-
-const gasImplCV = contractPrincipalCV(deployer, "gas-impl");
 
 describe("gas service tests", () => {
   describe("setup", () => {
@@ -48,7 +46,7 @@ describe("gas service tests", () => {
 
   it("should revert all public functions before initialization", () => {
     expect(simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
-      gasImplCV,
+      gasImplContract,
       uintCV(1000),
       principalCV(address1),
       stringAsciiCV("chain"),
@@ -58,7 +56,7 @@ describe("gas service tests", () => {
     ], address1).result).toBeErr(uintCV(6052)); // ERR-NOT-STARTED
 
     expect(simnet.callPublicFn("gas-service", "add-native-gas", [
-      gasImplCV,
+      gasImplContract,
       uintCV(1000),
       bufferCV(Buffer.from("txhash")),
       uintCV(0),
@@ -66,7 +64,7 @@ describe("gas service tests", () => {
     ], address1).result).toBeErr(uintCV(6052));
 
     expect(simnet.callPublicFn("gas-service", "refund", [
-      gasImplCV,
+      gasImplContract,
       bufferCV(Buffer.from("txhash")),
       uintCV(0),
       principalCV(address1),
@@ -74,7 +72,7 @@ describe("gas service tests", () => {
     ], address1).result).toBeErr(uintCV(6052));
 
     expect(simnet.callPublicFn("gas-service", "collect-fees", [
-      gasImplCV,
+      gasImplContract,
       principalCV(address1),
       uintCV(1000)
     ], address1).result).toBeErr(uintCV(6052));
@@ -101,7 +99,7 @@ describe("gas service tests", () => {
 
     it("should pay native gas for contract call", () => {
       const { result } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
-        gasImplCV,
+        gasImplContract,
         uintCV(1000),
         principalCV(address1),
         stringAsciiCV("chain"),
@@ -115,7 +113,7 @@ describe("gas service tests", () => {
 
     it("should add native gas", () => {
       const { result } = simnet.callPublicFn("gas-service", "add-native-gas", [
-        gasImplCV,
+        gasImplContract,
         uintCV(1000),
         bufferCV(Buffer.from("txhash")),
         uintCV(0),
@@ -127,7 +125,7 @@ describe("gas service tests", () => {
 
     it("should validate amount for gas payments", () => {
       const { result } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
-        gasImplCV,
+        gasImplContract,
         uintCV(0),
         principalCV(address1),
         stringAsciiCV("chain"),
@@ -141,7 +139,7 @@ describe("gas service tests", () => {
 
     it("should check balance for refunds", () => {
       const { result } = simnet.callPublicFn("gas-service", "refund", [
-        gasImplCV,
+        gasImplContract,
         bufferCV(Buffer.from("txhash")),
         uintCV(0),
         principalCV(address2),
