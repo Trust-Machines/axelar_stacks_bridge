@@ -21,7 +21,7 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl
             pay-native-gas-for-contract-call
             amount
@@ -39,7 +39,7 @@
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl
             add-native-gas
             amount
@@ -55,7 +55,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl
             refund
             tx-hash
@@ -69,7 +69,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl
             collect-fees
             receiver
@@ -79,7 +79,7 @@
 ;; Read-only functions
 (define-public (get-balance (gas-impl <gas-impl-trait>))
     (begin
-        (asserts! (is-eq (is-correct-impl gas-impl) true) ERR-INVALID-IMPL)
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl get-balance))
 )
 

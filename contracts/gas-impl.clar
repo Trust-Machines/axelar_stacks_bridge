@@ -25,8 +25,8 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-paid-event
@@ -46,8 +46,8 @@
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-added-event
@@ -70,8 +70,8 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
         (try! (validate-principal receiver))
@@ -90,8 +90,8 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
-        (asserts! (is-eq (get-is-started) true) ERR-NOT-STARTED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
         (try! (validate-principal receiver))
@@ -114,7 +114,7 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (err u103))  ;; err-not-implemented
 )
 
@@ -125,7 +125,7 @@
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (err u103))  ;; err-not-implemented
 )
 
@@ -137,7 +137,7 @@
     (payload (buff 64000))
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (err u103))  ;; err-not-implemented
 )
 
@@ -148,6 +148,6 @@
     (log-index uint)
     (refund-address principal))
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (err u103))  ;; err-not-implemented
 )

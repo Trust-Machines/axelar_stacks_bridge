@@ -21,7 +21,7 @@
 
 (define-public (start) 
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set is-started true))
     )
 )
@@ -33,7 +33,7 @@
 
 (define-public (set-impl (new-impl principal)) 
     (begin
-        (asserts! (is-eq (is-proxy) true) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set impl new-impl))
     )
 )
@@ -51,7 +51,7 @@
     (destination-address (string-ascii 128))
     (payload-hash (buff 32)))
     (begin
-        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "native-gas-paid-for-contract-call",
             sender: sender,
@@ -69,7 +69,7 @@
     (tx-hash (buff 32))
     (log-index uint))
     (begin
-        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "native-gas-added",
             amount: amount,
@@ -85,7 +85,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "refunded",
             tx-hash: tx-hash,
@@ -99,7 +99,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-eq (is-impl) true) ERR-UNAUTHORIZED)
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "fees-collected",
             receiver: receiver,
