@@ -1,12 +1,12 @@
 (impl-trait .traits.gas-service-impl-trait)
 
 ;; Define constants
-(define-constant ERR-INSUFFICIENT-BALANCE (err u101))
-(define-constant ERR-INVALID-AMOUNT (err u102))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u10111))
+(define-constant ERR-INVALID-AMOUNT (err u10112))
 
 (define-constant NULL-PRINCIPAL 'SP000000000000000000002Q6VF78)
-(define-constant ERR-INVALID-PRINCIPAL (err u105))
-(define-constant ERR-NOT-STARTED (err u6052))
+(define-constant ERR-INVALID-PRINCIPAL (err u10115))
+(define-constant ERR-NOT-STARTED (err u60152))
 (define-constant ERR-UNAUTHORIZED (err u10111))
 
 ;; Proxy contract reference
@@ -15,6 +15,28 @@
 (define-private (is-proxy) (is-eq contract-caller PROXY))
 
 (define-read-only (get-is-started) (contract-call? .gas-storage get-is-started))
+
+;; ####################
+;; ####################
+;; ### Ownership ###
+;; ####################
+;; ####################
+
+(define-constant ERR-ONLY-OWNER (err u10151))
+
+(define-read-only (get-owner) (contract-call? .gas-storage get-owner))
+
+;; Transfers ownership to a new account
+(define-public (transfer-ownership (new-owner principal))
+    (begin
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
+        (asserts! (is-eq tx-sender (get-owner)) ERR-ONLY-OWNER)
+        (try! (contract-call? .gas-storage set-owner new-owner))
+        (try! (contract-call? .gas-storage emit-transfer-ownership new-owner))
+        (ok true)
+    )
+)
 
 ;; Public function for native gas payment for contract call
 (define-public (pay-native-gas-for-contract-call

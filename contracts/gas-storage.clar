@@ -38,6 +38,18 @@
     )
 )
 
+;; Gas owner
+(define-data-var owner principal contract-caller)
+
+(define-read-only (get-owner) (var-get owner))
+
+(define-public (set-owner (new-owner principal)) 
+    (begin
+        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (ok (var-set owner new-owner))
+    )
+)
+
 ;; ######################
 ;; ######################
 ;; ####### Events #######
@@ -106,3 +118,13 @@
             amount: amount
         })
         (ok true)))
+
+(define-public (emit-transfer-ownership
+        (new-owner principal)
+) 
+    (begin 
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
+        (print {type: "transfer-ownership", new-owner: new-owner})
+        (ok true)
+    )
+)

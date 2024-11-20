@@ -53,7 +53,7 @@ describe("gas service tests", () => {
       stringAsciiCV("address"),
       bufferCV(Buffer.from("payload")),
       principalCV(address1)
-    ], address1).result).toBeErr(uintCV(6052)); // ERR-NOT-STARTED
+    ], address1).result).toBeErr(uintCV(60152)); // ERR-NOT-STARTED
 
     expect(simnet.callPublicFn("gas-service", "add-native-gas", [
       gasImplContract,
@@ -61,7 +61,7 @@ describe("gas service tests", () => {
       bufferCV(Buffer.from("txhash")),
       uintCV(0),
       principalCV(address1)
-    ], address1).result).toBeErr(uintCV(6052));
+    ], address1).result).toBeErr(uintCV(60152));
 
     expect(simnet.callPublicFn("gas-service", "refund", [
       gasImplContract,
@@ -69,13 +69,13 @@ describe("gas service tests", () => {
       uintCV(0),
       principalCV(address1),
       uintCV(1000)
-    ], address1).result).toBeErr(uintCV(6052));
+    ], address1).result).toBeErr(uintCV(60152));
 
     expect(simnet.callPublicFn("gas-service", "collect-fees", [
       gasImplContract,
       principalCV(address1),
       uintCV(1000)
-    ], address1).result).toBeErr(uintCV(6052));
+    ], address1).result).toBeErr(uintCV(60152));
   });
 
   describe("after initialization", () => {
@@ -134,7 +134,7 @@ describe("gas service tests", () => {
         principalCV(address1)
       ], address1);
 
-      expect(result).toBeErr(uintCV(102)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
     });
 
     it("should check balance for refunds", () => {
@@ -146,7 +146,204 @@ describe("gas service tests", () => {
         uintCV(1000000000)
       ], deployer);
 
-      expect(result).toBeErr(uintCV(101)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
+    });
+
+    // Governance and Implementation tests
+    it("should only allow governance to set implementation", () => {
+      const newImpl = contractPrincipalCV(deployer, "new-impl");
+      
+      // Test with non-governance caller
+      expect(simnet.callPublicFn("gas-service", "set-impl", [
+        newImpl
+      ], address1).result).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
+    });
+
+    // Refund validation tests
+    it("should validate refund parameters", () => {
+      // Test with invalid tx hash
+      expect(simnet.callPublicFn("gas-service", "refund", [
+        gasImplContract,
+        bufferCV(Buffer.from("")),
+        uintCV(0),
+        principalCV(address1),
+        uintCV(1000)
+      ], address1).result).toBeErr(uintCV(10111));
+    });
+
+    // Fee collection tests
+    it("should validate fee collection", () => {
+      // Test collecting more than available balance
+      const balanceCV = simnet.callPublicFn(
+        "gas-service",
+        "get-balance",
+        [gasImplContract],
+        deployer
+      ).result;
+      
+      const balance = Number(cvToValue(balanceCV).value);
+      
+      expect(simnet.callPublicFn("gas-service", "collect-fees", [
+        gasImplContract,
+        principalCV(address1),
+        uintCV(balance + 1000)
+      ], address1).result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
+    });
+
+    // Unimplemented function tests
+    it("should return not implemented for legacy functions", () => {
+      expect(simnet.callPublicFn("gas-service", "pay-gas-for-contract-call", [
+        uintCV(1000),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1).result).toBeErr(uintCV(103)); // err-not-implemented
+      
+      expect(simnet.callPublicFn("gas-service", "add-gas", [
+        uintCV(1000),
+        principalCV(address1),
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address1)
+      ], address1).result).toBeErr(uintCV(103));
+      
+      expect(simnet.callPublicFn("gas-service", "pay-native-gas-for-express-call", [
+        uintCV(1000),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1).result).toBeErr(uintCV(103));
+      
+      expect(simnet.callPublicFn("gas-service", "add-native-express-gas", [
+        uintCV(1000),
+        principalCV(address1),
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address1)
+      ], address1).result).toBeErr(uintCV(103));
+    });
+
+    // Event emission tests
+    it("should emit events correctly", () => {
+      const { events } = simnet.callPublicFn("gas-service", "pay-native-gas-for-contract-call", [
+        gasImplContract,
+        uintCV(1000),
+        principalCV(address1),
+        stringAsciiCV("chain"),
+        stringAsciiCV("address"),
+        bufferCV(Buffer.from("payload")),
+        principalCV(address1)
+      ], address1);
+      
+      expect(events).toHaveLength(2);
+      expect(events[0].event).toBe("stx_transfer_event");
+      expect(events[1].event).toBe("print_event");
+      expect(events[1].data.topic).toBe("print");
+      // Verify event data
+    });
+
+    // Balance tracking tests
+    it("should track balances correctly across operations", () => {
+      const initialBalance = Number(cvToValue(simnet.callPublicFn(
+        "gas-service",
+        "get-balance",
+        [gasImplContract],
+        deployer
+      ).result).value);
+      
+      // Add gas
+      simnet.callPublicFn("gas-service", "add-native-gas", [
+        gasImplContract,
+        uintCV(1000),
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address1)
+      ], address1);
+      
+      // Verify balance increased
+      const afterAddBalance = Number(cvToValue(simnet.callPublicFn(
+        "gas-service",
+        "get-balance",
+        [gasImplContract],
+        deployer
+      ).result).value);
+      
+      expect(afterAddBalance).toBe(initialBalance + 1000);
+      
+      // Perform refund
+      simnet.callPublicFn("gas-service", "refund", [
+        gasImplContract,
+        bufferCV(Buffer.from("txhash")),
+        uintCV(0),
+        principalCV(address2),
+        uintCV(500)
+      ], deployer);
+      
+      // Verify balance decreased
+      const finalBalance = Number(cvToValue(simnet.callPublicFn(
+        "gas-service",
+        "get-balance",
+        [gasImplContract],
+        deployer
+      ).result).value);
+      
+      expect(finalBalance).toBe(afterAddBalance - 500);
+    });
+
+    // Add these new tests for transfer-ownership
+    describe("ownership management", () => {
+      it("should allow owner to transfer ownership", () => {
+        // First verify current owner
+        const ownerCV = simnet.callReadOnlyFn(
+          "gas-storage",
+          "get-owner",
+          [],
+          deployer
+        ).result;
+        expect(cvToValue(ownerCV)).toBe(deployer);
+
+        // Transfer ownership
+        const { result } = simnet.callPublicFn(
+          "gas-service",
+          "transfer-ownership",
+          [gasImplContract, principalCV(address1)],
+          deployer
+        );
+        expect(result).toBeOk(boolCV(true));
+
+        // Verify new owner
+        const newOwnerCV = simnet.callReadOnlyFn(
+          "gas-storage",
+          "get-owner",
+          [],
+          deployer
+        ).result;
+        expect(cvToValue(newOwnerCV)).toBe(address1);
+      });
+
+      it("should prevent non-owner from transferring ownership", () => {
+        // Attempt transfer from non-owner account
+        const { result } = simnet.callPublicFn(
+          "gas-service",
+          "transfer-ownership",
+          [gasImplContract, principalCV(address2)],
+          address1
+        );
+        expect(result).toBeErr(uintCV(10151)); // ERR-ONLY-OWNER
+
+        // Verify owner hasn't changed
+        const ownerCV = simnet.callReadOnlyFn(
+          "gas-storage",
+          "get-owner",
+          [],
+          deployer
+        ).result;
+        expect(cvToValue(ownerCV)).toBe(deployer);
+      });
     });
   });
 }); 

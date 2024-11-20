@@ -51,7 +51,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(102)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
     });
 
     it("should fail on direct call to implementation", () => {
@@ -111,7 +111,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(102)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
     });
   });
 
@@ -161,7 +161,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(101)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
     });
 
     it("should fail with invalid principal", () => {
@@ -177,7 +177,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(105)); // ERR-INVALID-PRINCIPAL
+      expect(result).toBeErr(uintCV(10115)); // ERR-INVALID-PRINCIPAL
     });
   });
 
@@ -223,7 +223,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(101)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(10111)); // ERR-INSUFFICIENT-BALANCE
     });
 
     it("should fail with invalid principal", () => {
@@ -237,7 +237,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(105)); // ERR-INVALID-PRINCIPAL
+      expect(result).toBeErr(uintCV(10115)); // ERR-INVALID-PRINCIPAL
     });
   });
 

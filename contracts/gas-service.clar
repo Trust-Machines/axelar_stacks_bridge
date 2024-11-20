@@ -83,6 +83,13 @@
         (contract-call? gas-impl get-balance))
 )
 
+(define-public (transfer-ownership (gas-impl <gas-impl-trait>) (new-owner principal))
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl transfer-ownership new-owner)
+    )
+)
+
 ;; Add unimplemented functions from the trait
 (define-public (pay-gas-for-contract-call
     (amount uint)
