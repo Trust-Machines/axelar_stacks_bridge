@@ -102,7 +102,6 @@
     )
 )
 
-;; Update collect-fees function with validation
 (define-public (collect-fees
     (receiver principal)
     (amount uint))
