@@ -8,12 +8,7 @@ import {
   contractPrincipalCV,
   cvToValue,
 } from "@stacks/transactions";
-import {
-  deployGasService,
-  deployGateway,
-  gasImplContract,
-  getSigners,
-} from "./util";
+import { deployGasService, gasImplContract } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
