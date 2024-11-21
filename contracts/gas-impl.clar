@@ -4,7 +4,6 @@
 (define-constant ERR-INSUFFICIENT-BALANCE (err u10114))
 (define-constant ERR-INVALID-AMOUNT (err u10112))
 (define-constant ERR-INVALID-PRINCIPAL (err u10115))
-(define-constant ERR-NOT-STARTED (err u60152))
 (define-constant ERR-UNAUTHORIZED (err u10111))
 (define-constant ERR-OWNER-ONLY (err u10116))
 (define-constant ERR-NOT-IMPLEMENTED (err u10113))
@@ -13,8 +12,6 @@
 (define-constant PROXY .gas-service)
 
 (define-private (is-proxy) (is-eq contract-caller PROXY))
-
-(define-read-only (get-is-started) (contract-call? .gas-storage get-is-started))
 
 ;; ####################
 ;; ####################
@@ -30,7 +27,6 @@
 (define-public (transfer-ownership (new-owner principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-owner)) ERR-ONLY-OWNER)
         (try! (contract-call? .gas-storage set-owner new-owner))
         (try! (contract-call? .gas-storage emit-transfer-ownership new-owner))
@@ -48,7 +44,6 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-paid-event
@@ -69,7 +64,6 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-added-event
@@ -88,7 +82,6 @@
     (amount uint))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (asserts! (get-is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
@@ -106,7 +99,6 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (get-is-started) ERR-NOT-STARTED)
         ;; Ensure only the owner can call this function
         (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)

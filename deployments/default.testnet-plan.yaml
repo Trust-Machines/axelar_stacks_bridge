@@ -149,11 +149,6 @@ plan:
               - "u16"
             cost: 5960
         - contract-call:
-            contract-id: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD.gas-service
-            expected-sender: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD
-            method: setup
-            cost: 5960
-        - contract-call:
             contract-id: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD.interchain-token-service
             expected-sender: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD
             method: setup

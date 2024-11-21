@@ -15,61 +15,6 @@ const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas storage tests", () => {
-  describe("started status management", () => {
-    it("should have correct initial status", () => {
-      const { result: initialStatus } = simnet.callReadOnlyFn(
-        "gas-storage",
-        "get-is-started",
-        [],
-        address1
-      );
-      expect(cvToValue(initialStatus)).toBe(false);
-    });
-
-    it("should prevent unauthorized start calls", () => {
-      // Direct start call should fail (not from proxy)
-      const { result: failedStart } = simnet.callPublicFn(
-        "gas-storage",
-        "start",
-        [],
-        address1
-      );
-      expect(failedStart).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
-    });
-
-    it("should allow start through gas-service", () => {
-      simnet.callPublicFn("gas-service", "setup", [], deployer);
-
-      const { result: updatedStatus } = simnet.callReadOnlyFn(
-        "gas-storage",
-        "get-is-started",
-        [],
-        address1
-      );
-      expect(cvToValue(updatedStatus)).toBe(true);
-    });
-
-    it("should prevent multiple start calls", () => {
-      // Try to start again through gas-service
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "setup",
-        [],
-        deployer
-      );
-      // Should still be successful but not change state
-      expect(result).toBeOk(boolCV(true));
-
-      const { result: status } = simnet.callReadOnlyFn(
-        "gas-storage",
-        "get-is-started",
-        [],
-        address1
-      );
-      expect(cvToValue(status)).toBe(true);
-    });
-  });
-
   describe("implementation contract management", () => {
     it("should have correct initial implementation", () => {
       const { result: initialImpl } = simnet.callReadOnlyFn(
@@ -93,10 +38,6 @@ describe("gas storage tests", () => {
   });
 
   describe("owner management", () => {
-    beforeEach(() => {
-      // Setup gas service before each test
-      simnet.callPublicFn("gas-service", "setup", [], deployer);
-    });
     it("should have correct initial owner", () => {
       const { result: owner } = simnet.callReadOnlyFn(
         "gas-storage",
@@ -141,11 +82,6 @@ describe("gas storage tests", () => {
   });
 
   describe("event emission", () => {
-    beforeEach(() => {
-      // Setup gas service before each test
-      simnet.callPublicFn("gas-service", "setup", [], deployer);
-    });
-
     it("should emit gas paid event correctly", () => {
       const { events } = simnet.callPublicFn(
         "gas-service",

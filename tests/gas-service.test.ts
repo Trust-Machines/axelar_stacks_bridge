@@ -8,7 +8,7 @@ import {
   contractPrincipalCV,
   cvToValue,
 } from "@stacks/transactions";
-import { deployGasService, gasImplContract } from "./util";
+import { gasImplContract } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -16,104 +16,7 @@ const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas service tests", () => {
-  describe("setup", () => {
-    it("should initialize correctly", () => {
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "setup",
-        [],
-        deployer
-      );
-      expect(result).toBeOk(boolCV(true));
-
-      // Verify started status
-      const { result: startedStatus } = simnet.callReadOnlyFn(
-        "gas-storage",
-        "get-is-started",
-        [],
-        deployer
-      );
-      expect(cvToValue(startedStatus)).toBe(true);
-    });
-
-    it("should prevent double initialization", () => {
-      // First setup
-      deployGasService();
-
-      // Try second setup
-      const { result } = simnet.callPublicFn(
-        "gas-service",
-        "setup",
-        [],
-        deployer
-      );
-      expect(result).toBeErr(uintCV(6051)); // ERR-STARTED
-    });
-  });
-
-  it("should revert all public functions before initialization", () => {
-    expect(
-      simnet.callPublicFn(
-        "gas-service",
-        "pay-native-gas-for-contract-call",
-        [
-          gasImplContract,
-          uintCV(1000),
-          principalCV(address1),
-          stringAsciiCV("chain"),
-          stringAsciiCV("address"),
-          bufferCV(Buffer.from("payload")),
-          principalCV(address1),
-        ],
-        address1
-      ).result
-    ).toBeErr(uintCV(60152)); // ERR-NOT-STARTED
-
-    expect(
-      simnet.callPublicFn(
-        "gas-service",
-        "add-native-gas",
-        [
-          gasImplContract,
-          uintCV(1000),
-          bufferCV(Buffer.from("txhash")),
-          uintCV(0),
-          principalCV(address1),
-        ],
-        address1
-      ).result
-    ).toBeErr(uintCV(60152));
-
-    expect(
-      simnet.callPublicFn(
-        "gas-service",
-        "refund",
-        [
-          gasImplContract,
-          bufferCV(Buffer.from("txhash")),
-          uintCV(0),
-          principalCV(address1),
-          uintCV(1000),
-        ],
-        address1
-      ).result
-    ).toBeErr(uintCV(60152));
-
-    expect(
-      simnet.callPublicFn(
-        "gas-service",
-        "collect-fees",
-        [gasImplContract, principalCV(address1), uintCV(1000)],
-        address1
-      ).result
-    ).toBeErr(uintCV(60152));
-  });
-
   describe("after initialization", () => {
-    beforeEach(() => {
-      deployGasService();
-    });
-
     it("should validate implementation contract", () => {
       const invalidImpl = contractPrincipalCV(deployer, "traits");
 

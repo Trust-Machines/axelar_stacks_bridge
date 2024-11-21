@@ -14,18 +14,6 @@
 ;; ######################
 ;; ######################
 
-;; Constructor flag
-(define-data-var is-started bool false)
-
-(define-read-only (get-is-started) (var-get is-started))
-
-(define-public (start) 
-    (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (ok (var-set is-started true))
-    )
-)
-
 ;; Gas Service implementation contract address 
 (define-data-var impl principal .gas-impl)
 

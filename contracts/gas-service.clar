@@ -177,21 +177,3 @@
 
 (define-public (set-governance (governance principal))
     (ok true))
-
-
-;; ######################
-;; ######################
-;; ### Initialization ###
-;; ######################
-;; ######################
-
-(define-constant ERR-STARTED (err u6051))
-
-;; Constructor function
-(define-public (setup)
-    (begin
-        (asserts! (is-eq (contract-call? .gas-storage get-is-started) false) ERR-STARTED)
-        (try! (contract-call? .gas-storage start))
-        (ok true)
-    )
-)

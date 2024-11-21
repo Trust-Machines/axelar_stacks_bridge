@@ -7,17 +7,13 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
-import { deployGasService, gasImplContract } from "./util";
+import { gasImplContract } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
 
 describe("gas-impl tests", () => {
-  beforeEach(() => {
-    deployGasService();
-  });
-
   describe("pay-native-gas-for-contract-call", () => {
     it("should fail on direct call to implementation", () => {
       const { result } = simnet.callPublicFn(
@@ -203,10 +199,6 @@ describe("gas-impl tests", () => {
 });
 
 describe("transfer-ownership", () => {
-  beforeEach(() => {
-    deployGasService();
-  });
-
   it("should handle valid ownership transfer", () => {
     const { result } = simnet.callPublicFn(
       "gas-service",
