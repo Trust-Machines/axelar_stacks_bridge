@@ -99,7 +99,6 @@ plan:
               - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.gas-service"
               - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
               - '(list
-                {chain-name: "axelar", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "axelarnet", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "avalanche-fuji", address: "hub"})'
               - '"axelarnet"'

@@ -157,7 +157,6 @@ plan:
               - "'ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD.gas-service"
               - "'ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD"
               - '(list
-                {chain-name: "axelar", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "axelarnet", address: "axelar10jzzmv5m7da7dn2xsfac0yqe7zamy34uedx3e28laq0p6f3f8dzqp649fp"}
                 {chain-name: "avalanche-fuji", address: "hub"}
                 {chain-name: "stacks", address: "ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD.interchain-token-service"})'
