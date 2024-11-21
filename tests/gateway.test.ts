@@ -68,6 +68,11 @@ describe("gateway tests", () => {
     expect(result).toBeErr(uintCV(6051));
   });
 
+  it("only deployer can run the setup function", () => {
+    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
+    expect(result).toBeErr(uintCV(10111));
+  });
+
   it("call contract", () => {
     deployGateway(getSigners(0, 10, 1, 10, "1"));
 

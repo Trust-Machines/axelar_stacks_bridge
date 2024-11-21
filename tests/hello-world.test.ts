@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
-import { boolCV, bufferCV, cvToJSON, Cl, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV, contractPrincipalCV } from "@stacks/transactions";
+import { boolCV, bufferCV, cvToJSON, Cl, listCV, serializeCV, stringAsciiCV, tupleCV, contractPrincipalCV } from "@stacks/transactions";
 
 import { keccak256 } from "./its-utils";
 
