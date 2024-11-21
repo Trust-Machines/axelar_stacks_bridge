@@ -124,6 +124,8 @@
 (define-constant ERR-SIGNERS-DATA (err u5052))
 (define-constant ERR-STARTED (err u6051))
 
+(define-constant DEPLOYER tx-sender)
+
 ;; Constructor function
 ;; @param signers; The data for the new signers.
 ;; @param operator_
@@ -147,6 +149,7 @@
             } signers) ERR-SIGNERS-DATA))
         )
         (asserts! (is-eq (contract-call? .gateway-storage get-is-started) false) ERR-STARTED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-impl rotate-signers-inner signers_ false))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
