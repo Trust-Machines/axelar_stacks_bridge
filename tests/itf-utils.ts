@@ -1,7 +1,7 @@
 import { BufferCV, Cl, PrincipalCV, ResponseOkCV } from "@stacks/transactions";
 import { BURN_ADDRESS } from "./constants";
 import { itsImpl, keccak256 } from "./its-utils";
-import { gatewayImplCV } from "./util";
+import { gasImplContract, gatewayImplCV } from "./util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -32,6 +32,7 @@ export function factoryDeployInterchainToken({
     [
       impl,
       gatewayImplCV,
+      gasImplContract,
       itsImpl,
       Cl.buffer(salt),
       Cl.address(tokenAddress),
@@ -73,6 +74,7 @@ export function registerCanonicalInterchainToken({
     [
       impl,
       gatewayImplCV,
+      gasImplContract,
       itsImpl,
       Cl.address(tokenAddress),
       Cl.address(tokenManagerAddress),
@@ -101,6 +103,7 @@ export function deployRemoteCanonicalInterchainToken({
     [
       impl,
       gatewayImplCV,
+      gasImplContract,
       itsImpl,
       Cl.address(tokenAddress),
       Cl.stringAscii(destinationChain),
@@ -152,6 +155,7 @@ export function factoryDeployRemoteInterchainToken({
     [
       impl,
       gatewayImplCV,
+      gasImplContract,
       itsImpl,
       Cl.buffer(salt),
       Cl.address(minter),
@@ -210,6 +214,7 @@ export function factoryDeployRemoteInterchainTokenWithMinter({
     [
       impl,
       gatewayImplCV,
+      gasImplContract,
       itsImpl,
       Cl.buffer(salt),
       Cl.address(minter),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gatewayImplCV, getSigners } from "./util";
+import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
   enableTokenManager,
   itsImpl,
@@ -23,6 +23,7 @@ describe("Interchain token factory impl", () => {
         "register-canonical-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           itsImpl,
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.address(`${deployer}.token-manager`),
@@ -49,6 +50,7 @@ describe("Interchain token factory impl", () => {
         "deploy-remote-canonical-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           itsImpl,
           Cl.address(`${deployer}.sample-sip-010`),
           Cl.stringAscii("ethereum"),
@@ -65,6 +67,7 @@ describe("Interchain token factory impl", () => {
         "deploy-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           itsImpl,
           Cl.buffer(salt),
           Cl.address(`${deployer}.native-interchain-token`),
@@ -84,6 +87,7 @@ describe("Interchain token factory impl", () => {
         "deploy-remote-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           itsImpl,
           Cl.buffer(salt),
           Cl.address(address1),

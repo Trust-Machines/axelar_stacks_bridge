@@ -11,6 +11,7 @@
 (use-trait token-manager-trait .traits.token-manager-trait)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
 (use-trait gateway-trait .traits.gateway-trait)
+(use-trait gas-service-trait .traits.gas-service-impl-trait)
 (use-trait itf-trait .traits.interchain-token-factory-trait)
 (use-trait its-trait .traits.interchain-token-service-trait)
 (impl-trait .traits.proxy-trait)
@@ -31,6 +32,7 @@
 (define-public (register-canonical-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
@@ -42,6 +44,7 @@
             itf-impl
                 register-canonical-interchain-token
                 gateway-impl
+                gas-service-impl
                 its-impl
                 token-address
                 token-manager-address
@@ -59,6 +62,7 @@
 (define-public (deploy-remote-canonical-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token <sip-010-trait>)
         (destination-chain (string-ascii 20))
@@ -67,6 +71,7 @@
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-remote-canonical-interchain-token 
             gateway-impl
+            gas-service-impl
             its-impl
             token
             destination-chain
@@ -78,6 +83,7 @@
 (define-public (deploy-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
@@ -88,6 +94,7 @@
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-interchain-token
             gateway-impl
+            gas-service-impl
             its-impl
             salt_
             token
@@ -104,6 +111,7 @@
 (define-public (deploy-remote-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
@@ -116,6 +124,7 @@
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-remote-interchain-token
             gateway-impl
+            gas-service-impl
             its-impl
             salt_
             minter_
@@ -128,6 +137,7 @@
 (define-public (deploy-remote-interchain-token-with-minter
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
@@ -141,6 +151,7 @@
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-remote-interchain-token-with-minter
             gateway-impl
+            gas-service-impl
             its-impl
             salt_
             minter_

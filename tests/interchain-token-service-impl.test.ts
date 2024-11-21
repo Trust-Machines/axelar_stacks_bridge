@@ -1,6 +1,6 @@
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
-import { gatewayImplCV, getSigners } from "./util";
+import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
   enableTokenManager,
   getTokenId,
@@ -62,6 +62,7 @@ describe("Interchain Token Service impl", () => {
         "deploy-token-manager",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.buffer(salt),
           Cl.stringAscii("ethereum"),
           Cl.uint(TokenType.LOCK_UNLOCK),
@@ -88,6 +89,7 @@ describe("Interchain Token Service impl", () => {
         "process-deploy-token-manager-from-external-chain",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.address(`${deployer}.token-manager`),
           Cl.buffer(
             Cl.serialize(
@@ -149,6 +151,7 @@ describe("Interchain Token Service impl", () => {
         "deploy-remote-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.buffer(salt),
           Cl.stringAscii("ethereum"),
           Cl.stringAscii("NIT"),
@@ -168,6 +171,7 @@ describe("Interchain Token Service impl", () => {
         "deploy-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.buffer(salt),
           Cl.address(`${deployer}.native-interchain-token`),
           Cl.uint(10),
@@ -184,6 +188,7 @@ describe("Interchain Token Service impl", () => {
         "interchain-transfer",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.address(`${deployer}.native-interchain-token`),
           Cl.address(`${deployer}.native-interchain-token`),
           tokenId,
@@ -206,6 +211,7 @@ describe("Interchain Token Service impl", () => {
         "call-contract-with-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.address(`${deployer}.native-interchain-token`),
           Cl.address(`${deployer}.native-interchain-token`),
           tokenId,
@@ -229,6 +235,7 @@ describe("Interchain Token Service impl", () => {
         "execute-deploy-token-manager",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.stringAscii("ethereum"),
           Cl.stringAscii("0x00"),
           Cl.stringAscii(""),
@@ -248,6 +255,7 @@ describe("Interchain Token Service impl", () => {
         "execute-deploy-interchain-token",
         [
           gatewayImplCV,
+          gasImplContract,
           Cl.stringAscii("ethereum"),
           Cl.stringAscii("0x00"),
           Cl.stringAscii("0x00"),

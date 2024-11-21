@@ -16,9 +16,23 @@ plan:
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
+            contract-name: gas-storage
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 647653
+            path: contracts/gas-storage.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gas-impl
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 647653
+            path: contracts/gas-impl.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
             contract-name: gas-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 53140
+            cost: 647653
             path: contracts/gas-service.clar
             anchor-block-only: true
             clarity-version: 2
@@ -73,7 +87,7 @@ plan:
             clarity-version: 2
       epoch: "2.5"
     - id: 2
-      transactions:
+      transactions: 
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM

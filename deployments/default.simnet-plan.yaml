@@ -50,24 +50,29 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
+            contract-name: gas-storage
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: traits
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/traits.clar
             clarity-version: 2
         - emulated-contract-publish:
-            contract-name: failed-interchain-executable
+            contract-name: gas-impl
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/failed-interchain-executable.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: gas-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/gas-service.clar
+            path: contracts/gas-impl.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: gateway-storage
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/gateway-storage.clar
+            clarity-version: 2
+        - emulated-contract-publish:
+            contract-name: gas-service
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/gas-service.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: gateway-impl

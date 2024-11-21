@@ -179,7 +179,7 @@
     (ok (is-flow-limiter-raw addr)))
 
 (define-read-only (is-flow-limiter-raw (addr principal))
-    (or 
+    (or
         (is-eq addr (get-its-impl))
         (default-to false (get flow-limiter (map-get? roles addr)))))
 

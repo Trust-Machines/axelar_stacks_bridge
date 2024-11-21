@@ -1,5 +1,5 @@
 (use-trait gateway-trait .traits.gateway-trait)
-(use-trait gas-service-trait .traits.gas-service-trait)
+(use-trait gas-service-trait .traits.gas-service-impl-trait)
 (impl-trait .traits.interchain-token-executable-trait)
 (impl-trait .traits.axelar-executable)
 (define-constant ERR-NOT-AUTHORIZED (err u1151))

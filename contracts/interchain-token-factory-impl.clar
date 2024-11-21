@@ -12,6 +12,7 @@
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait its-trait .traits.interchain-token-service-trait)
+(use-trait gas-service-trait .traits.gas-service-impl-trait)
 (impl-trait .traits.interchain-token-factory-trait)
 ;; token definitions
 ;;
@@ -103,6 +104,7 @@
 ;; @return tokenId The tokenId corresponding to the registered canonical token.
 (define-public (register-canonical-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
@@ -116,6 +118,7 @@
             .interchain-token-service
                 deploy-token-manager
                 gateway-impl
+                gas-service-impl
                 its-impl
                 (get-canonical-interchain-token-salt CHAIN-NAME-HASH (contract-of token-address))
                 ""
@@ -137,6 +140,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-canonical-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token <sip-010-trait>)
         (destination-chain (string-ascii 20))
@@ -156,6 +160,7 @@
         (contract-call? .interchain-token-service
             deploy-remote-interchain-token
             gateway-impl
+            gas-service-impl
             its-impl
             salt
             destination-chain
@@ -169,6 +174,7 @@
 
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
@@ -184,6 +190,7 @@
         (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token
         gateway-impl
+        gas-service-impl
         its-impl
         salt
         token
@@ -198,6 +205,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-interchain-token 
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
@@ -208,6 +216,7 @@
         (caller principal))
     (deploy-remote-interchain-token-with-minter 
         gateway-impl
+        gas-service-impl
         its-impl
         salt_
         minter_
@@ -230,6 +239,7 @@
 ;; @param gas-value The amount of gas to send for the deployment.
 (define-public (deploy-remote-interchain-token-with-minter
         (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
@@ -279,6 +289,7 @@
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (contract-call? .interchain-token-service deploy-remote-interchain-token
             gateway-impl
+            gas-service-impl
             its-impl
             salt
             destination-chain

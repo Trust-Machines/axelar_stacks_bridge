@@ -251,7 +251,7 @@ describe("Interchain Token Service Full Flow", () => {
         expect(gasStxTransferEvent.data).toStrictEqual({
           amount: String(gasValue),
           memo: "",
-          recipient: `${deployer}.gas-service`,
+          recipient: `${deployer}.gas-impl`,
           sender: address1,
         });
         expect(gasPaidNotification.data.value).toBeTuple({
@@ -393,7 +393,7 @@ describe("Interchain Token Service Full Flow", () => {
         expect(gasStxTransferEvent.data).toStrictEqual({
           amount: "100",
           memo: "",
-          recipient: `${deployer}.gas-service`,
+          recipient: `${deployer}.gas-impl`,
           sender: address1,
         });
         expect(deploymentNotification.data.value).toBeTuple({
@@ -483,7 +483,7 @@ describe("Interchain Token Service Full Flow", () => {
           data: {
             amount: String(gas),
             memo: "",
-            recipient: `${deployer}.gas-service`,
+            recipient: `${deployer}.gas-impl`,
             sender: address1,
           },
         });

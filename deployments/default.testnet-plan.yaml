@@ -23,6 +23,20 @@ plan:
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
+            contract-name: gas-storage
+            expected-sender: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD
+            cost: 647653
+            path: contracts/gas-storage.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: gas-impl
+            expected-sender: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD
+            cost: 647653
+            path: contracts/gas-impl.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
             contract-name: gas-service
             expected-sender: ST25GN6WPQAP15NB29PGMEXZ7TSRXNC8HZHQMJQFD
             cost: 647653
