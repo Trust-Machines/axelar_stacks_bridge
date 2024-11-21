@@ -163,19 +163,13 @@
         ) 
         (asserts! (is-eq contract-caller governance-impl) ERR-UNAUTHORIZED)
         
-        ;; Transfer balance from old impl to new impl if there is a balance
-        (if (> prev-balance u0)
-            (try! (contract-call? .gas-impl collect-fees gas-impl prev-balance))
-            true
-        )
-        
         ;; Set new implementation
         (try! (contract-call? .gas-storage set-impl gas-impl))
         (print {
             type: "gas-impl-updgraded",
             prev: prev,
             new: gas-impl,
-            transferred-balance: prev-balance
+            balance: prev-balance
         })
         (ok true)
     )

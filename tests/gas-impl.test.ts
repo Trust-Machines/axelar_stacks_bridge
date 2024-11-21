@@ -1,6 +1,7 @@
 import {
   boolCV,
   bufferCV,
+  cvToValue,
   principalCV,
   stringAsciiCV,
   uintCV,
@@ -118,17 +119,49 @@ describe("gas-impl tests", () => {
       expect(result).toBeErr(uintCV(10116)); // ERR-OWNER-ONLY
     });
 
-    it("should fail on direct call to implementation", () => {
+    it("should fail when amount is zero", () => {
       const { result } = simnet.callPublicFn(
         "gas-impl",
         "collect-fees",
-        [
-          principalCV(address2),
-          uintCV(10000), // More than available
-        ],
-        deployer // Call from owner address
+        [principalCV(address2), uintCV(0)],
+        deployer
       );
-      expect(result).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZE
+      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
+    });
+
+    it("should fail when amount exceeds balance", () => {
+      const { result } = simnet.callPublicFn(
+        "gas-impl",
+        "collect-fees",
+        [principalCV(address2), uintCV(10000)], // More than available
+        deployer
+      );
+      expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+    });
+
+    it("should successfully collect fees when called by owner", () => {
+      const initialBalance = Number(
+        cvToValue(
+          simnet.callReadOnlyFn("gas-impl", "get-balance", [], deployer).result
+        ).value
+      );
+
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "collect-fees",
+        [gasImplContract, principalCV(address2), uintCV(2000)],
+        deployer
+      );
+
+      expect(result).toBeOk(boolCV(true));
+
+      // Verify balance was reduced
+      const finalBalance = Number(
+        cvToValue(
+          simnet.callReadOnlyFn("gas-impl", "get-balance", [], deployer).result
+        ).value
+      );
+      expect(finalBalance).toBe(initialBalance - 2000);
     });
   });
 

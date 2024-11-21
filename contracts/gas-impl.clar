@@ -106,7 +106,6 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         ;; Ensure only the owner can call this function
         (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
