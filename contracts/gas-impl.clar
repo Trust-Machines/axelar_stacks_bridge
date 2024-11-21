@@ -123,7 +123,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u10113))  ;; err-not-implemented
+        ERR-NOT-IMPLEMENTED)
 )
 
 (define-public (add-gas
@@ -134,7 +134,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u10113))  ;; err-not-implemented
+        ERR-NOT-IMPLEMENTED)
 )
 
 (define-public (pay-native-gas-for-express-call
@@ -146,7 +146,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u10113))  ;; err-not-implemented
+        ERR-NOT-IMPLEMENTED)
 )
 
 (define-public (add-native-express-gas
@@ -157,5 +157,5 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (err u10113))  ;; err-not-implemented
+        ERR-NOT-IMPLEMENTED)
 )
