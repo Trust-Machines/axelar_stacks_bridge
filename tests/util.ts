@@ -332,7 +332,7 @@ export const deployGateway = (
       minimumRotationDelay,
       previousSignersRetention,
     ],
-    contractCaller
+    deployerAddress
   );
   expect(result).toBeOk(boolCV(true));
 
