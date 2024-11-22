@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
-import { boolCV, bufferCV, cvToJSON, Cl, listCV, serializeCV, stringAsciiCV, tupleCV, contractPrincipalCV } from "@stacks/transactions";
-
+import { boolCV, bufferCV, cvToJSON, Cl, listCV, serializeCV, stringAsciiCV, tupleCV, contractPrincipalCV, uintCV } from "@stacks/transactions";
 import { keccak256 } from "./its-utils";
 
 const accounts = simnet.getAccounts();
@@ -29,7 +28,7 @@ describe("hello-world tests", () => {
   ]);
 
   it("Should execute message", () => {
-    const {result: impl} = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
+    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
     expect(impl).toStrictEqual(gatewayImplCV);
 
     const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
@@ -58,5 +57,17 @@ describe("hello-world tests", () => {
     // Execute on the hello world
     const { result: resultExecute } = simnet.callPublicFn("hello-world", "execute", [sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload)), gatewayImplCV], address1);
     expect(resultExecute).toBeOk(boolCV(true));
+  });
+
+  it("Should set remote value", () => {
+    deployGateway(getSigners(0, 10, 1, 4, "1"));
+    const destinationChain = stringAsciiCV("avalanche-fuji");
+    const destinationContractAddress = stringAsciiCV("0xC993dBcdC94E2115C7C1526D2Dec78B384Bb826D");
+    const payload = Cl.bufferFromHex("0x00");
+    const gasAmount = uintCV(1000000);
+    const gasImplCV = contractPrincipalCV(accounts.get("deployer")!, "gas-impl");
+
+    const { result } = simnet.callPublicFn("hello-world", "set-remote-value", [destinationChain, destinationContractAddress, payload, gasAmount, gatewayImplCV, gasImplCV], address1);
+    expect(result).toBeOk(boolCV(true));
   });
 });
