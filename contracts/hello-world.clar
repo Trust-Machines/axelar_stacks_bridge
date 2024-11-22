@@ -33,7 +33,8 @@
     (begin
         (try! (stx-transfer? gas-amount contract-caller (as-contract tx-sender)))
         (try!
-            (contract-call? gas-service pay-native-gas-for-contract-call
+            (contract-call? .gas-service pay-native-gas-for-contract-call
+                gas-service
                 gas-amount
                 (as-contract tx-sender)
                 destination-chain
