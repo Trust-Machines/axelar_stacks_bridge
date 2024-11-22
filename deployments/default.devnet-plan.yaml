@@ -57,13 +57,13 @@ plan:
             path: contracts/interchain-token-service.clar
             anchor-block-only: true
             clarity-version: 2
-        - contract-publish:
-            contract-name: token-manager
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 113470
-            path: contracts/token-manager.clar
-            anchor-block-only: true
-            clarity-version: 2
+        # - contract-publish:
+        #     contract-name: token-manager
+        #     expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+        #     cost: 113470
+        #     path: contracts/token-manager.clar
+        #     anchor-block-only: true
+        #     clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-factory
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
@@ -71,13 +71,13 @@ plan:
             path: contracts/interchain-token-factory.clar
             anchor-block-only: true
             clarity-version: 2
-        - contract-publish:
-            contract-name: native-interchain-token
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 122710
-            path: contracts/native-interchain-token.clar
-            anchor-block-only: true
-            clarity-version: 2
+        # - contract-publish:
+        #     contract-name: native-interchain-token
+        #     expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+        #     cost: 122710
+        #     path: contracts/native-interchain-token.clar
+        #     anchor-block-only: true
+        #     clarity-version: 2
         - contract-publish:
             contract-name: sample-sip-010
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
@@ -87,7 +87,7 @@ plan:
             clarity-version: 2
       epoch: "2.5"
     - id: 2
-      transactions: 
+      transactions:
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
