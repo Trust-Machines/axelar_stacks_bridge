@@ -38,7 +38,7 @@
 
 (define-constant ERR-MESSAGES-DATA (err u9051))
 (define-constant ERR-MESSAGE-NOT-FOUND (err u9052))
-(define-constant ERR-MESSAGES-INSERT (err u9061))
+(define-constant ERR-MESSAGE-INSERT (err u9061))
 (define-constant MESSAGE-EXECUTED 0x01)
 
 
@@ -94,7 +94,7 @@
                         source-address: (get source-address message),
                         contract-address: (get contract-address message),
                         payload-hash: (get payload-hash message)
-                    })) ERR-MESSAGES-INSERT))
+                    })) ERR-MESSAGE-INSERT))
                 )
                 (if inserted (some (contract-call? .gateway-storage emit-message-approved command-id message)) none)
                 (ok true) 
