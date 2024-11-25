@@ -31,7 +31,6 @@
 
 (define-constant ERR-INSUFFICIENT-BALANCE (err u2051))
 (define-constant ERR-INVALID-PARAMS (err u2052))
-(define-constant ERR-ZERO-AMOUNT (err u2053))
 (define-constant ERR-NOT-AUTHORIZED (err u2054))
 
 (define-fungible-token itscoin)
@@ -57,9 +56,8 @@
 
 (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
     (begin
-        (asserts! (is-eq from tx-sender) ERR-NOT-AUTHORIZED)
+        (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) ERR-NOT-AUTHORIZED)
         (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
-        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)
         (match memo m 
             (print m) 0x)

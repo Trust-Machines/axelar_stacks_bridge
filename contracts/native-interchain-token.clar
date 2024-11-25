@@ -53,9 +53,8 @@
 (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq from tx-sender) ERR-NOT-AUTHORIZED)
+        (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) ERR-NOT-AUTHORIZED)
         (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
-        (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)
         (print (default-to 0x memo))
         (ft-transfer? itscoin amount from to)))

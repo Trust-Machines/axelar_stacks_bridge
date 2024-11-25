@@ -772,8 +772,8 @@
                 caller))))
 
 
-;; #[allow(unchecked_params)]
 (define-private (process-deploy-interchain-from-external-chain
+    ;; #[allow(unchecked_params)]
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (message-id (string-ascii 128))
