@@ -22,6 +22,7 @@ Schedules a task to be finalized at a later time. The `eta` p(execution time) sp
 ```
 {
   target: principal, ;; new implementation contract address
+  proxy: principal, ;; address of the proxy contract that the update will be made on
   eta: uint, ;; unix timestamp in seconds
   type: u1  ;; update type
 }
@@ -32,6 +33,7 @@ Schedules a task to be finalized at a later time. The `eta` p(execution time) sp
 ```
 {
   target: principal, ;; new governance contract address
+  proxy: principal, ;; address of the proxy contract that the update will be made on
   eta: uint, ;; unix timestamp in seconds
   type: u2 ;; update type
 }
