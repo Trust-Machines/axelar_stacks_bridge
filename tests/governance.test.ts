@@ -17,6 +17,7 @@ describe("governance tests", () => {
   it("should update gateway implementation", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'gateway-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -82,6 +83,7 @@ describe("governance tests", () => {
   it("should update gateway governance", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'governance-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -147,6 +149,7 @@ describe("governance tests", () => {
   it("should update interchain token factory implementation", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'interchain-token-factory-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'interchain-token-factory'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -212,6 +215,7 @@ describe("governance tests", () => {
   it("should update interchain token service implementation", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'interchain-token-service-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'interchain-token-service'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -277,6 +281,7 @@ describe("governance tests", () => {
   it("should update gas service implementation", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'gas-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'gas-service'),
       eta: uintCV(eta),
       type: uintCV(1)
     })
@@ -339,11 +344,73 @@ describe("governance tests", () => {
     expect(impl2).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "gas-impl-2"));
   });
 
+  it("should not update with invalid proxy", () => {
+    const payload = tupleCV({
+      target: contractPrincipalCV(deployer, 'gas-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'gas-service'),
+      eta: uintCV(eta),
+      type: uintCV(1)
+    })
+    const payloadHash = bufferCV(keccak256(serializeCV(payload)));
+
+    const messages = listCV([
+      tupleCV({
+        "source-chain": sourceChain,
+        "message-id": messageId,
+        "source-address": sourceAddress,
+        "contract-address": contractAddress,
+        "payload-hash": payloadHash
+      })
+    ]);
+
+    const { result: impl } = simnet.callReadOnlyFn("gas-storage", "get-impl", [], address1);
+    expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "gas-impl"));
+
+    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+
+    const signersHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
+      return cvToJSON(result).value;
+    })();
+
+    const dataHash = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], address1);
+      return cvToJSON(result).value;
+    })();
+
+    const messageHashToSign = (() => {
+      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)], address1);
+      return cvToJSON(result).value
+    })();
+
+    const proof = makeProofCV(proofSigners, messageHashToSign);
+
+    // approve message on the gateway
+    const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
+    expect(resultApprove).toBeOk(boolCV(true));
+
+    // execute on the governance
+    const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
+    expect(resultExecute).toBeOk(boolCV(true));
+
+    // check timelock
+    const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
+    expect(timelock).toStrictEqual(payload);
+
+    while (Number(simnet.getBlockTime()) < eta) {
+      simnet.mineBlock([]);
+    }
+
+    // try to finalize
+    const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
+    expect(resultFinalize).toBeErr(uintCV(13051));
+  });
 
   it("should cancel a scheduled task", () => {
     //-- Schedule task 
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'governance-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -440,6 +507,7 @@ describe("governance tests", () => {
   it("should not finalize before eta", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'governance-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(2)
     })
@@ -490,6 +558,7 @@ describe("governance tests", () => {
   it("should not finalize with invalid type", () => {
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'governance-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(11)
     })
@@ -550,6 +619,7 @@ describe("governance tests", () => {
     let eta = Math.floor(Date.now() / 1000) + 600;
     const payload = tupleCV({
       target: contractPrincipalCV(deployer, 'gateway-impl-2'),
+      proxy: contractPrincipalCV(deployer, 'gateway'),
       eta: uintCV(eta),
       type: uintCV(1)
     })

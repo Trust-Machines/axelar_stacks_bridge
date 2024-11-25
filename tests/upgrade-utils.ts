@@ -39,6 +39,7 @@ export function upgradeITSBasedContract(suffix: string) {
 
   const payload = Cl.tuple({
     target: Cl.address(newImplCA),
+    proxy: Cl.contractPrincipal(deployer, prefix),
     eta: Cl.uint(eta),
     type: Cl.uint(1),
   });
