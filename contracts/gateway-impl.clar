@@ -394,19 +394,36 @@
 ;; @returns (buff 33)
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
 
-
+;; Recovers ECDS signature with the message hash provided
+;; @param signature
+;; @param message-hash
+;; @returns (response (buff 33) uint)
 (define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
      (secp256k1-recover? message-hash signature)
 )
 
+;; Returns true if the provided response is an error
+;; @param signer
+;; @returns bool
 (define-private (is-error-or-pub (signer (response (buff 33) uint)))
   (is-err signer)
 )
 
+;; Helper function to unwrap pubkey from reponse
+;; @param pub
+;; @returns (buff 33)
 (define-private (unwrap-pub (pub (response (buff 33) uint))) (unwrap-panic pub))
 
+;; Helper function to iterate pubkeys along with signers and return signer
+;; @param pub
+;; @param signer
+;; @returns {signer: (buff 33), weight: uint}
 (define-private (pub-to-signer (pub (buff 33)) (signer {signer: (buff 33), weight: uint})) signer)
 
+;; Helper function to repeat the same messages hash in a list
+;; @param signature
+;; @param state
+;; @returns (list 100 (buff 32))
 (define-private (repeat-message-hash (signature (buff 65)) (state (list 100 (buff 32))) )
     (unwrap-panic (as-max-len? (append state (unwrap-panic (element-at? state u0))) u100))
 )
@@ -440,7 +457,7 @@
             (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
         )
         (ok true)
-        )
+    )
 )
 
 
