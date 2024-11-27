@@ -228,11 +228,11 @@
 (define-read-only (get-operator) (contract-call? .gateway-storage get-operator))
 
 ;; Transfers operatorship to a new account
-(define-public (transfer-operatorship (new-operator principal))
+(define-public (transfer-operatorship (new-operator principal) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq tx-sender (get-operator)) ERR-ONLY-OPERATOR)
+        (asserts! (is-eq caller (get-operator)) ERR-ONLY-OPERATOR)
         (try! (contract-call? .gateway-storage set-operator new-operator))
         (try! (contract-call? .gateway-storage emit-transfer-operatorship new-operator))
         (ok true)

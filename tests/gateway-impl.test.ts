@@ -10,7 +10,7 @@ describe("gateway impl tests", () => {
   it("proxy only public functions", () => {
     expect(simnet.callPublicFn("gateway-impl", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz"), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
     expect(simnet.callPublicFn("gateway-impl", "validate-message", [stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), Cl.bufferFromHex("0x00"), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
-    expect(simnet.callPublicFn("gateway-impl", "transfer-operatorship", [principalCV(address1)], address1).result).toBeErr(uintCV(10111));
+    expect(simnet.callPublicFn("gateway-impl", "transfer-operatorship", [principalCV(address1), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
     expect(simnet.callPublicFn("gateway-impl", "rotate-signers-inner", [tupleCV({ "signers": listCV([]), "threshold": uintCV(1), "nonce": Cl.bufferFromHex("0x00") }), boolCV(false)], address1).result).toBeErr(uintCV(10111));
     expect(simnet.callPublicFn("gateway-impl", "dispatch", [stringAsciiCV(""), Cl.bufferFromHex("0x00")], address1).result).toBeErr(uintCV(10111));
   });

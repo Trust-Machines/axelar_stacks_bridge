@@ -61,7 +61,7 @@
 (define-public (transfer-operatorship (gateway-impl <gateway-trait>) (new-operator principal))
     (begin
         (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
-        (contract-call? gateway-impl transfer-operatorship new-operator)
+        (contract-call? gateway-impl transfer-operatorship new-operator contract-caller)
     )
 )
 
