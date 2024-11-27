@@ -333,13 +333,12 @@
     (> (get weight signer) u0) ;; signer weight must be bigger than zero
 )
 
-
 ;; Validates public key order accumulating error inside the state provided
 ;; @param pub; The public key
 ;; @param state; State to accumulate next public key and errors
 ;; @returns {pub: (buff 33), failed: bool}
 (define-private (validate-pub-order (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
-    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {failed: true}))
+    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {pub: pub, failed: true}))
 )
 
 ;; A helper fn to unwrap a response boolean
