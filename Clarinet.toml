@@ -6,16 +6,6 @@ telemetry = true
 cache_dir = './.cache'
 requirements = []
 
-[contracts.traits]
-path = 'contracts/traits.clar'
-clarity_version = 2
-epoch = 2.5
-
-[contracts.gas-storage]
-path = 'contracts/gas-storage.clar'
-clarity_version = 2
-epoch = 2.5
-
 [contracts.gas-impl]
 path = 'contracts/gas-impl.clar'
 clarity_version = 2
@@ -23,6 +13,11 @@ epoch = 2.5
 
 [contracts.gas-service]
 path = 'contracts/gas-service.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.gas-storage]
+path = 'contracts/gas-storage.clar'
 clarity_version = 2
 epoch = 2.5
 
@@ -91,6 +86,10 @@ path = 'contracts/token-manager.clar'
 clarity_version = 2
 epoch = 2.5
 
+[contracts.traits]
+path = 'contracts/traits.clar'
+clarity_version = 2
+epoch = 2.5
 [repl.analysis]
 passes = ['check_checker']
 

@@ -508,8 +508,8 @@
 
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
 
-(define-private (recover-signature (signature (buff 65)))
-     (ok (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
+(define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
+     (ok (unwrap! (secp256k1-recover? message-hash signature) (err u0)))
 )
 
 (define-private (is-error-or-pub (signer (response (buff 33) uint)))
@@ -519,6 +519,10 @@
 (define-private (unwrap-pub (pub (response (buff 33) uint))) (unwrap-panic pub))
 
 (define-private (pub-to-signer (pub (buff 33)) (signer {signer: (buff 33), weight: uint})) signer)
+
+(define-private (repeat-message-hash (signature (buff 65)) (state (list 100 (buff 32))) )
+    (unwrap-panic (as-max-len? (append state (unwrap-panic (element-at? state u0))) u100))
+)
 
 ;; This function takes message-hash and proof data and reverts if proof is invalid
 ;; The signers and signatures should be sorted by signer address in ascending order
@@ -535,12 +539,10 @@
                 (signatures (list 100 (buff 65))
 ))
     (begin
-        ;; Fill temp variables with data will be used in loops
-        (var-set temp-hash message-hash)
-        
         (let
             (
-                (recovered (map recover-signature signatures))
+                (message-hash-repeated (fold repeat-message-hash signatures (list message-hash)))
+                (recovered (map recover-signature signatures message-hash-repeated))
                 (recover-err (element-at? (filter is-error-or-pub recovered) u0))
                 (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
                 (signers- (get signers signers))
@@ -558,8 +560,6 @@
                     (signers-- (map pub-to-signer pubs signers-))
                     (total-weight (fold accumulate-weights signers-- u0))
                 )
-            
-          
 
                 (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
                 (ok true)
