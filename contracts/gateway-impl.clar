@@ -392,117 +392,13 @@
 ;; ############################
 
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
 (define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
-
-;; Returns true if the address of the signer provided equals to the value stored in temp-account
-;; @param signer;
-;; @returns bool
-(define-private (is-the-signer (signer {signer: (buff 33), weight: uint})) (is-eq (var-get temp-pub) (get signer signer)))
-
-
-;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
-;; @param signature;
-;; @returns (response {signer: (buff 33), weight: uint}) or (err u0) or (err u1)
-(define-private (signature-to-signer (signature (buff 65)))
-    (let
-       (
-            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
-       )
-       (var-set temp-pub pub)
-       (let
-            (
-                (signers (filter is-the-signer (var-get temp-signers)))
-                (signer (unwrap! (element-at? signers u0) (err u1)))
-            )
-            (ok signer)
-       )
-    )
-)
-
-;; A helper function to unwrap signer value from an ok response
-;; @param signer;
-;; @returns {signer: (buff 33), weight: uint}
-(define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-    (unwrap-panic signer)
-)
-
-;; A helper function to determine whether the provided signer is an error.
-;; @param signer;
-;; @returns bool
-(define-private (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-  (is-err signer)
-)
 
 ;; Accumulates weight of signers
 ;; @param signer
 ;; @accumulator
 (define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
     (+ accumulator (get weight signer))
-)
-
-;; This function takes message-hash and proof data and reverts if proof is invalid
-;; The signers and signatures should be sorted by signer address in ascending order
-;; @param message-hash; The hash of the message that was signed
-;; @param signers; The weighted signers
-;; @param signatures The sorted signatures data
-(define-private (validate-signatures2
-                (message-hash (buff 32))
-                (signers {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                })
-                (signatures (list 100 (buff 65))
-))
-    (begin
-        ;; Fill temp variables with data will be used in loops
-        (var-set temp-hash message-hash)
-        (var-set temp-signers (get signers signers))
-        (let
-            (
-                (signers-raw (map signature-to-signer signatures))
-                (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
-            )
-            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH) (unwrap-err-panic (unwrap-panic signer-err)))))
-            (let
-                (
-                    ;; Convert signatures to signers
-                    (signers- (map unwrap-signer signers-raw))
-                    ;; Total weight of signatures provided
-                    (total-weight (fold accumulate-weights signers- u0))
-                )
-
-                ;; Reset temp principal var
-                (var-set temp-pub NULL-PUB)
-                ;; Signers need to be in strictly increasing order
-                (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-                ;; Reset temp vars
-                (var-set temp-hash 0x00)
-                (var-set temp-signers (list))
-                (var-set temp-pub NULL-PUB)
-                ;; total-weight must be bigger than the signers threshold
-                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
-                (ok true)
-            )
-        )
-    )
-)
-
-
-
-;; Validates public key order
-;; @param signer; public key to validate
-;; @returns (response true) or reverts
-(define-private (validate-pub-order (pub (buff 33)))
-    (let
-        (
-            (r (> pub (var-get temp-pub)))
-        )
-       ;; save this signer in order to do comparison with the next signer
-       (var-set temp-pub pub)
-       (ok r)
-    )
 )
 
 
@@ -514,7 +410,7 @@
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
 
 (define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
-     (ok (unwrap! (secp256k1-recover? message-hash signature) (err u0)))
+     (secp256k1-recover? message-hash signature)
 )
 
 (define-private (is-error-or-pub (signer (response (buff 33) uint)))
