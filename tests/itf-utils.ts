@@ -116,14 +116,16 @@ export function deployRemoteCanonicalInterchainToken({
 export function getInterchainTokenId({
   salt,
   sender,
+  deployer,
 }: {
   salt: BufferCV;
+  deployer: PrincipalCV;
   sender: string;
 }) {
-  return simnet.callPrivateFn(
+  return simnet.callPublicFn(
     "interchain-token-factory-impl",
     "get-interchain-token-id",
-    [itsImpl, salt],
+    [itsImpl, deployer, salt],
     sender,
   ).result as ResponseOkCV<BufferCV>;
 }

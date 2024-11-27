@@ -88,8 +88,22 @@
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
-(define-private (get-interchain-token-id (its-impl <its-trait>) (salt (buff 32)))
+(define-private (get-interchain-token-id-raw (its-impl <its-trait>) (salt (buff 32)))
     (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER salt))
+
+;; Computes the ID for an interchain token based on the deployer and a salt.
+;; @param deployer The address that deployed the interchain token.
+;; @param salt A unique identifier used in the deployment process.
+;; @return token-id The ID of the interchain token.
+(define-public (get-interchain-token-id (its-impl <its-trait>) (deployer principal) (salt (buff 32)))
+    (let ((deploy-salt (get-interchain-token-deploy-salt deployer salt)))
+    ;; this is assumed to be a read only operation
+    ;; #[allow(unchecked_data)]
+        (get-interchain-token-id-raw its-impl deploy-salt)))
+;; function interchainTokenId(address deployer, bytes32 salt) public view returns (bytes32 tokenId) {
+;;     bytes32 deploySalt = interchainTokenDeploySalt(deployer, salt);
+;;     tokenId = _interchainTokenId(deploySalt);
+;; }
 
 
 ;; Computes the ID for a canonical interchain token based on its address.
@@ -249,7 +263,7 @@
         (proxy-check (asserts! (is-proxy) ERR-NOT-PROXY))
         (deploy-salt (get-interchain-token-deploy-salt caller salt_))
         ;; #[allow(unchecked_data)]
-        (deployed-token-id (unwrap-panic (get-interchain-token-id its-impl deploy-salt)))
+        (deployed-token-id (unwrap-panic (get-interchain-token-id-raw its-impl deploy-salt)))
         (minter
             (if
                 (not (is-eq NULL-ADDRESS minter_))
@@ -323,9 +337,8 @@
     (let (
         (proxy-check (asserts! (is-proxy) ERR-NOT-PROXY))
         (minter caller)
-        (deploy-salt (get-interchain-token-deploy-salt deployer salt_))
         ;; #[allow(unchecked_data)]
-        (token-id (unwrap-panic (get-interchain-token-id its-impl deploy-salt)))
+        (token-id (unwrap-panic (get-interchain-token-id its-impl deployer salt_)))
         (token-info (unwrap! (contract-call? .interchain-token-service-storage get-token-info token-id) ERR-TOKEN-NOT-FOUND))
         (approval {
             minter: minter,
@@ -369,9 +382,8 @@
     (let (
         (proxy-check (asserts! (is-proxy) ERR-NOT-PROXY))
         (minter caller)
-        (deploy-salt (get-interchain-token-deploy-salt deployer salt_))
         ;; #[allow(unchecked_data)]
-        (token-id (unwrap-panic (get-interchain-token-id its-impl deploy-salt)))
+        (token-id (unwrap-panic (get-interchain-token-id its-impl deployer salt_)))
         (approval {
             minter: minter,
             token-id: token-id,

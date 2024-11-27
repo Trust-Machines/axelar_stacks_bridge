@@ -27,7 +27,6 @@ import {
   getInterchainTokenId,
   registerCanonicalInterchainToken,
   factoryDeployRemoteInterchainToken,
-  getInterchainTokenSalt,
 } from "./itf-utils";
 import { Cl, cvToHex, randomBytes } from "@stacks/transactions";
 import { getSigners } from "./util";
@@ -286,12 +285,10 @@ describe("Interchain Token Service Full Flow", () => {
   describe("New Interchain token", () => {
     // let token;
     const originalSalt = randomBytes(32);
-    const interchainTokenSalt = getInterchainTokenSalt({
-      salt: originalSalt,
-      deployer: address1,
-    });
+
     const tokenId = getInterchainTokenId({
-      salt: interchainTokenSalt,
+      salt: Cl.buffer(originalSalt),
+      deployer: Cl.address(address1),
       sender: address1,
     }).value;
 
