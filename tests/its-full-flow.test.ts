@@ -32,7 +32,6 @@ import {
 import { Cl, cvToHex, randomBytes } from "@stacks/transactions";
 import { getSigners } from "./util";
 import {
-  BURN_ADDRESS,
   MessageType,
   MetadataVersion,
   NIT_ERRORS,
@@ -293,7 +292,6 @@ describe("Interchain Token Service Full Flow", () => {
     });
     const tokenId = getInterchainTokenId({
       salt: interchainTokenSalt,
-      deployer: Cl.address(BURN_ADDRESS),
       sender: address1,
     }).value;
 

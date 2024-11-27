@@ -110,6 +110,11 @@ plan:
             path: contracts/interchain-token-service.clar
             clarity-version: 2
         - emulated-contract-publish:
+            contract-name: native-interchain-token
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/native-interchain-token.clar
+            clarity-version: 2
+        - emulated-contract-publish:
             contract-name: interchain-token-factory-impl
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-factory-impl.clar
@@ -118,11 +123,6 @@ plan:
             contract-name: interchain-token-service-impl
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-service-impl.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: native-interchain-token
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/native-interchain-token.clar
             clarity-version: 2
         - emulated-contract-publish:
             contract-name: sample-sip-010

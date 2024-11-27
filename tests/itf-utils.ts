@@ -1,6 +1,6 @@
 import { BufferCV, Cl, PrincipalCV, ResponseOkCV } from "@stacks/transactions";
 import { BURN_ADDRESS } from "./constants";
-import { itsImpl, keccak256 } from "./its-utils";
+import { itsImpl } from "./its-utils";
 import { gasImplContract, gatewayImplCV } from "./util";
 
 const accounts = simnet.getAccounts();
@@ -115,17 +115,15 @@ export function deployRemoteCanonicalInterchainToken({
 
 export function getInterchainTokenId({
   salt,
-  deployer,
   sender,
 }: {
-  deployer: PrincipalCV;
   salt: BufferCV;
   sender: string;
 }) {
   return simnet.callPrivateFn(
     "interchain-token-factory-impl",
     "get-interchain-token-id",
-    [itsImpl, deployer, salt],
+    [itsImpl, salt],
     sender,
   ).result as ResponseOkCV<BufferCV>;
 }
@@ -177,12 +175,8 @@ export function getInterchainTokenSalt({
 }) {
   return simnet.callReadOnlyFn(
     "interchain-token-factory-impl",
-    "get-interchain-token-salt",
-    [
-      Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
-      Cl.address(deployer),
-      Cl.buffer(salt),
-    ],
+    "get-interchain-token-deploy-salt",
+    [Cl.address(deployer), Cl.buffer(salt)],
     address1,
   ).result as BufferCV;
 }

@@ -100,18 +100,13 @@ describe("interchain-token-factory", () => {
     const originalSalt = randomBytes(32);
     const salt = simnet.callReadOnlyFn(
       "interchain-token-factory-impl",
-      "get-interchain-token-salt",
-      [
-        Cl.buffer(keccak256(Cl.serialize(Cl.stringAscii("stacks")))),
-        Cl.address(address1),
-        Cl.buffer(originalSalt),
-      ],
+      "get-interchain-token-deploy-salt",
+      [Cl.address(address1), Cl.buffer(originalSalt)],
       address1,
     ).result as BufferCV;
 
     const tokenId = getInterchainTokenId({
       salt,
-      deployer: Cl.address(address1),
       sender: address1,
     }).value;
     it("Should revert if an invalid impl is provided", () => {
