@@ -448,8 +448,10 @@
             (recover-err (element-at? (filter is-error-or-pub recovered) u0))
             (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
             (pubs (map unwrap-pub recovered))
+            ;; the signers and signatures should be sorted by signer address in ascending order
             (pubs-order-check (asserts! (is-eq (get failed (fold validate-pub-order pubs {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
             (signers- (get signers signers))
+            ;; the signers and signatures should be sorted by signer address in ascending order
             (signers-order-check (asserts! (is-eq (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
             (signers-- (map pub-to-signer pubs signers-))
             (total-weight (fold accumulate-weights signers-- u0))
