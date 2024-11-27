@@ -13,11 +13,12 @@ import { deployGasService, gasImplContract } from "./util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
+const address3 = accounts.get("wallet_3")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas service tests", () => {
   beforeEach(() => {
-    // Deploy gas service with address2 as gas collector
+    // Deploy gas service with address1 as gas collector
     deployGasService(address1);
   });
 
@@ -380,6 +381,139 @@ describe("gas service tests", () => {
         ).result;
         expect(cvToValue(ownerCV)).toBe(deployer);
       });
+    });
+  });
+
+  describe("gas collector management", () => {
+    it("should fail when non-gas-collector tries to transfer gas collector role", () => {
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "transfer-gas-collector",
+        [gasImplContract, principalCV(address3)],
+        address2 // Call from non-gas-collector address
+      );
+      expect(result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+    });
+
+    it("should successfully transfer gas collector role when called by current gas collector", () => {
+      // Initial gas collector is address1 (set in deployGasService)
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "transfer-gas-collector",
+        [gasImplContract, principalCV(address3)],
+        address1 // Call from current gas collector
+      );
+      expect(result).toBeOk(boolCV(true));
+
+      // Verify new gas collector
+      const newCollector = simnet.callReadOnlyFn(
+        "gas-storage",
+        "get-gas-collector",
+        [],
+        address1
+      ).result;
+      expect(cvToValue(newCollector)).toBe(address3);
+    });
+
+    it("should enforce new gas collector permissions after transfer", () => {
+      // First transfer gas collector role from address1 to address3
+      simnet.callPublicFn(
+        "gas-service",
+        "transfer-gas-collector",
+        [gasImplContract, principalCV(address3)],
+        address1
+      );
+
+      // Try to call refund from old gas collector (should fail)
+      const refundResult = simnet.callPublicFn(
+        "gas-service",
+        "refund",
+        [
+          gasImplContract,
+          bufferCV(Buffer.from("tx-hash")),
+          uintCV(0),
+          principalCV(address1),
+          uintCV(1000),
+        ],
+        address1 // Old gas collector
+      );
+      expect(refundResult.result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+
+      // Try to call collect-fees from old gas collector (should fail)
+      const collectResult = simnet.callPublicFn(
+        "gas-service",
+        "collect-fees",
+        [gasImplContract, principalCV(address1), uintCV(1000)],
+        address1 // Old gas collector
+      );
+      expect(collectResult.result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+
+      // Verify new gas collector can call these functions
+      // First add some balance for testing
+      simnet.callPublicFn(
+        "gas-service",
+        "add-native-gas",
+        [
+          gasImplContract,
+          uintCV(5000),
+          bufferCV(Buffer.from("tx-hash")),
+          uintCV(0),
+          principalCV(address1),
+        ],
+        address1
+      );
+
+      // New gas collector should be able to refund
+      const newRefundResult = simnet.callPublicFn(
+        "gas-service",
+        "refund",
+        [
+          gasImplContract,
+          bufferCV(Buffer.from("tx-hash")),
+          uintCV(0),
+          principalCV(address1),
+          uintCV(1000),
+        ],
+        address3 // New gas collector
+      );
+      expect(newRefundResult.result).toBeOk(boolCV(true));
+
+      // New gas collector should be able to collect fees
+      const newCollectResult = simnet.callPublicFn(
+        "gas-service",
+        "collect-fees",
+        [gasImplContract, principalCV(address1), uintCV(1000)],
+        address3 // New gas collector
+      );
+      expect(newCollectResult.result).toBeOk(boolCV(true));
+    });
+
+    it("should prevent setting owner as gas collector", () => {
+      const { result } = simnet.callPublicFn(
+        "gas-service",
+        "transfer-gas-collector",
+        [gasImplContract, principalCV(simnet.deployer)], // Try to set owner as collector
+        address1
+      );
+      expect(result).toBeErr(uintCV(10112)); // ERR-OWNER-CANNOT-BE-COLLECTOR
+    });
+
+    it("should emit transfer-gas-collector event", () => {
+      const { events } = simnet.callPublicFn(
+        "gas-service",
+        "transfer-gas-collector",
+        [gasImplContract, principalCV(address3)],
+        address1
+      );
+
+      expect(events[0].event).toBe("print_event");
+      const printData = cvToValue(events[0].data.value!) as {
+        type: { type: string; value: string };
+        "new-gas-collector": { type: string; value: string };
+      };
+
+      expect(printData.type.value).toBe("transfer-gas-collector");
+      expect(printData["new-gas-collector"].value).toBe(address3);
     });
   });
 });

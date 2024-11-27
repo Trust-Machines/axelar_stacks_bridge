@@ -49,7 +49,7 @@
 
 (define-public (set-gas-collector (new-gas-collector principal)) 
     (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (asserts! (not (is-eq new-gas-collector (get-owner))) ERR-OWNER-CANNOT-BE-COLLECTOR)
         (ok (var-set gas-collector new-gas-collector))
     )
