@@ -266,11 +266,6 @@
 ;; The minimum delay required between rotations
 (define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
 
-;; Helper vars to use within loops
-(define-data-var temp-pub (buff 33) NULL-PUB)
-(define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
-
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
@@ -338,18 +333,13 @@
     (> (get weight signer) u0) ;; signer weight must be bigger than zero
 )
 
-;; Validates signer order
-;; @param signer; Signer to validate
-;; @returns (response true) or reverts
-(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint}))
-    (let
-        (
-            (r (> (get signer signer) (var-get temp-pub)))
-        )
-       ;; save this signer in order to do comparison with the next signer
-       (var-set temp-pub (get signer signer))
-       (ok r)
-    )
+
+;; Validates public key order accumulating error inside the state provided
+;; @param pub; The public key
+;; @param state; State to accumulate next public key and errors
+;; @returns {pub: (buff 33), failed: bool}
+(define-private (validate-pub-order (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
+    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {failed: true}))
 )
 
 ;; A helper fn to unwrap a response boolean
@@ -380,9 +370,7 @@
         ;; signer weights need to be > 0
         (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
         ;; signers need to be in strictly increasing order
-        (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-        ;; reset temp var
-        (var-set temp-pub NULL-PUB)
+        (asserts! (is-eq (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER)
         (ok true)
     )
 )
@@ -401,13 +389,11 @@
     (+ accumulator (get weight signer))
 )
 
-
-(define-private (validate-pub-order2 (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
-    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {failed: true}))
-)
-
-
+;; Returns public key of a signer
+;; @param signer
+;; @returns (buff 33)
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
+
 
 (define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
      (secp256k1-recover? message-hash signature)
@@ -447,8 +433,8 @@
             (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
             (signers- (get signers signers))
             (pubs (map unwrap-pub recovered))
-            (signers-order-check (asserts! (is-eq (get failed (fold validate-pub-order2 (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
-            (pubs-order-check (asserts! (is-eq (get failed (fold validate-pub-order2 pubs {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (signers-order-check (asserts! (is-eq (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (pubs-order-check (asserts! (is-eq (get failed (fold validate-pub-order pubs {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
             (signers-- (map pub-to-signer pubs signers-))
             (total-weight (fold accumulate-weights signers-- u0))
             (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
