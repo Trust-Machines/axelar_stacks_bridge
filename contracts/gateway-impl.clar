@@ -506,6 +506,11 @@
 )
 
 
+(define-private (validate-pub-order2 (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
+    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {failed: true}))
+)
+
+
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
 
 (define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
@@ -538,34 +543,22 @@
                 })
                 (signatures (list 100 (buff 65))
 ))
-    (begin
-        (let
-            (
-                (message-hash-repeated (fold repeat-message-hash signatures (list message-hash)))
-                (recovered (map recover-signature signatures message-hash-repeated))
-                (recover-err (element-at? (filter is-error-or-pub recovered) u0))
-                (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
-                (signers- (get signers signers))
-                (pubs (map unwrap-pub recovered))
-            )
-
-
-            (var-set temp-pub NULL-PUB)
-            (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-pub-order (map get-signer-pub signers-))))) u0) ERR-SIGNERS-ORDER)
-            (var-set temp-pub NULL-PUB)
-            (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-pub-order pubs)))) u0) ERR-SIGNERS-ORDER)
-
-            (let
-                (
-                    (signers-- (map pub-to-signer pubs signers-))
-                    (total-weight (fold accumulate-weights signers-- u0))
-                )
-
-                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
-                (ok true)
-            )
+    (let
+        (
+            (message-hash-repeated (fold repeat-message-hash signatures (list message-hash)))
+            (recovered (map recover-signature signatures message-hash-repeated))
+            (recover-err (element-at? (filter is-error-or-pub recovered) u0))
+            (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
+            (signers- (get signers signers))
+            (pubs (map unwrap-pub recovered))
+            (signers-order-check (asserts! (is-eq (get failed (fold validate-pub-order2 (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (pubs-order-check (asserts! (is-eq (get failed (fold validate-pub-order2 pubs {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (signers-- (map pub-to-signer pubs signers-))
+            (total-weight (fold accumulate-weights signers-- u0))
+            (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
         )
-    )
+        (ok true)
+        )
 )
 
 
