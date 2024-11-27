@@ -16,13 +16,15 @@ const address2 = accounts.get("wallet_2")!;
 
 export function upgradeITSBasedContract(suffix: string) {
   let eta = Math.floor(Date.now() / 1000) + 86400;
-  let sourceChain = Cl.stringAscii("Source");
+  let sourceChain = Cl.stringAscii("ethereum");
   let messageId = Cl.stringAscii("1");
-  let sourceAddress = Cl.stringAscii("address0x123");
+  let sourceAddress = Cl.stringAscii("0xEde3d7425043a1e566D42DCfd6DBec8f2CFB81fB");
   let contractAddress = Cl.contractPrincipal(
     "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
     "governance",
   );
+  
+  simnet.callPublicFn("governance", "setup", [sourceChain, sourceAddress], deployer);
 
   const scope = "interchain-token";
   const prefix = `${scope}-${suffix}`;

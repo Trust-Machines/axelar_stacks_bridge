@@ -77,9 +77,14 @@
 ;; ######################
 ;; ######################
 
+(define-data-var governance-chain-hash (buff 32) 0x00)
+(define-data-var governance-address-hash (buff 32) 0x00)
+
 (define-constant ERR-PAYLOAD-DATA (err u13021))
 (define-constant ERR-INVALID-TYPE (err u13041))
 (define-constant ERR-INVALID-PROXY (err u13051))
+(define-constant ERR-UNAUTHORIZED (err u13061))
+(define-constant ERR-NOT-STARTED (err u13071))
 
 ;; Schedules a new task
 ;; @gateway-impl; Trait reference of the current gateway implementation. 
@@ -105,7 +110,11 @@
                 type: uint
             } payload) ERR-PAYLOAD-DATA))
             (payload-hash (keccak256 payload))
+            (source-chain-hash (keccak256 (unwrap-panic (to-consensus-buff? source-chain))))
+            (source-address-hash (keccak256 (unwrap-panic (to-consensus-buff? source-address))))
         )
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
+        (asserts! (and (is-eq source-chain-hash (var-get governance-chain-hash)) (is-eq source-address-hash (var-get governance-address-hash))) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
         (schedule-timelock payload-hash (get target data) (get proxy data) (get eta data) (get type data))
     )
@@ -171,5 +180,35 @@
         (asserts! (is-eq (get type data) u3) ERR-INVALID-TYPE)
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
         (cancel-timelock (get hash data))
+    )
+)
+
+;; ######################
+;; ######################
+;; ### Initialization ###
+;; ######################
+;; ######################
+
+(define-data-var is-started bool false)
+
+(define-constant ERR-STARTED (err u13081))
+
+(define-constant DEPLOYER tx-sender)
+
+;; Constructor function
+;; @param governance-chain; The name of the governance chain
+;; @param governance-addres; The address of the governance contract
+;; @returns (response true) or reverts
+(define-public (setup
+    (governance-chain (string-ascii 20))
+    (governance-address (string-ascii 128))
+)
+    (begin
+        (asserts! (is-eq (var-get is-started) false) ERR-STARTED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-UNAUTHORIZED)
+        (var-set governance-chain-hash (keccak256 (unwrap-panic (to-consensus-buff? governance-chain))))
+        (var-set governance-address-hash (keccak256 (unwrap-panic (to-consensus-buff? governance-address))))
+        (var-set is-started true)
+        (ok true)
     )
 )
