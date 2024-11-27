@@ -8,7 +8,7 @@ import {
   contractPrincipalCV,
   cvToValue,
 } from "@stacks/transactions";
-import { gasImplContract } from "./util";
+import { deployGasService, gasImplContract } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -16,6 +16,11 @@ const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas service tests", () => {
+  beforeEach(() => {
+    // Deploy gas service with address2 as gas collector
+    deployGasService(address1);
+  });
+
   describe("after initialization", () => {
     it("should validate implementation contract", () => {
       const invalidImpl = contractPrincipalCV(deployer, "traits");
@@ -104,7 +109,7 @@ describe("gas service tests", () => {
           principalCV(address2),
           uintCV(1000000000),
         ],
-        deployer
+        address1
       );
 
       expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
@@ -137,7 +142,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10116));
+      ).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
     });
 
     // Fee collection tests
@@ -147,7 +152,7 @@ describe("gas service tests", () => {
         "gas-service",
         "get-balance",
         [gasImplContract],
-        deployer
+        address1
       ).result;
 
       const balance = Number(cvToValue(balanceCV).value);
@@ -157,7 +162,7 @@ describe("gas service tests", () => {
           "gas-service",
           "collect-fees",
           [gasImplContract, principalCV(address1), uintCV(balance + 1000)],
-          deployer
+          address1
         ).result
       ).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
     });
@@ -275,7 +280,7 @@ describe("gas service tests", () => {
         [
           gasImplContract,
           uintCV(1000),
-          bufferCV(Buffer.from("txhash")),
+          bufferCV(Buffer.from("txhash".padEnd(32, "\0"))), // Ensure 32 bytes
           uintCV(0),
           principalCV(address1),
         ],
@@ -307,7 +312,7 @@ describe("gas service tests", () => {
           principalCV(address2),
           uintCV(500),
         ],
-        deployer
+        address1
       );
 
       // Verify balance decreased

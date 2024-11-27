@@ -347,3 +347,13 @@ export const gasImplContract = contractPrincipalCV(
   accounts.get("deployer")!,
   "gas-impl"
 );
+
+export const deployGasService = (gasCollector: string = contractCaller) => {
+  const { result } = simnet.callPublicFn(
+    "gas-service",
+    "setup",
+    [principalCV(gasCollector)],
+    deployerAddress
+  );
+  expect(result).toBeOk(boolCV(true));
+};

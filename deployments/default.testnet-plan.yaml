@@ -131,6 +131,13 @@ plan:
     - id: 1
       transactions:
         - contract-call:
+            contract-id: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.gas-service
+            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
+            method: setup
+            parameters:
+              - "'STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB"
+            cost: 5960
+        - contract-call:
             contract-id: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.gateway
             expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
             method: setup
