@@ -446,7 +446,7 @@
 ;; @param message-hash; The hash of the message that was signed
 ;; @param signers; The weighted signers
 ;; @param signatures The sorted signatures data
-(define-private (validate-signatures
+(define-private (validate-signatures2
                 (message-hash (buff 32))
                 (signers {
                     signers: (list 100 {signer: (buff 33), weight: uint}),
@@ -482,6 +482,85 @@
                 (var-set temp-signers (list))
                 (var-set temp-pub NULL-PUB)
                 ;; total-weight must be bigger than the signers threshold
+                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
+                (ok true)
+            )
+        )
+    )
+)
+
+
+
+;; Validates public key order
+;; @param signer; public key to validate
+;; @returns (response true) or reverts
+(define-private (validate-pub-order (pub (buff 33)))
+    (let
+        (
+            (r (> pub (var-get temp-pub)))
+        )
+       ;; save this signer in order to do comparison with the next signer
+       (var-set temp-pub pub)
+       (ok r)
+    )
+)
+
+
+(define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
+
+(define-private (recover-signature (signature (buff 65)))
+     (ok (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
+)
+
+(define-private (is-error-or-pub (signer (response (buff 33) uint)))
+  (is-err signer)
+)
+
+(define-private (unwrap-pub (pub (response (buff 33) uint))) (unwrap-panic pub))
+
+(define-private (pub-to-signer (pub (buff 33)) (signer {signer: (buff 33), weight: uint})) signer)
+
+;; This function takes message-hash and proof data and reverts if proof is invalid
+;; The signers and signatures should be sorted by signer address in ascending order
+;; @param message-hash; The hash of the message that was signed
+;; @param signers; The weighted signers
+;; @param signatures The sorted signatures data
+(define-private (validate-signatures
+                (message-hash (buff 32))
+                (signers {
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
+                })
+                (signatures (list 100 (buff 65))
+))
+    (begin
+        ;; Fill temp variables with data will be used in loops
+        (var-set temp-hash message-hash)
+        
+        (let
+            (
+                (recovered (map recover-signature signatures))
+                (recover-err (element-at? (filter is-error-or-pub recovered) u0))
+                (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
+                (signers- (get signers signers))
+                (pubs (map unwrap-pub recovered))
+            )
+
+
+            (var-set temp-pub NULL-PUB)
+            (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-pub-order (map get-signer-pub signers-))))) u0) ERR-SIGNERS-ORDER)
+            (var-set temp-pub NULL-PUB)
+            (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-pub-order pubs)))) u0) ERR-SIGNERS-ORDER)
+
+            (let
+                (
+                    (signers-- (map pub-to-signer pubs signers-))
+                    (total-weight (fold accumulate-weights signers-- u0))
+                )
+            
+          
+
                 (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
                 (ok true)
             )
