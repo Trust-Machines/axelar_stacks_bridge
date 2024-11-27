@@ -49,7 +49,7 @@ export function getCanonicalInterChainTokenId({
 }: {
   tokenAddress?: string;
 }) {
-  return simnet.callPrivateFn(
+  return simnet.callPublicFn(
     "interchain-token-factory-impl",
     "get-canonical-interchain-token-id",
     [itsImpl, Cl.address(tokenAddress)],

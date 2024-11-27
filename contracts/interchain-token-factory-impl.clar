@@ -100,16 +100,14 @@
     ;; this is assumed to be a read only operation
     ;; #[allow(unchecked_data)]
         (get-interchain-token-id-raw its-impl deploy-salt)))
-;; function interchainTokenId(address deployer, bytes32 salt) public view returns (bytes32 tokenId) {
-;;     bytes32 deploySalt = interchainTokenDeploySalt(deployer, salt);
-;;     tokenId = _interchainTokenId(deploySalt);
-;; }
 
 
 ;; Computes the ID for a canonical interchain token based on its address.
 ;; @param tokenAddress The address of the canonical interchain token.
 ;; @return tokenId The ID of the canonical interchain token.
-(define-private (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
+(define-public (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
+    ;; this is assumed to be a read only operation
+    ;; #[allow(unchecked_data)]
     (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-deploy-salt token-address)))
 
 
