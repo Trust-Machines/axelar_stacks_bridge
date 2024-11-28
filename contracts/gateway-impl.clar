@@ -338,7 +338,7 @@
 ;; @param state; State to accumulate next public key and errors
 ;; @returns {pub: (buff 33), failed: bool}
 (define-private (validate-pub-order (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
-    (if (> pub (get pub state)) (merge state {pub: pub}) (merge state {pub: pub, failed: true}))
+    (if (> pub (get pub state)) (merge state {pub: pub}) {pub: pub, failed: true})
 )
 
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
