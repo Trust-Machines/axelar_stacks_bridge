@@ -700,7 +700,7 @@ describe("gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(3053));
+      expect(result).toBeErr(uintCV(2054));
     });
 
     it('should reject if not enough weight provided ', () => {

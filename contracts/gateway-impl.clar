@@ -266,11 +266,6 @@
 ;; The minimum delay required between rotations
 (define-read-only (get-minimum-rotation-delay) (contract-call? .gateway-storage get-minimum-rotation-delay))
 
-;; Helper vars to use within loops
-(define-data-var temp-pub (buff 33) NULL-PUB)
-(define-data-var temp-hash (buff 32) 0x00)
-(define-data-var temp-signers (list 100 {signer: (buff 33), weight: uint}) (list))
-
 ;; Compute the message hash that is signed by the weighted signers
 ;; Returns an Stacks Signed Message, created from `domain-separator`, `signers-hash`, and `data-hash`.
 ;; @param signers-hash; The hash of the weighted signers that sign off on the data
@@ -338,24 +333,13 @@
     (> (get weight signer) u0) ;; signer weight must be bigger than zero
 )
 
-;; Validates signer order
-;; @param signer; Signer to validate
-;; @returns (response true) or reverts
-(define-private (validate-signer-order (signer {signer: (buff 33), weight: uint}))
-    (let
-        (
-            (r (> (get signer signer) (var-get temp-pub)))
-        )
-       ;; save this signer in order to do comparison with the next signer
-       (var-set temp-pub (get signer signer))
-       (ok r)
-    )
+;; Validates public key order accumulating error inside the state provided
+;; @param pub; The public key
+;; @param state; State to accumulate next public key and errors
+;; @returns {pub: (buff 33), failed: bool}
+(define-private (validate-pub-order (pub (buff 33)) (state {pub: (buff 33), failed: bool}))
+    (if (> pub (get pub state)) (merge state {pub: pub}) {pub: pub, failed: true})
 )
-
-;; A helper fn to unwrap a response boolean
-;; @param b;
-;; @returns bool
-(define-private (unwrap-bool (b (response bool bool))) (unwrap-panic b))
 
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
 ;; @param new-signers; Signers to validate
@@ -380,9 +364,7 @@
         ;; signer weights need to be > 0
         (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
         ;; signers need to be in strictly increasing order
-        (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-        ;; reset temp var
-        (var-set temp-pub NULL-PUB)
+        (asserts! (not (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER)
         (ok true)
     )
 )
@@ -392,53 +374,52 @@
 ;; ############################
 
 (define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-SIGNATURES-NO-MATCH (err u3053))
 (define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
-
-;; Returns true if the address of the signer provided equals to the value stored in temp-account
-;; @param signer;
-;; @returns bool
-(define-private (is-the-signer (signer {signer: (buff 33), weight: uint})) (is-eq (var-get temp-pub) (get signer signer)))
-
-
-;; This function recovers principal using the value stored in temp-hash + the signature provided and returns matching signer from the temp-signers
-;; @param signature;
-;; @returns (response {signer: (buff 33), weight: uint}) or (err u0) or (err u1)
-(define-private (signature-to-signer (signature (buff 65)))
-    (let
-       (
-            (pub (unwrap! (secp256k1-recover? (var-get temp-hash) signature) (err u0)))
-       )
-       (var-set temp-pub pub)
-       (let
-            (
-                (signers (filter is-the-signer (var-get temp-signers)))
-                (signer (unwrap! (element-at? signers u0) (err u1)))
-            )
-            (ok signer)
-       )
-    )
-)
-
-;; A helper function to unwrap signer value from an ok response
-;; @param signer;
-;; @returns {signer: (buff 33), weight: uint}
-(define-private (unwrap-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-    (unwrap-panic signer)
-)
-
-;; A helper function to determine whether the provided signer is an error.
-;; @param signer;
-;; @returns bool
-(define-private (is-error-or-signer (signer (response {signer: (buff 33), weight: uint} uint)))
-  (is-err signer)
-)
 
 ;; Accumulates weight of signers
 ;; @param signer
 ;; @accumulator
 (define-private (accumulate-weights (signer {signer: (buff 33), weight: uint}) (accumulator uint))
     (+ accumulator (get weight signer))
+)
+
+;; Returns public key of a signer
+;; @param signer
+;; @returns (buff 33)
+(define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
+
+;; Recovers ECDS signature with the message hash provided
+;; @param signature
+;; @param message-hash
+;; @returns (response (buff 33) uint)
+(define-private (recover-signature (signature (buff 65)) (message-hash (buff 32)))
+     (secp256k1-recover? message-hash signature)
+)
+
+;; Returns true if the provided response is an error
+;; @param signer
+;; @returns bool
+(define-private (is-error-or-pub (signer (response (buff 33) uint)))
+  (is-err signer)
+)
+
+;; Helper function to unwrap pubkey from reponse
+;; @param pub
+;; @returns (buff 33)
+(define-private (unwrap-pub (pub (response (buff 33) uint))) (unwrap-panic pub))
+
+;; Helper function to iterate pubkeys along with signers and return signer
+;; @param pub
+;; @param signer
+;; @returns {signer: (buff 33), weight: uint}
+(define-private (pub-to-signer (pub (buff 33)) (signer {signer: (buff 33), weight: uint})) signer)
+
+;; Helper function to repeat the same messages hash in a list
+;; @param signature
+;; @param state
+;; @returns (list 100 (buff 32))
+(define-private (repeat-message-hash (signature (buff 65)) (state (list 100 (buff 32))) )
+    (unwrap-panic (as-max-len? (append state (unwrap-panic (element-at? state u0))) u100))
 )
 
 ;; This function takes message-hash and proof data and reverts if proof is invalid
@@ -455,37 +436,23 @@
                 })
                 (signatures (list 100 (buff 65))
 ))
-    (begin
-        ;; Fill temp variables with data will be used in loops
-        (var-set temp-hash message-hash)
-        (var-set temp-signers (get signers signers))
-        (let
-            (
-                (signers-raw (map signature-to-signer signatures))
-                (signer-err (element-at? (filter is-error-or-signer signers-raw) u0))
-            )
-            (asserts! (is-none signer-err) (unwrap-panic (element-at? (list ERR-INVALID-SIGNATURE-DATA ERR-SIGNATURES-NO-MATCH) (unwrap-err-panic (unwrap-panic signer-err)))))
-            (let
-                (
-                    ;; Convert signatures to signers
-                    (signers- (map unwrap-signer signers-raw))
-                    ;; Total weight of signatures provided
-                    (total-weight (fold accumulate-weights signers- u0))
-                )
-
-                ;; Reset temp principal var
-                (var-set temp-pub NULL-PUB)
-                ;; Signers need to be in strictly increasing order
-                (asserts! (is-eq (len (filter not (map unwrap-bool (map validate-signer-order signers-)))) u0) ERR-SIGNERS-ORDER)
-                ;; Reset temp vars
-                (var-set temp-hash 0x00)
-                (var-set temp-signers (list))
-                (var-set temp-pub NULL-PUB)
-                ;; total-weight must be bigger than the signers threshold
-                (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT)
-                (ok true)
-            )
+    (let
+        (
+            (message-hash-repeated (fold repeat-message-hash signatures (list message-hash)))
+            (recovered (map recover-signature signatures message-hash-repeated))
+            (recover-err (element-at? (filter is-error-or-pub recovered) u0))
+            (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
+            (pubs (map unwrap-pub recovered))
+            ;; the signers and signatures should be sorted by signer address in ascending order
+            (pubs-order-check (asserts! (not (get failed (fold validate-pub-order pubs {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER))
+            (signers- (get signers signers))
+            ;; the signers and signatures should be sorted by signer address in ascending order
+            (signers-order-check (asserts! (not (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER))
+            (signers-- (map pub-to-signer pubs signers-))
+            (total-weight (fold accumulate-weights signers-- u0))
+            (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
         )
+        (ok true)
     )
 )
 
