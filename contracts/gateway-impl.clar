@@ -364,7 +364,7 @@
         ;; signer weights need to be > 0
         (asserts! (is-eq (len (filter not (map validate-signer-weight signers-))) u0) ERR-SIGNER-WEIGHT)
         ;; signers need to be in strictly increasing order
-        (asserts! (is-eq (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER)
+        (asserts! (not (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER)
         (ok true)
     )
 )
@@ -444,10 +444,10 @@
             (recover-err-check (asserts! (is-none recover-err) ERR-INVALID-SIGNATURE-DATA))
             (pubs (map unwrap-pub recovered))
             ;; the signers and signatures should be sorted by signer address in ascending order
-            (pubs-order-check (asserts! (is-eq (get failed (fold validate-pub-order pubs {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (pubs-order-check (asserts! (not (get failed (fold validate-pub-order pubs {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER))
             (signers- (get signers signers))
             ;; the signers and signatures should be sorted by signer address in ascending order
-            (signers-order-check (asserts! (is-eq (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false})) false) ERR-SIGNERS-ORDER))
+            (signers-order-check (asserts! (not (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER))
             (signers-- (map pub-to-signer pubs signers-))
             (total-weight (fold accumulate-weights signers-- u0))
             (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
