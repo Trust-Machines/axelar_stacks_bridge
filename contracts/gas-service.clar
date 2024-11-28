@@ -8,6 +8,8 @@
 ;; ######################
 
 (define-constant ERR-INVALID-IMPL (err u10211))
+(define-constant ERR-STARTED (err u60511))
+(define-constant OWNER tx-sender)
 
 (define-private (is-correct-impl (gas-impl <gas-impl-trait>)) (is-eq (contract-call? .gas-storage get-impl) (contract-of gas-impl)))
 
@@ -87,6 +89,13 @@
     (begin
         (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
         (contract-call? gas-impl transfer-ownership new-owner)
+    )
+)
+
+(define-public (transfer-gas-collector (gas-impl <gas-impl-trait>) (new-gas-collector principal))
+    (begin
+        (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
+        (contract-call? gas-impl transfer-gas-collector new-gas-collector)
     )
 )
 
@@ -177,3 +186,18 @@
 
 (define-public (set-governance (governance principal))
     (ok true))
+
+;; Constructor function
+;; @param gas-collector
+;; @returns (response true) or reverts
+(define-public (setup
+    (gas-collector principal)
+)
+    (begin
+        (asserts! (not (contract-call? .gas-storage get-is-started)) ERR-STARTED)
+        (asserts! (is-eq contract-caller OWNER) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gas-storage set-gas-collector gas-collector))
+        (try! (contract-call? .gas-storage start))
+        (ok true)
+    )
+)

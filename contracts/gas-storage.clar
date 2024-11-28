@@ -1,6 +1,7 @@
 (define-constant PROXY .gas-service)
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
+(define-constant ERR-OWNER-CANNOT-BE-COLLECTOR (err u10112))
 
 (define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 
@@ -8,11 +9,26 @@
 
 (define-private (is-impl) (is-eq contract-caller (var-get impl)))
 
+(define-private (is-gas-collector) (is-eq contract-caller (var-get gas-collector)))
+
+
 ;; ######################
 ;; ######################
 ;; ####### Storage ######
 ;; ######################
 ;; ######################
+
+;; Constructor flag
+(define-data-var is-started bool false)
+
+(define-read-only (get-is-started) (var-get is-started))
+
+(define-public (start)
+    (begin
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (ok (var-set is-started true))
+    )
+)
 
 ;; Gas Service implementation contract address 
 (define-data-var impl principal .gas-impl)
@@ -23,6 +39,19 @@
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set impl new-impl))
+    )
+)
+
+;; Gas Collector
+(define-data-var gas-collector principal contract-caller)
+
+(define-read-only (get-gas-collector) (var-get gas-collector))
+
+(define-public (set-gas-collector (new-gas-collector principal)) 
+    (begin
+        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (not (is-eq new-gas-collector (get-owner))) ERR-OWNER-CANNOT-BE-COLLECTOR)
+        (ok (var-set gas-collector new-gas-collector))
     )
 )
 
@@ -113,6 +142,15 @@
     (begin 
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {type: "transfer-ownership", new-owner: new-owner})
+        (ok true)
+    )
+)
+(define-public (emit-transfer-gas-collector
+        (new-gas-collector principal)
+) 
+    (begin 
+        (asserts! (is-impl) ERR-UNAUTHORIZED)
+        (print {type: "transfer-gas-collector", new-gas-collector: new-gas-collector})
         (ok true)
     )
 )

@@ -5,9 +5,9 @@
 (define-constant ERR-INVALID-AMOUNT (err u10112))
 (define-constant ERR-INVALID-PRINCIPAL (err u10115))
 (define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-OWNER-ONLY (err u10116))
 (define-constant ERR-NOT-IMPLEMENTED (err u10113))
-
+(define-constant ERR-ONLY-OWNER (err u10151))
+(define-constant ERR-ONLY-GAS-COLLECTOR (err u10152))
 ;; Proxy contract reference
 (define-constant PROXY .gas-service)
 
@@ -19,9 +19,11 @@
 ;; ####################
 ;; ####################
 
-(define-constant ERR-ONLY-OWNER (err u10151))
+
 
 (define-read-only (get-owner) (contract-call? .gas-storage get-owner))
+
+(define-read-only (get-gas-collector) (contract-call? .gas-storage get-gas-collector))
 
 ;; Transfers ownership to a new account
 (define-public (transfer-ownership (new-owner principal))
@@ -30,6 +32,17 @@
         (asserts! (is-eq tx-sender (get-owner)) ERR-ONLY-OWNER)
         (try! (contract-call? .gas-storage set-owner new-owner))
         (try! (contract-call? .gas-storage emit-transfer-ownership new-owner))
+        (ok true)
+    )
+)
+
+;; Transfers gas collector to a new account
+(define-public (transfer-gas-collector (new-gas-collector principal))
+    (begin
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
+        (try! (contract-call? .gas-storage set-gas-collector new-gas-collector))
+        (try! (contract-call? .gas-storage emit-transfer-gas-collector new-gas-collector))
         (ok true)
     )
 )
@@ -82,7 +95,7 @@
     (amount uint))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
-        (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
+        (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))
@@ -99,8 +112,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        ;; Ensure only the owner can call this function
-        (asserts! (is-eq tx-sender (get-owner)) ERR-OWNER-ONLY)
+        (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
         (try! (as-contract (stx-transfer? amount tx-sender receiver)))

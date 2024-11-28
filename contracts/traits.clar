@@ -363,6 +363,7 @@
         (collect-fees (principal uint) (response bool uint))
         (get-balance () (response uint uint))
         (transfer-ownership (principal) (response bool uint))
+        (transfer-gas-collector (principal) (response bool uint))
         (pay-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (add-gas (uint principal (buff 32) uint principal) (response bool uint))
         (pay-native-gas-for-express-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
