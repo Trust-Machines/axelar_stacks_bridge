@@ -143,36 +143,38 @@ The contracts implement several levels of access control:
 
 ### Gas Payment Events
 
-```
-clarity
+```clarity
 {
     type: "native-gas-paid-for-contract-call",
     sender: principal,
     amount: uint,
     refund-address: principal,
-    destination-chain: string-ascii<20>,
-    destination-address: string-ascii<128>,
-    payload-hash: buff<32>
+    destination-chain: (string-ascii 20),
+    destination-address: (string-ascii 128),
+    payload-hash: (buff 32)
 }
+```
 
+```clarity
 {
     type: "native-gas-added",
     amount: uint,
     refund-address: principal,
-    tx-hash: buff<32>,
+    tx-hash: (buff 32),
     log-index: uint
 }
 ```
 
 ### Administrative Events
 
-```
-clarity
+```clarity
 {
     type: "transfer-ownership",
     new-owner: principal
 }
+```
 
+```clarity
 {
     type: "transfer-gas-collector",
     new-gas-collector: principal
@@ -181,16 +183,17 @@ clarity
 
 ### Financial Events
 
-```
-clarity
+```clarity
 {
     type: "refunded",
-    tx-hash: buff<32>,
+    tx-hash: (buff 32),
     log-index: uint,
     receiver: principal,
     amount: uint
 }
+```
 
+```clarity
 {
     type: "fees-collected",
     receiver: principal,
