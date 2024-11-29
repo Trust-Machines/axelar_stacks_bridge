@@ -35,19 +35,18 @@ This architecture allows for upgradability while maintaining a consistent state.
 
 ## Core Functions
 
-### Gas Payment Functions
-
-#### pay-native-gas-for-contract-call
+### pay-native-gas-for-contract-call
 
 Allows users to pay for cross-chain contract calls using native STX.
 
 Parameters:
 
-- `amount`: uint - Amount of STX to pay
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `amount`: uint - Amount of uSTX to pay
 - `sender`: principal - The transaction initiator
-- `destination-chain`: string-ascii<20> - Target chain identifier
-- `destination-address`: string-ascii<128> - Target address on destination chain
-- `payload`: buff<64000> - Contract call payload
+- `destination-chain`: (string-ascii 20) - Target chain identifier/name
+- `destination-address`: (string-ascii 128) - Target address on destination chain
+- `payload`: (buff 64000) - Contract call payload
 - `refund-address`: principal - Address for potential refunds
 
 #### add-native-gas
@@ -56,62 +55,65 @@ Adds additional gas payment for an existing transaction.
 
 Parameters:
 
-- `amount`: uint - Additional STX amount
-- `tx-hash`: buff<32> - Original transaction hash
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `amount`: uint - Additional uSTX amount
+- `tx-hash`: (buff 32) - Original transaction hash
 - `log-index`: uint - Log index of the original transaction
 - `refund-address`: principal - Address for potential refunds
 
-### Management Functions
-
-#### refund
+### refund
 
 Allows gas collector to process refunds.
 
 Parameters:
 
-- `tx-hash`: buff<32> - Transaction hash
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `tx-hash`: (buff 32) - Transaction hash
 - `log-index`: uint - Log index
 - `receiver`: principal - Refund recipient
 - `amount`: uint - Refund amount
 
-#### collect-fees
+### collect-fees
 
 Enables gas collector to withdraw accumulated fees.
 
 Parameters:
 
+- `gas-impl` <gas-impl-trait> - Current impl contract
 - `receiver`: principal - Fee recipient
 - `amount`: uint - Amount to collect
 
-### Administrative Functions
-
-#### transfer-ownership
+### transfer-ownership
 
 Transfers contract ownership to a new address.
 
 Parameters:
 
+- `gas-impl` <gas-impl-trait> - Current impl contract
 - `new-owner`: principal - New owner address
 
-#### transfer-gas-collector
+### transfer-gas-collector
 
 Transfers gas collector role to a new address.
 
 Parameters:
 
+- `gas-impl` <gas-impl-trait> - Current impl contract
 - `new-gas-collector`: principal - New gas collector address
 
-### Query Functions
-
-#### get-balance
+### get-balance
 
 Returns the current STX balance of the contract.
 
-#### get-owner
+Parameters:
+
+- `gas-impl` <gas-impl-trait> - Current impl contract
+
+### get-owner
 
 Returns the current contract owner.
 
-#### get-gas-collector
+### get-gas-collector
 
 Returns the current gas collector address.
 
@@ -141,50 +143,60 @@ The contracts implement several levels of access control:
 
 ### Gas Payment Events
 
+```
 clarity
 {
-type: "native-gas-paid-for-contract-call",
-sender: principal,
-amount: uint,
-refund-address: principal,
-destination-chain: string-ascii<20>,
-destination-address: string-ascii<128>,
-payload-hash: buff<32>
+    type: "native-gas-paid-for-contract-call",
+    sender: principal,
+    amount: uint,
+    refund-address: principal,
+    destination-chain: string-ascii<20>,
+    destination-address: string-ascii<128>,
+    payload-hash: buff<32>
 }
+
 {
-type: "native-gas-added",
-amount: uint,
-refund-address: principal,
-tx-hash: buff<32>,
-log-index: uint
+    type: "native-gas-added",
+    amount: uint,
+    refund-address: principal,
+    tx-hash: buff<32>,
+    log-index: uint
 }
+```
 
 ### Administrative Events
 
+```
 clarity
 {
-type: "transfer-ownership",
-new-owner: principal
+    type: "transfer-ownership",
+    new-owner: principal
 }
+
 {
-type: "transfer-gas-collector",
-new-gas-collector: principal
+    type: "transfer-gas-collector",
+    new-gas-collector: principal
 }
+```
 
 ### Financial Events
 
+```
 clarity
 {
-type: "refunded",
-tx-hash: buff<32>,
-log-index: uint,
-receiver: principal,
-amount: uint}
-{
-type: "fees-collected",
-receiver: principal,
-amount: uint
+    type: "refunded",
+    tx-hash: buff<32>,
+    log-index: uint,
+    receiver: principal,
+    amount: uint
 }
+
+{
+    type: "fees-collected",
+    receiver: principal,
+    amount: uint
+}
+```
 
 ## Upgrade Process
 
