@@ -1,140 +1,219 @@
-# Gas Service Contract
+# Gas Service Smart Contracts
 
 ## Overview
 
-The Gas Service Contract manages gas payments and refunds for cross-chain communication on the Stacks network. It allows users to pay for gas for cross-chain calls and provides functionality for refunding and managing the contract's balance.
+The Gas Service is implemented as a set of three contracts that work together using a proxy pattern:
 
-## Function Descriptions
+1. **Gas Service (Proxy)**: The main entry point that delegates calls to the implementation
+2. **Gas Implementation**: Contains the core business logic
+3. **Gas Storage**: Manages the contract's state
+
+This architecture allows for upgradability while maintaining a consistent state.
+
+## Contract Architecture
+
+### Gas Service (Proxy)
+
+- Acts as the main entry point for all interactions
+- Validates implementation contract before delegating calls
+- Manages contract upgrades through governance
+- Handles initial setup
+
+### Gas Implementation
+
+- Contains the core business logic
+- Manages gas payments and refunds
+- Handles fee collection
+- Controls ownership and gas collector operations
+
+### Gas Storage
+
+- Stores all contract state
+- Manages access control
+- Emits events
+- Maintains configuration data
+
+## Core Functions
 
 ### pay-native-gas-for-contract-call
 
-This function allows users to pay for gas using native currency (STX) for a contract call. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
+Allows users to pay for cross-chain contract calls using native STX.
 
 Parameters:
 
-- `amount`: The amount of STX to pay for gas
-- `sender`: The address that will be recorded as initiating the cross-chain call (can be different from tx-sender)
-- `destination-chain`: The target chain for the cross-chain call
-- `destination-address`: The target address on the destination chain
-- `payload`: Data payload for the contract call
-- `refund-address`: The address where refunds, if any, should be sent
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `amount`: uint - Amount of uSTX to pay
+- `sender`: principal - The transaction initiator
+- `destination-chain`: (string-ascii 20) - Target chain identifier/name
+- `destination-address`: (string-ascii 128) - Target address on destination chain
+- `payload`: (buff 64000) - Contract call payload
+- `refund-address`: principal - Address for potential refunds
 
-Error conditions:
+#### add-native-gas
 
-- Returns `err-invalid-amount` if the amount is not greater than 0
-- Returns `err-insufficient-balance` if the caller has insufficient balance
-
-### add-native-gas
-
-This function allows anyone to add additional native gas payment for an existing transaction. It deducts the specified amount from the caller's balance and adds it to the contract's balance.
+Adds additional gas payment for an existing transaction.
 
 Parameters:
 
-- `amount`: The amount of STX to add as gas
-- `sender`: The address that initiated the cross-chain call
-- `tx-hash`: The transaction hash of the cross-chain call
-- `log-index`: The log index for the cross-chain call
-- `refund-address`: The address where refunds, if any, should be sent
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `amount`: uint - Additional uSTX amount
+- `tx-hash`: (buff 32) - Original transaction hash
+- `log-index`: uint - Log index of the original transaction
+- `refund-address`: principal - Address for potential refunds
 
 ### refund
 
-This function can only be called by the contract owner to refund gas payment to a specified receiver. It transfers the specified amount from the contract's balance to the receiver.
+Allows gas collector to process refunds.
 
 Parameters:
 
-- `tx-hash`: The transaction hash of the cross-chain call
-- `log-index`: The log index for the cross-chain call
-- `receiver`: The address to receive the refund
-- `amount`: The amount of STX to refund
-
-### transfer-ownership
-
-This function allows the current owner to transfer ownership of the contract to a new address.
-
-Parameters:
-
-- `new-owner`: The address of the new owner
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `tx-hash`: (buff 32) - Transaction hash
+- `log-index`: uint - Log index
+- `receiver`: principal - Refund recipient
+- `amount`: uint - Refund amount
 
 ### collect-fees
 
-This function can only be called by the contract owner to collect accumulated fees from the contract.
+Enables gas collector to withdraw accumulated fees.
 
 Parameters:
 
-- `receiver`: The address to receive the collected fees
-- `amount`: The amount of STX to collect
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `receiver`: principal - Fee recipient
+- `amount`: uint - Amount to collect
 
-## Read-Only Functions
+### transfer-ownership
+
+Transfers contract ownership to a new address.
+
+Parameters:
+
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `new-owner`: principal - New owner address
+
+### transfer-gas-collector
+
+Transfers gas collector role to a new address.
+
+Parameters:
+
+- `gas-impl` <gas-impl-trait> - Current impl contract
+- `new-gas-collector`: principal - New gas collector address
 
 ### get-balance
 
-Returns the current balance of the contract.
+Returns the current STX balance of the contract.
 
-### is-owner
+Parameters:
 
-Checks if the caller is the current owner of the contract.
+- `gas-impl` <gas-impl-trait> - Current impl contract
 
 ### get-owner
 
-Returns the current owner of the contract.
+Returns the current contract owner.
 
-## Events
+### get-gas-collector
 
-### native-gas-paid-for-contract-call
+Returns the current gas collector address.
 
-clarity
-{
-type: "native-gas-paid-for-contract-call",
-sender: principal,
-amount: uint,
-refund-address: principal,
-destination-chain: (string-ascii 32),
-destination-address: (string-ascii 128),
-payload-hash: (buff 10240)
-}
+## Access Control
 
-### native-gas-added
+The contracts implement several levels of access control:
 
-clarity
-{
-type: "native-gas-added",
-amount: uint,
-refund-address: principal,
-tx-hash: (buff 32),
-log-index: uint
-}
-
-### refunded
-
-{
-type: "refunded",
-sender: principal,
-amount: uint,
-tx-hash: (optional (buff 32)),
-log-index: (optional uint)
-}
-
-### ownership-transferred
-
-clarity
-{
-type: "ownership-transferred",
-new-owner: principal
-}
-
-### fees-collected
-
-clarity
-{
-type: "fees-collected",
-receiver: principal,
-amount: uint
-}
+1. **Owner**: Can transfer ownership
+2. **Gas Collector**: Can process refunds and collect fees
+3. **Proxy**: Can call implementation functions
+4. **Implementation**: Can emit events and modify storage
 
 ## Error Codes
 
-- `err-owner-only (u100)`: Thrown when a function restricted to the owner is called by another address.
-- `err-insufficient-balance (u101)`: Thrown when trying to perform an operation with an amount greater than the available balance.
-- `err-invalid-amount (u102)`: Thrown when trying to pay or refund with an invalid (zero or negative) amount.
-- `err-not-implemented (u103)`: Thrown when calling functions that are not yet implemented.
-- `err-invalid-sender (u104)`: Thrown when the sender specified in pay-native-gas-for-contract-call is not the same as tx-sender.
+- `ERR-UNAUTHORIZED (u10111)`: Unauthorized access
+- `ERR-OWNER-CANNOT-BE-COLLECTOR (u10112)`: Owner cannot be gas collector
+- `ERR-INVALID-AMOUNT (u10112)`: Invalid amount specified
+- `ERR-NOT-IMPLEMENTED (u10113)`: Function not implemented
+- `ERR-INSUFFICIENT-BALANCE (u10114)`: Insufficient contract balance
+- `ERR-INVALID-PRINCIPAL (u10115)`: Invalid principal provided
+- `ERR-ONLY-OWNER (u10151)`: Action restricted to owner
+- `ERR-ONLY-GAS-COLLECTOR (u10152)`: Action restricted to gas collector
+- `ERR-INVALID-IMPL (u10211)`: Invalid implementation contract
+- `ERR-STARTED (u60511)`: Contract already initialized
+
+## Events
+
+### Gas Payment Events
+
+```clarity
+{
+    type: "native-gas-paid-for-contract-call",
+    sender: principal,
+    amount: uint,
+    refund-address: principal,
+    destination-chain: (string-ascii 20),
+    destination-address: (string-ascii 128),
+    payload-hash: (buff 32)
+}
+```
+
+```clarity
+{
+    type: "native-gas-added",
+    amount: uint,
+    refund-address: principal,
+    tx-hash: (buff 32),
+    log-index: uint
+}
+```
+
+### Administrative Events
+
+```clarity
+{
+    type: "transfer-ownership",
+    new-owner: principal
+}
+```
+
+```clarity
+{
+    type: "transfer-gas-collector",
+    new-gas-collector: principal
+}
+```
+
+### Financial Events
+
+```clarity
+{
+    type: "refunded",
+    tx-hash: (buff 32),
+    log-index: uint,
+    receiver: principal,
+    amount: uint
+}
+```
+
+```clarity
+{
+    type: "fees-collected",
+    receiver: principal,
+    amount: uint
+}
+```
+
+## Upgrade Process
+
+The contract can be upgraded through the governance system:
+
+1. Only the governance implementation can call `set-impl`
+2. Previous implementation's balance is recorded
+3. New implementation is set in storage
+4. Event is emitted with upgrade details
+
+## Security Considerations
+
+1. All sensitive functions require appropriate authorization
+2. Balance checks before transfers
+3. Owner cannot be gas collector
+4. Proxy pattern ensures state preservation during upgrades
+5. Implementation validation before delegation
