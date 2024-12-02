@@ -428,7 +428,7 @@
     (let (
             (token-info (unwrap! (contract-call? .interchain-token-service-storage get-token-info token-id) ERR-TOKEN-NOT-FOUND))
             (manager (get manager-address token-info))
-            (current-its-impl (contract-call? .native-interchain-token get-its-impl))
+            (current-its-impl (contract-call? .interchain-token-service-storage get-service-impl))
     )
         (asserts! (is-eq manager (contract-of token-manager)) ERR-TOKEN-MISMATCH)
         (asserts! (unwrap! (contract-call? token-manager is-minter minter) ERR-TOKEN-NOT-DEPLOYED) ERR-NOT-MINTER)
