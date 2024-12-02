@@ -10,156 +10,142 @@ plan:
       transactions:
         - contract-publish:
             contract-name: gas-storage
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138782080
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 2773202
             path: contracts/gas-storage.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: traits
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139474936
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 307870
             path: contracts/traits.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gas-impl
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138902576
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 306706
             path: contracts/gas-impl.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gateway-storage
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139098383
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 307039
             path: contracts/gateway-storage.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gas-service
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138932700
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 306806
             path: contracts/gas-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gateway-impl
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 140408785
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 309798
             path: contracts/gateway-impl.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: gateway
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138917638
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 306673
             path: contracts/gateway.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: governance
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139038135
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 307172
             path: contracts/governance.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: hello-world
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138767017
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 306307
             path: contracts/hello-world.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-service-storage
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139489998
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 307903
             path: contracts/interchain-token-service-storage.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-factory
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139143570
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 307139
             path: contracts/interchain-token-factory.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-service
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 140017171
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 309067
             path: contracts/interchain-token-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-factory-impl
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 139836426
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 309167
             path: contracts/interchain-token-factory-impl.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: interchain-token-service-impl
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 141839683
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 313090
             path: contracts/interchain-token-service-impl.clar
             anchor-block-only: true
             clarity-version: 2
-        # - contract-publish:
-        #     contract-name: native-interchain-token
-        #     expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-        #     cost: 139459874
-        #     path: contracts/native-interchain-token.clar
-        #     anchor-block-only: true
-        #     clarity-version: 2
         - contract-publish:
             contract-name: sample-sip-010
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-            cost: 138661583
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
+            cost: 306075
             path: contracts/sample-sip-010.clar
             anchor-block-only: true
             clarity-version: 2
-        # - contract-publish:
-        #     contract-name: token-manager
-        #     expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
-        #     cost: 139414687
-        #     path: contracts/token-manager.clar
-        #     anchor-block-only: true
-        #     clarity-version: 2
       epoch: "2.5"
     - id: 1
       transactions:
         - contract-call:
-            contract-id: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.gas-service
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
+            contract-id: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.gas-service
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
             method: setup
             parameters:
-              - "'STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB"
+              - "'ST3ASWHNH5G542F1V58CQAND5GFN4ZDGXAJHC2VR0"
             cost: 5960
         - contract-call:
-            contract-id: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.gateway
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
+            contract-id: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.gateway
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
             method: setup
             parameters:
               - "0x0c00000003056e6f6e63650200000020000000000000000000000000000000000000000000000000000000000038d32c077369676e6572730b000000030c00000002067369676e65720200000021026e4a6fc3a6988c4cd7d3bc02e07bac8b72a9f5342d92f42161e7b6e57dd47e180677656967687401000000000000000000000000000000010c00000002067369676e6572020000002102d19c406d763c98d98554c980ae03543b936aad0c3f1289a367a0c2aafb71e8c10677656967687401000000000000000000000000000000010c00000002067369676e6572020000002103ea531f69879b3b15b6e3fe262250d5ceca6217e03e4def6919d4bdce3a7ec389067765696768740100000000000000000000000000000001097468726573686f6c640100000000000000000000000000000002"
-              - "'STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB"
+              - "'ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0"
               - "0x9f3f816350e47038614b888448ffbcb9f520b2bcdeeff15cec6c08c3c61c4f20"
               - "u3600"
               - "u16"
             cost: 5960
         - contract-call:
-            contract-id: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.interchain-token-service
-            expected-sender: STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB
+            contract-id: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.interchain-token-service
+            expected-sender: ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0
             method: setup
             parameters:
-              - '"STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.interchain-token-service"'
-              - "'STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.gas-service"
-              - "'STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB"
+              - '"ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.interchain-token-service"'
+              - "'ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.gas-service"
+              - "'ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0"
               - '(list
                 {chain-name: "axelar", address: "axelar157hl7gpuknjmhtac2qnphuazv2yerfagva7lsu9vuj2pgn32z22qa26dk4"}
                 {chain-name: "avalanche-fuji", address: "hub"}
-                {chain-name: "stacks", address: "STT0EEYR979J0ET1FMQSGFCA389JZSSGVFAC66KB.interchain-token-service"})'
+                {chain-name: "stacks", address: "ST3KDCFGNAXJ67GDD0N6HN7GMX9DRBYZT5QV6DCS0.interchain-token-service"})'
               - '"axelar"'
               - "none"
             cost: 5960
