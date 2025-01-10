@@ -112,8 +112,11 @@
         (h1 (if is-left (unwrap-panic (element-at proof-hashes ctr)) cur-hash))
         (h2 (if is-left cur-hash (unwrap-panic (element-at proof-hashes ctr))))
         (next-hash (tagged-hash merkle-path-node-tag (concat h1 h2)))
-        (is-verified (and (is-eq (+ u1 ctr) (len proof-hashes)) (is-eq next-hash root-hash))))
-    (merge state { cur-hash: next-hash, verified: is-verified})))
+        (is-verified (and (is-eq (+ u1 ctr) (len proof-hashes)) (is-eq next-hash root-hash)))
+		)
+    	(merge state { cur-hash: next-hash, verified: is-verified})
+	)
+)
 
 ;; Note that the hashes in the proof must be tagged hashes.
 ;; Do not put TXIDs in the proof directly, they must first be
@@ -162,7 +165,7 @@
 ;; state_index_root: 32 bytes
 ;; timestamp: 8 bytes
 ;; miner_signature: 65 bytes
-;; signer_bitvec:  bytes bitvec bit count + 4 bytes buffer length + bitvec buffer
+;; signer_bitvec: 2 bytes bitvec bit count + 4 bytes buffer length + bitvec buffer
 (define-read-only (was-tx-mined-compact (txid (buff 32)) (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint}) (tx-block-height uint) (block-header-without-signer-signatures (buff 712)))
 	(let (
 		(target-header-hash (unwrap! (get-block-info-header-hash? tx-block-height) err-invalid-block-height))
