@@ -12,88 +12,88 @@ epoch = 3.0
 
 [contracts.gas-impl]
 path = 'contracts/gas-impl.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gas-service]
 path = 'contracts/gas-service.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gas-storage]
 path = 'contracts/gas-storage.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gateway]
 path = 'contracts/gateway.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gateway-impl]
 path = 'contracts/gateway-impl.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gateway-storage]
 path = 'contracts/gateway-storage.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.governance]
 path = 'contracts/governance.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.hello-world]
 path = 'contracts/hello-world.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.interchain-token-factory]
 path = 'contracts/interchain-token-factory.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.interchain-token-factory-impl]
 path = 'contracts/interchain-token-factory-impl.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.interchain-token-service]
 path = 'contracts/interchain-token-service.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.interchain-token-service-impl]
 path = 'contracts/interchain-token-service-impl.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.interchain-token-service-storage]
 path = 'contracts/interchain-token-service-storage.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.native-interchain-token]
 path = 'contracts/native-interchain-token.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.sample-sip-010]
 path = 'contracts/sample-sip-010.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.token-manager]
 path = 'contracts/token-manager.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 
 [contracts.traits]
 path = 'contracts/traits.clar'
-clarity_version = 2
-epoch = 2.5
+clarity_version = 3
+epoch = 3.0
 [repl.analysis]
 passes = ['check_checker']
 

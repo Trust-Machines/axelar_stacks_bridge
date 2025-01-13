@@ -513,7 +513,7 @@
     (let
         (
             (last-rotation-timestamp_ (get-last-rotation-timestamp))
-            (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
+            (current-ts (unwrap-panic (get-stacks-block-info? time  (- stacks-block-height u1))))
         )
         (asserts! (is-eq (and (is-eq enforce-rotation-delay true) (< (- current-ts last-rotation-timestamp_) (get-minimum-rotation-delay))) false) ERR-INSUFFICIENT-ROTATION-DELAY)
         (try! (contract-call? .gateway-storage set-last-rotation-timestamp current-ts))
