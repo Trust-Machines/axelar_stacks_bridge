@@ -401,7 +401,7 @@ describe("gateway tests", () => {
     it('should allow rotating signers after the delay', () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"), { minimumRotationDelay: (10 * 60) + 1 });
 
-      simnet.mineBlock([]);
+      simnet.mineEmptyBlocks(6);
 
       const newSigners = getSigners(11, 15, 1, 3, "2")
 

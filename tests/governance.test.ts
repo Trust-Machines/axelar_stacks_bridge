@@ -76,8 +76,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // finalize
@@ -144,8 +144,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // finalize
@@ -212,8 +212,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // finalize
@@ -280,8 +280,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // finalize
@@ -348,8 +348,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // finalize
@@ -416,8 +416,8 @@ describe("governance tests", () => {
     const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
     expect(timelock).toStrictEqual(payload);
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // try to finalize
@@ -626,8 +626,8 @@ describe("governance tests", () => {
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
     expect(resultExecute).toBeOk(boolCV(true));
 
-    while (Number(simnet.getBlockTime()) < eta) {
-      simnet.mineBlock([]);
+    while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+      simnet.mineEmptyBlock()
     }
 
     // should not finalize with invalid type

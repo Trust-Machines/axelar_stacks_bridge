@@ -136,8 +136,8 @@ export function upgradeITSBasedContract(suffix: string) {
   );
   expect(timelock).toStrictEqual(payload);
 
-  while (Number(simnet.getBlockTime()) < eta) {
-    simnet.mineBlock([]);
+  while (Number(simnet.getBlockTime()) < (eta + 5000)) {
+    simnet.mineEmptyBlock()
   }
 
   // finalize
