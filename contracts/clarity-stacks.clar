@@ -166,7 +166,7 @@
 ;; timestamp: 8 bytes
 ;; miner_signature: 65 bytes
 ;; signer_bitvec: 2 bytes bitvec bit count + 4 bytes buffer length + bitvec buffer
-(define-read-only (was-tx-mined-compact (txid (buff 32)) (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint}) (tx-block-height uint) (block-header-without-signer-signatures (buff 712)))
+(define-read-only (was-tx-mined-compact (txid (buff 32)) (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint}) (tx-block-height uint) (block-header-without-signer-signatures (buff 800)))
 	(let (
 		(target-header-hash (unwrap! (get-block-info-header-hash? tx-block-height) err-invalid-block-height))
 		(tx-merkle-root (unwrap-panic (as-max-len? (unwrap! (slice? block-header-without-signer-signatures u69 u101) err-block-header-too-short) u32)))
