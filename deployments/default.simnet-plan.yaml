@@ -139,4 +139,9 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/token-manager.clar
             clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: verify-onchain
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/verify-onchain.clar
+            clarity-version: 3
       epoch: "3.0"

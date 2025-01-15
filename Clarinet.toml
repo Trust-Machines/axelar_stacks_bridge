@@ -9,6 +9,10 @@ requirements = []
 path = 'contracts/clarity-stacks.clar'
 clarity_version = 3
 epoch = 3.0
+[contracts.verify-onchain]
+path = 'contracts/verify-onchain.clar'
+clarity_version = 3
+epoch = 3.0
 
 [contracts.gas-impl]
 path = 'contracts/gas-impl.clar'

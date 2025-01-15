@@ -9,83 +9,125 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: traits
+            contract-name: clarity-stacks
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 70860
-            path: contracts/traits.clar
+            cost: 69870
+            path: contracts/clarity-stacks.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
         - contract-publish:
             contract-name: gas-storage
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 647653
+            cost: 41640
             path: contracts/gas-storage.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
+        - contract-publish:
+            contract-name: traits
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 127110
+            path: contracts/traits.clar
+            anchor-block-only: true
+            clarity-version: 3
         - contract-publish:
             contract-name: gas-impl
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 647653
+            cost: 52830
             path: contracts/gas-impl.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
+        - contract-publish:
+            contract-name: gateway-storage
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 73950
+            path: contracts/gateway-storage.clar
+            anchor-block-only: true
+            clarity-version: 3
         - contract-publish:
             contract-name: gas-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 647653
+            cost: 59360
             path: contracts/gas-service.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
+        - contract-publish:
+            contract-name: gateway-impl
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 248510
+            path: contracts/gateway-impl.clar
+            anchor-block-only: true
+            clarity-version: 3
         - contract-publish:
             contract-name: gateway
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 266020
+            cost: 50360
             path: contracts/gateway.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
+        - contract-publish:
+            contract-name: governance
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 83840
+            path: contracts/governance.clar
+            anchor-block-only: true
+            clarity-version: 3
         - contract-publish:
             contract-name: hello-world
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 18020
+            cost: 27750
             path: contracts/hello-world.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 3
         - contract-publish:
-            contract-name: interchain-token-service
+            contract-name: interchain-token-service-storage
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 426430
-            path: contracts/interchain-token-service.clar
+            cost: 129620
+            path: contracts/interchain-token-service-storage.clar
             anchor-block-only: true
-            clarity-version: 2
-        # - contract-publish:
-        #     contract-name: token-manager
-        #     expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-        #     cost: 113470
-        #     path: contracts/token-manager.clar
-        #     anchor-block-only: true
-        #     clarity-version: 2
+            clarity-version: 3
         - contract-publish:
             contract-name: interchain-token-factory
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 92320
+            cost: 80990
             path: contracts/interchain-token-factory.clar
             anchor-block-only: true
-            clarity-version: 2
-        # - contract-publish:
-        #     contract-name: native-interchain-token
-        #     expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-        #     cost: 122710
-        #     path: contracts/native-interchain-token.clar
-        #     anchor-block-only: true
-        #     clarity-version: 2
+            clarity-version: 3
+        - contract-publish:
+            contract-name: interchain-token-service
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 202410
+            path: contracts/interchain-token-service.clar
+            anchor-block-only: true
+            clarity-version: 3
+        - contract-publish:
+            contract-name: interchain-token-factory-impl
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 209250
+            path: contracts/interchain-token-factory-impl.clar
+            anchor-block-only: true
+            clarity-version: 3
+        - contract-publish:
+            contract-name: interchain-token-service-impl
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 456720
+            path: contracts/interchain-token-service-impl.clar
+            anchor-block-only: true
+            clarity-version: 3
         - contract-publish:
             contract-name: sample-sip-010
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 13410
+            cost: 12800
             path: contracts/sample-sip-010.clar
             anchor-block-only: true
-            clarity-version: 2
-      epoch: "2.5"
+            clarity-version: 3
+        - contract-publish:
+            contract-name: verify-onchain
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 177670
+            path: contracts/verify-onchain.clar
+            anchor-block-only: true
+            clarity-version: 3
+      epoch: "3.0"
     - id: 2
       transactions:
         - contract-call:
@@ -93,7 +135,7 @@ plan:
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             method: setup
             parameters:
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+              - "'ST32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32N9D9WJ83"
             cost: 5960
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service
@@ -121,4 +163,4 @@ plan:
               - "u3600"
               - "u16"
             cost: 6000
-      epoch: "2.5"
+      epoch: "3.0"

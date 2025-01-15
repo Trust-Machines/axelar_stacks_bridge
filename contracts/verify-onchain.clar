@@ -1,70 +1,159 @@
-(define-constant contract-code 
-"(define-read-only (hi)\n  \"hi\"\n)\n")
+(define-constant nit-contract-code "\n;; title: mintable-burnable-sip-010\n;; version:\n;; summary:\n;; description:\n\n;; traits\n;;\n(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.native-interchain-token-trait)\n(use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)\n\n(define-constant ERR-NOT-AUTHORIZED (err u1051))\n\n\n;; ##########################\n;; ##########################\n;; ######  SIP-010  #########\n;; ##########################\n;; ##########################\n\n(define-constant ERR-INSUFFICIENT-BALANCE (err u2051))\n(define-constant ERR-INVALID-PARAMS (err u2052))\n(define-constant ERR-ZERO-AMOUNT (err u2053))\n\n(define-fungible-token itscoin)\n\n(define-data-var decimals uint u0)\n(define-data-var token-uri (optional (string-utf8 256)) none)\n(define-data-var name (string-ascii 32) \"not-initialized\")\n(define-data-var symbol (string-ascii 32) \"not-initialized\")\n(define-data-var token-id (buff 32) 0x)\n(define-data-var minter principal NULL-ADDRESS)\n\n(define-read-only (get-balance (address principal))\n    (ok (ft-get-balance itscoin address)))\n\n(define-read-only (get-decimals)\n    (ok (var-get decimals))\n)\n\n(define-read-only (get-total-supply)\n    (ok (ft-get-supply itscoin)))\n\n(define-read-only (get-token-uri)\n    (ok (var-get token-uri)))\n\n(define-read-only (get-name)\n    (ok (var-get name)))\n\n(define-read-only (get-symbol)\n    (ok (var-get symbol)))\n\n(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) ERR-NOT-AUTHORIZED)\n        (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)\n        (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)\n        (print (default-to 0x memo))\n        (ft-transfer? itscoin amount from to)))\n\n;; constants\n;;\n(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)\n\n(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))\n\n\n\n;; ##########################\n;; ##########################\n;; ####  token manager  #####\n;; ##########################\n;; ##########################\n\n(define-read-only (get-token-id)\n    (ok (var-get token-id)))\n\n(define-public (burn (from principal) (amount uint))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (> amount u0) ERR-ZERO-AMOUNT)\n        (asserts! (not (is-eq from (as-contract tx-sender))) ERR-INVALID-PARAMS)\n        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (ft-burn? itscoin amount from))\n)\n\n(define-public (mint (to principal) (amount uint))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (> amount u0) ERR-ZERO-AMOUNT)\n        (asserts! (not (is-eq to (as-contract tx-sender))) ERR-INVALID-PARAMS)\n        (asserts! (is-minter-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (ft-mint? itscoin amount to))\n)\n\n;; Reads the managed token address\n;; @return principal The address of the token.\n(define-read-only (get-token-address)\n    (ok (as-contract tx-sender)))\n\n(define-read-only (get-token-type)\n    (ok TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))\n\n;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself\n;; the flow would still be handled by the ITS\n;; subject to change\n(define-public (take-token (token <sip-010-trait>) (from principal) (amount uint))\n    (begin\n        ;; #[filter(amount)]\n        (try! (add-flow-out amount))\n        (burn from amount))\n)\n\n(define-public (give-token (token <sip-010-trait>) (to principal) (amount uint))\n    (begin\n        ;; #[filter(amount)]\n        (try! (add-flow-in amount))\n        (mint to amount)))\n\n\n(define-read-only (is-minter-raw (address principal))\n    (or\n        (is-eq address (var-get minter))\n        (is-eq address (get-its-impl))))\n\n(define-read-only (is-minter (address principal))\n    (ok (is-minter-raw address)))\n\n(define-map roles principal {\n    flow-limiter: bool,\n})\n\n\n;; ######################\n;; ######################\n;; ##### Flow Limit #####\n;; ######################\n;; ######################\n\n;; 6 BTC hours\n(define-constant EPOCH-TIME u36)\n\n(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u3051))\n\n(define-map flows uint {\n    flow-in: uint,\n    flow-out: uint,\n})\n(define-data-var flow-limit uint u0)\n\n;; This function adds a flow limiter for this TokenManager.\n;; Can only be called by the operator.\n;; @param flowLimiter the address of the new flow limiter.\n;; #[allow(unchecked_data)]\n(define-public (add-flow-limiter (address principal))\n    (begin\n        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (ok (map-set roles address  {flow-limiter: true}))))\n\n;; This function removes a flow limiter for this TokenManager.\n;; Can only be called by the operator.\n;; @param flowLimiter the address of an existing flow limiter.\n;; #[allow(unchecked_data)]\n(define-public (remove-flow-limiter (address principal))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (match (map-get? roles address)\n            ;; no need to check limiter if they don't exist it will be a noop\n            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))\n            (ok true))))\n\n;; Query if an address is a flow limiter.\n;; @param addr The address to query for.\n;; @return bool Boolean value representing whether or not the address is a flow limiter.\n(define-read-only (is-flow-limiter (addr principal))\n    (ok (is-flow-limiter-raw addr)))\n\n(define-read-only (is-flow-limiter-raw (addr principal))\n    (or\n        (is-eq addr (get-its-impl))\n        (default-to false (get flow-limiter (map-get? roles addr)))))\n\n;;\n;; Returns the current flow limit.\n;; @return The current flow limit value.\n;;\n(define-read-only (get-flow-limit)\n    (ok (var-get flow-limit)))\n\n;; This function sets the flow limit for this TokenManager.\n;; Can only be called by the flow limiters.\n;; @param flowLimit_ The maximum difference between the tokens\n;; flowing in and/or out at any given interval of time (6h).\n;; #[allow(unchecked_data)]\n(define-public (set-flow-limit (limit uint))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (is-flow-limiter-raw contract-caller) ERR-NOT-AUTHORIZED)\n        ;; no need to check can be set to 0 to practically makes it unlimited\n        (var-set flow-limit limit)\n        (ok true))\n)\n\n;; Returns the current flow out amount.\n;; @return flowOutAmount_ The current flow out amount.\n(define-read-only (get-flow-out-amount)\n    (let (\n            (epoch (/ burn-block-height EPOCH-TIME))\n        )\n        (ok (default-to u0 (get flow-out (map-get? flows epoch))))))\n\n;; Returns the current flow in amount.\n;; @return flowInAmount_ The current flow in amount.\n(define-read-only (get-flow-in-amount)\n    (let ((epoch (/ burn-block-height EPOCH-TIME)))\n        (ok (default-to u0 (get flow-in (map-get? flows epoch))))))\n\n;; Adds a flow out amount while ensuring it does not exceed the flow limit.\n;; @param flow-amount The flow out amount to add.\n(define-private (add-flow-out (flow-amount uint))\n    (let (\n            (limit  (var-get flow-limit))\n            (epoch  (/ burn-block-height EPOCH-TIME))\n            (current-flow-out   (unwrap-panic (get-flow-out-amount)))\n            (current-flow-in  (unwrap-panic (get-flow-in-amount)))\n            (new-flow-out (+ current-flow-out flow-amount))\n        )\n        (if (is-eq limit u0)\n            (ok true)\n            (begin\n                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)\n                (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)\n                (asserts! (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)\n                (map-set flows epoch {\n                    flow-out: new-flow-out,\n                    flow-in: current-flow-in\n                })\n                (ok true)))))\n\n;; Adds a flow in amount while ensuring it does not exceed the flow limit.\n;; @param flow-amount The flow out amount to add.\n(define-private  (add-flow-in  (flow-amount uint))\n    (let (\n            (limit   (var-get flow-limit))\n            (epoch   (/ burn-block-height EPOCH-TIME))\n            (current-flow-out    (unwrap-panic  (get-flow-out-amount)))\n            (current-flow-in (unwrap-panic (get-flow-in-amount)))\n            (new-flow-in (+ current-flow-in flow-amount)))\n        (if  (is-eq limit u0)\n            (ok true)\n            (begin\n                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)\n                (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)\n                (asserts!  (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)\n                (map-set flows epoch {\n                    flow-out: current-flow-out,\n                    flow-in: new-flow-in\n                })\n                (ok true)))))\n\n\n;; ######################\n;; ######################\n;; ### Initialization ###\n;; ######################\n;; ######################\n\n(define-constant ERR-STARTED (err u4051))\n(define-constant ERR-NOT-STARTED (err u4052))\n(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))\n(define-constant OWNER tx-sender)\n\n(define-data-var token-type (optional uint) none)\n\n(define-data-var is-started bool false)\n(define-read-only (get-is-started) (var-get is-started))\n\n(define-public (setup\n    (token-id_ (buff 32))\n    (token-type_ uint)\n    (operator-address (optional principal))\n    (name_ (string-ascii 32))\n    (symbol_ (string-ascii 32))\n    (decimals_ uint)\n    (token-uri_ (optional (string-utf8 256)))\n    (minter_ (optional principal))\n)\n    (begin\n        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)\n        (asserts! (not (var-get is-started)) ERR-STARTED)\n        (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)\n        (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)\n        (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)\n        (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)\n        (var-set is-started true)\n        ;; #[allow(unchecked_data)]\n        (var-set token-type (some token-type_))\n        ;; #[allow(unchecked_data)]\n        (match operator-address op\n            (map-set roles op {\n                flow-limiter: true,\n            })\n            true)\n        ;; #[allow(unchecked_data)]\n        (var-set operator (default-to NULL-ADDRESS operator-address))\n        ;; #[allow(unchecked_data)]\n        (var-set decimals decimals_)\n        (var-set name name_)\n        (var-set symbol symbol_)\n        ;; #[allow(unchecked_data)]\n        (var-set token-uri token-uri_)\n        (var-set token-id token-id_)\n        ;; #[allow(unchecked_data)]\n        (var-set minter (default-to NULL-ADDRESS minter_))\n        (print\n            {\n                notification: \"token-metadata-update\",\n                payload: {\n                    token-class: \"ft\",\n                    contract-id: (as-contract tx-sender)\n                }\n            })\n        (ok true)\n    )\n)\n(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))\n(define-constant ERR-ONLY-OPERATOR (err u5051))\n(define-data-var operator principal NULL-ADDRESS)\n(define-read-only (get-its-impl)\n    (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))\n\n(define-read-only (is-operator-raw (address principal))\n    (or\n        (is-eq address (var-get operator))\n        (is-eq address (get-its-impl))\n    ))\n\n(define-read-only (is-operator (address principal))\n    (ok (is-operator-raw address)))\n\n(define-read-only (get-operators)\n    (ok (list\n            (get-its-impl)\n            (var-get operator))))\n\n;; Transfers operatorship to a new account\n(define-public (transfer-operatorship (new-operator principal))\n    (begin\n        (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)\n        ;; #[allow(unchecked_data)]\n        (var-set operator new-operator)\n        (print {action: \"transfer-operatorship\", new-operator: new-operator})\n        (ok true)\n    )\n)\n\n(define-public (transfer-mintership (new-minter principal))\n    (begin\n        (asserts! (is-eq (var-get minter) contract-caller) ERR-NOT-AUTHORIZED)\n        (asserts! (not (is-eq (get-its-impl) new-minter)) ERR-NOT-AUTHORIZED)\n        (var-set minter new-minter)\n        (print {action: \"transfer-mintership\", new-minter: new-minter})\n        (ok true)))\n")
+
+(define-constant token-manager-contract-code ";;\n;; @title TokenManager\n;; This contract is responsible for managing tokens, \n;; such as setting locking token balances, \n;; or setting flow limits, for interchain transfers.\n(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.token-manager-trait)\n(use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)\n(define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? \"token-manager\"))))\n(define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? \"canonical-token-salt\"))))\n\n(define-constant OWNER tx-sender)\n\n;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.\n;; @notice rares: same as mint burn in functionality will be custom tokens made by us\n;; that are deployed outside of the contracts but registered by the ITS contract\n(define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)\n;; The token will be locked/unlocked at the token manager.\n(define-constant TOKEN-TYPE-LOCK-UNLOCK u2)\n\n(define-constant ERR-NOT-AUTHORIZED (err u1051))\n\n\n(define-data-var token-address (optional principal) none)\n(define-data-var token-type (optional uint) none)\n\n\n\n(define-map roles principal {\n    flow-limiter: bool,\n})\n(define-read-only (get-its-impl) \n    (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))\n\n\n;; Checks that the sender is the interchain-token-service contract\n(define-read-only (is-its-sender) \n    (is-eq contract-caller (get-its-impl)))\n\n;; Getter for the contract id.\n;; @return (buff 32) The contract id.\n(define-read-only (contract-id)\n    (ok CONTRACT-ID))\n\n;; Reads the managed token address\n;; @return principal The address of the token.\n(define-read-only (get-token-address)\n    (ok (unwrap! (var-get token-address) ERR-NOT-STARTED)))\n\n(define-read-only (get-token-type)\n    (ok (unwrap! (var-get token-type) ERR-NOT-STARTED)))\n\n;; ######################\n;; ######################\n;; ##### Flow Limit #####\n;; ######################\n;; ######################\n\n;; 6 BTC hours\n(define-constant EPOCH-TIME u36)\n\n(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2051))\n\n(define-map flows uint {\n    flow-in: uint,\n    flow-out: uint,\n})\n(define-data-var flow-limit uint u0)\n\n;; This function adds a flow limiter for this TokenManager.\n;; Can only be called by the operator.\n;; @param flowLimiter the address of the new flow limiter.\n;; #[allow(unchecked_data)]\n(define-public (add-flow-limiter (address principal))\n    (begin\n        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (ok (map-set roles address  {flow-limiter: true}))))\n\n;; This function removes a flow limiter for this TokenManager.\n;; Can only be called by the operator.\n;; @param flowLimiter the address of an existing flow limiter.\n;; #[allow(unchecked_data)]\n(define-public (remove-flow-limiter (address principal))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)\n        (match (map-get? roles address) \n            ;; no need to check limiter if they don't exist it will be a noop\n            limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))\n            (ok true))))\n\n;; Query if an address is a flow limiter.\n;; @param addr The address to query for.\n;; @return bool Boolean value representing whether or not the address is a flow limiter.\n(define-read-only (is-flow-limiter (addr principal))\n    (ok (is-flow-limiter-raw addr)))\n\n(define-read-only (is-flow-limiter-raw (addr principal))\n    (or \n        (is-eq addr (get-its-impl))\n        (default-to false (get flow-limiter (map-get? roles addr)))))\n;;     \n;; Returns the current flow limit.\n;; @return The current flow limit value.\n;;      \n(define-read-only (get-flow-limit) \n    (ok (var-get flow-limit)))\n\n;; This function sets the flow limit for this TokenManager.\n;; Can only be called by the flow limiters.\n;; @param flowLimit_ The maximum difference between the tokens \n;; flowing in and/or out at any given interval of time (6h).\n;; #[allow(unchecked_data)]\n(define-public (set-flow-limit (limit uint))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (is-flow-limiter-raw contract-caller) ERR-NOT-AUTHORIZED)\n        ;; no need to check can be set to 0 to practically makes it unlimited\n        (var-set flow-limit limit)\n        (ok true))\n)\n\n\n;; Returns the current flow out amount.\n;; @return flowOutAmount_ The current flow out amount.\n(define-read-only (get-flow-out-amount)\n    (let (\n            (epoch (/ burn-block-height EPOCH-TIME))\n        )\n        (ok (default-to u0 (get flow-out (map-get? flows epoch))))))\n\n;; Returns the current flow in amount.\n;; @return flowInAmount_ The current flow in amount.\n(define-read-only (get-flow-in-amount)\n    (let ((epoch (/ burn-block-height EPOCH-TIME)))\n        (ok (default-to u0 (get flow-in (map-get? flows epoch))))))\n\n;; Adds a flow out amount while ensuring it does not exceed the flow limit.\n;; @param flow-amount The flow out amount to add.\n(define-private (add-flow-out (flow-amount uint))\n    (let (\n            (limit  (var-get flow-limit))\n            (epoch  (/ burn-block-height EPOCH-TIME))\n            (current-flow-out   (unwrap-panic (get-flow-out-amount)))\n            (current-flow-in  (unwrap-panic (get-flow-in-amount)))\n            (new-flow-out (+ current-flow-out flow-amount))\n        )\n        (if (is-eq limit u0)\n            (ok true)\n            (begin\n                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)\n                (asserts! (<= new-flow-out (+ current-flow-in limit)) ERR-FLOW-LIMIT-EXCEEDED)\n                (asserts! (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)\n                (map-set flows epoch {\n                    flow-out: new-flow-out,\n                    flow-in: current-flow-in\n                })\n                (ok true)))))\n\n;; Adds a flow in amount while ensuring it does not exceed the flow limit.\n;; @param flow-amount The flow out amount to add.\n(define-private  (add-flow-in  (flow-amount uint))\n    (let (\n            (limit   (var-get flow-limit))\n            (epoch   (/ burn-block-height EPOCH-TIME))\n            (current-flow-out    (unwrap-panic  (get-flow-out-amount)))\n            (current-flow-in (unwrap-panic (get-flow-in-amount)))\n            (new-flow-in (+ current-flow-in flow-amount)))\n        (if  (is-eq limit u0)\n            (ok true)\n            (begin\n                (asserts! (> flow-amount u0) ERR-ZERO-AMOUNT)\n                (asserts!  (<= new-flow-in (+ current-flow-out limit)) ERR-FLOW-LIMIT-EXCEEDED)\n                (asserts!  (<= flow-amount limit) ERR-FLOW-LIMIT-EXCEEDED)\n                (map-set flows epoch {\n                    flow-out: current-flow-out,\n                    flow-in: new-flow-in\n                })\n                (ok true)))))\n\n\n\n;; ######################\n;; ######################\n;; ### Token Manager ####\n;; ######################\n;; ######################\n(define-constant ERR-NOT-MANAGED-TOKEN (err u3051))\n(define-constant ERR-ZERO-AMOUNT (err u3052))\n\n;; This function gives token to a specified address from the token manager.\n;; @param sip-010-token The sip-010 interface of the token.\n;; @param token-manager The trait interface of the token manager\n;; @param to The address to give tokens to.\n;; @param amount The amount of tokens to give.\n;; @return (response bool uint)\n(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) \n    (begin\n        (asserts! (> amount u0) ERR-ZERO-AMOUNT)\n        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)\n        (try! (add-flow-in amount))\n        (as-contract (transfer-token-from sip-010-token contract-caller to amount))))\n\n;; This function takes token from a specified address to the token manager.\n;; @param sip-010-token The sip-010 interface of the token.\n;; @param token-manager The trait interface of the token manager\n;; @param from The address to take tokens from.\n;; @param amount The amount of token to take.\n;; @return (response bool uint)\n(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) \n    (begin\n        (asserts! (> amount u0) ERR-ZERO-AMOUNT)\n        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)\n        (try! (add-flow-out amount))\n        (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))\n\n\n(define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))\n    (begin\n        (asserts! (var-get is-started) ERR-NOT-STARTED)\n        (asserts! (is-eq (contract-of sip-010-token) (unwrap! (var-get token-address) ERR-NOT-STARTED)) ERR-NOT-MANAGED-TOKEN)\n        (contract-call? sip-010-token transfer amount from to none)))\n\n(define-read-only (is-minter (address principal)) \n    (ok false))\n\n\n;; ######################\n;; ######################\n;; ### Initialization ###\n;; ######################\n;; ######################\n\n(define-constant ERR-STARTED (err u4051))\n(define-constant ERR-NOT-STARTED (err u4052))\n(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))\n(define-constant ERR-INVALID-PARAMS (err u4054))\n\n(define-data-var is-started bool false)\n(define-read-only (get-is-started) (var-get is-started))\n;; Constructor function\n;; @returns (response true) or reverts\n;; #[allow(unchecked_data)]\n(define-public (setup \n    (token-address_ principal)\n    (token-type_ uint)\n    (operator-address (optional principal))\n) \n    (begin\n        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)\n        (asserts! (not (var-get is-started)) ERR-STARTED)\n        ;; (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)\n        (var-set is-started true)\n        ;; #[allow(unchecked_data)]\n        (var-set token-address (some token-address_))\n        ;; #[allow(unchecked_data)]\n        (var-set token-type (some token-type_))\n        ;; #[allow(unchecked_data)]\n        (var-set operator (default-to NULL-ADDRESS operator-address))\n        (match operator-address op \n            (map-set roles op {\n                flow-limiter: true,\n            })\n            true)\n        (ok true)\n    )\n)\n\n;;  * @notice Getter function for the parameters of a lock/unlock TokenManager.\n;;  * @dev This function will be mainly used by frontends.\n;;  * @param operator_ The operator of the TokenManager.\n;;  * @param tokenAddress_ The token to be managed.\n;;  * @return params_ The resulting params to be passed to custom TokenManager deployments.\n(define-read-only (get-params (operator_ (optional principal)) (token-address_ principal)) \n    (ok (unwrap-panic (to-consensus-buff? {\n        operator: operator_,\n        token-address: token-address_,\n    }))))\n\n;; ####################\n;; ####################\n;; ### Operatorship ###\n;; ####################\n;; ####################\n(define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))\n(define-constant ERR-ONLY-OPERATOR (err u5051))\n(define-data-var operator principal NULL-ADDRESS)\n\n(define-read-only (is-operator-raw (address principal)) \n    (or\n        (is-eq address (var-get operator))\n        (is-eq address (get-its-impl))\n    ))\n\n(define-read-only (is-operator (address principal)) \n    (ok (is-operator-raw address)))\n\n(define-read-only (get-operators) \n    (ok (list \n            (get-its-impl)\n            (var-get operator))))\n\n;; Transfers operatorship to a new account\n(define-public (transfer-operatorship (new-operator principal))\n    (begin\n        (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)\n        ;; #[allow(unchecked_data)]\n        (var-set operator new-operator)\n        (print {action: \"transfer-operatorship\", new-operator: new-operator})\n        (ok true)\n    )\n)")
+
+(define-constant nit-contract-code-length 0x0000314a)
+(define-constant token-manager-contract-code-length 0x00002ec6)
 
 (define-constant tx-version (if is-in-mainnet 0x00 0x80))
 
-(define-constant curr-chain-id (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? chain-id)) u13 u17)))
+(define-constant curr-chain-id (if is-in-mainnet 0x00000001 0x80000000))
 (define-constant standard-auth-type 0x04)
 (define-constant p2pkh-hash-mode 0x00)
 
-(define-constant contract-code-buff (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? contract-code)) u5 u37)))
+(define-constant nit-contract-code-buff 
+  (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? nit-contract-code)) u5 u12623)))
+(define-constant token-manager-contract-code-buff 
+  (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? token-manager-contract-code)) u5 u11979)))
 (define-constant pub-key-encoding 0x00)
-(define-constant sig 0x00bbe24c6f9e5d3ecaa8452e0e03112e2e4e8276159972420198bf752634bfa9113886cd8a7bb8f02264040941be317ae11a6a576caf0ca9728e2e08b57bb280c0)
 ;; anchor mode any
 (define-constant anchor-mode 0x03)
 (define-constant post-conditions-mode-allow 0x01)
 (define-constant post-conditions 0x00000000)
 (define-constant versioned-smart-contract 0x06)
-(define-constant clarity-version 0x03)
-(define-constant contract-name
-  (unwrap-panic (get name (unwrap-panic (principal-destruct? (as-contract tx-sender))))))
-(define-constant contract-name-length 
-  (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? (len contract-name))) u16 u17)))
-(define-constant contract-name-buff (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? contract-name)) u5 (+ (len contract-name) u5))))
-(define-constant contract-code-length 
-  (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? (len contract-code))) u13 u17)))
-(define-read-only (construct)
-  contract-code-buff)
+(define-constant clarity-version 0x02)
+
+(define-constant ERR-INVALID-NONCE (err u29001))
+(define-constant ERR-INVALID-FEE (err u29002))
+(define-constant ERR-INVALID-SIGNATURE (err u29003))
+(define-constant ERR-INVALID-CONTRACT-NAME (err u29004))
 
 
 
+(define-read-only (build-shared-header 
+  (nonce (buff 8))
+  (fee-rate (buff 8))
+  (signature (buff 65))
+  (deployer principal)) 
+    (begin
+      (asserts! (is-eq (len nonce) u8) ERR-INVALID-NONCE)
+      (asserts! (is-eq (len fee-rate) u8) ERR-INVALID-FEE)
+      (asserts! (is-eq (len signature) u65) ERR-INVALID-SIGNATURE)
+      (ok 
+        (concat tx-version
+          (concat curr-chain-id
+            (concat standard-auth-type
+              (concat p2pkh-hash-mode
+                (concat (get hash-bytes (unwrap-panic (principal-destruct? deployer)))
+                  (concat nonce 
+                    (concat fee-rate
+                      (concat pub-key-encoding
+                        (concat signature
+                          (concat anchor-mode
+                            (concat post-conditions-mode-allow
+                              (concat post-conditions
+                                (concat versioned-smart-contract clarity-version))))))))))))))))
 
-(define-constant tx-serialized (concat
-  tx-version
-  (concat curr-chain-id
-    (concat 
-      standard-auth-type
-        (concat p2pkh-hash-mode
+;; (define-private (verify-sig (sig (buff 65)) (deployer principal)) 
+;;   (let ((pub (secp256k1-recover? message-hash signature))) expr-1))
+
+(define-read-only (build-nit-deploy-tx
+  (nonce (buff 8))
+  (fee-rate (buff 8))
+  (signature (buff 65))
+  (contract-name (buff 255))
+  (deployer principal))
+  (begin
+    (asserts! (>= (len contract-name) u3) ERR-INVALID-CONTRACT-NAME)
+    (let (
+      (contract-name-len (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? (len contract-name))) u16 u17)))
+      (shared-part (try! (build-shared-header nonce fee-rate signature deployer)))
+      (nit-part
+        (concat contract-name-len
           (concat 
-            (get hash-bytes (unwrap-panic (principal-destruct? tx-sender)))
+            contract-name
             (concat 
-              0x0000000000000000
-              (concat
-                0x0000000000002710
-                (concat
-                  pub-key-encoding
-                  (concat
-                    sig
-                    (concat
-                      anchor-mode
-                      (concat
-                        post-conditions-mode-allow
-                        (concat 
-                          post-conditions
-                          (concat 
-                            versioned-smart-contract
-                            (concat
-                              clarity-version
-                              (concat
-                                contract-name-length
-                                (concat
-                                  contract-name-buff
-                                  (concat
-                                    contract-code-length
-                                    contract-code-buff))
-                              ))))))))))))))))
-(sha512/256 tx-serialized)
-;; how can we get from here to there
-(get-block-info? header-hash block-height)
+              nit-contract-code-length
+              nit-contract-code-buff))))
+      )
+  (ok (sha512/256 (concat shared-part nit-part))))))
+
+(define-read-only (build-token-manager-deploy-tx
+  (nonce (buff 8))
+  (fee-rate (buff 8))
+  (signature (buff 65))
+  (contract-name (buff 255))
+  (deployer principal))
+  (begin
+    (asserts! (>= (len contract-name) u3) ERR-INVALID-CONTRACT-NAME)
+    (let ( 
+      (contract-name-len (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? (len contract-name))) u16 u17)))
+      (shared-part (try! (build-shared-header nonce fee-rate signature deployer)))
+      (token-manager-part
+        (concat contract-name-len
+          (concat 
+            contract-name
+            (concat 
+              token-manager-contract-code-length
+              token-manager-contract-code-buff))))
+      )
+  (ok (sha512/256 (concat shared-part token-manager-part))))))
 
 
+
+
+(contract-call? .clarity-stacks debug-set-block-header-hash u99 0x3e83b019e17190248dff744429adbfe59ac3803b89c947b5b42e1afaaaacabff)
+
+(define-read-only (verify-nit-deployment
+  (nonce (buff 8))
+  (fee-rate (buff 8))
+  (signature (buff 65))
+  (contract-name (buff 255))
+  (deployer principal)
+  (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint})
+  (tx-block-height uint)
+  (block-header-without-signer-signatures (buff 800))
+) 
+  (contract-call? .clarity-stacks
+    was-tx-mined-compact
+    (try! (build-nit-deploy-tx nonce fee-rate signature contract-name deployer))
+      proof
+      tx-block-height
+      block-header-without-signer-signatures
+  )
+)
+
+(define-read-only (verify-token-manager-deployment
+  (nonce (buff 8))
+  (fee-rate (buff 8))
+  (signature (buff 65))
+  (contract-name (buff 255))
+  (deployer principal)
+  (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint})
+  (tx-block-height uint)
+  (block-header-without-signer-signatures (buff 800))
+) 
+  (contract-call? .clarity-stacks
+    was-tx-mined-compact
+    (try! (build-token-manager-deploy-tx nonce fee-rate signature contract-name deployer))
+      proof
+      tx-block-height
+      block-header-without-signer-signatures
+  )
+)
+
+(define-read-only (demo)
+  (verify-nit-deployment
+    0x0000000000000000
+    0x00000000000031c7
+    0x01b12b2bfee5114aa405fb5044c1fd495aca82e2a468c7cf335dfe4670c9cdc6622037978f4005e5769776d05bc533f4f779cc0a722d0fa33580040c88ad557e85
+    0x6e6974
+    'ST32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32N9D9WJ83
+    {
+      hashes: (list 0x6473336ea475b349bb161afc5e7468152dd9ae39e6a50842529a0869bf11f124),
+      tree-depth: u1, 
+      tx-index: u0 
+    }
+    u99
+    0x00000000000000006300000000001d4c0058a4f944c02849d0a311765427184ba13dfebd4fe5eb8b4e307e2e0c63ff336f0ef41fca403adec8df5d37995d19c2416fb55525d230b2d2e6fd66a976dbb8409dad4da75e414bcbd8c1e8fbb383fb5059f791104138b153efdb8776524006775b2f5e5d3758341af1fca3064b838b07d1e086db000000006786a27401f12a2662d2d87c4b984b4a1412007a6f6f4c620933a70bd563ed4ac7c48a9a9d11a1df08a10a2c0a69acf81ea4774ba1b8b28f8f4d40c799528679e26f58879d001000000002ffff
+  ))
