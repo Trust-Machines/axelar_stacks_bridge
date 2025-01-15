@@ -3,8 +3,8 @@
 ;; This contract is responsible for managing tokens, 
 ;; such as setting locking token balances, 
 ;; or setting flow limits, for interchain transfers.
-(impl-trait .traits.token-manager-trait)
-(use-trait sip-010-trait .traits.sip-010-trait)
+(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.token-manager-trait)
+(use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 
@@ -29,7 +29,7 @@
     flow-limiter: bool,
 })
 (define-read-only (get-its-impl) 
-    (contract-call? .interchain-token-service-storage get-service-impl))
+    (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))
 
 
 ;; Checks that the sender is the interchain-token-service contract
