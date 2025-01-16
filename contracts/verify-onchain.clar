@@ -153,3 +153,8 @@
         0x00000000000000c1780000000005627aa05793d40096982fedd27182956bb1f32c831024c42f06c622f00eaae294062061257d961dd82f06dcd6e9ff039e212e2282167afc343a59a80e96b21f394cdd980572bb324c61534c678d92f15a3b2084ce530c2406f9f80be3c071a39fa7f9553481baa6125ce5bf56829b036d20c85ad590f9f8000000006787d22400d3424a819d77e6526282063c3393e196f52baab9c69e87a1c8b4cf058dbc1eaf567775943946f0c99c0fc8f0cdd4b7da6aba5831585a9d26f6e68bd5c1496d1a013700000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
     ))
 
+(define-read-only (get-nit-source) 
+  nit-contract-code)
+
+(define-read-only (get-token-manager-source) 
+  token-manager-contract-code)

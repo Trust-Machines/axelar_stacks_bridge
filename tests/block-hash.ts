@@ -9,7 +9,7 @@ function tagged_sha512_256(tag: Uint8Array, data: Uint8Array): Uint8Array {
 }
 
 // https://github.com/stacks-network/stacks-core/blob/eb865279406d0700474748dc77df100cba6fa98e/stacks-common/src/util/hash.rs
-class MerkleTree {
+export class MerkleTree {
     static MERKLE_PATH_LEAF_TAG = new Uint8Array([0x00]);
     static MERKLE_PATH_NODE_TAG = new Uint8Array([0x01]);
 
