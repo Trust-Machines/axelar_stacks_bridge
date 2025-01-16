@@ -21,9 +21,7 @@ import {
   deployInterchainToken,
   deployRemoteInterchainToken,
   deployTokenManager,
-  enableTokenManager,
   executeDeployInterchainToken,
-  executeDeployTokenManager,
   executeReceiveInterchainToken,
   getFlowLimit,
   getSip010Balance,
@@ -217,22 +215,7 @@ describe("Interchain Token Service", () => {
       expect(deployTokenManagerTx.result).toBeErr(
         ITS_ERROR_CODES["ERR-INVALID-IMPL"],
       );
-      const enableTokenTx = simnet.callPublicFn(
-        "interchain-token-service",
-        "process-deploy-token-manager-from-stacks",
-        [
-          gatewayImplCV,
-          evilImpl,
-          Cl.stringAscii("0x00"),
-          Cl.stringAscii("stacks"),
-          Cl.stringAscii("interchain-token-service"),
-          Cl.bufferFromHex("0x00"),
-        ],
-        address1,
-      );
-
-      expect(enableTokenTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
-
+      
       const deployInterchainTokenTx = deployInterchainToken({
         impl: evilImpl,
         salt,
@@ -287,10 +270,6 @@ describe("Interchain Token Service", () => {
       expect(Cl.deserialize(deployTx.events[3].data.raw_value!)).toBeTuple(
         message,
       );
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
     });
 
     it("Should register a native interchain token", () => {
@@ -332,10 +311,6 @@ describe("Interchain Token Service", () => {
         salt,
       });
 
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       expect(
         deployRemoteInterchainToken({
           salt,
@@ -367,10 +342,6 @@ describe("Interchain Token Service", () => {
         salt,
       });
 
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       expect(
         deployRemoteInterchainToken({
           salt,
@@ -389,11 +360,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
-
       setPaused({ paused: true });
 
       expect(
@@ -482,11 +448,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
 
       const secondDeployTx = deployTokenManager({ salt });
@@ -604,185 +565,6 @@ describe("Interchain Token Service", () => {
     });
   });
 
-  describe("Receive Remote Token Manager Deployment", () => {
-    it("Should revert if an invalid impl is provided", () => {
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-        impl: evilImpl,
-      });
-
-      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
-    });
-    it("Should be able to receive a remote lock/unlock token manager deployment", () => {
-      setupTokenManager({});
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-      });
-
-      const wrappedPayload = {
-        "message-id": Cl.stringAscii(wrappedMessageId),
-        "source-address": Cl.stringAscii(TRUSTED_ADDRESS),
-        "source-chain": Cl.stringAscii(TRUSTED_CHAIN),
-        payload: Cl.buffer(Cl.serialize(Cl.tuple(payload))),
-      };
-      expect(deployTx.result).toBeOk(Cl.bool(true));
-      const verifyPayload = buildVerifyTokenManagerPayload({
-        tokenId,
-        wrappedPayload,
-      });
-      const message = buildOutgoingGMPMessage({
-        payload: verifyPayload,
-        destinationChain: "stacks",
-        destinationContractAddress: "interchain-token-service",
-        sender: Cl.contractPrincipal(deployer, "interchain-token-service"),
-      });
-      expect(deployTx.events[2].event).toBe("print_event");
-      expect(Cl.deserialize(deployTx.events[2].data.raw_value!)).toBeTuple(
-        message,
-      );
-      enableTokenManager({
-        messageId,
-        proofSigners,
-        tokenId,
-        wrappedPayload,
-      });
-    });
-
-    it("Should not be able to receive a remote mint/burn token manager deployment", () => {
-      setupTokenManager({
-        tokenType: TokenType.MINT_BURN,
-      });
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.MINT_BURN),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-      });
-      expect(deployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"],
-      );
-    });
-
-    it("Should not be able to receive a remote interchain token manager deployment", () => {
-      expect(
-        setupTokenManager({
-          tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
-        }).result,
-      ).toBeOk(Cl.bool(true));
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-      });
-      expect(deployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"],
-      );
-    });
-  });
-
   describe("Send Token", () => {
     it("Should revert if an invalid impl is provided", () => {
       const amount = 100;
@@ -808,11 +590,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
       const amount = 1000;
       const destinationAddress = "some eth address";
@@ -908,11 +685,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       expect(
         interchainTransfer({
           amount: Cl.uint(0),
@@ -933,10 +705,6 @@ describe("Interchain Token Service", () => {
         salt,
       });
 
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
 
       setPaused({ paused: true });
       expect(
@@ -955,44 +723,6 @@ describe("Interchain Token Service", () => {
   });
 
   describe("Execute checks", () => {
-    it("Should revert on execute deploy token manager if remote address validation fails", () => {
-      setupTokenManager({
-        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
-      });
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: "untrusted address",
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-      });
-      expect(deployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"],
-      );
-    });
 
     it("Should revert on execute deploy remote interchain token if remote address validation fails", () => {
       const { payload } = approveRemoteInterchainToken({
@@ -1015,10 +745,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
       expect(
         executeReceiveInterchainToken({
@@ -1046,44 +772,6 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
     });
 
-    it("Should revert on execute deploy token manager if the service is paused", () => {
-      setupTokenManager({
-        tokenType: TokenType.NATIVE_INTERCHAIN_TOKEN,
-      });
-      const messageId = "remote-token-manager-deployment";
-      const wrappedMessageId = "wrapped-" + messageId;
-      const tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010");
-      const tokenManagerAddress = Cl.contractPrincipal(
-        deployer,
-        "token-manager",
-      );
-      const payload = {
-        type: Cl.uint(3),
-        "source-chain": Cl.stringAscii("ethereum"),
-        "token-id": tokenId,
-        "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-        params: Cl.buffer(
-          Cl.serialize(
-            Cl.tuple({
-              operator: Cl.some(Cl.address(address1)),
-              "token-address": tokenAddress,
-            }),
-          ),
-        ),
-      };
-      setPaused({ paused: true });
-      const deployTx = executeDeployTokenManager({
-        messageId: wrappedMessageId,
-        payload: payload,
-        sourceChain: TRUSTED_CHAIN,
-        sourceAddress: TRUSTED_ADDRESS,
-        token: tokenAddress,
-        tokenManager: tokenManagerAddress,
-        gasValue: 1000,
-      });
-      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
-    });
-
     it("Should revert on execute deploy interchain token if the service is paused", () => {
       const { payload } = approveRemoteInterchainToken({
         proofSigners,
@@ -1106,10 +794,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
       setPaused({ paused: true });
       expect(
@@ -1157,10 +841,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
 
       const amount = 100;
@@ -1408,10 +1088,6 @@ describe("Interchain Token Service", () => {
         deployTokenManager({
           salt,
         });
-        enableTokenManager({
-          proofSigners,
-          tokenId,
-        });
 
         const amount = 100;
         const destinationAddress = "some eth address";
@@ -1569,10 +1245,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
 
       const amount = 100;
       const destinationAddress = "some eth address";
@@ -1632,10 +1304,6 @@ describe("Interchain Token Service", () => {
         deployTokenManager({
           salt: lockUnlockSalt,
         });
-        enableTokenManager({
-          proofSigners,
-          tokenId: tokenId.lockUnlock,
-        });
         setupNIT({ tokenId: tokenId.mintBurn, minter: deployer });
         const deployTx = deployInterchainToken({
           salt: mintBurnSalt,
@@ -1693,10 +1361,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       const amount = Cl.uint(0);
       const destinationAddress = Cl.bufferFromAscii("some eth address");
       const destinationChain = Cl.stringAscii("ethereum");
@@ -1729,10 +1393,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
       setPaused({ paused: true });
       const amount = Cl.uint(0);
@@ -1768,10 +1428,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       setPaused({ paused: true });
       const amount = Cl.uint(100);
       const destinationAddress = Cl.bufferFromAscii("some eth address");
@@ -1805,10 +1461,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
 
       const amount = Cl.uint(100);
@@ -1846,10 +1498,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       const amount = Cl.uint(100);
       const destinationAddress = Cl.bufferFromAscii("some eth address");
       const destinationChain = Cl.stringAscii("oneCoin");
@@ -1886,10 +1534,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
 
       const amount = 100;
@@ -1964,10 +1608,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
 
       const amount = 100;
@@ -2486,10 +2126,6 @@ describe("Interchain Token Service", () => {
       deployTokenManager({
         salt,
       });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
       setPaused({ paused: true });
       const setFlowTx = setFlowLimit({
         tokenId,
@@ -2504,10 +2140,6 @@ describe("Interchain Token Service", () => {
       setupTokenManager({});
       deployTokenManager({
         salt,
-      });
-      enableTokenManager({
-        proofSigners,
-        tokenId,
       });
       const setFlowTx = setFlowLimit({
         tokenId,
@@ -2658,10 +2290,6 @@ describe("Interchain Token Service", () => {
       it("lock unlock", () => {
         setupTokenManager({});
         deployTokenManager({ salt });
-        enableTokenManager({
-          proofSigners,
-          tokenId,
-        });
 
         setFlowLimit({
           tokenId,

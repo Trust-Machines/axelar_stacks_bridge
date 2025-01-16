@@ -4,7 +4,6 @@ import {
   approveReceiveInterchainTransfer,
   buildIncomingInterchainTransferPayload,
   buildOutgoingGMPMessage,
-  enableTokenManager,
   executeDeployInterchainToken,
   executeReceiveInterchainToken,
   getCommandId,
@@ -79,11 +78,6 @@ describe("Interchain Token Service Full Flow", () => {
     });
 
     it("Should register the token and initiate its deployment on other chains", async () => {
-      const { enableTokenTx } = enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
-
       for (const chain of otherChains) {
         const payload = Cl.tuple({
           "destination-chain": Cl.stringAscii(chain),
@@ -110,18 +104,6 @@ describe("Interchain Token Service Full Flow", () => {
         });
         expect(deployRemoteTx.result).toBeOk(Cl.bool(true));
 
-        expect(
-          enableTokenTx.events.map((item) => item.data.raw_value),
-        ).toContain(
-          cvToHex(
-            Cl.tuple({
-              type: Cl.stringAscii("token-manager-deployed"),
-              "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
-              "token-manager": Cl.address(`${deployer}.token-manager`),
-              "token-id": tokenId,
-            }),
-          ),
-        );
 
         expect(
           deployRemoteTx.events.map((item) => item.data.raw_value),
@@ -193,12 +175,6 @@ describe("Interchain Token Service Full Flow", () => {
       });
       const payloadHash = keccak256(Cl.serialize(payload));
       beforeEach(() => {
-        expect(
-          enableTokenManager({
-            proofSigners,
-            tokenId,
-          }).enableTokenTx.result,
-        ).toBeOk(Cl.bool(true));
         for (const chain of otherChains) {
           const deployRemoteTx = deployRemoteCanonicalInterchainToken({
             destinationChain: chain,

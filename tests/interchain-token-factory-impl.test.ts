@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
-  enableTokenManager,
   itsImpl,
   setupNIT,
   setupService,
@@ -39,10 +38,7 @@ describe("Interchain token factory impl", () => {
 
     setupService(proofSigners);
     setupTokenManager({});
-    enableTokenManager({
-      proofSigners,
-      tokenId,
-    });
+    
 
     expect(
       simnet.callPublicFn(

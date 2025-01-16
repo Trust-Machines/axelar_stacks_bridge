@@ -2,7 +2,6 @@ import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
-  enableTokenManager,
   getTokenId,
   setupService,
   setupTokenManager,
@@ -78,72 +77,6 @@ describe("Interchain Token Service impl", () => {
     const tokenId = getTokenId(salt).result as BufferCV;
     setupService(proofSigners);
     setupTokenManager({});
-    enableTokenManager({
-      proofSigners,
-      tokenId,
-    });
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
-        "process-deploy-token-manager-from-external-chain",
-        [
-          gatewayImplCV,
-          gasImplContract,
-          Cl.address(`${deployer}.token-manager`),
-          Cl.buffer(
-            Cl.serialize(
-              Cl.tuple({
-                "source-chain": Cl.stringAscii("ethereum"),
-                type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
-                "token-id": Cl.buffer(salt),
-                "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-                params: Cl.buffer(
-                  Cl.serialize(
-                    Cl.tuple({
-                      operator: Cl.none(),
-                      "token-address": Cl.address(`${deployer}.sample-sip-010`),
-                    }),
-                  ),
-                ),
-              }),
-            ),
-          ),
-          Cl.none(),
-          Cl.uint(1000),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
-        "process-deploy-token-manager-from-stacks",
-        [
-          gatewayImplCV,
-          Cl.stringAscii(""),
-          Cl.stringAscii("ethereum"),
-          Cl.stringAscii("0x0000000000000000000000000000000000000000"),
-          Cl.buffer(
-            Cl.serialize(
-              Cl.tuple({
-                type: Cl.stringAscii(""),
-                "token-manager-address": Cl.address(
-                  `${deployer}.token-manager`,
-                ),
-                "token-id": tokenId,
-                "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
-                "wrapped-payload": Cl.none(),
-              }),
-            ),
-          ),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
 
     expect(
       simnet.callPublicFn(
@@ -222,26 +155,6 @@ describe("Interchain Token Service impl", () => {
             version: Cl.uint(MetadataVersion.ContractCall),
             data: Cl.bufferFromHex("0x"),
           }),
-          Cl.uint(1000),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
-        "execute-deploy-token-manager",
-        [
-          gatewayImplCV,
-          gasImplContract,
-          Cl.stringAscii("ethereum"),
-          Cl.stringAscii("0x00"),
-          Cl.stringAscii(""),
-          Cl.bufferFromHex("0x"),
-          Cl.address(`${deployer}.sample-sip-010`),
-          Cl.address(`${deployer}.token-manager`),
           Cl.uint(1000),
           Cl.address(address1),
         ],

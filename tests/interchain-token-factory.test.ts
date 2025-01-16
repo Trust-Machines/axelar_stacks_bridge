@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   approveDeployNativeInterchainToken,
   buildOutgoingGMPMessage,
-  enableTokenManager,
   executeDeployInterchainToken,
   keccak256,
   setupNIT,
@@ -85,10 +84,6 @@ describe("interchain-token-factory", () => {
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
-      enableTokenManager({
-        proofSigners,
-        tokenId,
-      });
 
       const remoteDeployTx = deployRemoteCanonicalInterchainToken({});
 
