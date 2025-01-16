@@ -269,6 +269,7 @@
                 operator: (optional principal),
                 token-address: principal
             } params) ERR-INVALID-PARAMS))
+            (operator (default-to NULL-ADDRESS (get operator data)))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
@@ -291,13 +292,17 @@
                 (get tx-block-height verification-params)
                 (get block-header-without-signer-signatures verification-params)))
         (asserts! (is-eq
-            (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
             token-manager-type
+            (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
         ) ERR-TOKEN-MANAGER-MISMATCH)
         (asserts! (is-eq 
             managed-token
             (get token-address data)
         ) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (unwrap!
+            (contract-call? token-manager is-operator operator) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+        (asserts! (unwrap! (contract-call? token-manager is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token-manager is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
         (asserts!
             (unwrap! (insert-token-manager token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK) ERR-NOT-AUTHORIZED)
         ERR-TOKEN-EXISTS)
@@ -421,6 +426,10 @@
         (asserts! (unwrap! (contract-call? token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
         (asserts! (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
         (asserts! (unwrap! (contract-call? token is-minter minter-unpacked) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
+        (asserts! (is-eq
+            TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN
+            (unwrap! (contract-call? token get-token-type) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-UNSUPPORTED-TOKEN-TYPE)
         (asserts! (is-eq
             token-id
             (unwrap! (contract-call? token get-token-id) ERR-TOKEN-NOT-DEPLOYED)
