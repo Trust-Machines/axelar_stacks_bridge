@@ -370,6 +370,55 @@
         contract-name: contract-name,
         deployer: (unwrap! (principal-construct? (get version data) (get hash-bytes data)) ERR-INVALID-PARAMS),
     })))
+
+(define-private (native-interchain-token-checks
+    (token <native-interchain-token-trait>)
+    (minter principal)
+    (token-id (buff 32))
+    (supply uint)
+    (verification-params {
+        nonce: (buff 8),
+        fee-rate: (buff 8),
+        signature: (buff 65),
+        proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+        tx-block-height: uint,
+        block-header-without-signer-signatures: (buff 800),
+    })
+) 
+    (let (
+            (token-address (contract-of token))
+            (contract-principal (try! (decode-contract-principal token-address)))
+
+    ) 
+        (try! (contract-call? .verify-onchain verify-nit-deployment
+            (get nonce verification-params)
+            (get fee-rate verification-params)
+            (get signature verification-params)
+            (get contract-name contract-principal)
+            (get deployer contract-principal)
+            (get proof verification-params)
+            (get tx-block-height verification-params)
+            (get block-header-without-signer-signatures verification-params)))
+        (asserts! (unwrap!
+            (contract-call? token is-operator minter) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+        (asserts! (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-minter minter) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
+        (asserts! (is-eq
+            TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN
+            (unwrap! (contract-call? token get-token-type) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-UNSUPPORTED-TOKEN-TYPE)
+        (asserts! (is-eq
+            token-id
+            (unwrap! (contract-call? token get-token-id) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
+        (asserts! (is-eq
+            supply
+            (unwrap! (contract-call? token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
+        (ok true))
+)
 ;; Used to deploy a native interchain token on stacks
 ;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because
 ;; validators will need to verify the contract code and parameters
@@ -401,39 +450,13 @@
             (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
             (token-id (interchain-token-id-raw deployer salt))
             (token-address (contract-of token))
-            (contract-principal (try! (decode-contract-principal token-address)))
             (minter-unpacked (default-to NULL-ADDRESS minter)))
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
-        (try! (contract-call? .verify-onchain verify-nit-deployment
-            (get nonce verification-params)
-            (get fee-rate verification-params)
-            (get signature verification-params)
-            (get contract-name contract-principal)
-            (get deployer contract-principal)
-            (get proof verification-params)
-            (get tx-block-height verification-params)
-            (get block-header-without-signer-signatures verification-params)))
-        (asserts! (unwrap!
-            (contract-call? token is-operator minter-unpacked) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
-        (asserts! (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
-        (asserts! (unwrap! (contract-call? token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
-        (asserts! (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
-        (asserts! (unwrap! (contract-call? token is-minter minter-unpacked) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
-        (asserts! (is-eq
-            TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN
-            (unwrap! (contract-call? token get-token-type) ERR-TOKEN-NOT-DEPLOYED)
-        ) ERR-UNSUPPORTED-TOKEN-TYPE)
-        (asserts! (is-eq
-            token-id
-            (unwrap! (contract-call? token get-token-id) ERR-TOKEN-NOT-DEPLOYED)
-        ) ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
-        (asserts! (is-eq
-            supply
-            (unwrap! (contract-call? token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
-        ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
+        ;; #[filter(verification-params, minter-unpacked, supply)]
+        (try! (native-interchain-token-checks token minter-unpacked token-id supply verification-params))
         (asserts!
             (unwrap! (insert-token-manager token-id token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
@@ -449,7 +472,7 @@
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
-        (token-address <native-interchain-token-trait>)
+        (token <native-interchain-token-trait>)
         (payload (buff 62000))
         (verification-params {
             nonce: (buff 8),
@@ -469,65 +492,41 @@
                 (is-eq source-chain CHAIN-NAME)
                 (is-eq source-address (get-its-contract-name)))
         (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
-        (process-deploy-interchain-from-external-chain
-        ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
-            gateway-impl
-            gas-service-impl
-            message-id
-            source-chain
-            source-address
+        (let (
+            (payload-decoded (unwrap! (from-consensus-buff? {
+                type: uint,
+                source-chain: (string-ascii 20),
+                token-id: (buff 32),
+                name: (string-ascii 32),
+                symbol: (string-ascii 32),
+                decimals: uint,
+                minter-bytes: (buff 128),
+            } payload) ERR-INVALID-PAYLOAD))
+            (token-address (contract-of token))
+            (contract-principal (try! (decode-contract-principal token-address)))
+        )
+        (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (unwrap! (contract-call? gateway-impl is-message-approved
+                source-chain message-id source-address .interchain-token-service (keccak256 payload))
+                    ERR-GATEWAY-NOT-DEPLOYED)
+            ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
+        (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
+        ;; #[filter(verification-params)]
+        (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params))
+        (asserts!
+            (unwrap! (insert-token-manager (get token-id payload-decoded) token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
+            ERR-TOKEN-EXISTS)
+        (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployed
+            (get token-id payload-decoded)
             token-address
-            payload
-            caller)))
-
-
-(define-private (process-deploy-interchain-from-external-chain
-    ;; #[allow(unchecked_params)]
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
-        (message-id (string-ascii 128))
-        (source-chain (string-ascii 20))
-        (source-address (string-ascii 128))
-        (token-address <native-interchain-token-trait>)
-        (payload (buff 62000))
-        (caller principal)
-    )
-    (let (
-        (payload-decoded (unwrap! (from-consensus-buff? {
-            type: uint,
-            source-chain: (string-ascii 20),
-            token-id: (buff 32),
-            name: (string-ascii 32),
-            symbol: (string-ascii 32),
-            decimals: uint,
-            minter-bytes: (buff 128),
-        } payload) ERR-INVALID-PAYLOAD))
-        (verify-payload (unwrap-panic (to-consensus-buff? {
-                type: "verify-interchain-token",
-                wrapped-payload: (some {
-                    source-chain: source-chain,
-                    source-address: source-address,
-                    message-id: message-id,
-                    payload: payload,
-                }),
-                token-address: (contract-of token-address),
-                token-id: (get token-id payload-decoded),
-                minter: NULL-ADDRESS,
-                name: (get name payload-decoded),
-                symbol: (get symbol payload-decoded),
-                decimals: (get decimals payload-decoded),
-                token-type: TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN,
-                operator: NULL-ADDRESS,
-                supply: u0,
-            })))
-    )
-    (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-    (asserts! (unwrap! (contract-call? gateway-impl is-message-approved
-            source-chain message-id source-address .interchain-token-service (keccak256 payload))
-                ERR-GATEWAY-NOT-DEPLOYED)
-        ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
-    (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
-    (ok true)))
+            TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
+        (try! (as-contract (contract-call? .interchain-token-service gateway-validate-message
+            gateway-impl
+            source-chain
+            message-id
+            source-address
+            (keccak256 payload))))
+        (ok true))))
 
 (define-read-only (valid-token-address (token-id (buff 32)))
     (ok (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND)))
