@@ -36,7 +36,6 @@
         (its-impl <its-trait>)
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -56,7 +55,6 @@
                 its-impl
                 token-address
                 token-manager-address
-                gas-value
                 verification-params
                 contract-caller)
     ))
@@ -98,7 +96,6 @@
         (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter principal)
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -117,7 +114,6 @@
             token
             initial-supply
             minter
-            gas-value
             verification-params
             contract-caller)))
 

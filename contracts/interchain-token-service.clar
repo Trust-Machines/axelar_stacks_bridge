@@ -195,7 +195,6 @@
         (token-manager-type uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -215,7 +214,6 @@
             token-manager-type
             params
             token-manager
-            gas-value
             verification-params
             contract-caller)))
 
@@ -260,7 +258,6 @@
         (token <native-interchain-token-trait>)
         (supply uint)
         (minter (optional principal))
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -278,7 +275,6 @@
             token
             supply
             minter
-            gas-value
             verification-params
             contract-caller)))
 
@@ -362,7 +358,14 @@
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 62000))
-        (gas-value uint))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-interchain-token
@@ -373,7 +376,7 @@
             source-address
             token-address
             payload
-            gas-value
+            verification-params
             contract-caller)))
 
 (define-public (execute-receive-interchain-token

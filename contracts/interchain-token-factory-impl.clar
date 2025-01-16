@@ -120,7 +120,6 @@
         (its-impl <its-trait>)
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -148,7 +147,6 @@
                     token-address: (contract-of token-address)
                 }))
                 token-manager-address
-                gas-value
                 verification-params)
     ))
 
@@ -196,7 +194,6 @@
         (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter principal)
-        (gas-value uint)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -221,7 +218,6 @@
         initial-supply
         (some
         minter)
-        gas-value
         verification-params)))
 
 ;; This will only be a risk if the user deploying the token remotely

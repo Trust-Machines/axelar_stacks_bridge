@@ -52,7 +52,6 @@
         uint
         (buff 62000)
         <token-manager-trait>
-        uint
         {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -82,7 +81,6 @@
         <native-interchain-token-trait>
         uint
         (optional principal)
-        uint
         {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -134,7 +132,14 @@
         (string-ascii 128)
         <native-interchain-token-trait>
         (buff 62000)
-        uint
+        {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
         principal)
         (response bool uint))
     (execute-receive-interchain-token
@@ -258,7 +263,6 @@
                 <interchain-token-service-trait>
                 <sip-010-trait>
                 <token-manager-trait>
-                uint
                 {
                     nonce: (buff 8),
                     fee-rate: (buff 8),
@@ -290,7 +294,6 @@
                 <native-interchain-token-trait>
                 uint
                 principal
-                uint
                 {
                     nonce: (buff 8),
                     fee-rate: (buff 8),
