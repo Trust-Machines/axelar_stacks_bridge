@@ -37,6 +37,14 @@
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
         (gas-value uint)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
     )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
@@ -49,6 +57,7 @@
                 token-address
                 token-manager-address
                 gas-value
+                verification-params
                 contract-caller)
     ))
 
@@ -89,7 +98,15 @@
         (token <native-interchain-token-trait>)
         (initial-supply uint)
         (minter principal)
-        (gas-value uint))
+        (gas-value uint)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-interchain-token
@@ -101,6 +118,7 @@
             initial-supply
             minter
             gas-value
+            verification-params
             contract-caller)))
 
 ;; This will only be a risk if the user deploying the token remotely

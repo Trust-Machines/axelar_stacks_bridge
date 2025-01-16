@@ -121,6 +121,14 @@
         (token-address <sip-010-trait>)
         (token-manager-address <token-manager-trait>)
         (gas-value uint)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
         (caller principal)
     )
     (begin
@@ -140,7 +148,8 @@
                     token-address: (contract-of token-address)
                 }))
                 token-manager-address
-                gas-value)
+                gas-value
+                verification-params)
     ))
 
 
@@ -188,6 +197,14 @@
         (initial-supply uint)
         (minter principal)
         (gas-value uint)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
         (caller principal))
     (let
         (
@@ -204,7 +221,8 @@
         initial-supply
         (some
         minter)
-        gas-value)))
+        gas-value
+        verification-params)))
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
