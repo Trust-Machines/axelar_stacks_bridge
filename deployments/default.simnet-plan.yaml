@@ -120,6 +120,11 @@ plan:
             path: contracts/interchain-token-factory-impl.clar
             clarity-version: 3
         - emulated-contract-publish:
+            contract-name: verify-onchain
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/verify-onchain.clar
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: interchain-token-service-impl
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-service-impl.clar
@@ -138,10 +143,5 @@ plan:
             contract-name: token-manager
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/token-manager.clar
-            clarity-version: 3
-        - emulated-contract-publish:
-            contract-name: verify-onchain
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/verify-onchain.clar
             clarity-version: 3
       epoch: "3.0"

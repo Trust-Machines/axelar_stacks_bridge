@@ -11,9 +11,9 @@
 (define-constant standard-auth-type 0x04)
 (define-constant p2pkh-hash-mode 0x00)
 
-(define-constant nit-contract-code-buff 
+(define-constant nit-contract-code-buff
   (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? nit-contract-code)) u5 (+ u5 (len nit-contract-code)))))
-(define-constant token-manager-contract-code-buff 
+(define-constant token-manager-contract-code-buff
   (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? token-manager-contract-code)) u5 (+ u5 (len token-manager-contract-code)))))
 (define-constant pub-key-encoding 0x00)
 ;; anchor mode any
@@ -30,22 +30,22 @@
 
 
 
-(define-read-only (build-shared-header 
+(define-read-only (build-shared-header
   (nonce (buff 8))
   (fee-rate (buff 8))
   (signature (buff 65))
-  (deployer principal)) 
+  (deployer principal))
     (begin
       (asserts! (is-eq (len nonce) u8) ERR-INVALID-NONCE)
       (asserts! (is-eq (len fee-rate) u8) ERR-INVALID-FEE)
       (asserts! (is-eq (len signature) u65) ERR-INVALID-SIGNATURE)
-      (ok 
+      (ok
         (concat tx-version
           (concat curr-chain-id
             (concat standard-auth-type
               (concat p2pkh-hash-mode
                 (concat (get hash-bytes (unwrap-panic (principal-destruct? deployer)))
-                  (concat nonce 
+                  (concat nonce
                     (concat fee-rate
                       (concat pub-key-encoding
                         (concat signature
@@ -54,8 +54,6 @@
                               (concat post-conditions
                                 (concat versioned-smart-contract clarity-version))))))))))))))))
 
-;; (define-private (verify-sig (sig (buff 65)) (deployer principal)) 
-;;   (let ((pub (secp256k1-recover? message-hash signature))) expr-1))
 
 (define-read-only (build-nit-deploy-tx
   (nonce (buff 8))
@@ -70,9 +68,9 @@
       (shared-part (try! (build-shared-header nonce fee-rate signature deployer)))
       (nit-part
         (concat contract-name-len
-          (concat 
+          (concat
             contract-name
-            (concat 
+            (concat
               nit-contract-code-length
               nit-contract-code-buff))))
       )
@@ -86,18 +84,24 @@
   (deployer principal))
   (begin
     (asserts! (>= (len contract-name) u3) ERR-INVALID-CONTRACT-NAME)
-    (let ( 
+    (let (
       (contract-name-len (unwrap-panic (slice? (unwrap-panic (to-consensus-buff? (len contract-name))) u16 u17)))
       (shared-part (try! (build-shared-header nonce fee-rate signature deployer)))
       (token-manager-part
         (concat contract-name-len
-          (concat 
+          (concat
             contract-name
-            (concat 
+            (concat
               token-manager-contract-code-length
               token-manager-contract-code-buff))))
       )
   (ok (sha512/256 (concat shared-part token-manager-part))))))
+
+
+
+
+(contract-call? .clarity-stacks debug-set-block-header-hash u99 0x3e83b019e17190248dff744429adbfe59ac3803b89c947b5b42e1afaaaacabff)
+(contract-call? .clarity-stacks debug-set-block-header-hash u49528 0x4013bf18effed0f56cfa4b252039b284319de9e0362a7050ccfcf1839a83ded3)
 
 (define-read-only (verify-nit-deployment
   (nonce (buff 8))
@@ -108,7 +112,7 @@
   (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint})
   (tx-block-height uint)
   (block-header-without-signer-signatures (buff 800))
-) 
+)
   (contract-call? .clarity-stacks
     was-tx-mined-compact
     (try! (build-nit-deploy-tx nonce fee-rate signature contract-name deployer))
@@ -127,7 +131,7 @@
   (proof { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint})
   (tx-block-height uint)
   (block-header-without-signer-signatures (buff 800))
-) 
+)
   (contract-call? .clarity-stacks
     was-tx-mined-compact
     (try! (build-token-manager-deploy-tx nonce fee-rate signature contract-name deployer))
@@ -136,3 +140,16 @@
       block-header-without-signer-signatures
   )
 )
+
+(define-read-only (demo)
+    (verify-nit-deployment
+        0x0000000000000015
+        0x00000000000031c4
+        0x01cb787de4b8e95bf74be3fd1a9ba556b3c1b862581191ca9ff44d8a33be25faeb79f3e4b730df4a12d33a2324dd8f4cfff406d797078988db6ef1480db76ead37
+        0x6e6974
+        'STANVMQYPJMAB5TA226FFHSXJS2BQKPKSV3RKHYE
+        { hashes: (list 0xad185bd96189be60fa1488d035e465a8cc6ba137f05b9a1057e7801b32516da0), tree-depth: u1, tx-index: u1 }
+        u49528
+        0x00000000000000c1780000000005627aa05793d40096982fedd27182956bb1f32c831024c42f06c622f00eaae294062061257d961dd82f06dcd6e9ff039e212e2282167afc343a59a80e96b21f394cdd980572bb324c61534c678d92f15a3b2084ce530c2406f9f80be3c071a39fa7f9553481baa6125ce5bf56829b036d20c85ad590f9f8000000006787d22400d3424a819d77e6526282063c3393e196f52baab9c69e87a1c8b4cf058dbc1eaf567775943946f0c99c0fc8f0cdd4b7da6aba5831585a9d26f6e68bd5c1496d1a013700000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
+    ))
+

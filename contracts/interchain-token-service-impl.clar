@@ -5,7 +5,7 @@
 ;; description:
 (use-trait interchain-token-service-trait .traits.interchain-token-service-trait)
 (use-trait gas-service-trait .traits.gas-service-impl-trait)
-(impl-trait .traits.interchain-token-service-trait)
+;; (impl-trait .traits.interchain-token-service-trait)
 
 ;; traits
 ;;
@@ -469,7 +469,17 @@
     ;; #[filter(gateway-impl, gas-value)]
     (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
 
-
+(define-read-only (decode-contract-principal (contract-principal principal))
+    (let (
+        (data (unwrap! (principal-destruct? contract-principal) ERR-INVALID-PARAMS))
+        (contract-name-str (unwrap! (get name data) ERR-INVALID-PARAMS))
+        (contract-name-buff (unwrap-panic (to-consensus-buff? contract-name-str)))
+        (contract-name (unwrap-panic (slice? contract-name-buff u5 (len contract-name-buff))))
+    )
+    (ok {
+        contract-name: contract-name,
+        deployer: (unwrap! (principal-construct? (get version data) (get hash-bytes data)) ERR-INVALID-PARAMS),
+    })))
 ;; Used to deploy a native interchain token on stacks
 ;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because
 ;; validators will need to verify the contract code and parameters
@@ -489,11 +499,23 @@
         (supply uint)
         (minter (optional principal))
         (gas-value uint)
-        (caller principal))
+        (caller principal)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            ;; get that from trait interface
+            ;; contract-name: (buff 255),
+            ;; deployer: principal,
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
     (let (
             (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
             (token-id (interchain-token-id-raw deployer salt))
-            (payload (unwrap-panic (to-consensus-buff? {
+            (contract-principal (try! (decode-contract-principal (contract-of token))))
+            (payload-decoded {
                 type: "verify-interchain-token",
                 token-address: (contract-of token),
                 token-id: token-id,
@@ -508,19 +530,54 @@
                 operator: (default-to NULL-ADDRESS minter),
                 supply: supply,
                 wrapped-payload: none,
-            }))))
+            })
+            (payload (unwrap-panic (to-consensus-buff? payload-decoded))))
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
         (asserts! (> gas-value u0) ERR-ZERO-AMOUNT)
-        (contract-call? .interchain-token-service gateway-call-contract
-            gateway-impl
-            gas-service-impl
-            CHAIN-NAME
-            (get-its-contract-name)
-            payload
-            gas-value)))
+        (try! (contract-call? .verify-onchain verify-nit-deployment
+            (get nonce verification-params)
+            (get fee-rate verification-params)
+            (get signature verification-params)
+            (get contract-name contract-principal)
+            (get deployer contract-principal)
+            (get proof verification-params)
+            (get tx-block-height verification-params)
+            (get block-header-without-signer-signatures verification-params)))
+        (asserts! (is-eq
+            (get name payload-decoded)
+            (unwrap! (contract-call? token get-name) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-NAME-INVALID)
+        (asserts! (is-eq
+            (get symbol payload-decoded)
+            (unwrap! (contract-call? token get-symbol) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-SYMBOL-INVALID)
+        (asserts! (is-eq
+            (get decimals payload-decoded)
+            (unwrap! (contract-call? token get-decimals) ERR-TOKEN-NOT-DEPLOYED)) ERR-TOKEN-METADATA-DECIMALS-INVALID)
+        (asserts! (unwrap!
+            (contract-call? token is-operator (get operator payload-decoded)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+        (asserts! (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-MINTER-ITS-INVALID)
+        (asserts! (unwrap! (contract-call? token is-minter (get minter payload-decoded)) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-PASSED-MINTER-INVALID)
+        (asserts!
+            (is-eq
+                (get token-id payload-decoded)
+                (unwrap! (contract-call? token get-token-id) ERR-TOKEN-NOT-DEPLOYED))
+                ERR-TOKEN-METADATA-TOKEN-ID-INVALID)
+        (asserts! (is-eq
+            (get supply payload-decoded)
+            (unwrap! (contract-call? token get-total-supply) ERR-TOKEN-NOT-DEPLOYED)
+        ) ERR-TOKEN-METADATA-SUPPLY-INVALID)
+        (asserts!
+            (unwrap! (insert-token-manager token-id (get token-address payload-decoded) TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
+            ERR-TOKEN-EXISTS)
+        (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployed
+            token-id
+            (get token-address payload-decoded)
+            TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
+        (ok true)))
 
 
 (define-read-only (valid-token-address (token-id (buff 32)))
@@ -749,27 +806,17 @@
                 (is-eq source-chain CHAIN-NAME)
                 (is-eq source-address (get-its-contract-name)))
         (is-trusted-address source-chain source-address)) ERR-NOT-REMOTE-SERVICE)
-        (if (is-eq CHAIN-NAME source-chain)
-            (process-deploy-interchain-from-stacks
-            ;; #[filter(message-id, source-chain, payload, source-address, token-address)]
-                gateway-impl
-                message-id
-                source-chain
-                source-address
-                payload
-                token-address
-                caller)
-            (process-deploy-interchain-from-external-chain
-            ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
-                gateway-impl
-                gas-service-impl
-                message-id
-                source-chain
-                source-address
-                token-address
-                payload
-                gas-value
-                caller))))
+        (process-deploy-interchain-from-external-chain
+        ;; #[filter(message-id, source-chain, payload, token-address, source-address, gas-value)]
+            gateway-impl
+            gas-service-impl
+            message-id
+            source-chain
+            source-address
+            token-address
+            payload
+            gas-value
+            caller)))
 
 
 (define-private (process-deploy-interchain-from-external-chain
