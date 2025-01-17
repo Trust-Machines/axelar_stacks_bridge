@@ -21,7 +21,7 @@
 (define-constant post-conditions-mode-allow 0x01)
 (define-constant post-conditions 0x00000000)
 (define-constant versioned-smart-contract 0x06)
-(define-constant clarity-version 0x02)
+(define-constant clarity-version 0x03)
 
 (define-constant ERR-INVALID-NONCE (err u29001))
 (define-constant ERR-INVALID-FEE (err u29002))
