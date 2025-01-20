@@ -258,53 +258,55 @@
         })
         (caller principal)
     )
-    (let (
-            (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
-            (token-id (interchain-token-id-raw deployer salt))
-            (token-manager-address (contract-of token-manager))
-            (contract-principal (try! (decode-contract-principal token-manager-address)))
-            (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
-            (data (unwrap! (from-consensus-buff? {
-                operator: (optional principal),
-                token-address: principal
-            } params) ERR-INVALID-PARAMS))
-            (operator (default-to NULL-ADDRESS (get operator data)))
-        )
+    (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
-        (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
-        (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
-        (asserts! (is-eq (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
+        (let (
+                (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
+                (token-id (interchain-token-id-raw deployer salt))
+                (token-manager-address (contract-of token-manager))
+                (contract-principal (try! (decode-contract-principal token-manager-address)))
+                (managed-token (unwrap! (contract-call? token-manager get-token-address) ERR-TOKEN-MANAGER-NOT-DEPLOYED))
+                (data (unwrap! (from-consensus-buff? {
+                    operator: (optional principal),
+                    token-address: principal
+                } params) ERR-INVALID-PARAMS))
+                (operator (default-to NULL-ADDRESS (get operator data)))
+            )
+            
+            (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
+            (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
+            (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
+            (asserts! (is-eq (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
 
-        (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
-        (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
-        (try! (contract-call? .verify-onchain verify-nit-deployment
-                (get nonce verification-params)
-                (get fee-rate verification-params)
-                (get signature verification-params)
-                (get contract-name contract-principal)
-                (get deployer contract-principal)
-                (get proof verification-params)
-                (get tx-block-height verification-params)
-                (get block-header-without-signer-signatures verification-params)))
-        (asserts! (is-eq
-            token-manager-type
-            (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
-        ) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (is-eq 
-            managed-token
-            (get token-address data)
-        ) ERR-TOKEN-MANAGER-MISMATCH)
-        (asserts! (unwrap!
-            (contract-call? token-manager is-operator operator) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
-        (asserts! (unwrap! (contract-call? token-manager is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
-        (asserts! (unwrap! (contract-call? token-manager is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
-        (asserts!
-            (unwrap! (insert-token-manager token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK) ERR-NOT-AUTHORIZED)
-        ERR-TOKEN-EXISTS)
-        (contract-call? .interchain-token-service-storage emit-token-manager-deployed token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK)))
+            (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
+            (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
+            (try! (contract-call? .verify-onchain verify-token-manager-deployment
+                    (get nonce verification-params)
+                    (get fee-rate verification-params)
+                    (get signature verification-params)
+                    (get contract-name contract-principal)
+                    (get deployer contract-principal)
+                    (get proof verification-params)
+                    (get tx-block-height verification-params)
+                    (get block-header-without-signer-signatures verification-params)))
+            (asserts! (is-eq
+                token-manager-type
+                (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
+            ) ERR-TOKEN-MANAGER-MISMATCH)
+            (asserts! (is-eq 
+                managed-token
+                (get token-address data)
+            ) ERR-TOKEN-MANAGER-MISMATCH)
+            (asserts! (unwrap!
+                (contract-call? token-manager is-operator operator) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
+            (asserts! (unwrap! (contract-call? token-manager is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
+            (asserts! (unwrap! (contract-call? token-manager is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
+            (asserts!
+                (unwrap! (insert-token-manager token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK) ERR-NOT-AUTHORIZED)
+            ERR-TOKEN-EXISTS)
+            (contract-call? .interchain-token-service-storage emit-token-manager-deployed token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK))))
 
 
 
@@ -329,35 +331,36 @@
         (minter (buff 128))
         (gas-value uint)
         (caller principal))
-    (let (
-        (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
-        (token-id (interchain-token-id-raw deployer salt))
-        (payload (unwrap-panic (to-consensus-buff? {
-            type: MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN,
-            token-id: token-id,
-            name: name,
-            symbol: symbol,
-            decimals: decimals,
-            minter: minter
-        })))
-        (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
-    )
-    (asserts! (is-proxy) ERR-NOT-PROXY)
-    (asserts! (get-is-started) ERR-NOT-STARTED)
-    (try! (require-not-paused))
-    (asserts! (or
-            (is-eq destination-chain CHAIN-NAME)
-            (> (len destination-chain) u0))
-        ERR-INVALID-DESTINATION-CHAIN)
-    (try! (contract-call? .interchain-token-service-storage emit-interchain-token-deployment-started
-        token-id
-        destination-chain
-        name
-        symbol
-        decimals
-        minter))
-    ;; #[filter(gateway-impl, gas-value)]
-    (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value)))
+    (begin
+        (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (let (
+            (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
+            (token-id (interchain-token-id-raw deployer salt))
+            (payload (unwrap-panic (to-consensus-buff? {
+                type: MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN,
+                token-id: token-id,
+                name: name,
+                symbol: symbol,
+                decimals: decimals,
+                minter: minter
+            })))
+            (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
+        )
+        (asserts! (or
+                (is-eq destination-chain CHAIN-NAME)
+                (> (len destination-chain) u0))
+            ERR-INVALID-DESTINATION-CHAIN)
+        (try! (contract-call? .interchain-token-service-storage emit-interchain-token-deployment-started
+            token-id
+            destination-chain
+            name
+            symbol
+            decimals
+            minter))
+        ;; #[filter(gateway-impl, gas-value)]
+        (contract-call? .interchain-token-service its-hub-call-contract gateway-impl gas-service-impl destination-chain payload (get contract-call METADATA-VERSION) gas-value))))
 
 (define-read-only (decode-contract-principal (contract-principal principal))
     (let (
@@ -710,52 +713,53 @@
         (destination-contract (optional <interchain-token-executable-trait>))
         (caller principal)
     )
-    (let (
-        (payload-decoded (unwrap! (from-consensus-buff? {
-            type: uint,
-            source-chain: (string-ascii 20),
-            token-id: (buff 32),
-            source-address: (buff 128),
-            destination-address: (buff 128),
-            amount: uint,
-            data: (buff 63000),
-        } payload) ERR-INVALID-PAYLOAD))
-        (token-id (get token-id payload-decoded))
-        (sender-address (get source-address payload-decoded))
-        (recipient (unwrap-panic (from-consensus-buff? principal (get destination-address payload-decoded))))
-        (amount (get amount payload-decoded))
-        (data (get data payload-decoded))
-        (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
-        (data-is-empty (is-eq (len data) u0))
-    )
-    (asserts! (is-proxy) ERR-NOT-PROXY)
-    (asserts! (get-is-started) ERR-NOT-STARTED)
-    (try! (require-not-paused))
-    (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-    (asserts! (is-trusted-chain (get source-chain payload-decoded)) ERR-UNTRUSTED-CHAIN)
-    (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
-    (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
-    (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
-    (try! (as-contract
-        (contract-call? .interchain-token-service gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
-    ))
-    (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
-    (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received
-        token-id
-        (get source-chain payload-decoded)
-        sender-address
-        recipient
-        amount
-        (if data-is-empty EMPTY-32-BYTES (keccak256 data))))
-    (if (or (is-none destination-contract) data-is-empty)
-        (ok 0x)
+    (begin
+        (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
         (let (
-            (destination-contract-unwrapped (unwrap! destination-contract ERR-INVALID-DESTINATION-ADDRESS))
+            (payload-decoded (unwrap! (from-consensus-buff? {
+                type: uint,
+                source-chain: (string-ascii 20),
+                token-id: (buff 32),
+                source-address: (buff 128),
+                destination-address: (buff 128),
+                amount: uint,
+                data: (buff 63000),
+            } payload) ERR-INVALID-PAYLOAD))
+            (token-id (get token-id payload-decoded))
+            (sender-address (get source-address payload-decoded))
+            (recipient (unwrap-panic (from-consensus-buff? principal (get destination-address payload-decoded))))
+            (amount (get amount payload-decoded))
+            (data (get data payload-decoded))
+            (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
+            (data-is-empty (is-eq (len data) u0))
         )
-            (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
-            (as-contract
-                (contract-call? destination-contract-unwrapped execute-with-interchain-token
-                    (get source-chain payload-decoded) message-id sender-address data token-id (contract-of token) amount))))))
+        (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-chain (get source-chain payload-decoded)) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
+        (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
+        (try! (as-contract
+            (contract-call? .interchain-token-service gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
+        ))
+        (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
+        (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received
+            token-id
+            (get source-chain payload-decoded)
+            sender-address
+            recipient
+            amount
+            (if data-is-empty EMPTY-32-BYTES (keccak256 data))))
+        (if (or (is-none destination-contract) data-is-empty)
+            (ok 0x)
+            (let (
+                (destination-contract-unwrapped (unwrap! destination-contract ERR-INVALID-DESTINATION-ADDRESS))
+            )
+                (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
+                (as-contract
+                    (contract-call? destination-contract-unwrapped execute-with-interchain-token
+                        (get source-chain payload-decoded) message-id sender-address data token-id (contract-of token) amount)))))))
 
 
 ;; ######################
@@ -776,15 +780,14 @@
 
 
 (define-public (set-flow-limit (token-id (buff 32)) (token-manager <token-manager-trait>) (limit uint) (caller principal))
-    (let
-        (
-            (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
-        )
+    (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-eq (get-operator) caller) ERR-ONLY-OPERATOR)
-        (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
+        (asserts! (is-eq 
+            (get manager-address (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND)) 
+            (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
         (as-contract (contract-call? token-manager set-flow-limit limit))))
 
 

@@ -7,6 +7,7 @@ import {
   giveToken,
   nextEpoch,
   takeToken,
+  transferSip010,
 } from "./its-utils";
 import { NIT_ERRORS, TOKEN_MANAGER_ERRORS } from "./constants";
 
@@ -26,12 +27,12 @@ export function runFlowLimitsSuite({
   const FLOW_LIMIT_EXCEEDED = tokenManagerAddress.includes("token-manager")
     ? TOKEN_MANAGER_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
     : NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"];
-  it("Should be able to set the flow limit", async () => {
+  it("Should be able to set the flow limit", () => {
     const tx = simnet.callPublicFn(
       tokenManagerAddress,
       "set-flow-limit",
       [Cl.uint(flowLimit)],
-      address1
+      address1,
     );
 
     expect(tx.result).toBeOk(Cl.bool(true));
@@ -39,7 +40,7 @@ export function runFlowLimitsSuite({
     expect(flowLimitValue.result).toBeOk(Cl.uint(flowLimit));
   });
 
-  it("Should test flow in", async () => {
+  it("Should test flow in", () => {
     for (let i = 0; i < flowLimit; i++) {
       const giveTX = giveToken({
         contractName: tokenManagerAddress,
@@ -60,7 +61,7 @@ export function runFlowLimitsSuite({
         amount: 1,
         receiver: address2,
         sender: address1,
-      }).result
+      }).result,
     ).toBeErr(FLOW_LIMIT_EXCEEDED);
     nextEpoch();
     expect(getTokenFlowIn(tokenManagerAddress).result).toBeOk(Cl.uint(0));
@@ -72,24 +73,33 @@ export function runFlowLimitsSuite({
         amount: 1,
         receiver: address2,
         sender: address1,
-      }).result
+      }).result,
     ).toBeOk(Cl.bool(true));
   });
 
-  it("Should test flow out", async () => {
+  it("Should test flow out", () => {
+    expect(
+      transferSip010({
+        amount: 100,
+        sender: simnet.deployer,
+        recipient: address1,
+        contractAddress: tokenAddress,
+      }).result,
+    ).toBeOk(Cl.bool(true));
+    expect(getTokenFlowOut(tokenManagerAddress).result).toBeOk(Cl.uint(0));
     for (let i = 0; i < flowLimit; i++) {
       const takeTX = takeToken({
         contractName: tokenManagerAddress,
         tokenAddress: tokenAddress,
         amount: 1,
-        receiver: address1,
+        from: address1,
         sender: address1,
       });
 
       expect(takeTX.result).toBeOk(Cl.bool(true));
 
       expect(getTokenFlowOut(tokenManagerAddress).result).toBeOk(
-        Cl.uint(i + 1)
+        Cl.uint(i + 1),
       );
     }
     expect(
@@ -97,9 +107,9 @@ export function runFlowLimitsSuite({
         contractName: tokenManagerAddress,
         tokenAddress: tokenAddress,
         amount: 1,
-        receiver: address1,
+        from: address1,
         sender: address1,
-      }).result
+      }).result,
     ).toBeErr(FLOW_LIMIT_EXCEEDED);
     nextEpoch();
     expect(getTokenFlowOut(tokenManagerAddress).result).toBeOk(Cl.uint(0));
@@ -109,13 +119,13 @@ export function runFlowLimitsSuite({
         contractName: tokenManagerAddress,
         tokenAddress: tokenAddress,
         amount: 1,
-        receiver: address1,
+        from: address1,
         sender: address1,
-      }).result
+      }).result,
     ).toBeOk(Cl.bool(true));
   });
 
-  it("Should revert if single flow amount exceeds the flow limit", async () => {
+  it("Should revert if single flow amount exceeds the flow limit", () => {
     const excessiveFlowAmount = flowLimit + 1;
     expect(
       giveToken({
@@ -124,7 +134,7 @@ export function runFlowLimitsSuite({
         amount: flowLimit - 1,
         receiver: address2,
         sender: address1,
-      }).result
+      }).result,
     ).toBeOk(Cl.bool(true));
     expect(
       giveToken({
@@ -133,7 +143,7 @@ export function runFlowLimitsSuite({
         amount: excessiveFlowAmount,
         receiver: address2,
         sender: address1,
-      }).result
+      }).result,
     ).toBeErr(FLOW_LIMIT_EXCEEDED);
   });
 }

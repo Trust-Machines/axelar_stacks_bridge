@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  approveDeployNativeInterchainToken,
   buildOutgoingGMPMessage,
-  executeDeployInterchainToken,
   keccak256,
   setupNIT,
   setupService,
@@ -14,7 +12,7 @@ import {
   factoryDeployInterchainToken,
   deployRemoteCanonicalInterchainToken,
   factoryDeployRemoteInterchainToken,
-  getCanonicalInterChainTokenId,
+  // getCanonicalInterChainTokenId,
   getInterchainTokenId,
   registerCanonicalInterchainToken,
   itfImpl,
@@ -29,10 +27,12 @@ import {
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
 } from "./constants";
+import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
+const address3 = accounts.get("wallet_3");
 const deployer = accounts.get("deployer")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");
@@ -76,14 +76,22 @@ describe("interchain-token-factory", () => {
       expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
     });
     it("deploys a lock unlock token with its manager", () => {
-      setupTokenManager({});
+      const verificationParams = getTokenManagerMockCv();
+      setupTokenManager({
+        contract: `${address1}.token-man`,
+        operator: null,
+        sender: address1,
+      });
 
-      const tokenId = getCanonicalInterChainTokenId({}).value;
+      // const tokenId = getCanonicalInterChainTokenId({}).value;
 
-      const deployTx = registerCanonicalInterchainToken({});
+      const deployTx = registerCanonicalInterchainToken({
+        sender: address1,
+        tokenManagerAddress: `${address1}.token-man`,
+        verificationParams,
+      });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
-
 
       const remoteDeployTx = deployRemoteCanonicalInterchainToken({});
 
@@ -110,7 +118,7 @@ describe("interchain-token-factory", () => {
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
-        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
         impl: evilImpl,
@@ -119,43 +127,28 @@ describe("interchain-token-factory", () => {
       expect(remoteDeployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
     });
     it("deploys a mint burn token", () => {
+      const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
+        contract: `${address1}.nit`,
+        minter: address1,
+        operator: address1,
+        sender: address1,
       });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
+        verificationParams,
+        tokenAddress: `${address1}.nit`,
+        minterAddress: address1,
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
-      const { payload } = approveDeployNativeInterchainToken({
-        tokenId,
-        proofSigners,
-      });
-
-      expect(
-        executeDeployInterchainToken({
-          messageId: "approved-native-interchain-token-deployment-message",
-          gasValue: 100,
-          payload: Cl.serialize(payload),
-          tokenAddress: `${deployer}.native-interchain-token`,
-          sourceChain: "stacks",
-          sourceAddress: "interchain-token-service",
-        }).result,
-      ).toBeOk(Cl.bool(true));
-
-      approveDeployRemoteInterchainToken({
-        deployer: address1,
-        salt: originalSalt,
-        sender: address1,
-        destinationMinter: "0x" + "00".repeat(20),
-        destinationChain: "untrusted-chain",
-      });
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
-        tokenAddress: `${deployer}.native-interchain-token`,
-        tokenManagerAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
+        tokenManagerAddress: `${address1}.nit`,
         sender: address1,
         minter: BURN_ADDRESS,
       });
@@ -176,65 +169,69 @@ describe("interchain-token-factory", () => {
       expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
     });
     it("Should register a token if the mint amount is zero", () => {
+      const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-      });
-      const deployTx = factoryDeployInterchainToken({
-        salt: originalSalt,
-        sender: address1,
-        initialSupply: 0,
-      });
-
-      expect(deployTx.result).toBeOk(Cl.bool(true));
-    });
-    it("Should register a token if the mint amount is zero and minter is the zero address", () => {
-      setupNIT({
-        tokenId,
-      });
-      const deployTx = factoryDeployInterchainToken({
-        salt: originalSalt,
-        sender: address1,
-        initialSupply: 0,
-        minterAddress: BURN_ADDRESS,
-      });
-
-      expect(deployTx.result).toBeOk(Cl.bool(true));
-    });
-
-    it("Should initiate a remote interchain token deployment without the same minter", () => {
-      setupNIT({
-        tokenId,
+        contract: `${address1}.nit`,
         minter: address1,
+        operator: address1,
+        sender: address1,
       });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
         initialSupply: 0,
         minterAddress: address1,
+        tokenAddress: `${address1}.nit`,
+        verificationParams,
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
-      const { payload: approvalPayload } = approveDeployNativeInterchainToken({
+    });
+    it("Should register a token if the mint amount is zero and minter is the zero address", () => {
+      const verificationParams = getNITMockCv();
+      setupNIT({
         tokenId,
-        proofSigners,
-        minter: address1,
+        contract: `${address1}.nit`,
+        minter: BURN_ADDRESS,
+        operator: BURN_ADDRESS,
+        sender: address1,
+      });
+      const deployTx = factoryDeployInterchainToken({
+        salt: originalSalt,
+        sender: address1,
+        initialSupply: 0,
+        minterAddress: BURN_ADDRESS,
+        tokenAddress: `${address1}.nit`,
+        verificationParams,
       });
 
-      expect(
-        executeDeployInterchainToken({
-          messageId: "approved-native-interchain-token-deployment-message",
-          gasValue: 100,
-          payload: Cl.serialize(approvalPayload),
-          tokenAddress: `${deployer}.native-interchain-token`,
-          sourceChain: "stacks",
-          sourceAddress: "interchain-token-service",
-        }).result,
-      ).toBeOk(Cl.bool(true));
+      expect(deployTx.result).toBeOk(Cl.bool(true));
+    });
+
+    it("Should initiate a remote interchain token deployment without the same minter", () => {
+      const verificationParams = getNITMockCv();
+      setupNIT({
+        tokenId,
+        minter: address1,
+        contract: `${address1}.nit`,
+        sender: address1,
+        operator: address1,
+      });
+      const deployTx = factoryDeployInterchainToken({
+        salt: originalSalt,
+        sender: address1,
+        initialSupply: 0,
+        minterAddress: address1,
+        verificationParams,
+      });
+
+      expect(deployTx.result).toBeOk(Cl.bool(true));
 
       let remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
-        tokenAddress: `${deployer}.native-interchain-token`,
-        tokenManagerAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
+        tokenManagerAddress: `${address1}.nit`,
         sender: address1,
         minter: address1,
         destinationMinter: "0x" + "00".repeat(20),
@@ -245,7 +242,7 @@ describe("interchain-token-factory", () => {
       );
       remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
-        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
         minter: BURN_ADDRESS,
@@ -315,8 +312,8 @@ describe("interchain-token-factory", () => {
         sender: address1,
         destinationChain: "ethereum",
         destinationMinter: "0xdeadbeef",
-        tokenAddress: `${deployer}.native-interchain-token`,
-        tokenManagerAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
+        tokenManagerAddress: `${address1}.nit`,
       });
 
       expect(remoteDeployTx.result).toBeErr(
@@ -338,8 +335,8 @@ describe("interchain-token-factory", () => {
         sender: address1,
         destinationChain: "ethereum",
         destinationMinter: "0xdeadbeef",
-        tokenAddress: `${deployer}.native-interchain-token`,
-        tokenManagerAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
+        tokenManagerAddress: `${address1}.nit`,
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));

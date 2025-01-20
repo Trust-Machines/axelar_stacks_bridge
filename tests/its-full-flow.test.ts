@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  approveDeployNativeInterchainToken,
   approveReceiveInterchainTransfer,
   buildIncomingInterchainTransferPayload,
   buildOutgoingGMPMessage,
-  executeDeployInterchainToken,
   executeReceiveInterchainToken,
   getCommandId,
   getHelloWorldValue,
@@ -33,10 +31,10 @@ import {
   MessageType,
   MetadataVersion,
   NIT_ERRORS,
-  TokenType,
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
 } from "./constants";
+import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
@@ -70,10 +68,21 @@ describe("Interchain Token Service Full Flow", () => {
         recipient: address1,
         contractAddress: "sample-sip-010",
       });
-      setupTokenManager({});
+      const verificationParams = getTokenManagerMockCv();
+      expect(
+        setupTokenManager({
+          contract: `${address1}.token-man`,
+          sender: address1,
+          operator: null,
+        }).result,
+      ).toBeOk(Cl.bool(true));
 
       setupService(proofSigners);
-      const deployTx = registerCanonicalInterchainToken({});
+      const deployTx = registerCanonicalInterchainToken({
+        verificationParams,
+        tokenManagerAddress: `${address1}.token-man`,
+        sender: address1,
+      });
       expect(deployTx.result).toBeOk(Cl.bool(true));
     });
 
@@ -103,7 +112,6 @@ describe("Interchain Token Service Full Flow", () => {
           gasValue: 1000,
         });
         expect(deployRemoteTx.result).toBeOk(Cl.bool(true));
-
 
         expect(
           deployRemoteTx.events.map((item) => item.data.raw_value),
@@ -185,7 +193,7 @@ describe("Interchain Token Service Full Flow", () => {
       });
 
       it("Should send some tokens to another chain via ITS", async () => {
-        const tokenManagerAddress = `${deployer}.token-manager`;
+        const tokenManagerAddress = `${address1}.token-man`;
         const transferTx = interchainTransfer({
           amount: Cl.uint(amount),
           destinationAddress: Cl.bufferFromHex(destAddress),
@@ -210,7 +218,7 @@ describe("Interchain Token Service Full Flow", () => {
         expect(tokenLockEvent.data).toStrictEqual({
           amount: String(amount),
           asset_identifier: `${deployer}.sample-sip-010::itscoin`,
-          recipient: `${deployer}.token-manager`,
+          recipient: tokenManagerAddress,
           sender: address1,
         });
         expect(interchainTransferNotification.data.value).toBeTuple({
@@ -271,45 +279,36 @@ describe("Interchain Token Service Full Flow", () => {
     const gasValues = [1234, 5678];
     const tokenCap = 1e9;
     function deployNIT() {
-      mintNIT({
+      const verificationParams = getNITMockCv();
+      setupNIT({
+        tokenId,
         minter: address1,
-        amount: tokenCap,
+        operator: address1,
+        sender: address1,
+        contract: `${address1}.nit`,
       });
+      expect(
+        mintNIT({
+          minter: address1,
+          amount: tokenCap,
+          NITAddress: `${address1}.nit`,
+        }).result,
+      ).toBeOk(Cl.bool(true));
+
       const localDeployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
-        gasValue: gasValues[0],
         initialSupply: tokenCap,
         minterAddress: address1,
-        tokenAddress: `${deployer}.native-interchain-token`,
+        tokenAddress: `${address1}.nit`,
+        verificationParams,
       });
-
-      const { payload } = approveDeployNativeInterchainToken({
-        tokenId,
-        proofSigners,
-        minter: address1,
-        supply: tokenCap,
-      });
-
-      expect(
-        executeDeployInterchainToken({
-          messageId: "approved-native-interchain-token-deployment-message",
-          gasValue: 100,
-          payload: Cl.serialize(payload),
-          tokenAddress: `${deployer}.native-interchain-token`,
-          sourceChain: "stacks",
-          sourceAddress: "interchain-token-service",
-        }).result,
-      ).toBeOk(Cl.bool(true));
 
       expect(localDeployTx.result).toBeOk(Cl.bool(true));
     }
     beforeEach(() => {
       setupService(proofSigners);
-      setupNIT({
-        tokenId,
-        minter: address1,
-      });
+
       // Deploy a new Interchain token on the local chain.
       // The initial mint occurs on the factory contract, so it can be moved to other chains within the same multicall.
       deployNIT();
@@ -336,8 +335,8 @@ describe("Interchain Token Service Full Flow", () => {
         });
         const deployTx = factoryDeployRemoteInterchainToken({
           salt: originalSalt,
-          tokenAddress: `${deployer}.native-interchain-token`,
-          tokenManagerAddress: `${deployer}.native-interchain-token`,
+          tokenAddress: `${address1}.nit`,
+          tokenManagerAddress: `${address1}.nit`,
           destinationChain: chain,
           gasValue: 100,
           sender: address1,
@@ -412,11 +411,9 @@ describe("Interchain Token Service Full Flow", () => {
           destinationChain: Cl.stringAscii(chain),
           destinationAddress: Cl.bufferFromHex(destAddress),
           gasValue: Cl.uint(gas),
-          tokenAddress: Cl.address(`${deployer}.native-interchain-token`),
+          tokenAddress: Cl.address(`${address1}.nit`),
           tokenId: tokenId,
-          tokenManagerAddress: Cl.address(
-            `${deployer}.native-interchain-token`,
-          ),
+          tokenManagerAddress: Cl.address(`${address1}.nit`),
           metadata: {
             data: Cl.bufferFromHex("0x"),
             version: Cl.uint(MetadataVersion.ContractCall),
@@ -436,7 +433,7 @@ describe("Interchain Token Service Full Flow", () => {
           event: "ft_burn_event",
           data: {
             amount: String(amount),
-            asset_identifier: `${deployer}.native-interchain-token::itscoin`,
+            asset_identifier: `${address1}.nit::itscoin`,
             sender: address1,
           },
         });
@@ -494,10 +491,15 @@ describe("Interchain Token Service Full Flow", () => {
      * Change the minter to another address
      */
     it("Should be able to change the token minter", async () => {
-      expect(isMinter({ address: address1 })).toBeOk(Cl.bool(true));
-      expect(isMinter({ address: address2 })).toBeOk(Cl.bool(false));
+      expect(
+        isMinter({ contract: `${address1}.nit`, address: address1 }),
+      ).toBeOk(Cl.bool(true));
+      expect(
+        isMinter({ contract: `${address1}.nit`, address: address2 }),
+      ).toBeOk(Cl.bool(false));
 
       let transferMinterTx = transferMinterShip({
+        contract: `${address1}.nit`,
         newMinter: address2,
         sender: address2,
       });
@@ -505,29 +507,42 @@ describe("Interchain Token Service Full Flow", () => {
       expect(transferMinterTx.result).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
       transferMinterTx = transferMinterShip({
+        contract: `${address1}.nit`,
         newMinter: address2,
         sender: address1,
       });
       expect(transferMinterTx.result).toBeOk(Cl.bool(true));
 
-      expect(isMinter({ address: address1 })).toBeOk(Cl.bool(false));
-      expect(isMinter({ address: address2 })).toBeOk(Cl.bool(true));
+      expect(
+        isMinter({ contract: `${address1}.nit`, address: address1 }),
+      ).toBeOk(Cl.bool(false));
+      expect(
+        isMinter({ contract: `${address1}.nit`, address: address2 }),
+      ).toBeOk(Cl.bool(true));
 
-      expect(mintNIT({ minter: address1, amount: 100 }).result).toBeErr(
-        NIT_ERRORS["ERR-NOT-AUTHORIZED"],
-      );
+      expect(
+        mintNIT({
+          minter: address1,
+          amount: 100,
+          NITAddress: `${address1}.nit`,
+        }).result,
+      ).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
       const prevBalance = getSip010Balance({
         address: address2,
-        contractAddress: "native-interchain-token",
+        contractAddress: `${address1}.nit`,
       });
-      expect(mintNIT({ minter: address2, amount: 100 }).result).toBeOk(
-        Cl.bool(true),
-      );
+      expect(
+        mintNIT({
+          minter: address2,
+          amount: 100,
+          NITAddress: `${address1}.nit`,
+        }).result,
+      ).toBeOk(Cl.bool(true));
 
       const newBalance = getSip010Balance({
         address: address2,
-        contractAddress: "native-interchain-token",
+        contractAddress: `${address1}.nit`,
       });
       expect(newBalance).toBe(prevBalance + 100n);
     });
@@ -558,8 +573,8 @@ describe("Interchain Token Service Full Flow", () => {
         messageId,
         sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
-        tokenManager: Cl.contractPrincipal(deployer, "native-interchain-token"),
-        token: Cl.contractPrincipal(deployer, "native-interchain-token"),
+        tokenManager: Cl.contractPrincipal(address1, "nit"),
+        token: Cl.contractPrincipal(address1, "nit"),
         payload: Cl.buffer(Cl.serialize(payload)),
         destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
       });
@@ -583,7 +598,7 @@ describe("Interchain Token Service Full Flow", () => {
         event: "ft_mint_event",
         data: {
           amount: String(amount),
-          asset_identifier: `${deployer}.native-interchain-token::itscoin`,
+          asset_identifier: `${address1}.nit::itscoin`,
           recipient: `${deployer}.hello-world`,
         },
       });

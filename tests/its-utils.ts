@@ -31,6 +31,7 @@ import {
   ITS_HUB_ROUTING_IDENTIFIER,
   BURN_ADDRESS,
 } from "./constants";
+import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -41,20 +42,22 @@ export function setupTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
   operator = address1,
   sender = deployer,
+  contract = "token-manager",
 }: {
+  contract?: string;
   tokenType?: TokenType;
   operator?: string | null;
   sender?: string;
 }) {
   return simnet.callPublicFn(
-    "token-manager",
+    contract,
     "setup",
     [
       Cl.contractPrincipal(deployer, "sample-sip-010"),
       Cl.uint(tokenType),
       operator ? Cl.some(Cl.standardPrincipal(operator)) : Cl.none(),
     ],
-    sender
+    sender,
   );
 }
 
@@ -91,6 +94,7 @@ export function deployTokenManager({
   tokenManagerAddress = Cl.contractPrincipal(deployer, "token-manager"),
   gas = 0,
   impl = itsImpl,
+  verificationParams = getTokenManagerMockCv(),
 }: {
   impl?: PrincipalCV;
   salt: Buffer | Uint8Array;
@@ -99,6 +103,7 @@ export function deployTokenManager({
   tokenAddress?: ContractPrincipalCV;
   tokenManagerAddress?: ContractPrincipalCV;
   gas?: number;
+  verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -115,26 +120,25 @@ export function deployTokenManager({
           Cl.tuple({
             operator: Cl.some(Cl.address(address1)),
             "token-address": tokenAddress,
-          })
-        )
+          }),
+        ),
       ),
       tokenManagerAddress,
-      Cl.uint(gas),
+      verificationParams,
     ],
-    address1
+    address1,
   );
 }
 
-
 export function getTokenId(
   salt: Uint8Array | Buffer,
-  deployer: string = address1
+  deployer: string = address1,
 ) {
   return simnet.callReadOnlyFn(
     "interchain-token-service-impl",
     "interchain-token-id-raw",
     [Cl.standardPrincipal(deployer), Cl.buffer(salt)],
-    address1
+    address1,
   );
 }
 
@@ -185,7 +189,7 @@ export function getDataHashFromMessages({ messages }: { messages: ListCV }) {
     "gateway-impl",
     "data-hash-from-messages",
     [messages],
-    address1
+    address1,
   );
   return cvToJSON(result).value.replace("0x", "");
 }
@@ -194,7 +198,7 @@ export function getSignersHash({ proofSigners }: { proofSigners: Signers }) {
     "gateway-impl",
     "get-signers-hash",
     [signersToCv(proofSigners)],
-    address1
+    address1,
   );
   return cvToJSON(result).value;
 }
@@ -210,7 +214,7 @@ export const getMessageHashToSign = ({
     "gateway-impl",
     "message-hash-to-sign",
     [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
-    address1
+    address1,
   );
   return cvToJSON(result).value;
 };
@@ -230,7 +234,7 @@ export function signAndApproveMessages({
       "gateway-impl",
       "message-hash-to-sign",
       [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)],
-      address1
+      address1,
     );
     return cvToJSON(result).value;
   })();
@@ -244,7 +248,7 @@ export function signAndApproveMessages({
       Cl.buffer(Cl.serialize(messages)),
       Cl.buffer(Cl.serialize(proof)),
     ],
-    address1
+    address1,
   );
 
   return expect(approveResult).toBeOk(Cl.bool(true));
@@ -261,7 +265,7 @@ export function setPaused({
     "interchain-token-service",
     "set-paused",
     [impl, Cl.bool(paused)],
-    deployer
+    deployer,
   );
 }
 
@@ -302,7 +306,7 @@ export function deployRemoteInterchainToken({
       Cl.buffer(minter),
       Cl.uint(gasValue),
     ],
-    address1
+    address1,
   );
 }
 
@@ -312,8 +316,8 @@ export function executeDeployInterchainToken({
   sourceAddress,
   sourceChain,
   tokenAddress,
-  gasValue,
   impl = itsImpl,
+  verificationParams = getNITMockCv(),
 }: {
   impl?: PrincipalCV;
   messageId: string;
@@ -322,6 +326,7 @@ export function executeDeployInterchainToken({
   tokenAddress: `${string}.${string}`;
   payload: Buffer | Uint8Array;
   gasValue: number;
+  verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -335,9 +340,9 @@ export function executeDeployInterchainToken({
       Cl.stringAscii(sourceAddress),
       Cl.contractPrincipal(...(tokenAddress.split(".") as [string, string])),
       Cl.buffer(payload),
-      Cl.uint(gasValue),
+      verificationParams,
     ],
-    address1
+    address1,
   );
 }
 export function buildVerifyInterchainTokenPayload({
@@ -389,15 +394,15 @@ export function approveRemoteInterchainToken({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
-          "approved-interchain-token-deployment-message"
+          "approved-interchain-token-deployment-message",
         ),
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -412,11 +417,11 @@ export function approveRemoteInterchainToken({
 
 export function deployInterchainToken({
   salt,
-  token = Cl.contractPrincipal(deployer, "native-interchain-token"),
+  token = Cl.contractPrincipal(address1, "nit"),
   supply = 0,
   minter,
-  gasValue,
   impl = itsImpl,
+  verificationParams = getNITMockCv(),
 }: {
   impl?: PrincipalCV;
   salt: Uint8Array | Buffer;
@@ -424,6 +429,7 @@ export function deployInterchainToken({
   token?: ContractPrincipalCV;
   supply?: number;
   minter?: PrincipalCV;
+  verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
     "interchain-token-service",
@@ -436,12 +442,11 @@ export function deployInterchainToken({
       token,
       Cl.uint(supply),
       minter ? Cl.some(minter) : Cl.none(),
-      Cl.uint(gasValue),
+      verificationParams,
     ],
-    address1
+    address1,
   );
 }
-
 
 export function interchainTransfer({
   amount,
@@ -490,7 +495,7 @@ export function interchainTransfer({
           }),
       gasValue,
     ],
-    caller
+    caller,
   );
 }
 
@@ -573,7 +578,7 @@ export function executeReceiveInterchainToken({
       payload,
       destinationContract ? Cl.some(destinationContract) : Cl.none(),
     ],
-    address1
+    address1,
   );
 }
 
@@ -619,13 +624,13 @@ export function approveReceiveInterchainTransfer({
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(messageId),
         payload,
         sourceAddress: Cl.stringAscii(TRUSTED_ADDRESS),
         sourceChain: Cl.stringAscii(TRUSTED_CHAIN),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -649,7 +654,7 @@ export function getSip010Balance({
     contractAddress,
     "get-balance",
     [Cl.address(address)],
-    address1
+    address1,
   ).result as ResponseOkCV<UIntCV>;
   return result.value.value;
 }
@@ -660,15 +665,19 @@ export function setupNIT({
   operator,
   name = "Nitter",
   symbol = "NIT",
+  contract = "native-interchain-token",
+  sender = deployer,
 }: {
   tokenId: BufferCV;
   minter?: string;
   operator?: string;
   name?: string;
   symbol?: string;
+  contract?: string;
+  sender?: string;
 }) {
   return simnet.callPublicFn(
-    "native-interchain-token",
+    contract,
     "setup",
     [
       // (token-id_ (buff 32))
@@ -687,7 +696,7 @@ export function setupNIT({
       Cl.none(),
       minter ? Cl.some(Cl.address(minter)) : Cl.none(),
     ],
-    deployer
+    sender,
   );
 }
 
@@ -711,26 +720,25 @@ export function approveDeployNativeInterchainToken({
     operator: Cl.address(operator),
     supply: Cl.uint(supply),
     symbol: Cl.stringAscii("NIT"),
-    "token-address": Cl.address(`${deployer}.native-interchain-token`),
+    "token-address": Cl.address(`${deployer}.nit`),
     "token-id": tokenId,
     "token-type": Cl.uint(TokenType.NATIVE_INTERCHAIN_TOKEN),
-    type: Cl.stringAscii("verify-interchain-token"),
-    "wrapped-payload": Cl.none(),
+    type: Cl.uint(MessageType.DEPLOY_INTERCHAIN_TOKEN),
   });
   const messages = Cl.list([
     Cl.tuple(
       buildIncomingGMPMessage({
         contractAddress: Cl.contractPrincipal(
           deployer,
-          "interchain-token-service"
+          "interchain-token-service",
         ),
         messageId: Cl.stringAscii(
-          "approved-native-interchain-token-deployment-message"
+          "approved-native-interchain-token-deployment-message",
         ),
         payload,
         sourceAddress: Cl.stringAscii("interchain-token-service"),
         sourceChain: Cl.stringAscii("stacks"),
-      })
+      }),
     ),
   ]);
   signAndApproveMessages({
@@ -759,7 +767,7 @@ export function mintNIT({
     NITAddress,
     "mint",
     [Cl.address(recipient ?? minter), Cl.uint(amount)],
-    minter
+    minter,
   );
 }
 
@@ -779,7 +787,7 @@ export function burnNIT({
     NITAddress,
     "burn",
     [Cl.address(recipient ?? minter), Cl.uint(amount)],
-    minter
+    minter,
   );
 }
 
@@ -834,7 +842,7 @@ export function callContractWithInterchainToken({
           }),
       gasValue,
     ],
-    caller
+    caller,
   );
 }
 
@@ -864,8 +872,8 @@ export function setupService(proofSigners: Signers, customITSImpl?: string) {
         Cl.stringAscii(TRUSTED_CHAIN),
         customITSImpl ? Cl.some(Cl.address(customITSImpl)) : Cl.none(),
       ],
-      deployer
-    ).result
+      deployer,
+    ).result,
   ).toBeOk(Cl.bool(true));
   deployGateway(proofSigners);
 }
@@ -885,7 +893,7 @@ export function setFlowLimit({
     "interchain-token-service",
     "set-flow-limit",
     [impl, tokenId, tokenManagerAddress, limit],
-    deployer
+    deployer,
   );
 }
 
@@ -906,27 +914,27 @@ export function giveToken({
     contractName,
     "give-token",
     [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
-    sender
+    sender,
   );
 }
 export function takeToken({
   amount,
   contractName,
-  receiver,
+  from,
   sender,
   tokenAddress,
 }: {
   amount: number;
   sender: string;
-  receiver: string;
+  from: string;
   contractName: string;
   tokenAddress: string;
 }) {
   return simnet.callPublicFn(
     contractName,
     "take-token",
-    [Cl.address(tokenAddress), Cl.address(receiver), Cl.uint(amount)],
-    sender
+    [Cl.address(tokenAddress), Cl.address(from), Cl.uint(amount)],
+    sender,
   );
 }
 
@@ -935,7 +943,7 @@ export function getTokenFlowIn(contractName: string) {
     contractName,
     "get-flow-in-amount",
     [],
-    address1
+    address1,
   );
 }
 export function getTokenFlowOut(contractName: string) {
@@ -943,20 +951,20 @@ export function getTokenFlowOut(contractName: string) {
     contractName,
     "get-flow-out-amount",
     [],
-    address1
+    address1,
   );
 }
 
 export function setTokenFlowLimit(
   contractName: string,
   limit: number,
-  sender = address1
+  sender = address1,
 ) {
   return simnet.callPublicFn(
     contractName,
     "set-flow-limit",
     [Cl.uint(limit)],
-    sender
+    sender,
   );
 }
 
@@ -981,7 +989,7 @@ export function addFlowLimiter({
     contractName,
     "add-flow-limiter",
     [Cl.address(limiterAddress)],
-    operator
+    operator,
   );
 }
 
@@ -998,7 +1006,7 @@ export function removeFlowLimiter({
     contractName,
     "remove-flow-limiter",
     [Cl.address(limiterAddress)],
-    operator
+    operator,
   );
 }
 
@@ -1014,7 +1022,7 @@ export function isFlowLimiter({
     contractName,
     "is-flow-limiter",
     [Cl.address(limiterAddress)],
-    address1
+    address1,
   );
 }
 
@@ -1029,7 +1037,7 @@ export function isOperator({
     contractName,
     "is-operator",
     [Cl.address(operator)],
-    address1
+    address1,
   );
 }
 
@@ -1046,7 +1054,7 @@ export function transferTokenOperatorShip({
     contractName,
     "transfer-operatorship",
     [Cl.address(newOperator)],
-    operator
+    operator,
   );
 }
 export function transferITSOperatorShip({
@@ -1062,7 +1070,7 @@ export function transferITSOperatorShip({
     "interchain-token-service",
     "transfer-operatorship",
     [impl, Cl.address(newOperator)],
-    operator
+    operator,
   );
 }
 
@@ -1081,7 +1089,7 @@ export function transferSip010({
     contractAddress,
     "transfer",
     [Cl.uint(amount), Cl.address(sender), Cl.address(recipient), Cl.none()],
-    sender
+    sender,
   );
 }
 
@@ -1106,26 +1114,34 @@ export function getCommandId({
   return keccak256(Cl.serialize(Cl.stringAscii(`${sourceChain}_${messageId}`)));
 }
 
-export function isMinter({ address }: { address: string }) {
+export function isMinter({
+  address,
+  contract = "native-interchain-token",
+}: {
+  address: string;
+  contract?: string;
+}) {
   return simnet.callReadOnlyFn(
-    "native-interchain-token",
+    contract,
     "is-minter",
     [Cl.address(address)],
-    address1
+    address1,
   ).result as ResponseOkCV<BooleanCV>;
 }
 
 export function transferMinterShip({
   newMinter,
   sender,
+  contract = "native-interchain-token",
 }: {
   newMinter: string;
   sender: string;
+  contract?: string;
 }) {
   return simnet.callPublicFn(
-    "native-interchain-token",
+    contract,
     "transfer-mintership",
     [Cl.address(newMinter)],
-    sender
+    sender,
   );
 }
