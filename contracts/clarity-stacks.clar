@@ -26,7 +26,7 @@
 (define-constant merkle-path-node-tag 0x01)
 
 (define-map debug-block-header-hashes uint (buff 32))
-(define-constant debug-mode false)
+(define-constant debug-mode true)
 
 (define-read-only (valid-signer-bitvec (bitvec (buff 506)))
 	(let ((byte-length (buff-to-uint-be (unwrap-panic (as-max-len? (unwrap! (slice? bitvec u2 u6) false) u4)))))

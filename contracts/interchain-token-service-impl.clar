@@ -279,8 +279,6 @@
             (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
             (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
             (asserts! (is-eq (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
-
-            (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
             (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
             (try! (contract-call? .verify-onchain verify-token-manager-deployment
                     (get nonce verification-params)
@@ -304,9 +302,9 @@
             (asserts! (unwrap! (contract-call? token-manager is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
             (asserts! (unwrap! (contract-call? token-manager is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
             (asserts!
-                (unwrap! (insert-token-manager token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK) ERR-NOT-AUTHORIZED)
+                (unwrap! (insert-token-manager token-id token-manager-address token-manager-type) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
-            (contract-call? .interchain-token-service-storage emit-token-manager-deployed token-id token-manager-address TOKEN-TYPE-LOCK-UNLOCK))))
+            (contract-call? .interchain-token-service-storage emit-token-manager-deployed token-id token-manager-address token-manager-type))))
 
 
 
@@ -348,8 +346,8 @@
             })))
             (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
         )
-        (asserts! (or
-                (is-eq destination-chain CHAIN-NAME)
+        (asserts! (and
+                (not (is-eq destination-chain CHAIN-NAME))
                 (> (len destination-chain) u0))
             ERR-INVALID-DESTINATION-CHAIN)
         (try! (contract-call? .interchain-token-service-storage emit-interchain-token-deployment-started
@@ -509,10 +507,6 @@
             (contract-principal (try! (decode-contract-principal token-address)))
         )
         (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-        (asserts! (unwrap! (contract-call? gateway-impl is-message-approved
-                source-chain message-id source-address .interchain-token-service (keccak256 payload))
-                    ERR-GATEWAY-NOT-DEPLOYED)
-            ERR-TOKEN-DEPLOYMENT-NOT-APPROVED)
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
         ;; #[filter(verification-params)]
         (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params))
