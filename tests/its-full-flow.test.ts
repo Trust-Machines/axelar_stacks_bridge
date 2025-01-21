@@ -550,7 +550,6 @@ describe("Interchain Token Service Full Flow", () => {
     it("Should execute an application with interchain transfer via ITS Hub", async () => {
       const amount = 1234;
       const sourceChain = otherChains[0];
-      const gasValue = 6789; // Set this to the gas quote for the interchain call in production
       const recipient = `${deployer}.hello-world`;
       const sender = address1;
       const messageId = Buffer.from(randomBytes(32)).toString("hex");
@@ -561,7 +560,6 @@ describe("Interchain Token Service Full Flow", () => {
         sender,
         tokenId,
         data,
-        gasValue,
         sourceChain,
       });
       approveReceiveInterchainTransfer({

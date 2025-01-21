@@ -32,7 +32,6 @@ import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
-const address3 = accounts.get("wallet_3");
 const deployer = accounts.get("deployer")!;
 
 const proofSigners = getSigners(0, 10, 1, 10, "1");

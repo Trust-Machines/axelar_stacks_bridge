@@ -92,7 +92,6 @@ export function deployTokenManager({
   tokenType = TokenType.LOCK_UNLOCK,
   tokenAddress = Cl.contractPrincipal(deployer, "sample-sip-010"),
   tokenManagerAddress = Cl.contractPrincipal(deployer, "token-manager"),
-  gas = 0,
   impl = itsImpl,
   verificationParams = getTokenManagerMockCv(),
 }: {
@@ -102,7 +101,6 @@ export function deployTokenManager({
   tokenType?: 0 | 2;
   tokenAddress?: ContractPrincipalCV;
   tokenManagerAddress?: ContractPrincipalCV;
-  gas?: number;
   verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
@@ -325,7 +323,6 @@ export function executeDeployInterchainToken({
   sourceAddress: string;
   tokenAddress: `${string}.${string}`;
   payload: Buffer | Uint8Array;
-  gasValue: number;
   verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
@@ -425,7 +422,6 @@ export function deployInterchainToken({
 }: {
   impl?: PrincipalCV;
   salt: Uint8Array | Buffer;
-  gasValue: number;
   token?: ContractPrincipalCV;
   supply?: number;
   minter?: PrincipalCV;
@@ -595,7 +591,6 @@ export function buildIncomingInterchainTransferPayload({
   recipient: string;
   amount: number;
   data: BufferCV;
-  gasValue: number;
   sourceChain?: string;
 }) {
   return Cl.tuple({
