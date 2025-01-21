@@ -400,25 +400,35 @@ describe("Interchain Token Service", () => {
       ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
     it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
+      const verificationParams = getNITMockCv();
+      setupNIT({
+        contract: `${address1}.nit`,
+        tokenId,
+        sender: address1,
+      });
       expect(
         executeDeployInterchainToken({
           messageId: "unapproved-message",
           payload: Cl.serialize(
             Cl.tuple({
-              type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
+              type: Cl.uint(MessageType.DEPLOY_INTERCHAIN_TOKEN),
               "source-chain": Cl.stringAscii("ethereum"),
-              "token-id": Cl.buffer(randomBytes(32)),
+              "token-id": tokenId,
               name: Cl.stringAscii("unapproved-token"),
               symbol: Cl.stringAscii("unapproved-token"),
               decimals: Cl.uint(6),
               "minter-bytes": Cl.bufferFromHex("0x00"),
+              verificationParams,
             }),
           ),
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
-          tokenAddress: `${deployer}.sample-sip-010`,
+          tokenAddress: `${address1}.nit`,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-TOKEN-DEPLOYMENT-NOT-APPROVED"]);
+      ).toBeErr(
+        // ERR-MESSAGE-NOT-FOUND
+        Cl.uint(9052),
+      );
     });
 
     it("Should be able to receive a remote interchain token deployment with a mint/burn token manager with empty minter and operator", () => {
