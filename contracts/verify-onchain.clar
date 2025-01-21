@@ -97,12 +97,6 @@
       )
   (ok (sha512/256 (concat shared-part token-manager-part))))))
 
-
-
-
-(contract-call? .clarity-stacks debug-set-block-header-hash u99 0x3e83b019e17190248dff744429adbfe59ac3803b89c947b5b42e1afaaaacabff)
-(contract-call? .clarity-stacks debug-set-block-header-hash u49528 0x4013bf18effed0f56cfa4b252039b284319de9e0362a7050ccfcf1839a83ded3)
-
 (define-read-only (verify-nit-deployment
   (nonce (buff 8))
   (fee-rate (buff 8))
@@ -140,18 +134,6 @@
       block-header-without-signer-signatures
   )
 )
-
-(define-read-only (demo)
-    (verify-nit-deployment
-        0x0000000000000015
-        0x00000000000031c4
-        0x01cb787de4b8e95bf74be3fd1a9ba556b3c1b862581191ca9ff44d8a33be25faeb79f3e4b730df4a12d33a2324dd8f4cfff406d797078988db6ef1480db76ead37
-        0x6e6974
-        'STANVMQYPJMAB5TA226FFHSXJS2BQKPKSV3RKHYE
-        { hashes: (list 0xad185bd96189be60fa1488d035e465a8cc6ba137f05b9a1057e7801b32516da0), tree-depth: u1, tx-index: u1 }
-        u49528
-        0x00000000000000c1780000000005627aa05793d40096982fedd27182956bb1f32c831024c42f06c622f00eaae294062061257d961dd82f06dcd6e9ff039e212e2282167afc343a59a80e96b21f394cdd980572bb324c61534c678d92f15a3b2084ce530c2406f9f80be3c071a39fa7f9553481baa6125ce5bf56829b036d20c85ad590f9f8000000006787d22400d3424a819d77e6526282063c3393e196f52baab9c69e87a1c8b4cf058dbc1eaf567775943946f0c99c0fc8f0cdd4b7da6aba5831585a9d26f6e68bd5c1496d1a013700000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
-    ))
 
 (define-read-only (get-nit-source) 
   nit-contract-code)
