@@ -2,12 +2,31 @@ import { bytesToHex, hexToBytes } from "@noble/hashes/utils";
 import {
   Cl,
   deserializeTransaction,
-  callReadOnlyFunction,
+  callReadOnlyFunction as fetchCallReadOnlyFunction,
   StringAsciiCV,
+  broadcastTransaction,
+  makeContractCall,
+  getAddressFromPrivateKey,
+  TransactionVersion,
+  AnchorMode,
+  PostConditionMode,
+  makeContractDeploy,
+  ClarityVersion,
+  SingleSigSpendingCondition,
 } from "@stacks/transactions";
-import { intToHex, asciiToBytes, intToBytes } from "@stacks/common";
+import { intToHex, asciiToBytes } from "@stacks/common";
 import { MerkleTree, proof_path_to_cv } from "./block-hash.ts";
 import { sha512_256 } from "@noble/hashes/sha512";
+
+const referenceAddy = "ST237BAVWHZ124P5XWDRJEB40WNRGM9C8A9CK02Q6";
+const timestamp = Date.now();
+const tmName = `token-manager-${timestamp}`;
+const senderKey =
+  "d427253f39b2f4d5649533fa855f16cd7d5cdeee4b4481cf1f83da6053573db901";
+const senderAddress = getAddressFromPrivateKey(
+  senderKey,
+  TransactionVersion.Testnet,
+);
 
 async function getTxInfo({ txId }: { txId: string }) {
   const txInfoRes = await fetch(
@@ -17,15 +36,18 @@ async function getTxInfo({ txId }: { txId: string }) {
   return txInfoData;
 }
 
-async function verifyDeployment({
-  txId,
-  deploymentType,
-}: {
-  txId: string;
-  deploymentType: "token-manager" | "nit";
-}) {
+async function getRawTx({ txId }: { txId: string }) {
+  const txRawRes = await fetch(
+    `https://api.testnet.hiro.so/extended/v1/tx/${txId}/raw`,
+  );
+  const txRawData = (await txRawRes.json()) as any;
+  const txRaw = txRawData.raw_tx;
+  return txRaw;
+}
+
+async function getVerificationParams(txId: string) {
   const txRaw = await getRawTx({ txId });
-  const txInfoData = await getTxInfo({ txId });
+  const txInfoData = (await getTxInfo({ txId })) as any;
 
   const txIndex = txInfoData.tx_index;
   const blockHeight = txInfoData.block_height;
@@ -61,7 +83,6 @@ async function verifyDeployment({
     .map((item) => "808000000004" + item)
     .slice(1)
     .map((item) => hexToBytes(deserializeTransaction(item).txid()));
-
   const tx_merkle_tree = MerkleTree.new(txids);
 
   const blockHeader = new Uint8Array([
@@ -80,36 +101,143 @@ async function verifyDeployment({
   const proof = tx_merkle_tree.proof(txIndex);
 
   const tx = deserializeTransaction(txRaw);
-  async function getRawTx({ txId }: { txId: string }) {
-    const txRawRes = await fetch(
-      `https://api.testnet.hiro.so/extended/v1/tx/${txId}/raw`,
-    );
-    const txRawData = await txRawRes.json();
-    const txRaw = txRawData.raw_tx;
-    return txRaw;
-  }
 
-  const verifyRes = await callReadOnlyFunction({
-    contractAddress: txInfoData.sender_address,
-    contractName: "verify-onchain",
-    senderAddress: txInfoData.sender_address,
-    functionName: `verify-${deploymentType}-deployment`,
+  return Cl.tuple({
+    nonce: Cl.bufferFromHex(intToHex(txInfoData.nonce, 8)),
+    "fee-rate": Cl.bufferFromHex(intToHex(txInfoData.fee_rate, 8)),
+    signature: Cl.bufferFromHex(
+      (tx.auth.spendingCondition as SingleSigSpendingCondition).signature.data,
+    ),
+    proof: proof_path_to_cv(txIndex, proof, proof.length),
+    "tx-block-height": Cl.uint(txInfoData.block_height),
+    "block-header-without-signer-signatures": Cl.buffer(blockHeader),
+  });
+}
+
+async function setupTm() {
+  const tx = await makeContractCall({
+    contractAddress: senderAddress,
+    contractName: tmName,
+    functionName: "setup",
     functionArgs: [
-      Cl.bufferFromHex(intToHex(txInfoData.nonce, 8)),
-      Cl.bufferFromHex(intToHex(txInfoData.fee_rate, 8)),
-      Cl.bufferFromHex(tx.auth.spendingCondition.signature.data),
-      Cl.buffer(asciiToBytes(tx.payload.contractName.content)),
-      Cl.address(txInfoData.sender_address),
-      proof_path_to_cv(txIndex, proof, proof.length),
-      Cl.uint(txInfoData.block_height),
-      Cl.buffer(blockHeader),
+      Cl.address(`${referenceAddy}.sample-sip-010`),
+      Cl.uint(2),
+      Cl.none(),
+    ],
+    senderKey,
+    network: "testnet",
+    fee: 10000,
+    anchorMode: AnchorMode.Any,
+  });
+
+  const result = await broadcastTransaction(tx, "testnet");
+  return result;
+}
+
+async function getTmSource() {
+  const source = await fetchCallReadOnlyFunction({
+    contractAddress: referenceAddy,
+    contractName: "verify-onchain",
+    functionName: "get-token-manager-source",
+    functionArgs: [],
+    senderAddress,
+    network: "testnet",
+  });
+  return (source as StringAsciiCV).data;
+}
+async function deployTm() {
+  const source = await getTmSource();
+  const deployTx = await makeContractDeploy({
+    contractName: tmName,
+    codeBody: source,
+    senderKey,
+    network: "testnet",
+    postConditionMode: PostConditionMode.Allow,
+    anchorMode: AnchorMode.Any,
+    clarityVersion: ClarityVersion.Clarity3,
+    fee: 1000_000,
+  });
+  const result = await broadcastTransaction(deployTx, "testnet");
+
+  return result;
+}
+
+async function getTokenTxId() {
+  const res = await fetch(
+    `https://api.testnet.hiro.so/extended/v1/contract/${senderAddress}.${tmName}`,
+  );
+
+  const json = (await res.json()) as any;
+
+  return json.tx_id;
+}
+
+async function registerTm() {
+  const tmTxHash = await getTokenTxId();
+  const verificationParams = await getVerificationParams(tmTxHash);
+  const tx = await makeContractCall({
+    contractAddress: referenceAddy,
+    contractName: "interchain-token-factory",
+    functionName: "register-canonical-interchain-token",
+    functionArgs: [
+      Cl.address(`${referenceAddy}.interchain-token-factory-impl`),
+      Cl.address(`${referenceAddy}.gateway-impl`),
+      Cl.address(`${referenceAddy}.gas-impl`),
+      Cl.address(`${referenceAddy}.interchain-token-service-impl`),
+      Cl.address(`${referenceAddy}.sample-sip-010`),
+      Cl.address(`${senderAddress}.${tmName}`),
+      verificationParams,
+    ],
+    senderKey,
+    fee: 10000,
+    network: "testnet",
+    anchorMode: AnchorMode.Any,
+  });
+
+  const result = await broadcastTransaction(tx, "testnet");
+
+  return result;
+}
+
+async function verifyTm() {
+  const tmTxHash = await getTokenTxId();
+  const verificationParams = await getVerificationParams(tmTxHash);
+
+  const verifyRes = await fetchCallReadOnlyFunction({
+    contractAddress: referenceAddy,
+    contractName: "verify-onchain",
+    senderAddress,
+    functionName: `verify-token-manager-deployment`,
+    functionArgs: [
+      verificationParams.data.nonce,
+      verificationParams.data["fee-rate"],
+      verificationParams.data["signature"],
+      Cl.buffer(asciiToBytes(tmName)),
+      Cl.address(senderAddress),
+      verificationParams.data["proof"],
+      verificationParams.data["tx-block-height"],
+      verificationParams.data["block-header-without-signer-signatures"],
     ],
     network: "testnet",
   });
 
-  // console.log(txRaw)
-
   return verifyRes;
+}
+
+async function transferOp() {
+  const burn = "ST000000000000000000002AMW42H";
+  const tx = await makeContractCall({
+    contractAddress: senderAddress,
+    contractName: tmName,
+    functionName: "transfer-operatorship",
+    functionArgs: [Cl.address(burn)],
+    senderKey,
+    network: "testnet",
+    anchorMode: AnchorMode.Any,
+  });
+
+  const result = await broadcastTransaction(tx, "testnet");
+  return result;
 }
 
 // const tokenManagerTxId =
