@@ -17,12 +17,19 @@ import {
 import { intToHex, asciiToBytes } from "@stacks/common";
 import { MerkleTree, proof_path_to_cv } from "./block-hash.ts";
 import { sha512_256 } from "@noble/hashes/sha512";
+import { keccak_256 } from "@noble/hashes/sha3";
 
 const referenceAddy = "ST237BAVWHZ124P5XWDRJEB40WNRGM9C8A9CK02Q6";
-const timestamp = Date.now();
+// get new one with Date.now()
+const timestamp = 1737466838286;
 const tmName = `token-manager-${timestamp}`;
+const nitName = `nit-${timestamp}`;
 const senderKey =
   "d427253f39b2f4d5649533fa855f16cd7d5cdeee4b4481cf1f83da6053573db901";
+// get a new one using randomBytes(32)
+const nitSalt =
+  "5314c6882a18b49e6d67215b55db4793ac0fc46c2bf8fcdc1802b2af6880b8e4";
+
 const senderAddress = getAddressFromPrivateKey(
   senderKey,
   TransactionVersion.Testnet,
@@ -162,9 +169,9 @@ async function deployTm() {
   return result;
 }
 
-async function getTokenTxId() {
+async function getTokenTxId(contract: string) {
   const res = await fetch(
-    `https://api.testnet.hiro.so/extended/v1/contract/${senderAddress}.${tmName}`,
+    `https://api.testnet.hiro.so/extended/v1/contract/${contract}`,
   );
 
   const json = (await res.json()) as any;
@@ -173,7 +180,7 @@ async function getTokenTxId() {
 }
 
 async function registerTm() {
-  const tmTxHash = await getTokenTxId();
+  const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
   const verificationParams = await getVerificationParams(tmTxHash);
   const tx = await makeContractCall({
     contractAddress: referenceAddy,
@@ -200,7 +207,7 @@ async function registerTm() {
 }
 
 async function verifyTm() {
-  const tmTxHash = await getTokenTxId();
+  const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
   const verificationParams = await getVerificationParams(tmTxHash);
 
   const verifyRes = await fetchCallReadOnlyFunction({
@@ -237,6 +244,129 @@ async function transferOp() {
   });
 
   const result = await broadcastTransaction(tx, "testnet");
+  return result;
+}
+
+async function getNITSource() {
+  const source = await fetchCallReadOnlyFunction({
+    contractAddress: referenceAddy,
+    contractName: "verify-onchain",
+    functionName: "get-nit-source",
+    functionArgs: [],
+    senderAddress,
+    network: "testnet",
+  });
+  return (source as StringAsciiCV).data;
+}
+
+async function deployNIT() {
+  const source = await getNITSource();
+  const deployTx = await makeContractDeploy({
+    contractName: nitName,
+    codeBody: source,
+    senderKey,
+    network: "testnet",
+    clarityVersion: ClarityVersion.Clarity3,
+    postConditionMode: PostConditionMode.Allow,
+    anchorMode: AnchorMode.Any,
+  });
+  const result = await broadcastTransaction(deployTx, "testnet");
+
+  return result;
+}
+
+function getFactoryInterchainSalt(salt: string, deployer: string) {
+  salt = salt.replace(/^0x/, "");
+
+  const interchainTokenSaltPrefix = keccak_256(
+    Cl.serialize(Cl.stringAscii("interchain-token-salt")),
+  );
+  const chainNameHash = keccak_256(Cl.serialize(Cl.stringAscii("stacks")));
+
+  return keccak_256(
+    new Uint8Array([
+      ...interchainTokenSaltPrefix,
+      ...chainNameHash,
+      ...Cl.serialize(Cl.principal(deployer)),
+      ...hexToBytes(salt),
+    ]),
+  );
+}
+
+function getInterChainTokenId(sender: string, salt: string) {
+  const interchainTokenIdPrefix = keccak_256(
+    Cl.serialize(Cl.stringAscii("its-interchain-token-id")),
+  );
+
+  return keccak_256(
+    new Uint8Array([
+      ...interchainTokenIdPrefix,
+      ...Cl.serialize(Cl.principal(sender)),
+      ...hexToBytes(salt),
+    ]),
+  );
+}
+
+function getInterchainTokenId(salt: Uint8Array, deployer: string) {
+  return getInterChainTokenId(
+    "ST000000000000000000002AMW42H",
+    bytesToHex(getFactoryInterchainSalt(bytesToHex(salt), deployer)),
+  );
+}
+
+async function setupNIT() {
+  const tokenId = getInterchainTokenId(hexToBytes(nitSalt), senderAddress);
+
+  const tx = await makeContractCall({
+    contractAddress: senderAddress,
+    contractName: nitName,
+    functionName: "setup",
+    functionArgs: [
+      Cl.buffer(tokenId),
+      Cl.uint(0),
+      Cl.none(),
+      Cl.stringAscii("NIT-OCV"),
+      Cl.stringAscii("NIV"),
+      Cl.uint(6),
+      Cl.none(),
+      Cl.none(),
+    ],
+    senderKey,
+    network: "testnet",
+    fee: 10000,
+    anchorMode: AnchorMode.Any,
+  });
+
+  const result = await broadcastTransaction(tx, "testnet");
+  return result;
+}
+
+async function registerNIT() {
+  const nitTxHash = await getTokenTxId(`${senderAddress}.${nitName}`);
+  const verificationParams = await getVerificationParams(nitTxHash);
+  const tx = await makeContractCall({
+    contractAddress: referenceAddy,
+    contractName: "interchain-token-factory",
+    functionName: "deploy-interchain-token",
+    functionArgs: [
+      Cl.address(`${referenceAddy}.interchain-token-factory-impl`),
+      Cl.address(`${referenceAddy}.gateway-impl`),
+      Cl.address(`${referenceAddy}.gas-impl`),
+      Cl.address(`${referenceAddy}.interchain-token-service-impl`),
+      Cl.bufferFromHex(nitSalt),
+      Cl.address(`${senderAddress}.${nitName}`),
+      Cl.uint(0),
+      Cl.address("ST000000000000000000002AMW42H"),
+      verificationParams,
+    ],
+    senderKey,
+    fee: 100000,
+    network: "testnet",
+    anchorMode: AnchorMode.Any,
+  });
+
+  const result = await broadcastTransaction(tx, "testnet");
+
   return result;
 }
 
