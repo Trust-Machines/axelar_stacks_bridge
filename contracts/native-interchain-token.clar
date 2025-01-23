@@ -1,13 +1,13 @@
 
-;; title: mintable-burnable-sip-010
+;; title: native-interchain-token
 ;; version:
 ;; summary:
 ;; description:
 
 ;; traits
 ;;
-(impl-trait .traits.native-interchain-token-trait)
-(use-trait sip-010-trait .traits.sip-010-trait)
+(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.native-interchain-token-trait)
+(use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
 
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
 
@@ -329,7 +329,7 @@
 (define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-its-impl)
-    (contract-call? .interchain-token-service-storage get-service-impl))
+    (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))
 
 (define-read-only (is-operator-raw (address principal))
     (or

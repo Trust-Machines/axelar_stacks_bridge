@@ -33,7 +33,7 @@
 (define-private (schedule-timelock (hash (buff 32)) (target principal) (proxy principal) (eta uint) (type uint)) 
     (let 
         (
-            (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
+            (current-ts (unwrap-panic (get-stacks-block-info? time (- stacks-block-height u1))))
             (min-eta (+ current-ts MIN-TIMELOCK-DELAY))
         ) 
         (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
@@ -62,7 +62,7 @@
 (define-private (finalize-timelock (hash (buff 32))) 
     (let
         (
-            (current-ts (unwrap-panic (get-block-info? time (- block-height u1))))
+            (current-ts (unwrap-panic (get-stacks-block-info? time (- stacks-block-height u1))))
             (eta (get eta (get-timelock hash)))
         )
         (asserts! (> eta u0) ERR-TIMELOCK-HASH)

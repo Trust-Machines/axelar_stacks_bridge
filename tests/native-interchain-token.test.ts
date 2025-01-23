@@ -7,36 +7,47 @@ import { runFlowLimitsSuite } from "./token-manager-utils";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const deployer = accounts.get("deployer")!;
-const contractName = "native-interchain-token";
+const contractName = deployer + ".native-interchain-token";
 
 describe("Native Interchain Token", () => {
   const salt = randomBytes(32);
   const tokenId = getTokenId(salt).result as BufferCV;
+
   describe("FlowLimit", async () => {
     const flowLimit = 5;
 
     beforeEach(() => {
       setupNIT({
+        contract: contractName,
         tokenId,
         operator: address1,
         minter: address1,
+        sender: deployer,
       });
       setTokenFlowLimit(contractName, flowLimit);
       mintNIT({
         minter: address1,
-        amount: 100,
+        amount: 10000,
+      });
+      mintNIT({
+        minter: address1,
+        amount: 10000,
+        recipient: deployer,
       });
     });
+
     runFlowLimitsSuite({
       flowLimit,
-      tokenAddress: `${deployer}.native-interchain-token`,
-      tokenManagerAddress: `${deployer}.native-interchain-token`,
+      tokenAddress: contractName,
+      tokenManagerAddress: contractName,
     });
   });
   describe("Interchain Token", () => {
     it("revert on init if tokenId is 0", () => {
       expect(
         setupNIT({
+          contract: contractName,
+          sender: deployer,
           tokenId: Cl.bufferFromHex("0x"),
         }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
@@ -44,6 +55,8 @@ describe("Native Interchain Token", () => {
     it("revert on init if token name is invalid", () => {
       expect(
         setupNIT({
+          contract: contractName,
+          sender: deployer,
           tokenId,
           name: "",
         }).result,
@@ -52,8 +65,10 @@ describe("Native Interchain Token", () => {
     it("revert on init if token symbol is invalid", () => {
       expect(
         setupNIT({
+          contract: contractName,
           tokenId,
           symbol: "",
+          sender: deployer,
         }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });

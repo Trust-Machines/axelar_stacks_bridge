@@ -52,31 +52,16 @@
         uint
         (buff 62000)
         <token-manager-trait>
-        uint
+        {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
         principal)
     (response bool uint))
-    (process-deploy-token-manager-from-external-chain
-        (<gateway-trait>
-        <gas-service-impl-trait>
-        <token-manager-trait>
-        (buff 63000)
-        (optional {
-            source-chain: (string-ascii 20),
-            source-address: (string-ascii 128),
-            message-id: (string-ascii 128),
-            payload: (buff 63000),
-        })
-        uint
-        principal)
-        (response bool uint))
-    (process-deploy-token-manager-from-stacks
-        (<gateway-trait>
-        (string-ascii 128)
-        (string-ascii 20)
-        (string-ascii 128)
-        (buff 64000)
-        principal)
-        (response bool uint))
     (deploy-remote-interchain-token
         (<gateway-trait>
         <gas-service-impl-trait>
@@ -96,7 +81,14 @@
         <native-interchain-token-trait>
         uint
         (optional principal)
-        uint
+        {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
         principal)
         (response bool uint))
     (interchain-transfer
@@ -132,18 +124,6 @@
         uint
         principal)
         (response bool uint))
-    (execute-deploy-token-manager
-        (<gateway-trait>
-        <gas-service-impl-trait>
-        (string-ascii 20)
-        (string-ascii 128)
-        (string-ascii 128)
-        (buff 63000)
-        <sip-010-trait>
-        <token-manager-trait>
-        uint
-        principal)
-        (response bool uint))
     (execute-deploy-interchain-token
         (<gateway-trait>
         <gas-service-impl-trait>
@@ -152,7 +132,14 @@
         (string-ascii 128)
         <native-interchain-token-trait>
         (buff 62000)
-        uint
+        {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
         principal)
         (response bool uint))
     (execute-receive-interchain-token
@@ -276,7 +263,14 @@
                 <interchain-token-service-trait>
                 <sip-010-trait>
                 <token-manager-trait>
-                uint
+                {
+                    nonce: (buff 8),
+                    fee-rate: (buff 8),
+                    signature: (buff 65),
+                    proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+                    tx-block-height: uint,
+                    block-header-without-signer-signatures: (buff 800),
+                }
                 principal
             )
             (response bool uint))
@@ -300,7 +294,14 @@
                 <native-interchain-token-trait>
                 uint
                 principal
-                uint
+                {
+                    nonce: (buff 8),
+                    fee-rate: (buff 8),
+                    signature: (buff 65),
+                    proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+                    tx-block-height: uint,
+                    block-header-without-signer-signatures: (buff 800),
+                }
                 principal
             )
             (response bool uint))

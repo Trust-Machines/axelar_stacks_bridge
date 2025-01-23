@@ -195,7 +195,14 @@
         (token-manager-type uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
-        (gas-value uint)
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
@@ -207,57 +214,7 @@
             token-manager-type
             params
             token-manager
-            gas-value
-            contract-caller)))
-;; Used to deploy remote custom TokenManagers.
-;; @dev At least the `gasValue` amount of native token must be passed to the function call. `gasValue` exists because this function can be
-;; part of a multicall involving multiple functions that could make remote contract calls.
-;; @param salt The salt to be used during deployment.
-;; @param destinationChain The name of the chain to deploy the TokenManager and standardized token to.
-;; @param tokenManagerType The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
-;; @param params The params that will be used to initialize the TokenManager.
-;; @param gasValue The amount of native tokens to be used to pay for gas for the remote deployment.
-;; @return tokenId The tokenId corresponding to the deployed TokenManager.
-(define-public (process-deploy-token-manager-from-external-chain
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
-        (its-impl <its-trait>)
-        (token-manager <token-manager-trait>)
-        (payload (buff 63000))
-        (wrapped-payload  (optional {
-            source-chain: (string-ascii 20),
-            source-address: (string-ascii 128),
-            message-id: (string-ascii 128),
-            payload: (buff 63000),
-        }))
-        (gas-value uint))
-    (begin
-        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl process-deploy-token-manager-from-external-chain
-            gateway-impl
-            gas-service-impl
-            token-manager
-            payload
-            wrapped-payload
-            gas-value
-            contract-caller)))
-
-
-(define-public (process-deploy-token-manager-from-stacks
-        (gateway-impl <gateway-trait>)
-        (its-impl <its-trait>) 
-        (message-id (string-ascii 128))
-        (source-chain (string-ascii 20))
-        (source-address (string-ascii 128))
-        (payload (buff 64000)))
-    (begin
-        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl process-deploy-token-manager-from-stacks
-            gateway-impl
-            message-id
-            source-chain
-            source-address
-            payload
+            verification-params
             contract-caller)))
 
 ;; Deploys an interchain token on a destination chain.
@@ -301,7 +258,14 @@
         (token <native-interchain-token-trait>)
         (supply uint)
         (minter (optional principal))
-        (gas-value uint))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-interchain-token
@@ -311,7 +275,7 @@
             token
             supply
             minter
-            gas-value
+            verification-params
             contract-caller)))
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
@@ -385,31 +349,6 @@
 
 
 
-(define-public (execute-deploy-token-manager
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
-        (its-impl <its-trait>)
-        (source-chain (string-ascii 20))
-        (message-id (string-ascii 128))
-        (source-address (string-ascii 128))
-        (payload (buff 63000))
-        (token <sip-010-trait>)
-        (token-manager <token-manager-trait>)
-        (gas-value uint))
-    (begin
-        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl execute-deploy-token-manager
-            gateway-impl
-            gas-service-impl
-            source-chain
-            message-id
-            source-address
-            payload
-            token
-            token-manager
-            gas-value
-            contract-caller)))
-
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
@@ -419,7 +358,14 @@
         (source-address (string-ascii 128))
         (token-address <native-interchain-token-trait>)
         (payload (buff 62000))
-        (gas-value uint))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl execute-deploy-interchain-token
@@ -430,7 +376,7 @@
             source-address
             token-address
             payload
-            gas-value
+            verification-params
             contract-caller)))
 
 (define-public (execute-receive-interchain-token

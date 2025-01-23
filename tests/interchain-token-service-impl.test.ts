@@ -1,13 +1,9 @@
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
-import {
-  enableTokenManager,
-  getTokenId,
-  setupService,
-  setupTokenManager,
-} from "./its-utils";
+import { getTokenId, setupService, setupTokenManager } from "./its-utils";
 import { MessageType, MetadataVersion, TokenType } from "./constants";
+import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -56,6 +52,11 @@ describe("Interchain Token Service impl", () => {
       ).result,
     ).toBeErr(ERR_NOT_PROXY);
     const salt = randomBytes(32);
+    const verificationParams = getTokenManagerMockCv();
+    setupTokenManager({
+      contract: `${address1}.token-man`,
+      sender: address1,
+    });
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
@@ -67,8 +68,8 @@ describe("Interchain Token Service impl", () => {
           Cl.stringAscii("ethereum"),
           Cl.uint(TokenType.LOCK_UNLOCK),
           Cl.bufferFromHex("0x"),
-          Cl.address(`${deployer}.token-manager`),
-          Cl.uint(0),
+          Cl.address(`${address1}.token-man`),
+          verificationParams,
           Cl.address(address1),
         ],
         address1,
@@ -78,72 +79,6 @@ describe("Interchain Token Service impl", () => {
     const tokenId = getTokenId(salt).result as BufferCV;
     setupService(proofSigners);
     setupTokenManager({});
-    enableTokenManager({
-      proofSigners,
-      tokenId,
-    });
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
-        "process-deploy-token-manager-from-external-chain",
-        [
-          gatewayImplCV,
-          gasImplContract,
-          Cl.address(`${deployer}.token-manager`),
-          Cl.buffer(
-            Cl.serialize(
-              Cl.tuple({
-                "source-chain": Cl.stringAscii("ethereum"),
-                type: Cl.uint(MessageType.DEPLOY_TOKEN_MANAGER),
-                "token-id": Cl.buffer(salt),
-                "token-manager-type": Cl.uint(TokenType.LOCK_UNLOCK),
-                params: Cl.buffer(
-                  Cl.serialize(
-                    Cl.tuple({
-                      operator: Cl.none(),
-                      "token-address": Cl.address(`${deployer}.sample-sip-010`),
-                    }),
-                  ),
-                ),
-              }),
-            ),
-          ),
-          Cl.none(),
-          Cl.uint(1000),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
-        "process-deploy-token-manager-from-stacks",
-        [
-          gatewayImplCV,
-          Cl.stringAscii(""),
-          Cl.stringAscii("ethereum"),
-          Cl.stringAscii("0x0000000000000000000000000000000000000000"),
-          Cl.buffer(
-            Cl.serialize(
-              Cl.tuple({
-                type: Cl.stringAscii(""),
-                "token-manager-address": Cl.address(
-                  `${deployer}.token-manager`,
-                ),
-                "token-id": tokenId,
-                "token-type": Cl.uint(TokenType.LOCK_UNLOCK),
-                "wrapped-payload": Cl.none(),
-              }),
-            ),
-          ),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
 
     expect(
       simnet.callPublicFn(
@@ -173,10 +108,10 @@ describe("Interchain Token Service impl", () => {
           gatewayImplCV,
           gasImplContract,
           Cl.buffer(salt),
-          Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(`${address1}.nit`),
           Cl.uint(10),
           Cl.none(),
-          Cl.uint(1000),
+          getNITMockCv(),
           Cl.address(address1),
         ],
         address1,
@@ -189,8 +124,8 @@ describe("Interchain Token Service impl", () => {
         [
           gatewayImplCV,
           gasImplContract,
-          Cl.address(`${deployer}.native-interchain-token`),
-          Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.nit`),
           tokenId,
           Cl.stringAscii("ethereum"),
           Cl.bufferFromHex("0x00"),
@@ -212,8 +147,8 @@ describe("Interchain Token Service impl", () => {
         [
           gatewayImplCV,
           gasImplContract,
-          Cl.address(`${deployer}.native-interchain-token`),
-          Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.nit`),
           tokenId,
           Cl.stringAscii("ethereum"),
           Cl.bufferFromHex("0x00"),
@@ -232,26 +167,6 @@ describe("Interchain Token Service impl", () => {
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
-        "execute-deploy-token-manager",
-        [
-          gatewayImplCV,
-          gasImplContract,
-          Cl.stringAscii("ethereum"),
-          Cl.stringAscii("0x00"),
-          Cl.stringAscii(""),
-          Cl.bufferFromHex("0x"),
-          Cl.address(`${deployer}.sample-sip-010`),
-          Cl.address(`${deployer}.token-manager`),
-          Cl.uint(1000),
-          Cl.address(address1),
-        ],
-        address1,
-      ).result,
-    ).toBeErr(ERR_NOT_PROXY);
-
-    expect(
-      simnet.callPublicFn(
-        "interchain-token-service-impl",
         "execute-deploy-interchain-token",
         [
           gatewayImplCV,
@@ -259,9 +174,9 @@ describe("Interchain Token Service impl", () => {
           Cl.stringAscii("ethereum"),
           Cl.stringAscii("0x00"),
           Cl.stringAscii("0x00"),
-          Cl.address(`${deployer}.native-interchain-token`),
+          Cl.address(`${address1}.nit`),
           Cl.bufferFromHex("0x"),
-          Cl.uint(1000),
+          getNITMockCv(),
           Cl.address(address1),
         ],
         address1,

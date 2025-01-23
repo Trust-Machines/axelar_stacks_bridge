@@ -1,7 +1,16 @@
-import { BufferCV, Cl, PrincipalCV, ResponseOkCV } from "@stacks/transactions";
+import {
+  BufferCV,
+  Cl,
+  ListCV,
+  PrincipalCV,
+  ResponseOkCV,
+  TupleCV,
+  UIntCV,
+} from "@stacks/transactions";
 import { BURN_ADDRESS } from "./constants";
 import { itsImpl } from "./its-utils";
 import { gasImplContract, gatewayImplCV } from "./util";
+import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -12,11 +21,11 @@ export const itfImpl = Cl.address(`${deployer}.interchain-token-factory-impl`);
 export function factoryDeployInterchainToken({
   sender,
   salt,
-  tokenAddress = `${deployer}.native-interchain-token`,
-  gasValue = 100,
+  tokenAddress = `${address1}.nit`,
   initialSupply = 0,
   minterAddress = BURN_ADDRESS,
   impl = itfImpl,
+  verificationParams = getNITMockCv(),
 }: {
   impl?: PrincipalCV;
   sender: string;
@@ -25,6 +34,12 @@ export function factoryDeployInterchainToken({
   initialSupply?: number;
   minterAddress?: string;
   gasValue?: number;
+  verificationParams?: TupleCV<
+    Record<
+      string,
+      BufferCV | UIntCV | TupleCV<Record<string, UIntCV | ListCV<BufferCV>>>
+    >
+  >;
 }) {
   return simnet.callPublicFn(
     "interchain-token-factory",
@@ -38,7 +53,7 @@ export function factoryDeployInterchainToken({
       Cl.address(tokenAddress),
       Cl.uint(initialSupply),
       Cl.address(minterAddress),
-      Cl.uint(gasValue),
+      verificationParams,
     ],
     sender,
   );
@@ -62,11 +77,13 @@ export function registerCanonicalInterchainToken({
   tokenAddress = `${deployer}.sample-sip-010`,
   tokenManagerAddress = `${deployer}.token-manager`,
   impl = itfImpl,
+  verificationParams = getTokenManagerMockCv(),
 }: {
   impl?: PrincipalCV;
   sender?: string;
   tokenAddress?: string;
   tokenManagerAddress?: string;
+  verificationParams?: TupleCV;
 }) {
   return simnet.callPublicFn(
     "interchain-token-factory",
@@ -78,7 +95,7 @@ export function registerCanonicalInterchainToken({
       itsImpl,
       Cl.address(tokenAddress),
       Cl.address(tokenManagerAddress),
-      Cl.uint(1000),
+      verificationParams,
     ],
     sender,
   );
@@ -226,7 +243,7 @@ export function factoryDeployRemoteInterchainTokenWithMinter({
   );
 }
 
-const NIT = `${deployer}.native-interchain-token`;
+const NIT = `${address1}.nit`;
 export function approveDeployRemoteInterchainToken({
   deployer,
   salt,
