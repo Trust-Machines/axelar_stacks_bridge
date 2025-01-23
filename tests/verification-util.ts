@@ -13,11 +13,17 @@ import {
   makeContractDeploy,
   ClarityVersion,
   SingleSigSpendingCondition,
+  deserializeAuthorization,
+  BytesReader,
+  deserializeLPList,
+  StacksMessageType,
+  StacksTransaction,
 } from "@stacks/transactions";
 import { intToHex, asciiToBytes } from "@stacks/common";
 import { MerkleTree, proof_path_to_cv } from "./block-hash.ts";
 import { sha512_256 } from "@noble/hashes/sha512";
 import { keccak_256 } from "@noble/hashes/sha3";
+import { deserializePayload } from "@stacks/transactions/dist/payload";
 
 const referenceAddy = "ST237BAVWHZ124P5XWDRJEB40WNRGM9C8A9CK02Q6";
 // get new one with Date.now()
@@ -83,14 +89,10 @@ async function getVerificationParams(txId: string) {
     pastSignatures,
     pastSignatures + 6 + signerBitVecByteLen,
   );
-  const txids = bytesToHex(
-    block.slice(pastSignatures + 10 + signerBitVecByteLen),
-  )
-    .split("808000000004")
-    .map((item) => "808000000004" + item)
-    .slice(1)
-    .map((item) => hexToBytes(deserializeTransaction(item).txid()));
-  const tx_merkle_tree = MerkleTree.new(txids);
+
+  const txs = block.slice(pastSignatures + 10 + signerBitVecByteLen);
+  const txids = deserializeRawBlockTxs(txs);
+  const tx_merkle_tree = MerkleTree.new(txids.map(hexToBytes));
 
   const blockHeader = new Uint8Array([
     ...block_version,
@@ -121,7 +123,7 @@ async function getVerificationParams(txId: string) {
   });
 }
 
-async function setupTm() {
+export async function setupTm() {
   const tx = await makeContractCall({
     contractAddress: senderAddress,
     contractName: tmName,
@@ -152,7 +154,7 @@ async function getTmSource() {
   });
   return (source as StringAsciiCV).data;
 }
-async function deployTm() {
+export async function deployTm() {
   const source = await getTmSource();
   const deployTx = await makeContractDeploy({
     contractName: tmName,
@@ -179,7 +181,7 @@ async function getTokenTxId(contract: string) {
   return json.tx_id;
 }
 
-async function registerTm() {
+export async function registerTm() {
   const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
   const verificationParams = await getVerificationParams(tmTxHash);
   const tx = await makeContractCall({
@@ -206,7 +208,7 @@ async function registerTm() {
   return result;
 }
 
-async function verifyTm() {
+export async function verifyTm() {
   const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
   const verificationParams = await getVerificationParams(tmTxHash);
 
@@ -231,7 +233,7 @@ async function verifyTm() {
   return verifyRes;
 }
 
-async function transferOp() {
+export async function transferOp() {
   const burn = "ST000000000000000000002AMW42H";
   const tx = await makeContractCall({
     contractAddress: senderAddress,
@@ -259,7 +261,7 @@ async function getNITSource() {
   return (source as StringAsciiCV).data;
 }
 
-async function deployNIT() {
+export async function deployNIT() {
   const source = await getNITSource();
   const deployTx = await makeContractDeploy({
     contractName: nitName,
@@ -314,7 +316,7 @@ function getInterchainTokenId(salt: Uint8Array, deployer: string) {
   );
 }
 
-async function setupNIT() {
+export async function setupNIT() {
   const tokenId = getInterchainTokenId(hexToBytes(nitSalt), senderAddress);
 
   const tx = await makeContractCall({
@@ -341,7 +343,7 @@ async function setupNIT() {
   return result;
 }
 
-async function registerNIT() {
+export async function registerNIT() {
   const nitTxHash = await getTokenTxId(`${senderAddress}.${nitName}`);
   const verificationParams = await getVerificationParams(nitTxHash);
   const tx = await makeContractCall({
@@ -501,3 +503,53 @@ export const getNITMockCv = () => {
     ),
   });
 };
+
+export function deserializeTransactionCustom(tx: Uint8Array) {
+  const bytesReader = new BytesReader(tx);
+  const transactionVersion = bytesReader.readUInt8Enum(
+    TransactionVersion,
+    (n) => {
+      throw new Error(`Could not parse ${n} as TransactionVersion`);
+    },
+  );
+  const chainId = bytesReader.readUInt32BE();
+  const auth = deserializeAuthorization(bytesReader);
+  const anchorMode = bytesReader.readUInt8Enum(AnchorMode, (n) => {
+    throw new Error(`Could not parse ${n} as AnchorMode`);
+  });
+  const postConditionMode = bytesReader.readUInt8Enum(
+    PostConditionMode,
+    (n) => {
+      throw new Error(`Could not parse ${n} as PostConditionMode`);
+    },
+  );
+  const postConditions = deserializeLPList(
+    bytesReader,
+    StacksMessageType.PostCondition,
+  );
+  const payload = deserializePayload(bytesReader);
+
+  const transaction = new StacksTransaction(
+    transactionVersion,
+    auth,
+    payload,
+    postConditions,
+    postConditionMode,
+    anchorMode,
+    chainId,
+  );
+  return { transaction, nextOffset: bytesReader.consumed };
+}
+
+export function deserializeRawBlockTxs(txs: Uint8Array) {
+  let offset = 0;
+  let txids: string[] = [];
+  while (offset < txs.length) {
+    const { transaction, nextOffset } = deserializeTransactionCustom(
+      txs.slice(offset),
+    );
+    offset += nextOffset;
+    txids.push(transaction.txid());
+  }
+  return txids;
+}
