@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { exampleTxProof, MerkleTree, proof_path_to_cv } from "./block-hash";
 import { Cl, StringAsciiCV } from "@stacks/transactions";
 import { bytesToHex } from "@noble/hashes/utils";
-import {asciiToBytes, hexToBytes, intToHex} from "@stacks/common"
+import { asciiToBytes, hexToBytes, intToHex } from "@stacks/common";
 import { nitMockParams, tmMockParams } from "./verification-util";
 import { sha512_256 } from "@noble/hashes/sha512";
 
@@ -11,7 +11,7 @@ describe("onchain tx verification", () => {
     const { blockHeader, tx_merkle_tree, txids } = exampleTxProof();
     const exampleTxId =
       "d5d54009cedd77a24e2a43af7ddbbc30292b30f6a1dddd2bc76b40eab527a372";
-    const txIndex = txids.findIndex((item) => bytesToHex(item) === exampleTxId);
+    const txIndex = txids.findIndex((item) => item === exampleTxId);
     const proof = tx_merkle_tree.proof(txIndex);
 
     let result = simnet.callReadOnlyFn(
@@ -22,7 +22,7 @@ describe("onchain tx verification", () => {
         Cl.buffer(tx_merkle_tree.root()),
         proof_path_to_cv(txIndex, proof, proof.length),
       ],
-      simnet.deployer
+      simnet.deployer,
     );
     expect(result.result).toBeOk(Cl.bool(true));
 
@@ -32,10 +32,10 @@ describe("onchain tx verification", () => {
       [
         Cl.uint(443049),
         Cl.bufferFromHex(
-          "0xd74b118225d9715ce957f04b0508114dff79f09e2708277e7fd3cb29afb542b5"
+          "0xd74b118225d9715ce957f04b0508114dff79f09e2708277e7fd3cb29afb542b5",
         ),
       ],
-      simnet.deployer
+      simnet.deployer,
     );
     expect(result.result).toBeOk(Cl.bool(true));
 
@@ -48,7 +48,7 @@ describe("onchain tx verification", () => {
         Cl.uint(443049),
         Cl.buffer(blockHeader),
       ],
-      simnet.deployer
+      simnet.deployer,
     );
     expect(result.result).toBeOk(Cl.bool(true));
   });
@@ -59,20 +59,16 @@ describe("onchain tx verification", () => {
       "debug-set-block-header-hash",
       [
         Cl.uint(tmMockParams.blockHeight),
-        Cl.buffer(sha512_256(
-          hexToBytes(tmMockParams.blockHeader)
-        ))
+        Cl.buffer(sha512_256(hexToBytes(tmMockParams.blockHeader))),
       ],
-      simnet.deployer
+      simnet.deployer,
     );
 
-    const tree = MerkleTree.new([
-      hexToBytes(tmMockParams.txId),
-    ])
+    const tree = MerkleTree.new([hexToBytes(tmMockParams.txId)]);
 
-    const proof = tree.proof(tmMockParams.txIndex)
+    const proof = tree.proof(tmMockParams.txIndex);
 
-    const {result} = simnet.callReadOnlyFn(
+    const { result } = simnet.callReadOnlyFn(
       "verify-onchain",
       "verify-token-manager-deployment",
       [
@@ -85,10 +81,10 @@ describe("onchain tx verification", () => {
         Cl.uint(tmMockParams.blockHeight),
         Cl.bufferFromHex(tmMockParams.blockHeader),
       ],
-      simnet.deployer
-    )
+      simnet.deployer,
+    );
 
-    expect(result).toBeOk(Cl.bool(true))
+    expect(result).toBeOk(Cl.bool(true));
   });
 
   it("ensures that native interchain token deployment is correct sample testnet blocks", () => {
@@ -97,18 +93,16 @@ describe("onchain tx verification", () => {
       "debug-set-block-header-hash",
       [
         Cl.uint(nitMockParams.blockHeight),
-        Cl.buffer(sha512_256(hexToBytes(nitMockParams.blockHeader)))
+        Cl.buffer(sha512_256(hexToBytes(nitMockParams.blockHeader))),
       ],
-      simnet.deployer
+      simnet.deployer,
     );
 
-    const tree = MerkleTree.new([
-      hexToBytes(nitMockParams.txId),
-    ])
+    const tree = MerkleTree.new([hexToBytes(nitMockParams.txId)]);
 
-    const proof = tree.proof(nitMockParams.txIndex)
+    const proof = tree.proof(nitMockParams.txIndex);
 
-    const {result} = simnet.callReadOnlyFn(
+    const { result } = simnet.callReadOnlyFn(
       "verify-onchain",
       "verify-nit-deployment",
       [
@@ -121,19 +115,29 @@ describe("onchain tx verification", () => {
         Cl.uint(nitMockParams.blockHeight),
         Cl.bufferFromHex(nitMockParams.blockHeader),
       ],
-      simnet.deployer
-    )
+      simnet.deployer,
+    );
 
-    expect(result).toBeOk(Cl.bool(true))
+    expect(result).toBeOk(Cl.bool(true));
   });
 
   it("should export the NIT contract source", async () => {
-    const {result} = simnet.callReadOnlyFn("verify-onchain", "get-nit-source", [], simnet.deployer)
+    const { result } = simnet.callReadOnlyFn(
+      "verify-onchain",
+      "get-nit-source",
+      [],
+      simnet.deployer,
+    );
 
-    expect((result as StringAsciiCV).data.length).toBeGreaterThan(0)
+    expect((result as StringAsciiCV).data.length).toBeGreaterThan(0);
   });
   it("should export the token manager contract source", async () => {
-    const {result} = simnet.callReadOnlyFn("verify-onchain", "get-token-manager-source", [], simnet.deployer)
-    expect((result as StringAsciiCV).data.length).toBeGreaterThan(0)
+    const { result } = simnet.callReadOnlyFn(
+      "verify-onchain",
+      "get-token-manager-source",
+      [],
+      simnet.deployer,
+    );
+    expect((result as StringAsciiCV).data.length).toBeGreaterThan(0);
   });
 });

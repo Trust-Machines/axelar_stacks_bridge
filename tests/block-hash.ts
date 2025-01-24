@@ -1,13 +1,7 @@
 import { sha512_256 } from "@noble/hashes/sha512";
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils";
-import {
-  bufferCV,
-  Cl,
-  deserializeTransaction,
-  listCV,
-  tupleCV,
-  uintCV,
-} from "@stacks/transactions";
+import { bufferCV, listCV, tupleCV, uintCV } from "@stacks/transactions";
+import { deserializeRawBlockTxs } from "./verification-util";
 
 function tagged_sha512_256(tag: Uint8Array, data: Uint8Array): Uint8Array {
   return sha512_256(new Uint8Array([...tag, ...data]));
@@ -205,15 +199,11 @@ export function exampleTxProof() {
     pastSignatures,
     pastSignatures + 6 + signerBitVecByteLen,
   );
-  const txids = bytesToHex(
-    block.slice(pastSignatures + 10 + signerBitVecByteLen),
-  )
-    .split("000000000104")
-    .map((item) => "000000000104" + item)
-    .slice(1)
-    .map((item) => hexToBytes(deserializeTransaction(item).txid()));
 
-  const tx_merkle_tree = MerkleTree.new(txids);
+  const txs = block.slice(pastSignatures + 10 + signerBitVecByteLen);
+  const txids = deserializeRawBlockTxs(txs);
+
+  const tx_merkle_tree = MerkleTree.new(txids.map(hexToBytes));
 
   // const root = tx_merkle_tree.root();
   // console.log({txs})
