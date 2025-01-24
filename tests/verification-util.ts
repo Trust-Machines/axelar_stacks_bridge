@@ -13,17 +13,12 @@ import {
   makeContractDeploy,
   ClarityVersion,
   SingleSigSpendingCondition,
-  deserializeAuthorization,
   BytesReader,
-  deserializeLPList,
-  StacksMessageType,
-  StacksTransaction,
 } from "@stacks/transactions";
 import { intToHex, asciiToBytes } from "@stacks/common";
 import { MerkleTree, proof_path_to_cv } from "./block-hash.ts";
 import { sha512_256 } from "@noble/hashes/sha512";
 import { keccak_256 } from "@noble/hashes/sha3";
-import { deserializePayload } from "@stacks/transactions/dist/payload";
 
 const referenceAddy = "ST237BAVWHZ124P5XWDRJEB40WNRGM9C8A9CK02Q6";
 // get new one with Date.now()
@@ -504,52 +499,23 @@ export const getNITMockCv = () => {
   });
 };
 
-export function deserializeTransactionCustom(tx: Uint8Array) {
-  const bytesReader = new BytesReader(tx);
-  const transactionVersion = bytesReader.readUInt8Enum(
-    TransactionVersion,
-    (n) => {
-      throw new Error(`Could not parse ${n} as TransactionVersion`);
-    },
-  );
-  const chainId = bytesReader.readUInt32BE();
-  const auth = deserializeAuthorization(bytesReader);
-  const anchorMode = bytesReader.readUInt8Enum(AnchorMode, (n) => {
-    throw new Error(`Could not parse ${n} as AnchorMode`);
-  });
-  const postConditionMode = bytesReader.readUInt8Enum(
-    PostConditionMode,
-    (n) => {
-      throw new Error(`Could not parse ${n} as PostConditionMode`);
-    },
-  );
-  const postConditions = deserializeLPList(
-    bytesReader,
-    StacksMessageType.PostCondition,
-  );
-  const payload = deserializePayload(bytesReader);
-
-  const transaction = new StacksTransaction(
-    transactionVersion,
-    auth,
-    payload,
-    postConditions,
-    postConditionMode,
-    anchorMode,
-    chainId,
-  );
-  return { transaction, nextOffset: bytesReader.consumed };
+export function deserializeTransactionCustom(bytesReader: BytesReader) {
+  const transaction = deserializeTransaction(bytesReader);
+  return { transaction, reader: bytesReader };
 }
 
-export function deserializeRawBlockTxs(txs: Uint8Array) {
-  let offset = 0;
-  let txids: string[] = [];
-  while (offset < txs.length) {
-    const { transaction, nextOffset } = deserializeTransactionCustom(
-      txs.slice(offset),
-    );
-    offset += nextOffset;
-    txids.push(transaction.txid());
+export function deserializeRawBlockTxs(
+  txs: Uint8Array | BytesReader,
+  processedTxs: string[] = [],
+) {
+  const { transaction, reader } = deserializeTransactionCustom(
+    txs instanceof BytesReader ? txs : new BytesReader(txs),
+  );
+
+  processedTxs = processedTxs.concat(transaction.txid());
+
+  if (reader.consumed === reader.source.length) {
+    return processedTxs;
   }
-  return txids;
+  return deserializeRawBlockTxs(reader, processedTxs);
 }
