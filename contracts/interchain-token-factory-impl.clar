@@ -89,7 +89,7 @@
 ;; @param salt A unique identifier used in the deployment process.
 ;; @return tokenId The ID of the interchain token.
 (define-private (get-interchain-token-id-raw (its-impl <its-trait>) (salt (buff 32)))
-    (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER salt))
+    (contract-call? .interchain-token-service interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER salt))
 
 ;; Computes the ID for an interchain token based on the deployer and a salt.
 ;; @param deployer The address that deployed the interchain token.
@@ -108,7 +108,7 @@
 (define-public (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
     ;; this is assumed to be a read only operation
     ;; #[allow(unchecked_data)]
-    (contract-call? its-impl interchain-token-id TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-deploy-salt token-address)))
+    (contract-call? .interchain-token-service interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-deploy-salt token-address)))
 
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
@@ -173,7 +173,7 @@
             (minter NULL-BYTES)
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (try! (contract-call? its-impl valid-token-address token-id))
+        (try! (contract-call? .interchain-token-service valid-token-address its-impl token-id))
         (deploy-remote-interchain-token-inner 
             gateway-impl
             gas-service-impl

@@ -421,6 +421,20 @@
         (contract-call? its-impl set-flow-limit token-id token-manager limit contract-caller)))
 
 
+(define-public (interchain-token-id 
+    (its-impl <its-trait>)
+    (sender principal) (salt (buff 32)))
+    (begin
+        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
+        (contract-call? its-impl interchain-token-id sender salt)))
+
+(define-public (valid-token-address 
+    (its-impl <its-trait>)
+    (token-id (buff 32)))
+    (begin
+        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
+        (contract-call? its-impl valid-token-address token-id)))
+
 ;; ######################
 ;; ######################
 ;; ### Upgradability ####

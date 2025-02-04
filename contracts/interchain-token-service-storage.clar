@@ -192,9 +192,6 @@
 (define-data-var its-hub-chain (string-ascii 20) "axelarnet")
 
 
-(define-read-only (get-gateway)
-    (contract-call? .gateway-storage get-impl))
-
 (define-read-only (get-token-factory)
     (var-get factory-impl))
 
