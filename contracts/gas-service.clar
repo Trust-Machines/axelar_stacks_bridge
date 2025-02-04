@@ -168,7 +168,6 @@
         (
             (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .gas-storage get-impl))
-            (prev-balance (unwrap! (contract-call? .gas-impl get-balance) ERR-UNAUTHORIZED))
         ) 
         (asserts! (is-eq contract-caller governance-impl) ERR-UNAUTHORIZED)
         
@@ -178,7 +177,6 @@
             type: "gas-impl-upgraded",
             prev: prev,
             new: gas-impl,
-            balance: prev-balance
         })
         (ok true)
     )
