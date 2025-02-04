@@ -97,7 +97,7 @@
                     })) ERR-MESSAGE-INSERT))
                 )
                 (if inserted (some (contract-call? .gateway-storage emit-message-approved command-id message)) none)
-                (ok true) 
+                (ok inserted) 
             )
 )
 
@@ -131,8 +131,7 @@
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (validate-proof data-hash proof_))
-        (map approve-message messages_)
-        (ok true)
+        (ok (map approve-message messages_))
     )
 )
 

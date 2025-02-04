@@ -131,7 +131,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
-      expect(approveResult).toBeOk(boolCV(true));
+      expect(approveResult).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
       expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
@@ -192,7 +192,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result: approveResult, events: approveEvents } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
-      expect(approveResult).toBeOk(boolCV(true));
+      expect(approveResult).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
       expect(approveEvents[0].data.contract_identifier).toBe(`${deployer}.gateway-storage`)
       expect(messageApprovedEventToObj(approveEvents[0].data.raw_value!)).toStrictEqual({
         type: 'message-approved',
@@ -212,7 +212,7 @@ describe("gateway tests", () => {
 
       // re-approval should be a no-op
       const { result: approveResult2, events: approveEvents2 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
-      expect(approveResult2).toBeOk(boolCV(true));
+      expect(approveResult2).toBeOk(Cl.list([Cl.ok(Cl.bool(false))]));
       expect(approveEvents2.length).toBe(0);
 
       const isApprovedBefore2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;
@@ -240,7 +240,7 @@ describe("gateway tests", () => {
 
       // re-approving same message after execution should be a no-op as well
       const { result: approveResult3, events: approveEvents3 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller);
-      expect(approveResult3).toBeOk(boolCV(true));
+      expect(approveResult3).toBeOk(Cl.list([Cl.ok(Cl.bool(false))]));
       expect(approveEvents3.length).toBe(0);
 
       const isApprovedAfter2 = simnet.callReadOnlyFn("gateway-impl", "is-message-approved", [sourceChain, messageId, sourceAddress, contractAddress, payloadHash], contractCaller).result;

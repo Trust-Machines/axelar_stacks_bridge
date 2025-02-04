@@ -249,7 +249,7 @@ export function signAndApproveMessages({
     address1,
   );
 
-  return expect(approveResult).toBeOk(Cl.bool(true));
+  return expect(approveResult).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 }
 
 export function setPaused({

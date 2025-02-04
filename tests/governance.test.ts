@@ -66,7 +66,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -134,7 +134,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -202,7 +202,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -270,7 +270,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -338,7 +338,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -406,7 +406,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -471,7 +471,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -514,7 +514,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove2 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages2)), bufferCV(serializeCV(proof2))], address1);
-    expect(resultApprove2).toBeOk(boolCV(true));
+    expect(resultApprove2).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute2 } = simnet.callPublicFn("governance", "cancel", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload2))], address1);
@@ -567,7 +567,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -620,7 +620,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -683,7 +683,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -744,7 +744,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // try to execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
@@ -799,7 +799,7 @@ describe("governance tests", () => {
 
     // approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // try to execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);

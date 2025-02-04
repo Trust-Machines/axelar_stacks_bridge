@@ -110,7 +110,7 @@ export function upgradeITSBasedContract(suffix: string) {
     ],
     address1,
   );
-  expect(resultApprove).toBeOk(Cl.bool(true));
+  expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
   // execute on the governance
   const { result: resultExecute } = simnet.callPublicFn(

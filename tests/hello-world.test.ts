@@ -52,7 +52,7 @@ describe("hello-world tests", () => {
 
     // Approve message on the gateway
     const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(boolCV(true));
+    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
 
     // Execute on the hello world
     const { result: resultExecute } = simnet.callPublicFn("hello-world", "execute", [sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload)), gatewayImplCV], address1);
