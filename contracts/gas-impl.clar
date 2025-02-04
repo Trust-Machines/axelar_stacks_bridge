@@ -112,6 +112,7 @@
     (receiver principal)
     (amount uint))
     (begin
+        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
