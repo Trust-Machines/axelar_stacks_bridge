@@ -347,11 +347,12 @@ describe("gas service tests", () => {
         const { result } = simnet.callPublicFn(
           "gas-service",
           "transfer-ownership",
-          [gasImplContract, principalCV(address1)],
+          [gasImplContract, principalCV(address2)],
           deployer
         );
         expect(result).toBeOk(boolCV(true));
 
+       
         // Verify new owner
         const newOwnerCV = simnet.callReadOnlyFn(
           "gas-storage",
@@ -359,8 +360,19 @@ describe("gas service tests", () => {
           [],
           deployer
         ).result;
-        expect(cvToValue(newOwnerCV)).toBe(address1);
+        expect(cvToValue(newOwnerCV)).toBe(address2);
       });
+
+      it("should prevent gas collector from becoming the owner", () => {
+         // Transfer ownership
+        const { result } = simnet.callPublicFn(
+          "gas-service",
+          "transfer-ownership",
+          [gasImplContract, principalCV(address1)],
+          deployer
+        );
+        expect(result).toBeErr(uintCV(10112));
+      })
 
       it("should prevent non-owner from transferring ownership", () => {
         // Attempt transfer from non-owner account

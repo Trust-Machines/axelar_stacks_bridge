@@ -63,6 +63,7 @@
 (define-public (set-owner (new-owner principal)) 
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (not (is-eq new-owner (get-gas-collector))) ERR-OWNER-CANNOT-BE-COLLECTOR)
         (ok (var-set owner new-owner))
     )
 )
