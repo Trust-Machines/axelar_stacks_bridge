@@ -214,7 +214,6 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (try! (require-not-paused))
         (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
         (asserts!
             (or
@@ -230,7 +229,6 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (try! (require-not-paused))
         (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage emit-trusted-address-removed chain-name))
         (contract-call? .interchain-token-service-storage remove-trusted-address chain-name)))
