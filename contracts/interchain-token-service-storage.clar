@@ -70,6 +70,20 @@
     )
 )
 
+;; ITS owner
+(define-data-var owner principal contract-caller)
+
+(define-read-only (get-owner) (var-get owner))
+
+;; logic for write guards will be in the calling context (proxy, impl)
+;; #[allow(unchecked_data)]
+(define-public (set-owner (new-owner principal))
+    (begin
+        (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
+        (ok (var-set owner new-owner))
+    )
+)
+
 
 ;; ITS operator
 (define-data-var operator principal contract-caller)
@@ -246,6 +260,13 @@
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {action: "transfer-operatorship", new-operator: new-operator})
         (ok true)))
+
+(define-public (emit-transfer-ownership (new-owner principal))
+    (begin
+        (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
+        (print {action: "transfer-ownership", new-owner: new-owner})
+        (ok true)))
+
 
 (define-public (emit-trusted-address-set
         (chain-name (string-ascii 20))

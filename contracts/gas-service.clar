@@ -9,7 +9,7 @@
 
 (define-constant ERR-INVALID-IMPL (err u10211))
 (define-constant ERR-STARTED (err u60511))
-(define-constant OWNER tx-sender)
+(define-constant DEPLOYER tx-sender)
 
 (define-private (is-correct-impl (gas-impl <gas-impl-trait>)) (is-eq (contract-call? .gas-storage get-impl) (contract-of gas-impl)))
 
@@ -195,7 +195,7 @@
 )
     (begin
         (asserts! (not (contract-call? .gas-storage get-is-started)) ERR-STARTED)
-        (asserts! (is-eq contract-caller OWNER) ERR-UNAUTHORIZED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-UNAUTHORIZED)
         (try! (contract-call? .gas-storage set-gas-collector gas-collector))
         (try! (contract-call? .gas-storage start))
         (ok true)

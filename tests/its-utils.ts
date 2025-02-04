@@ -1069,6 +1069,23 @@ export function transferITSOperatorShip({
   );
 }
 
+export function transferITSOwnership({
+  owner,
+  newOwner,
+  impl = itsImpl,
+}: {
+  impl?: PrincipalCV;
+  owner: string;
+  newOwner: string;
+}) {
+  return simnet.callPublicFn(
+    "interchain-token-service",
+    "transfer-ownership",
+    [impl, Cl.address(newOwner)],
+    owner,
+  );
+}
+
 export function transferSip010({
   amount,
   sender,

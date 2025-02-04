@@ -42,6 +42,7 @@
 (define-trait interchain-token-service-trait (
     (set-paused (bool principal) (response bool uint))
     (transfer-operatorship (principal principal) (response bool uint))
+    (transfer-ownership (principal principal) (response bool uint))
     (set-trusted-address ((string-ascii 20) (string-ascii 128) principal) (response bool uint))
     (remove-trusted-address  ((string-ascii 20) principal) (response bool uint))
     (deploy-token-manager

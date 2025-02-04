@@ -122,6 +122,16 @@ describe("ITS Storage tests", () => {
         address1,
       ).result,
     ).toBeErr(ERR_NOT_AUTHORIZED);
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service-storage",
+        "emit-transfer-ownership",
+        [Cl.principal(address1)],
+        address1,
+      ).result,
+    ).toBeErr(ERR_NOT_AUTHORIZED);
+
     expect(
       simnet.callPublicFn(
         "interchain-token-service-storage",

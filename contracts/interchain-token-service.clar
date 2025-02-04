@@ -44,7 +44,7 @@
 ;;
 (define-constant ERR-NOT-AUTHORIZED (err u21051))
 
-(define-constant OWNER tx-sender)
+(define-constant DEPLOYER tx-sender)
 
 (define-public (set-paused (its-impl <its-trait>) (status bool))
     (begin
@@ -63,6 +63,13 @@
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl transfer-operatorship new-operator contract-caller)
+    )
+)
+
+(define-public (transfer-ownership (its-impl <its-trait>) (new-owner principal))
+    (begin
+        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
+        (contract-call? its-impl transfer-ownership new-owner contract-caller)
     )
 )
 
@@ -473,7 +480,7 @@
 )
     (begin
         (asserts! (not (contract-call? .interchain-token-service-storage get-is-started)) ERR-STARTED)
-        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-its-contract-name its-contract-address-name))
         (try! (contract-call? .interchain-token-service-storage set-gas-service gas-service-address))
         (try! (contract-call? .interchain-token-service-storage set-operator operator-address))

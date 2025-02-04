@@ -268,7 +268,7 @@
 (define-constant ERR-STARTED (err u4051))
 (define-constant ERR-NOT-STARTED (err u4052))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
-(define-constant OWNER tx-sender)
+(define-constant DEPLOYER tx-sender)
 
 (define-data-var token-type (optional uint) none)
 
@@ -286,7 +286,7 @@
     (minter_ (optional principal))
 )
     (begin
-        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)

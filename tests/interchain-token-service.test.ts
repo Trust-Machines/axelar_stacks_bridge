@@ -39,6 +39,7 @@ import {
   setupService,
   setupTokenManager,
   transferITSOperatorShip,
+  transferITSOwnership,
   transferSip010,
   transferTokenOperatorShip,
 } from "./its-utils";
@@ -2484,6 +2485,22 @@ describe("Interchain Token Service", () => {
       });
     });
   });
+  describe("ownership", () => {
+    it("should transfer ownership", () => {
+      expect(
+        transferITSOwnership({
+          owner: deployer,
+          newOwner: address2,
+        }).result,
+      ).toBeOk(Cl.bool(true));
+      expect(
+        transferITSOwnership({
+          owner: deployer,
+          newOwner: address2,
+        }).result,
+      ).toBeErr(ITS_ERROR_CODES["ERR-ONLY-OWNER"])
+    })
+  })
   it("dynamic dispatch", () => {
     expect(
       simnet.callPublicFn(

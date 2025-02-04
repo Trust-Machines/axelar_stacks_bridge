@@ -8,7 +8,7 @@
 (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "token-manager"))))
 (define-constant PREFIX_CANONICAL_TOKEN_SALT (keccak256 (unwrap-panic (to-consensus-buff? "canonical-token-salt"))))
 
-(define-constant OWNER tx-sender)
+(define-constant DEPLOYER tx-sender)
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
 ;; @notice rares: same as mint burn in functionality will be custom tokens made by us
@@ -246,7 +246,7 @@
     (operator-address (optional principal))
 ) 
     (begin
-        (asserts! (is-eq contract-caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         ;; (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)
         (var-set is-started true)

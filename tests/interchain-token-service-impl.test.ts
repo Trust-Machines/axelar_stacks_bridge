@@ -33,6 +33,16 @@ describe("Interchain Token Service impl", () => {
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
+        "transfer-ownership",
+        [Cl.address(address1), Cl.address(address1)],
+        address1,
+      ).result,
+    ).toBeErr(ERR_NOT_PROXY);
+
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service-impl",
         "set-trusted-address",
         [
           Cl.stringAscii("ethereum"),

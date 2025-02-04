@@ -71,8 +71,6 @@
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 
-
-(define-constant OWNER tx-sender)
 (define-constant CHAIN-NAME "stacks")
 (define-constant CHAIN-NAME-HASH (keccak256 (unwrap-panic (to-consensus-buff? CHAIN-NAME))))
 ;; (define-constant CONTRACT-ID (keccak256 (unwrap-panic (to-consensus-buff? "interchain-token-service"))))
@@ -111,7 +109,7 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
         (contract-call? .interchain-token-service-storage set-paused status)))
 
 (define-read-only (get-is-paused)
@@ -171,6 +169,21 @@
     )
 )
 
+(define-constant ERR-ONLY-OWNER (err u25052))
+(define-read-only (get-owner) (contract-call? .interchain-token-service-storage get-owner))
+
+(define-public (transfer-ownership (new-owner principal) (caller principal))
+    (begin
+        (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (get-is-started) ERR-NOT-STARTED)
+        (try! (require-not-paused))
+        (asserts! (is-eq caller (get-owner)) ERR-ONLY-OWNER)
+        ;; #[allow(unchecked_data)]
+        (try! (contract-call? .interchain-token-service-storage emit-transfer-ownership new-owner))
+        (contract-call? .interchain-token-service-storage set-owner new-owner)
+    )
+)
+
 ;; ####################
 ;; ####################
 ;; ### address tracking ###
@@ -202,7 +215,7 @@
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (asserts!  (is-eq caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
         (asserts!
             (or
                 (is-eq (get-its-hub-chain) chain-name)
@@ -218,7 +231,7 @@
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
-        (asserts!  (is-eq caller OWNER) ERR-NOT-AUTHORIZED)
+        (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage emit-trusted-address-removed chain-name))
         (contract-call? .interchain-token-service-storage remove-trusted-address chain-name)))
 
