@@ -246,7 +246,7 @@
 ;; TODO: write an axelar executable trait and contracts which interact with axelar should
 
 (define-trait axelar-executable (
-  ;; the gateway validate-message pub fn MUST be called in contracts that impls of this trait
+  ;; the gateway validate-message pub fn MUST be called in contracts that implements of this trait
   (execute (
     (string-ascii 20)
     (string-ascii 128)

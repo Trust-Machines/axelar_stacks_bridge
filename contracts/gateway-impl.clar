@@ -47,7 +47,7 @@
 ;; @param message-id The unique message id for the message.
 ;; @returns (buff 32) the command-id.
 (define-read-only (message-to-command-id (source-chain (string-ascii 20)) (message-id (string-ascii 128)))
-    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
+    ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is unambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
 
@@ -387,7 +387,7 @@
 ;; @returns (buff 33)
 (define-private (get-signer-pub (signer {signer: (buff 33), weight: uint})) (get signer signer))
 
-;; Recovers ECDS signature with the message hash provided
+;; Recovers ECDSA signature with the message hash provided
 ;; @param signature
 ;; @param message-hash
 ;; @returns (response (buff 33) uint)
@@ -402,7 +402,7 @@
   (is-err signer)
 )
 
-;; Helper function to unwrap pubkey from reponse
+;; Helper function to unwrap pubkey from response
 ;; @param pub
 ;; @returns (buff 33)
 (define-private (unwrap-pub (pub (response (buff 33) uint))) (unwrap-panic pub))

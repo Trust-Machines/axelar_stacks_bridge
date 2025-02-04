@@ -65,7 +65,7 @@
     )
 )
 
-;; General purose proxy call 
+;; General purpose proxy call 
 (define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
         (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)

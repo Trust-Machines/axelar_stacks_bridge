@@ -233,7 +233,7 @@
         (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-factory-impl itf-impl))
         (print {
-            type: "interchain-token-factory-impl-updgraded",
+            type: "interchain-token-factory-impl-upgraded",
             prev: prev,
             new: itf-impl
         })
@@ -244,7 +244,7 @@
 (define-public (set-governance (governance principal))
     (ok true))
 
-;; General purose proxy call 
+;; General purpose proxy call 
 (define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)

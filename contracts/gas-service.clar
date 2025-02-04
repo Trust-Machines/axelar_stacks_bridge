@@ -175,7 +175,7 @@
         ;; Set new implementation
         (try! (contract-call? .gas-storage set-impl gas-impl))
         (print {
-            type: "gas-impl-updgraded",
+            type: "gas-impl-upgraded",
             prev: prev,
             new: gas-impl,
             balance: prev-balance

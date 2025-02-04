@@ -197,7 +197,7 @@
 
 ;; Constructor function
 ;; @param governance-chain; The name of the governance chain
-;; @param governance-addres; The address of the governance contract
+;; @param governance-address; The address of the governance contract
 ;; @returns (response true) or reverts
 (define-public (setup
     (governance-chain (string-ascii 20))

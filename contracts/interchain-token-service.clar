@@ -437,7 +437,7 @@
         (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-service-impl its-impl))
         (print {
-            type: "interchain-token-service-impl-updgraded",
+            type: "interchain-token-service-impl-upgraded",
             prev: prev,
             new: its-impl
         })
@@ -450,7 +450,7 @@
 
 
 
-;; General purose proxy call 
+;; General purpose proxy call 
 (define-public (call (its-impl <its-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
     (begin 
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
