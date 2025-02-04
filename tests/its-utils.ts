@@ -15,6 +15,7 @@ import {
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
 import {
+  deployGasService,
   deployGateway,
   gasImplContract,
   gatewayImplCV,

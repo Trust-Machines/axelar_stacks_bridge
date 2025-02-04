@@ -8,6 +8,7 @@ import {
   cvToValue,
   boolCV,
 } from "@stacks/transactions";
+import { deployGasService } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -15,6 +16,9 @@ const address2 = accounts.get("wallet_2")!;
 const deployer = accounts.get("deployer")!;
 
 describe("gas storage tests", () => {
+  beforeEach(() => {
+    deployGasService(address1)
+  })
   describe("implementation contract management", () => {
     it("should have correct initial implementation", () => {
       const { result: initialImpl } = simnet.callReadOnlyFn(
@@ -198,7 +202,7 @@ describe("gas storage tests", () => {
           principalCV(address1),
           uintCV(500),
         ],
-        deployer
+        address1
       );
 
       expect(events[1].event).toBe("print_event");
@@ -240,7 +244,7 @@ describe("gas storage tests", () => {
           principalCV(address1),
           uintCV(100),
         ],
-        deployer
+        address1
       );
 
       expect(events[1].event).toBe("print_event");

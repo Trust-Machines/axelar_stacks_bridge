@@ -335,6 +335,7 @@ export const deployGateway = (
     deployerAddress
   );
   expect(result).toBeOk(boolCV(true));
+  deployGasService(operatorAddress)
 
   return signers;
 };

@@ -267,11 +267,15 @@ describe("gas-impl tests", () => {
 });
 
 describe("transfer-ownership", () => {
+  beforeEach(() => {
+    // Deploy gas service with address2 as gas collector
+    deployGasService(address2);
+  });
   it("should handle valid ownership transfer", () => {
     const { result } = simnet.callPublicFn(
       "gas-service",
       "transfer-ownership",
-      [gasImplContract, principalCV(address2)],
+      [gasImplContract, principalCV(address1)],
       simnet.deployer
     );
     expect(result).toBeOk(boolCV(true));

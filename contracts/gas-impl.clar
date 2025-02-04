@@ -8,10 +8,12 @@
 (define-constant ERR-NOT-IMPLEMENTED (err u10113))
 (define-constant ERR-ONLY-OWNER (err u10151))
 (define-constant ERR-ONLY-GAS-COLLECTOR (err u10152))
+(define-constant ERR-NOT-STARTED (err u10153))
 ;; Proxy contract reference
 (define-constant PROXY .gas-service)
 
 (define-private (is-proxy) (is-eq contract-caller PROXY))
+(define-private (is-started) (contract-call? .gas-storage get-is-started))
 
 ;; ####################
 ;; ####################
@@ -29,6 +31,7 @@
 (define-public (transfer-ownership (new-owner principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-owner)) ERR-ONLY-OWNER)
         (try! (contract-call? .gas-storage set-owner new-owner))
         (try! (contract-call? .gas-storage emit-transfer-ownership new-owner))
@@ -40,6 +43,7 @@
 (define-public (transfer-gas-collector (new-gas-collector principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (try! (contract-call? .gas-storage set-gas-collector new-gas-collector))
         (try! (contract-call? .gas-storage emit-transfer-gas-collector new-gas-collector))
@@ -57,6 +61,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-paid-event
@@ -77,6 +82,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
         (try! (contract-call? .gas-storage emit-gas-added-event
@@ -95,6 +101,7 @@
     (amount uint))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
@@ -113,6 +120,7 @@
     (amount uint))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
@@ -136,6 +144,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         ERR-NOT-IMPLEMENTED)
 )
 
@@ -147,6 +156,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         ERR-NOT-IMPLEMENTED)
 )
 
@@ -159,6 +169,7 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         ERR-NOT-IMPLEMENTED)
 )
 
@@ -170,5 +181,6 @@
     (refund-address principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-started) ERR-NOT-STARTED)
         ERR-NOT-IMPLEMENTED)
 )
