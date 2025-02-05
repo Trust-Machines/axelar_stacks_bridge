@@ -42,6 +42,8 @@
 (define-constant ERR-TOKEN-MISMATCH (err u211060))
 (define-constant ERR-INVALID-CHAIN-NAME (err u211061))
 (define-constant ERR-REMOTE-DEPLOYMENT-NOT-APPROVED (err u211062))
+(define-constant ERR-CANNOT-DELETE-DEPLOY-APPROVAL (err u211063))
+(define-constant ERR-PAUSED (err u211064))
 
 
 
@@ -359,6 +361,7 @@
         })
         (approval-key (get-deploy-approval-key approval))
     )
+    (try! (require-not-paused))
     (asserts! (is-eq (contract-of token) (get manager-address token-info)) ERR-TOKEN-MISMATCH)
     ;; #[filter(minter)]
     (try! (check-token-minter token token-id minter))
@@ -402,7 +405,10 @@
             destination-chain: destination-chain,
         })
         (key (get-deploy-approval-key approval))
+        (is-deleted (unwrap! (contract-call? .interchain-token-service-storage remove-approved-destination-minter key) ERR-CANNOT-DELETE-DEPLOY-APPROVAL))
     )
+        (asserts! is-deleted ERR-REMOTE-DEPLOYMENT-NOT-APPROVED)
+        (try! (require-not-paused))
         (print {
             type: "revoked-deploy-remote-interchain-token-approval",
             minter: minter,
@@ -410,7 +416,7 @@
             token-id: token-id,
             destination-chain: destination-chain,
         })
-        (contract-call? .interchain-token-service-storage remove-approved-destination-minter key)))
+        (ok true)))
 
 ;; Use the deploy approval to check that the destination minter is valid and then delete the approval.
 (define-private (use-deploy-approval 
@@ -501,3 +507,10 @@
         (ok true)
     )
 )
+
+
+(define-read-only (get-is-paused)
+    (contract-call? .interchain-token-service-storage get-is-paused))
+
+(define-private (require-not-paused)
+    (ok (asserts! (not (unwrap-panic (get-is-paused))) ERR-PAUSED)))
