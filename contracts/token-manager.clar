@@ -214,7 +214,7 @@
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
 
-(define-public (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
+(define-private (transfer-token-from (sip-010-token <sip-010-trait>) (from principal) (to principal) (amount uint))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-eq (contract-of sip-010-token) (unwrap! (var-get token-address) ERR-NOT-STARTED)) ERR-NOT-MANAGED-TOKEN)
