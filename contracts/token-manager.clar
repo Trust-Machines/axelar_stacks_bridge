@@ -72,6 +72,7 @@
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (ok (map-set roles address  {flow-limiter: true}))))
 
@@ -302,6 +303,7 @@
 ;; Transfers operatorship to a new account
 (define-public (transfer-operatorship (new-operator principal))
     (begin
+        (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
