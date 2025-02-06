@@ -756,7 +756,7 @@
             recipient
             amount
             (if data-is-empty EMPTY-32-BYTES (keccak256 data))))
-        (if (or (is-none destination-contract) data-is-empty)
+        (if data-is-empty
             (ok 0x)
             (let (
                 (destination-contract-unwrapped (unwrap! destination-contract ERR-INVALID-DESTINATION-ADDRESS))
