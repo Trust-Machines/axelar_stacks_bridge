@@ -168,6 +168,10 @@
         token-type: uint,
     })
 
+(define-map used-token-managers principal bool)
+
+(define-read-only (is-manager-address-used (manager-address principal)) 
+    (default-to false (map-get? used-token-managers manager-address)))
 
 (define-read-only (get-token-info (token-id (buff 32)))
     (map-get? token-managers token-id))
@@ -177,6 +181,7 @@
 (define-public (insert-token-manager (token-id (buff 32)) (manager-address principal) (token-type uint))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
+        (map-insert used-token-managers manager-address true)
         (ok (map-insert token-managers token-id {
             manager-address: manager-address,
             token-type: token-type

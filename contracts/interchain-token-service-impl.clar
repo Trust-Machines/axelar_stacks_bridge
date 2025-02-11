@@ -312,6 +312,7 @@
                 (contract-call? token-manager is-operator operator) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-INVALID)
             (asserts! (unwrap! (contract-call? token-manager is-operator CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID)
             (asserts! (unwrap! (contract-call? token-manager is-flow-limiter CA) ERR-TOKEN-NOT-DEPLOYED) ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID)
+            (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-manager-address)) ERR-TOKEN-EXISTS)
             (asserts!
                 (unwrap! (insert-token-manager token-id token-manager-address token-manager-type) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
@@ -466,6 +467,7 @@
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
+        (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-address)) ERR-TOKEN-EXISTS)
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
         (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
         ;; #[filter(verification-params, minter-unpacked, supply)]
@@ -522,6 +524,7 @@
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
         ;; #[filter(verification-params)]
         (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params))
+        (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-address)) ERR-TOKEN-EXISTS)
         (asserts!
             (unwrap! (insert-token-manager (get token-id payload-decoded) token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)

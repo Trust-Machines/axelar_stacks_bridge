@@ -290,6 +290,48 @@ describe("Interchain Token Service", () => {
         ITS_ERROR_CODES["ERR-PAUSED"],
       );
     });
+
+
+    it("Should revert when deploying an interchain token twice", () => {
+      const verificationParams = getNITMockCv();
+      setupNIT({
+        tokenId,
+        contract: `${address1}.nit`,
+        minter: address1,
+        operator: address1,
+        sender: address1,
+      });
+      deployInterchainToken({
+        salt,
+        minter: Cl.address(address1),
+        verificationParams,
+        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+      });
+      const secondDeployTx = deployInterchainToken({
+        salt,
+        minter: Cl.address(address1),
+        verificationParams,
+        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+      });
+   
+      expect(secondDeployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+      );
+
+      const thirdDeployTx = deployInterchainToken({
+        salt: randomBytes(32),
+        minter: Cl.address(address1),
+        verificationParams,
+        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+      });
+   
+
+      expect(thirdDeployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+      );
+    });
+
+    
   });
 
   describe("Deploy and Register remote Interchain Token", () => {
@@ -484,7 +526,18 @@ describe("Interchain Token Service", () => {
         tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
         verificationParams,
       });
+
       expect(secondDeployTx.result).toBeErr(
+        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+      );
+
+      const thirdDeployTx = deployTokenManager({
+        salt: randomBytes(32),
+        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        verificationParams,
+      });
+
+      expect(thirdDeployTx.result).toBeErr(
         ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
       );
     });
