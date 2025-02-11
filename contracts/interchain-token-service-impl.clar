@@ -467,6 +467,7 @@
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
+        (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
         ;; #[filter(verification-params, minter-unpacked, supply)]
         (try! (native-interchain-token-checks token minter-unpacked token-id supply verification-params))
         (asserts!
