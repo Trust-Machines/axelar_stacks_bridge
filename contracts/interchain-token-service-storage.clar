@@ -419,3 +419,20 @@
             destination-minter: destination-minter,
         })
         (ok true)))
+
+(define-public (emit-revoked-deploy-remote-interchain-token-approval
+        (minter principal)
+        (deployer principal)
+        (token-id (buff 32))
+        (destination-chain (string-ascii 20))
+        )
+    (begin
+        (asserts! (is-factory-impl) ERR-NOT-AUTHORIZED)
+        (print {
+            type: "revoked-deploy-remote-interchain-token-approval",
+            minter: minter,
+            deployer: deployer,
+            token-id: token-id,
+            destination-chain: destination-chain,
+        })
+        (ok true)))

@@ -394,14 +394,6 @@
         destination-chain
         destination-minter
     ))
-    (print {
-        type: "deploy-remote-interchain-token-approval",
-        minter: minter,
-        deployer: deployer,
-        token-id: token-id,
-        destination-chain: destination-chain,
-        destination-minter: destination-minter,
-    })
     (contract-call? .interchain-token-service-storage set-approved-destination-minter approval-key (keccak256 destination-minter))))
 
 
@@ -428,15 +420,13 @@
         (key (get-deploy-approval-key approval))
         (is-deleted (unwrap! (contract-call? .interchain-token-service-storage remove-approved-destination-minter key) ERR-CANNOT-DELETE-DEPLOY-APPROVAL))
     )
-        (asserts! is-deleted ERR-REMOTE-DEPLOYMENT-NOT-APPROVED)
         (try! (require-not-paused))
-        (print {
-            type: "revoked-deploy-remote-interchain-token-approval",
-            minter: minter,
-            deployer: deployer,
-            token-id: token-id,
-            destination-chain: destination-chain,
-        })
+        (asserts! is-deleted ERR-REMOTE-DEPLOYMENT-NOT-APPROVED)
+        (try! (contract-call? .interchain-token-service-storage emit-revoked-deploy-remote-interchain-token-approval
+            minter
+            deployer
+            token-id
+            destination-chain))
         (ok true)))
 
 ;; Use the deploy approval to check that the destination minter is valid and then delete the approval.
