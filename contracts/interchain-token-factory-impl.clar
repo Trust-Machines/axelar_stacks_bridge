@@ -44,6 +44,8 @@
 (define-constant ERR-REMOTE-DEPLOYMENT-NOT-APPROVED (err u211062))
 (define-constant ERR-CANNOT-DELETE-DEPLOY-APPROVAL (err u211063))
 (define-constant ERR-PAUSED (err u211064))
+(define-constant ERR-INVALID-PARAMS (err u211065))
+(define-constant ERR-NOT-TOKEN-DEPLOYER (err u211066))
 
 
 
@@ -85,6 +87,19 @@
             (concat
                 (concat PREFIX-CANONICAL-TOKEN-SALT CHAIN-NAME-HASH)
                 (unwrap-panic (to-consensus-buff? token-address)))))
+
+(define-read-only (decode-contract-principal (contract-principal principal))
+    (let (
+        (data (unwrap! (principal-destruct? contract-principal) ERR-INVALID-PARAMS))
+        (contract-name-str (unwrap! (get name data) ERR-INVALID-PARAMS))
+        (contract-name-buff (unwrap-panic (to-consensus-buff? contract-name-str)))
+        (contract-name (unwrap-panic (slice? contract-name-buff u5 (len contract-name-buff))))
+    )
+    (ok {
+        contract-name: contract-name,
+        deployer: (unwrap! (principal-construct? (get version data) (get hash-bytes data)) ERR-INVALID-PARAMS),
+    })))
+
 
 ;; Computes the ID for an interchain token based on the deployer and a salt.
 ;; @param deployer The address that deployed the interchain token.
@@ -134,6 +149,9 @@
     )
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (is-eq (get deployer 
+            (try! (decode-contract-principal (contract-of token-manager-address)))
+        ) caller) ERR-NOT-TOKEN-DEPLOYER)
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
             .interchain-token-service
@@ -210,6 +228,9 @@
             (deploy-salt (get-interchain-token-deploy-salt caller salt_))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
+        (asserts! (is-eq (get deployer 
+            (try! (decode-contract-principal (contract-of token)))
+        ) caller) ERR-NOT-TOKEN-DEPLOYER)
         (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
     (contract-call? .interchain-token-service deploy-interchain-token
         gateway-impl

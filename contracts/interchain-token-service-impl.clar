@@ -61,6 +61,7 @@
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u22086))
 (define-constant ERR-INVALID-PARAMS (err u22088))
 (define-constant ERR-GATEWAY-NOT-DEPLOYED (err u22089))
+(define-constant ERR-NOT-TOKEN-DEPLOYER (err u22090))
 
 
 
@@ -287,6 +288,9 @@
             )
             
             (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
+            (asserts! (or
+                (is-eq deployer NULL-ADDRESS)
+                (is-eq (get deployer contract-principal) deployer)) ERR-NOT-TOKEN-DEPLOYER)
             (asserts! (is-eq u32 (len salt)) ERR-INVALID-SALT)
             (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
             (asserts! (is-eq (len destination-chain) u0) ERR-INVALID-DESTINATION-CHAIN)
@@ -397,12 +401,16 @@
         tx-block-height: uint,
         block-header-without-signer-signatures: (buff 800),
     })
+    (deployer principal)
 ) 
     (let (
             (token-address (contract-of token))
             (contract-principal (try! (decode-contract-principal token-address)))
 
-    ) 
+    )
+        (asserts! (or
+            (is-eq deployer NULL-ADDRESS)
+            (is-eq (get deployer contract-principal) deployer)) ERR-NOT-TOKEN-DEPLOYER)
         (try! (contract-call? .verify-onchain verify-nit-deployment
             (get nonce verification-params)
             (get fee-rate verification-params)
@@ -471,7 +479,7 @@
         (asserts! (is-none (get-token-info token-id)) ERR-TOKEN-EXISTS)
         (try! (contract-call? .interchain-token-service-storage emit-interchain-token-id-claimed token-id deployer salt))
         ;; #[filter(verification-params, minter-unpacked, supply)]
-        (try! (native-interchain-token-checks token minter-unpacked token-id supply verification-params))
+        (try! (native-interchain-token-checks token minter-unpacked token-id supply verification-params deployer))
         (asserts!
             (unwrap! (insert-token-manager token-id token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
@@ -522,8 +530,8 @@
         )
         (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
-        ;; #[filter(verification-params)]
-        (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params))
+        ;; #[filter(verification-params, caller)]
+        (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params caller))
         (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-address)) ERR-TOKEN-EXISTS)
         (asserts!
             (unwrap! (insert-token-manager (get token-id payload-decoded) token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
