@@ -54,8 +54,10 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) (err u4))
+        
+        (try! (ft-transfer? itscoin amount from to))
         (match memo to-print (print to-print) 0x)
-        (ft-transfer? itscoin amount from to)))
+        (ok true)))
 
 ;; constants
 ;;
