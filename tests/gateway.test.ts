@@ -843,6 +843,69 @@ describe("gateway tests", () => {
       expect(result2).toBeOk(boolCV(true));
     });
 
+    it('Arbitrary users cannot rotate signers', () => {
+
+      // Valid signer data, 2 signers
+      const proofSigners: Signers = {
+        signers: [
+          {
+            signer: '020544a6b1e14d0563e50bfbfdde11fdae17eac04d95bee50e595e6d80ea0a932b',
+            weight: 1
+          },
+          {
+            signer: '020efaddd546e33405db1fccd46610c30012f59137874d658c0315b910bf8793e5',
+            weight: 1
+          }
+        ],
+        threshold: 2,
+        nonce: '2'
+      }
+  
+      // 2 other, random, malicious signers
+      const badSigners = [
+        '0215049277b2681c5a10f0dc93c67203ac3b865adfaf8d8d6d75df65082f3676e9',
+        '0220ceccbc486f0bf0722150d02bbde9a4d688707148d911b85decac66b88fd374',
+      ];
+  
+      // Gateway is deployed with the valid signers
+      deployGateway(proofSigners);
+  
+      // malicious signers are designated
+      const maliciousSigners = getSigners(10, 20, 1, 6, "2");
+  
+      // the current signer hash is calculated 
+      const signersHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+  
+      // the data hash, with the new malicious signers, is calculated
+      const dataHash = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-signers", [signersToCv(maliciousSigners)], contractCaller);
+        return cvToJSON(result).value;
+      })();
+  
+      // the message to sign, which results in signers rotation to the new, malicious set
+      const messageHashToSign = (() => {
+        const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)], contractCaller);
+        return cvToJSON(result).value
+      })();
+  
+      // Attacker creates the malicious proof where the original signers are set but the signatures
+      // are made and signed by them
+      const maliciousProof = tupleCV({
+        "signers": signersToCv(proofSigners),
+        "signatures": listCV([
+          Cl.bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), badSigners[0])),
+          Cl.bufferFromHex(signMessageHashForAddress(messageHashToSign.replace('0x', ''), badSigners[1])),
+        ])
+      });
+  
+      // show that the rotation fails
+      const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(maliciousSigners))), bufferCV(serializeCV(maliciousProof))], contractCaller);
+      expect(result).toBeErr(Cl.uint(4051));
+    });
+
     it("should reject rotating signers from operator with a previous proof", () => {
       const proofSigners = deployGateway(getSigners(0, 10, 1, 10, "1"), { previousSignersRetention: 0 });
 

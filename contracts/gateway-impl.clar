@@ -430,6 +430,49 @@
     (unwrap-panic (as-max-len? (append state (unwrap-panic (element-at? state u0))) u100))
 )
 
+
+
+(define-private (match-pub-to-signer (unused-pub (buff 33)))
+    (let (
+        (pub (unwrap-panic (element-at? (var-get pubs-temp) (var-get checker-index))))
+        (signer (unwrap-panic (element-at? (var-get signers-temp) (var-get checker-index))))
+    )
+    (asserts! (is-eq pub signer) ERR-INVALID-SIGNERS)
+    (var-set checker-index (+ (var-get checker-index) u1))
+    (ok true))
+)
+
+(define-data-var pubs-temp (list 100 (buff 33)) (list))
+(define-data-var signers-temp (list 100 (buff 33)) (list))
+(define-data-var checker-index uint u0)
+
+
+(define-private (check-err  (result (response bool uint))
+                            (prior (response bool uint)))
+    (match prior ok-value result
+                err-value (err err-value)))
+
+(define-private (check-signers (signers {
+                    signers: (list 100 {signer: (buff 33), weight: uint}),
+                    threshold: uint,
+                    nonce: (buff 32)
+                })
+                (pubs (list 100 (buff 33)))
+                )
+    (let (
+        (current-signer-hash (unwrap! (get-signer-hash-by-epoch (get-epoch)) ERR-NOT-STARTED))
+        (data-hash (get-signers-hash signers))
+
+    )
+    (var-set pubs-temp pubs)
+    (var-set signers-temp (map get-signer-pub (get signers signers)))
+    (try! (fold check-err (map match-pub-to-signer pubs) (ok true)))
+    (var-set pubs-temp (list))
+    (var-set signers-temp (list))
+    (var-set checker-index u0)
+    (ok true)))
+
+
 ;; This function takes message-hash and proof data and reverts if proof is invalid
 ;; The signers and signatures should be sorted by signer address in ascending order
 ;; @param message-hash; The hash of the message that was signed
@@ -460,6 +503,8 @@
             (total-weight (fold accumulate-weights signers-- u0))
             (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
         )
+
+        (try! (check-signers signers pubs))
         (ok true)
     )
 )
