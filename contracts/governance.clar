@@ -120,6 +120,10 @@
     )
 )
 
+(define-constant ACTION-SET-IMPLEMENTATION u1)
+(define-constant ACTION-SET-GOVERNANCE u2)
+(define-constant ACTION-CANCEL-TASK u3)
+
 ;; Finalizes a scheduled task
 ;; @proxy; Proxy trait reference to run task with. 
 ;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the task.
@@ -138,12 +142,12 @@
         (try! (finalize-timelock payload-hash))
         (asserts! (is-eq (contract-of proxy) (get proxy timelock)) ERR-INVALID-PROXY)
         (asserts! (is-eq
-            (if (is-eq type u1) 
+            (if (is-eq type ACTION-SET-IMPLEMENTATION) 
                 (begin 
                     (try! (contract-call? proxy set-impl target))
                     true
                  )
-                (if (is-eq type u2) 
+                (if (is-eq type ACTION-SET-GOVERNANCE) 
                     (begin 
                         (try! (contract-call? proxy set-governance target))
                         true
@@ -177,7 +181,7 @@
                 type: uint
             } payload) ERR-PAYLOAD-DATA))
         )
-        (asserts! (is-eq (get type data) u3) ERR-INVALID-TYPE)
+        (asserts! (is-eq (get type data) ACTION-CANCEL-TASK) ERR-INVALID-TYPE)
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
         (cancel-timelock (get hash data))
     )
