@@ -143,15 +143,9 @@
         (asserts! (is-eq (contract-of proxy) (get proxy timelock)) ERR-INVALID-PROXY)
         (asserts! (is-eq
             (if (is-eq type ACTION-SET-IMPLEMENTATION) 
-                (begin 
-                    (try! (contract-call? proxy set-impl target))
-                    true
-                 )
+                (try! (contract-call? proxy set-impl target))
                 (if (is-eq type ACTION-SET-GOVERNANCE) 
-                    (begin 
-                        (try! (contract-call? proxy set-governance target))
-                        true
-                    )
+                    (try! (contract-call? proxy set-governance target))
                     false
             )
         ) true) ERR-INVALID-TYPE)

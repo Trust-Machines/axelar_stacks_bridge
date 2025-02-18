@@ -527,17 +527,18 @@
             } payload) ERR-INVALID-PAYLOAD))
             (token-address (contract-of token))
             (contract-principal (try! (decode-contract-principal token-address)))
+            (token-id (get token-id payload-decoded))
         )
         (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
         ;; #[filter(verification-params, caller)]
-        (try! (native-interchain-token-checks token NULL-ADDRESS (get token-id payload-decoded) u0 verification-params caller))
+        (try! (native-interchain-token-checks token NULL-ADDRESS token-id u0 verification-params caller))
         (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-address)) ERR-TOKEN-EXISTS)
         (asserts!
-            (unwrap! (insert-token-manager (get token-id payload-decoded) token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
+            (unwrap! (insert-token-manager token-id token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
             ERR-TOKEN-EXISTS)
         (try! (contract-call? .interchain-token-service-storage emit-token-manager-deployed
-            (get token-id payload-decoded)
+            token-id
             token-address
             TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
         (try! (as-contract (contract-call? .interchain-token-service gateway-validate-message
@@ -751,9 +752,10 @@
             (data (get data payload-decoded))
             (token-info (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
             (data-is-empty (is-eq (len data) u0))
+            (wrapped-source-chain (get source-chain payload-decoded))
         )
-        (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
-        (asserts! (is-trusted-chain (get source-chain payload-decoded)) ERR-UNTRUSTED-CHAIN)
+        (asserts! (not (is-eq wrapped-source-chain (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-chain wrapped-source-chain) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
@@ -763,7 +765,7 @@
         (try! (as-contract (contract-call? token-manager give-token token recipient amount)))
         (try! (contract-call? .interchain-token-service-storage emit-interchain-transfer-received
             token-id
-            (get source-chain payload-decoded)
+            wrapped-source-chain
             sender-address
             recipient
             amount
@@ -776,7 +778,7 @@
                 (asserts! (is-eq (contract-of destination-contract-unwrapped) recipient) ERR-INVALID-DESTINATION-ADDRESS)
                 (as-contract
                     (contract-call? destination-contract-unwrapped execute-with-interchain-token
-                        (get source-chain payload-decoded) message-id sender-address data token-id (contract-of token) amount)))))))
+                        wrapped-source-chain message-id sender-address data token-id (contract-of token) amount)))))))
 
 
 ;; ######################
