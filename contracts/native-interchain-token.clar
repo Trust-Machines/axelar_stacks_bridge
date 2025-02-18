@@ -288,13 +288,17 @@
     (token-uri_ (optional (string-utf8 256)))
     (minter_ (optional principal))
 )
-    (begin
+    (let
+        (
+            (minter-unpacked (default-to NULL-ADDRESS minter_))
+        )
         (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-UNSUPPORTED-TOKEN-TYPE)
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
+        (asserts! (not (is-eq minter-unpacked (get-its-impl))) ERR-INVALID-PARAMS)
         (var-set is-started true)
         ;; #[allow(unchecked_data)]
         (var-set token-type (some token-type_))
@@ -314,7 +318,7 @@
         (var-set token-uri token-uri_)
         (var-set token-id token-id_)
         ;; #[allow(unchecked_data)]
-        (var-set minter (default-to NULL-ADDRESS minter_))
+        (var-set minter minter-unpacked)
         (print
             {
                 notification: "token-metadata-update",

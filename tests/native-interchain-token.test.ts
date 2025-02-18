@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getTokenId, mintNIT, setupNIT, setTokenFlowLimit } from "./its-utils";
-import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
+import { getTokenId, mintNIT, setupNIT, setTokenFlowLimit, itsImpl } from "./its-utils";
+import { addressToString, BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { NIT_ERRORS } from "./constants";
 import { runFlowLimitsSuite } from "./token-manager-utils";
 
@@ -49,6 +49,17 @@ describe("Native Interchain Token", () => {
           contract: contractName,
           sender: deployer,
           tokenId: Cl.bufferFromHex("0x"),
+        }).result,
+      ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
+    });
+
+    it("revert on init if minter is its impl", () => {
+      expect(
+        setupNIT({
+          contract: contractName,
+          sender: deployer,
+          tokenId: Cl.bufferFromHex("0x"),
+          minter: addressToString(itsImpl.address),
         }).result,
       ).toBeErr(NIT_ERRORS["ERR-INVALID-PARAMS"]);
     });
