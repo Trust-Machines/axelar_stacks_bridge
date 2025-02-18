@@ -129,8 +129,6 @@
         (destination-chain (string-ascii 20))
         (destination-address (string-ascii 128))
         (payload (buff 64000)))
-    (if
-        (> amount u0)
             (contract-call? .gas-service pay-native-gas-for-contract-call
                 gas-service-impl
                 amount
@@ -138,8 +136,7 @@
                 destination-chain
                 destination-address
                 payload
-                refund-address)
-        (ok true)))
+                refund-address))
 
 
 
