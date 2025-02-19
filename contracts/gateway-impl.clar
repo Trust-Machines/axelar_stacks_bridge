@@ -97,7 +97,7 @@
                     })) ERR-MESSAGE-INSERT))
                 )
                 (if inserted (some (contract-call? .gateway-storage emit-message-approved command-id message)) none)
-                (ok inserted) 
+                (ok inserted)
             )
 )
 

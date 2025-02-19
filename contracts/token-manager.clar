@@ -1,7 +1,7 @@
 ;;
 ;; @title TokenManager
-;; This contract is responsible for managing tokens, 
-;; such as setting locking token balances, 
+;; This contract is responsible for managing tokens,
+;; such as setting locking token balances,
 ;; or setting flow limits, for interchain transfers.
 (impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.token-manager-trait)
 (use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
@@ -11,7 +11,7 @@
 (define-constant DEPLOYER tx-sender)
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
-;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; @notice same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be locked/unlocked at the token manager.
@@ -28,12 +28,12 @@
 (define-map roles principal {
     flow-limiter: bool,
 })
-(define-read-only (get-its-impl) 
+(define-read-only (get-its-impl)
     (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))
 
 
 ;; Checks that the sender is the interchain-token-service contract
-(define-read-only (is-its-sender) 
+(define-read-only (is-its-sender)
     (is-eq contract-caller (get-its-impl)))
 
 ;; Getter for the contract id.
@@ -68,7 +68,7 @@
 
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flowLimiter the address of the new flow limiter.
+;; @param flow-limiter the address of the new flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
@@ -78,13 +78,13 @@
 
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flowLimiter the address of an existing flow limiter.
+;; @param flow-limiter the address of an existing flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
-        (match (map-get? roles address) 
+        (match (map-get? roles address)
             ;; no need to check limiter if they don't exist it will be a noop
             limiter-roles (ok (map-set roles address (merge limiter-roles {flow-limiter: false})))
             (ok true))))
@@ -96,19 +96,19 @@
     (ok (is-flow-limiter-raw addr)))
 
 (define-read-only (is-flow-limiter-raw (addr principal))
-    (or 
+    (or
         (is-eq addr (get-its-impl))
         (default-to false (get flow-limiter (map-get? roles addr)))))
-;;     
+;;
 ;; Returns the current flow limit.
 ;; @return The current flow limit value.
-;;      
-(define-read-only (get-flow-limit) 
+;;
+(define-read-only (get-flow-limit)
     (ok (var-get flow-limit)))
 
 ;; This function sets the flow limit for this TokenManager.
 ;; Can only be called by the flow limiters.
-;; @param flowLimit_ The maximum difference between the tokens 
+;; @param flow-limit The maximum difference between the tokens
 ;; flowing in and/or out at any given interval of time (6h).
 ;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
@@ -122,7 +122,7 @@
 
 
 ;; Returns the current flow out amount.
-;; @return flowOutAmount_ The current flow out amount.
+;; @return flow-out-amount The current flow out amount.
 (define-read-only (get-flow-out-amount)
     (let (
             (epoch (/ burn-block-height EPOCH-TIME))
@@ -130,7 +130,7 @@
         (ok (default-to u0 (get flow-out (map-get? flows epoch))))))
 
 ;; Returns the current flow in amount.
-;; @return flowInAmount_ The current flow in amount.
+;; @return flow-in-amount The current flow in amount.
 (define-read-only (get-flow-in-amount)
     (let ((epoch (/ burn-block-height EPOCH-TIME)))
         (ok (default-to u0 (get flow-in (map-get? flows epoch))))))
@@ -194,7 +194,7 @@
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
-(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint)) 
+(define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint))
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
@@ -207,7 +207,7 @@
 ;; @param from The address to take tokens from.
 ;; @param amount The amount of token to take.
 ;; @return (response bool uint)
-(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint)) 
+(define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint))
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
         (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
@@ -221,7 +221,7 @@
         (asserts! (is-eq (contract-of sip-010-token) (unwrap! (var-get token-address) ERR-NOT-STARTED)) ERR-NOT-MANAGED-TOKEN)
         (contract-call? sip-010-token transfer amount from to none)))
 
-(define-read-only (is-minter (address principal)) 
+(define-read-only (is-minter (address principal))
     (ok false))
 
 
@@ -241,11 +241,11 @@
 ;; Constructor function
 ;; @returns (response true) or reverts
 ;; #[allow(unchecked_data)]
-(define-public (setup 
+(define-public (setup
     (token-address_ principal)
     (token-type_ uint)
     (operator-address (optional principal))
-) 
+)
     (begin
         (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
@@ -257,7 +257,7 @@
         (var-set token-type (some token-type_))
         ;; #[allow(unchecked_data)]
         (var-set operator (default-to NULL-ADDRESS operator-address))
-        (match operator-address op 
+        (match operator-address op
             (map-set roles op {
                 flow-limiter: true,
             })
@@ -271,7 +271,7 @@
 ;;  * @param operator_ The operator of the TokenManager.
 ;;  * @param tokenAddress_ The token to be managed.
 ;;  * @return params_ The resulting params to be passed to custom TokenManager deployments.
-(define-read-only (get-params (operator_ (optional principal)) (token-address_ principal)) 
+(define-read-only (get-params (operator_ (optional principal)) (token-address_ principal))
     (ok (unwrap-panic (to-consensus-buff? {
         operator: operator_,
         token-address: token-address_,
@@ -286,17 +286,17 @@
 (define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
 
-(define-read-only (is-operator-raw (address principal)) 
+(define-read-only (is-operator-raw (address principal))
     (or
         (is-eq address (var-get operator))
         (is-eq address (get-its-impl))
     ))
 
-(define-read-only (is-operator (address principal)) 
+(define-read-only (is-operator (address principal))
     (ok (is-operator-raw address)))
 
-(define-read-only (get-operators) 
-    (ok (list 
+(define-read-only (get-operators)
+    (ok (list
             (get-its-impl)
             (var-get operator))))
 

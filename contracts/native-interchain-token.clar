@@ -54,7 +54,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) (err u4))
-        
+
         (try! (ft-transfer? itscoin amount from to))
         (match memo to-print (print to-print) 0x)
         (ok true)))
@@ -102,7 +102,7 @@
 (define-read-only (get-token-type)
     (ok TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN))
 
-;; @notice rares: mint burn give/take will be handled in the token mintable-burnable itself
+;; @notice mint burn give/take will be handled in the token mintable-burnable itself
 ;; the flow would still be handled by the ITS
 ;; subject to change
 (define-public (take-token (token <sip-010-trait>) (from principal) (amount uint))
@@ -192,7 +192,7 @@
 
 ;; This function sets the flow limit for this TokenManager.
 ;; Can only be called by the flow limiters.
-;; @param flowLimit_ The maximum difference between the tokens
+;; @param limit The maximum difference between the tokens
 ;; flowing in and/or out at any given interval of time (6h).
 ;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
@@ -205,7 +205,7 @@
 )
 
 ;; Returns the current flow out amount.
-;; @return flowOutAmount_ The current flow out amount.
+;; @return flow-out-amount The current flow out amount.
 (define-read-only (get-flow-out-amount)
     (let (
             (epoch (/ burn-block-height EPOCH-TIME))
@@ -213,7 +213,7 @@
         (ok (default-to u0 (get flow-out (map-get? flows epoch))))))
 
 ;; Returns the current flow in amount.
-;; @return flowInAmount_ The current flow in amount.
+;; @return flow-in-amount The current flow in amount.
 (define-read-only (get-flow-in-amount)
     (let ((epoch (/ burn-block-height EPOCH-TIME)))
         (ok (default-to u0 (get flow-in (map-get? flows epoch))))))

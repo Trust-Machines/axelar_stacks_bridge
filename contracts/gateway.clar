@@ -17,7 +17,7 @@
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
 )
-    (begin 
+    (begin
         (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl call-contract destination-chain destination-contract-address payload contract-caller)
     )
@@ -65,9 +65,9 @@
     )
 )
 
-;; General purpose proxy call 
-(define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
-    (begin 
+;; General purpose proxy call
+(define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
         (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
         (contract-call? gateway-impl dispatch fn data)
     )
@@ -87,7 +87,7 @@
     (let
         (
             (prev (contract-call? .gateway-storage get-impl))
-        ) 
+        )
         (asserts! (is-governance) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-impl new))
         (print {
@@ -103,7 +103,7 @@
     (let
         (
             (prev (contract-call? .gateway-storage get-governance))
-        ) 
+        )
         (asserts! (is-governance) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-governance new))
         (print {

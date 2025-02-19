@@ -66,7 +66,7 @@
 
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
-;; rares: same as mint burn in functionality will be custom tokens made by us
+;; same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 ;; The token will be locked/unlocked at the token manager.
@@ -129,9 +129,7 @@
     (contract-call? .interchain-token-service-storage get-its-contract-name))
 
 (define-read-only (is-valid-token-type (token-type uint))
-    (or
-        ;; (is-eq token-type TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
-        (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK)))
+    (is-eq token-type TOKEN-TYPE-LOCK-UNLOCK))
 
 ;;  Calculates the token-id that would correspond to a link for a given deployer with a specified salt.
 ;;  @param sender The address of the TokenManager deployer.
@@ -286,7 +284,7 @@
                 } params) ERR-INVALID-PARAMS))
                 (operator (default-to NULL-ADDRESS (get operator data)))
             )
-            
+
             (asserts! (is-valid-token-type token-manager-type) ERR-UNSUPPORTED-TOKEN-TYPE)
             (asserts! (or
                 (is-eq deployer NULL-ADDRESS)
@@ -308,7 +306,7 @@
                 token-manager-type
                 (unwrap! (contract-call? token-manager get-token-type) ERR-TOKEN-MANAGER-NOT-DEPLOYED)
             ) ERR-TOKEN-MANAGER-MISMATCH)
-            (asserts! (is-eq 
+            (asserts! (is-eq
                 managed-token
                 (get token-address data)
             ) ERR-TOKEN-MANAGER-MISMATCH)
@@ -402,7 +400,7 @@
         block-header-without-signer-signatures: (buff 800),
     })
     (deployer principal)
-) 
+)
     (let (
             (token-address (contract-of token))
             (contract-principal (try! (decode-contract-principal token-address)))
@@ -449,7 +447,7 @@
 ;; @param token the deployed native interchain token contract address
 ;; @param supply The already minted supply of the deployed token.
 ;; @param minter The address that will be able to mint and burn the deployed token.
-;; @param gas-value The amount of native tokens to be used to pay for gas for the remote deployment.
+;; @param verification-params The verification parameters for the deployed token.
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-interchain-token
         (gateway-impl <gateway-trait>)
@@ -804,8 +802,8 @@
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (asserts! (is-eq (get-operator) caller) ERR-ONLY-OPERATOR)
-        (asserts! (is-eq 
-            (get manager-address (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND)) 
+        (asserts! (is-eq
+            (get manager-address (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
             (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
         (as-contract (contract-call? token-manager set-flow-limit limit))))
 

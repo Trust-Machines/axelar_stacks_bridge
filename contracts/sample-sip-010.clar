@@ -59,7 +59,7 @@
         (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) ERR-NOT-AUTHORIZED)
         (asserts! (not (is-eq to tx-sender)) ERR-INVALID-PARAMS)
         (asserts! (>= (ft-get-balance itscoin from) amount) ERR-INSUFFICIENT-BALANCE)
-        (match memo m 
+        (match memo m
             (print m) 0x)
         (ft-transfer? itscoin amount from to)))
 

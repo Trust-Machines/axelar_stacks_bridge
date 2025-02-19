@@ -169,9 +169,9 @@
         (
             (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .gas-storage get-impl))
-        ) 
+        )
         (asserts! (is-eq contract-caller governance-impl) ERR-UNAUTHORIZED)
-        
+
         ;; Set new implementation
         (try! (contract-call? .gas-storage set-impl gas-impl))
         (print {

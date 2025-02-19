@@ -21,14 +21,15 @@
 (define-constant ERR-INVALID-IMPL (err u210211))
 (define-constant ERR-NOT-AUTHORIZED (err u210212))
 
-(define-private (is-correct-impl (interchain-token-factory-impl <itf-trait>)) 
-    (is-eq 
-        (contract-call? .interchain-token-service-storage get-factory-impl) 
+(define-private (is-correct-impl (interchain-token-factory-impl <itf-trait>))
+    (is-eq
+        (contract-call? .interchain-token-service-storage get-factory-impl)
         (contract-of interchain-token-factory-impl)))
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
-;; @param tokenAddress The address of the canonical token.
-;; @return tokenId The tokenId corresponding to the registered canonical token.
+;; @param token-address The address of the canonical token.
+;; @param token-manager-address The address of the token manager.
+;; @param verification-params The verification parameters for the canonical token.
 (define-public (register-canonical-interchain-token
         (itf-impl <itf-trait>)
         (gateway-impl <gateway-trait>)
@@ -61,10 +62,9 @@
 
 
 ;; Deploys a canonical interchain token on a remote chain.
-;; @param originalTokenAddress The address of the original token on the original chain.
-;; @param destinationChain The name of the chain where the token will be deployed.
-;; @param gasValue The gas amount to be sent for deployment.
-;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
+;; @param token The address of the original token on the original chain.
+;; @param destination-chain The name of the chain where the token will be deployed.
+;; @param gas-value The gas amount to be sent for deployment.
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-canonical-interchain-token
         (itf-impl <itf-trait>)
@@ -76,7 +76,7 @@
         (gas-value uint))
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl deploy-remote-canonical-interchain-token 
+        (contract-call? itf-impl deploy-remote-canonical-interchain-token
             gateway-impl
             gas-service-impl
             its-impl
@@ -229,7 +229,7 @@
         (
             (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .interchain-token-service-storage get-factory-impl))
-        ) 
+        )
         (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-factory-impl itf-impl))
         (print {
@@ -244,9 +244,9 @@
 (define-public (set-governance (governance principal))
     (ok true))
 
-;; General purpose proxy call 
-(define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
-    (begin 
+;; General purpose proxy call
+(define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl dispatch fn data contract-caller)
     )

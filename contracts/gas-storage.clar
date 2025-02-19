@@ -30,12 +30,12 @@
     )
 )
 
-;; Gas Service implementation contract address 
+;; Gas Service implementation contract address
 (define-data-var impl principal .gas-impl)
 
 (define-read-only (get-impl) (var-get impl))
 
-(define-public (set-impl (new-impl principal)) 
+(define-public (set-impl (new-impl principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set impl new-impl))
@@ -47,7 +47,7 @@
 
 (define-read-only (get-gas-collector) (var-get gas-collector))
 
-(define-public (set-gas-collector (new-gas-collector principal)) 
+(define-public (set-gas-collector (new-gas-collector principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (asserts! (not (is-eq new-gas-collector (get-owner))) ERR-OWNER-CANNOT-BE-COLLECTOR)
@@ -60,7 +60,7 @@
 
 (define-read-only (get-owner) (var-get owner))
 
-(define-public (set-owner (new-owner principal)) 
+(define-public (set-owner (new-owner principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (asserts! (not (is-eq new-owner (get-gas-collector))) ERR-OWNER-CANNOT-BE-COLLECTOR)
@@ -73,7 +73,7 @@
 ;; ####### Events #######
 ;; ######################
 ;; ######################
-(define-public (emit-gas-paid-event 
+(define-public (emit-gas-paid-event
     (sender principal)
     (amount uint)
     (refund-address principal)
@@ -139,8 +139,8 @@
 
 (define-public (emit-transfer-ownership
         (new-owner principal)
-) 
-    (begin 
+)
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {type: "transfer-ownership", new-owner: new-owner})
         (ok true)
@@ -148,8 +148,8 @@
 )
 (define-public (emit-transfer-gas-collector
         (new-gas-collector principal)
-) 
-    (begin 
+)
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {type: "transfer-gas-collector", new-gas-collector: new-gas-collector})
         (ok true)

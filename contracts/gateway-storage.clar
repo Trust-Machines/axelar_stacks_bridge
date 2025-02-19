@@ -19,7 +19,7 @@
 
 (define-read-only (get-is-started) (var-get is-started))
 
-(define-public (start) 
+(define-public (start)
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set is-started true))
@@ -27,12 +27,12 @@
 )
 
 
-;; Gateway implementation contract address 
+;; Gateway implementation contract address
 (define-data-var impl principal .gateway-impl)
 
 (define-read-only (get-impl) (var-get impl))
 
-(define-public (set-impl (new-impl principal)) 
+(define-public (set-impl (new-impl principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set impl new-impl))
@@ -44,7 +44,7 @@
 
 (define-read-only (get-governance) (var-get governance))
 
-(define-public (set-governance (new principal)) 
+(define-public (set-governance (new principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (ok (var-set governance new))
@@ -57,7 +57,7 @@
 
 (define-read-only (get-operator) (var-get operator))
 
-(define-public (set-operator (new-operator principal)) 
+(define-public (set-operator (new-operator principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (var-set operator new-operator))
@@ -69,7 +69,7 @@
 
 (define-read-only (get-epoch) (var-get epoch))
 
-(define-public (set-epoch (epoch- uint)) 
+(define-public (set-epoch (epoch- uint))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (var-set epoch epoch-))
@@ -81,7 +81,7 @@
 
 (define-read-only (get-last-rotation-timestamp) (var-get last-rotation-timestamp))
 
-(define-public (set-last-rotation-timestamp (new-timestamp uint)) 
+(define-public (set-last-rotation-timestamp (new-timestamp uint))
     (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (ok (var-set last-rotation-timestamp new-timestamp))
@@ -93,7 +93,7 @@
 
 (define-read-only (get-signer-hash-by-epoch (signer-epoch uint)) (map-get? signer-hash-by-epoch signer-epoch))
 
-(define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32))) 
+(define-public (set-signer-hash-by-epoch (epoch- uint) (signers-hash (buff 32)))
     (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (ok (map-set signer-hash-by-epoch epoch- signers-hash))
@@ -105,7 +105,7 @@
 
 (define-read-only (get-epoch-by-signer-hash (signer-hash (buff 32))) (map-get? epoch-by-signer-hash signer-hash))
 
-(define-public (set-epoch-by-signer-hash (signers-hash (buff 32)) (epoch- uint) ) 
+(define-public (set-epoch-by-signer-hash (signers-hash (buff 32)) (epoch- uint) )
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (map-set epoch-by-signer-hash signers-hash epoch-))
@@ -117,7 +117,7 @@
 
 (define-read-only (get-previous-signers-retention) (var-get previous-signers-retention))
 
-(define-public (set-previous-signers-retention (retention uint)) 
+(define-public (set-previous-signers-retention (retention uint))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (var-set previous-signers-retention retention))
@@ -129,7 +129,7 @@
 
 (define-read-only (get-domain-separator) (var-get domain-separator))
 
-(define-public (set-domain-separator (separator (buff 32))) 
+(define-public (set-domain-separator (separator (buff 32)))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (var-set domain-separator separator))
@@ -142,7 +142,7 @@
 
 (define-read-only (get-minimum-rotation-delay) (var-get minimum-rotation-delay))
 
-(define-public (set-minimum-rotation-delay (delay uint)) 
+(define-public (set-minimum-rotation-delay (delay uint))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (ok (var-set minimum-rotation-delay delay))
@@ -154,14 +154,14 @@
 
 (define-read-only (get-message (command-id (buff 32))) (map-get? messages command-id))
 
-(define-public (insert-message (command-id (buff 32)) (message-hash (buff 32)) ) 
+(define-public (insert-message (command-id (buff 32)) (message-hash (buff 32)) )
     (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (ok (map-insert messages command-id message-hash))
     )
 )
 
-(define-public (set-message (command-id (buff 32)) (message-hash (buff 32)) ) 
+(define-public (set-message (command-id (buff 32)) (message-hash (buff 32)) )
     (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (ok (map-set messages command-id message-hash))
@@ -174,14 +174,14 @@
 ;; ######################
 ;; ######################
 
-(define-public (emit-contract-call 
+(define-public (emit-contract-call
         (sender principal)
         (destination-chain (string-ascii 20))
         (destination-contract-address (string-ascii 128))
         (payload (buff 64000))
         (payload-hash (buff 32))
 )
-    (begin 
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "contract-call",
@@ -219,8 +219,8 @@
         (command-id (buff 32))
         (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
-) 
-    (begin 
+)
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
           type: "message-executed",
@@ -240,8 +240,8 @@
                 nonce: (buff 32)
         })
         (new-signers-hash (buff 32))
-) 
-    (begin 
+)
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {
             type: "signers-rotated",
@@ -255,8 +255,8 @@
 
 (define-public (emit-transfer-operatorship
         (new-operator principal)
-) 
-    (begin 
+)
+    (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print {type: "transfer-operatorship", new-operator: new-operator})
         (ok true)
@@ -264,7 +264,7 @@
 )
 
 ;; General purpose event emitter for future
-(define-public (emit-str (o (string-ascii 4096))) 
+(define-public (emit-str (o (string-ascii 4096)))
     (begin
         (asserts! (is-impl) ERR-UNAUTHORIZED)
         (print o)

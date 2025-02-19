@@ -131,8 +131,8 @@
     (is-some (map-get? trusted-chain-address chain-name)))
 
 ;; Sets the trusted address and its hash for a remote chain
-;; @param chain Chain name of the remote chain
-;; @param address_ the string representation of the trusted address
+;; @param chain-name Chain name of the remote chain
+;; @param address the string representation of the trusted address
 ;; #[allow(unchecked_data)]
 (define-public (set-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (begin
@@ -140,9 +140,9 @@
         (ok (map-set trusted-chain-address chain-name address))))
 
 ;; Remove the trusted address of the chain.
-;; @param chain Chain name that should be made untrusted
+;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
-(define-public (remove-trusted-address  (chain-name  (string-ascii 20)))
+(define-public (remove-trusted-address  (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-delete trusted-chain-address chain-name))))
@@ -170,7 +170,7 @@
 
 (define-map used-token-managers principal bool)
 
-(define-read-only (is-manager-address-used (manager-address principal)) 
+(define-read-only (is-manager-address-used (manager-address principal))
     (default-to false (map-get? used-token-managers manager-address)))
 
 (define-read-only (get-token-info (token-id (buff 32)))
@@ -238,7 +238,7 @@
 
 ;; logic for write guards will be in the calling context (proxy, impl)
 ;; #[allow(unchecked_data)]
-(define-public (set-approved-destination-minter (approval-key (buff 32)) (hashed-destination-minter (buff 32))) 
+(define-public (set-approved-destination-minter (approval-key (buff 32)) (hashed-destination-minter (buff 32)))
     (begin
         (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
         (ok (map-set approved-destination-minters approval-key hashed-destination-minter))
@@ -246,7 +246,7 @@
 
 ;; logic for write guards will be in the calling context (proxy, impl)
 ;; #[allow(unchecked_data)]
-(define-public (remove-approved-destination-minter (approval-key (buff 32))) 
+(define-public (remove-approved-destination-minter (approval-key (buff 32)))
     (begin
         (asserts! (is-proxy-or-factory-impl) ERR-NOT-AUTHORIZED)
         (ok (map-delete approved-destination-minters approval-key))

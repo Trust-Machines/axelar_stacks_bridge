@@ -25,7 +25,7 @@
 
 (define-private (is-proxy) (is-eq contract-caller PROXY))
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
-;; @notice rares: same as mint burn in functionality will be custom tokens made by us
+;; @notice same as mint burn in functionality will be custom tokens made by us
 ;; that are deployed outside of the contracts but registered by the ITS contract
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
@@ -66,10 +66,8 @@
     (ok CONTRACT-ID))
 
 ;; Calculates the salt for an interchain token.
-;; @param chainNameHash_ The hash of the chain name.
 ;; @param deployer The address of the deployer.
 ;; @param salt A unique identifier to generate the salt.
-;; @return tokenSalt The calculated salt for the interchain token.
 (define-read-only (get-interchain-token-deploy-salt (deployer principal) (salt (buff 32)))
         (keccak256
             (concat
@@ -79,7 +77,6 @@
                     salt))))
 
 ;; Calculates the salt for a canonical interchain token.
-;; @param chain-name-hash The hash of the chain name.
 ;; @param token-address The address of the token.
 ;; @return salt The calculated salt for the interchain token.
 (define-read-only (get-canonical-interchain-token-deploy-salt (token-address principal))
@@ -104,7 +101,7 @@
 ;; Computes the ID for an interchain token based on the deployer and a salt.
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
-;; @return tokenId The ID of the interchain token.
+;; @return token-id The ID of the interchain token.
 (define-private (get-interchain-token-id-raw (its-impl <its-trait>) (salt (buff 32)))
     (contract-call? .interchain-token-service interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER salt))
 
@@ -120,8 +117,8 @@
 
 
 ;; Computes the ID for a canonical interchain token based on its address.
-;; @param tokenAddress The address of the canonical interchain token.
-;; @return tokenId The ID of the canonical interchain token.
+;; @param token-address The address of the canonical interchain token.
+;; @return token-id The ID of the canonical interchain token.
 (define-public (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
     ;; this is assumed to be a read only operation
     ;; #[allow(unchecked_data)]
@@ -130,8 +127,9 @@
 
 (define-constant LOCAL-DEPLOYMENT "")
 ;; Registers a canonical token as an interchain token and deploys its token manager.
-;; @param tokenAddress The address of the canonical token.
-;; @return tokenId The tokenId corresponding to the registered canonical token.
+;; @param token-address The address of the canonical token.
+;; @param token-manager-address The address of the token manager.
+;; @param verification-params The verification parameters for the token manager deployment.
 (define-public (register-canonical-interchain-token
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
@@ -150,7 +148,7 @@
     )
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (asserts! (is-eq (get deployer 
+        (asserts! (is-eq (get deployer
             (try! (decode-contract-principal (contract-of token-manager-address)))
         ) caller) ERR-NOT-TOKEN-DEPLOYER)
         (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
@@ -173,10 +171,9 @@
 
 
 ;; Deploys a canonical interchain token on a remote chain.
-;; @param originalTokenAddress The address of the original token on the original chain.
-;; @param destinationChain The name of the chain where the token will be deployed.
-;; @param gasValue The gas amount to be sent for deployment.
-;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
+;; @param token The address of the original token on the original chain.
+;; @param destination-chain The name of the chain where the token will be deployed.
+;; @param gas-value The gas amount to be sent for deployment.
 ;; #[allow(unchecked_data)]
 (define-public (deploy-remote-canonical-interchain-token
         (gateway-impl <gateway-trait>)
@@ -195,7 +192,7 @@
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (try! (contract-call? .interchain-token-service valid-token-address its-impl token-id))
-        (deploy-remote-interchain-token-inner 
+        (deploy-remote-interchain-token-inner
             gateway-impl
             gas-service-impl
             its-impl
@@ -229,7 +226,7 @@
             (deploy-salt (get-interchain-token-deploy-salt caller salt_))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (asserts! (is-eq (get deployer 
+        (asserts! (is-eq (get deployer
             (try! (decode-contract-principal (contract-of token)))
         ) caller) ERR-NOT-TOKEN-DEPLOYER)
         (asserts! (not (is-eq (contract-call? .interchain-token-service-storage get-service-impl) minter)) ERR-INVALID-MINTER)
@@ -248,7 +245,7 @@
 ;; is deploying an existing malicious token on stacks
 ;; basically getting themself rekt
 ;; #[allow(unchecked_data)]
-(define-public (deploy-remote-interchain-token 
+(define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
@@ -259,7 +256,7 @@
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>)
         (caller principal))
-    (deploy-remote-interchain-token-with-minter 
+    (deploy-remote-interchain-token-with-minter
         gateway-impl
         gas-service-impl
         its-impl
@@ -274,14 +271,16 @@
 )
 
 ;; Deploys a remote interchain token on a specified destination chain.
-;; @param salt The unique salt for deploying the token.
-;; @param minter The address to receive the minter and operator role of the token, in addition to ITS. If the address is `address(0)`,
+;; @param salt_ The unique salt for deploying the token.
+;; @param minter_ The address to receive the minter and operator role of the token, in addition to ITS. If the address is `address(0)`,
 ;; no additional minter is set on the token. Reverts if the minter does not have mint permission for the token.
 ;; @param destination-chain The name of the destination chain.
 ;; @param destination-minter The minter address to set on the deployed token on the destination chain. This can be arbitrary bytes
 ;; since the encoding of the account is dependent on the destination chain. If this is empty, then the `minter` of the token on the current chain
 ;; is used as the destination minter, which makes it convenient when deploying to other EVM chains.
 ;; @param gas-value The amount of gas to send for the deployment.
+;; @param token The token to deploy.
+;; @param token-manager The token manager to use for the token.
 (define-public (deploy-remote-interchain-token-with-minter
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
@@ -307,8 +306,8 @@
                     ;; #[filter(token-manager)]
                     (try! (check-token-minter token-manager deployed-token-id minter_))
                     (asserts! (not (is-eq minter_ (contract-of its-impl))) ERR-INVALID-MINTER)
-                        (match 
-                            destination-minter 
+                        (match
+                            destination-minter
                             destination-minter-unpacked
                             (begin
                                 (try! (use-deploy-approval {
@@ -348,7 +347,7 @@
         minter: principal,
         token-id: (buff 32),
         destination-chain: (string-ascii 20),
-    })) 
+    }))
     (keccak256 (concat PREFIX-DEPLOY-APPROVAL
         (unwrap-panic (to-consensus-buff? approval))
     )))
@@ -357,9 +356,10 @@
 ;; Allow the minter to approve the deployer for a remote interchain token deployment that uses a custom destinationMinter address.
 ;; This ensures that a token deployer can't choose the destinationMinter itself, and requires the approval of the minter to reduce trust assumptions on the deployer.
 ;; @param deployer The address of the deployer.
-;; @param salt The unique salt for deploying the token.
+;; @param salt_ The unique salt for deploying the token.
 ;; @param destination-chain The name of the destination chain.
 ;; @param destination-minter The minter address to set on the deployed token on the destination chain. This can be arbitrary bytes
+;; @param token The token to deploy.
 ;; since the encoding of the account is dependent on the destination chain.
 (define-public (approve-deploy-remote-interchain-token
     (its-impl <its-trait>)
@@ -400,7 +400,7 @@
 
 ;; Allows the minter to revoke a deployer's approval for a remote interchain token deployment that uses a custom destination-minter address.
 ;; @param deployer The address of the deployer.
-;; @param salt The unique salt for deploying the token.
+;; @param salt_ The unique salt for deploying the token.
 ;; @param destination-chain The name of the destination chain.
 (define-public (revoke-deploy-remote-interchain-token
         (its-impl <its-trait>)
@@ -431,32 +431,32 @@
         (ok true)))
 
 ;; Use the deploy approval to check that the destination minter is valid and then delete the approval.
-(define-private (use-deploy-approval 
+(define-private (use-deploy-approval
     (approval {
         minter: principal,
         token-id: (buff 32),
         destination-chain: (string-ascii 20),
     })
     (destination-minter (buff 128))
-) 
+)
     (let (
         (key (get-deploy-approval-key approval))
         (destination-minter-hash (keccak256 destination-minter))
         (approved-minter-hash (default-to NULL-BYTES (contract-call? .interchain-token-service-storage get-approved-destination-minter key)))
     )
-    (asserts! 
+    (asserts!
         (is-eq approved-minter-hash destination-minter-hash)
     ERR-REMOTE-DEPLOYMENT-NOT-APPROVED)
     (contract-call? .interchain-token-service-storage remove-approved-destination-minter key)))
 
 ;; Checks that the minter is registered for the token on the current chain and not the ITS address.
-;; @param token The token to check. The token must be an interchain token deployed via ITS.
+;; @param token-manager The token manager to check. The token must be an interchain token deployed via ITS.
 ;; @param token-id The unique identifier for the token.
 ;; @param minter The address to be checked as a minter for the interchain token.
 (define-private (check-token-minter
     (token-manager <token-manager-trait>)
     (token-id (buff 32))
-    (minter principal)) 
+    (minter principal))
     (let (
             (token-info (unwrap! (contract-call? .interchain-token-service-storage get-token-info token-id) ERR-TOKEN-NOT-FOUND))
             (manager (get manager-address token-info))
@@ -470,11 +470,11 @@
 
 
 ;; Deploys a remote interchain token on a specified destination chain.
-;; @param deploySalt The salt used for the deployment.
-;; @param destinationChain The name of the destination chain.
+;; @param deploy-salt The salt used for the deployment.
 ;; @param minter The address to receive the minter and operator role of the token, in addition to ITS.
-;; @param gasValue The amount of gas to send for the deployment.
-;; @return tokenId The tokenId corresponding to the deployed InterchainToken.
+;; @param destination-chain The name of the destination chain.
+;; @param gas-value The amount of gas to send for the deployment.
+;; @param token The token to deploy remotely.
 (define-private (deploy-remote-interchain-token-inner
         ;; #[allow(unchecked_params)]
         (gateway-impl <gateway-trait>)
@@ -484,7 +484,7 @@
         (minter (buff 128))
         (destination-chain (string-ascii 20))
         (gas-value uint)
-        (token <sip-010-trait>)) 
+        (token <sip-010-trait>))
         (let (
             (proxy-check (asserts! (is-proxy) ERR-NOT-PROXY))
             ;; #[allow(unchecked_data)]

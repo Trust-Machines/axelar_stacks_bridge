@@ -20,13 +20,13 @@
 
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 
-(define-private (is-correct-impl-raw (impl principal)) 
-    (is-eq 
-        (contract-call? .interchain-token-service-storage get-service-impl) 
+(define-private (is-correct-impl-raw (impl principal))
+    (is-eq
+        (contract-call? .interchain-token-service-storage get-service-impl)
         impl))
 
-(define-private (is-correct-impl (interchain-token-service-impl <its-trait>)) 
-    (is-correct-impl-raw 
+(define-private (is-correct-impl (interchain-token-service-impl <its-trait>))
+    (is-correct-impl-raw
         (contract-of interchain-token-service-impl)))
 
 ;; traits
@@ -80,8 +80,8 @@
 ;; ####################
 
 ;; Sets the trusted address and its hash for a remote chain
-;; @param chain Chain name of the remote chain
-;; @param address_ the string representation of the trusted address
+;; @param chain-name Chain name of the remote chain
+;; @param address the string representation of the trusted address
 ;; #[allow(unchecked_data)]
 (define-public (set-trusted-address (its-impl <its-trait>) (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (begin
@@ -89,7 +89,7 @@
         (contract-call? its-impl set-trusted-address chain-name address contract-caller)))
 
 ;; Remove the trusted address of the chain.
-;; @param chain Chain name that should be made untrusted
+;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address (its-impl <its-trait>) (chain-name  (string-ascii 20)))
     (begin
@@ -148,7 +148,13 @@
 ;; @param payload The data payload for the transaction.
 ;; @param metadata-version The version of the metadata to be used, currently only contract-call is supported.
 ;; @param gas-value The amount of gas to be paid for the transaction.
-(define-public (its-hub-call-contract (gateway-impl <gateway-trait>) (gas-service-impl <gas-service-trait>) (destination-chain (string-ascii 20)) (payload (buff 63000)) (metadata-version uint) (gas-value uint))
+(define-public (its-hub-call-contract
+    (gateway-impl <gateway-trait>)
+    (gas-service-impl <gas-service-trait>)
+    (destination-chain (string-ascii 20))
+    (payload (buff 63000))
+    (metadata-version uint)
+    (gas-value uint))
     (let
         (
             ;; payload can be any arbitrary bytes doesn't need to be checked
@@ -185,7 +191,7 @@
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32)))
-    (begin 
+    (begin
         (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
         (as-contract (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))))
 
@@ -223,12 +229,12 @@
 
 ;; Deploys an interchain token on a destination chain.
 ;; @param salt The salt to be used during deployment.
+;; @param destination-chain The destination chain where the token will be deployed.
 ;; @param name The name of the token.
 ;; @param symbol The symbol of the token.
 ;; @param decimals The number of decimals of the token.
 ;; @param minter The minter address for the token.
-;; @param destinationChain The destination chain where the token will be deployed.
-;; @param gasValue The amount of gas to be paid for the transaction.
+;; @param gas-value The amount of gas to be paid for the transaction.
 (define-public (deploy-remote-interchain-token
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
@@ -283,12 +289,14 @@
             contract-caller)))
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
-;; @dev The function retrieves the TokenManager associated with the tokenId.
-;; @param tokenId The unique identifier of the token to be transferred.
-;; @param destinationChain The destination chain to send the tokens to.
-;; @param destinationAddress The address on the destination chain to send the tokens to.
+;; @param token-manager The TokenManager contract associated with the token being transferred
+;; @param token The token to be transferred.
+;; @param token-id The token ID of the token to be transferred
+;; @param destination-chain The destination chain to send the tokens to.
+;; @param destination-address The address on the destination chain to send the tokens to.
 ;; @param amount The amount of tokens to be transferred.
 ;; @param metadata Optional metadata for the call for additional effects (such as calling a destination contract).
+;; @param gas-value The amount of gas to be sent with the transfer.
 (define-public (interchain-transfer
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
@@ -408,7 +416,7 @@
             contract-caller)))
 
 
-(define-public (set-flow-limit 
+(define-public (set-flow-limit
     (its-impl <its-trait>)
     (token-id (buff 32))
     (token-manager <token-manager-trait>)
@@ -418,14 +426,14 @@
         (contract-call? its-impl set-flow-limit token-id token-manager limit contract-caller)))
 
 
-(define-public (interchain-token-id 
+(define-public (interchain-token-id
     (its-impl <its-trait>)
     (sender principal) (salt (buff 32)))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl interchain-token-id sender salt)))
 
-(define-public (valid-token-address 
+(define-public (valid-token-address
     (its-impl <its-trait>)
     (token-id (buff 32)))
     (begin
@@ -443,8 +451,8 @@
         (
             (governance-impl (contract-call? .gateway-storage get-governance))
             (prev (contract-call? .interchain-token-service-storage get-service-impl))
-            
-        ) 
+
+        )
         (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage set-service-impl its-impl))
         (print {
@@ -461,9 +469,9 @@
 
 
 
-;; General purpose proxy call 
-(define-public (call (its-impl <its-trait>) (fn (string-ascii 32)) (data (buff 65000))) 
-    (begin 
+;; General purpose proxy call
+(define-public (call (its-impl <its-trait>) (fn (string-ascii 32)) (data (buff 65000)))
+    (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl dispatch fn data contract-caller)
     )

@@ -135,8 +135,8 @@
   )
 )
 
-(define-read-only (get-nit-source) 
+(define-read-only (get-nit-source)
   nit-contract-code)
 
-(define-read-only (get-token-manager-source) 
+(define-read-only (get-token-manager-source)
   token-manager-contract-code)

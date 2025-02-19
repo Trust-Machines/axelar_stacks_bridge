@@ -30,12 +30,12 @@
 ;; @params eta; The proposed Unix timestamp (in secs) after which the new timelock can be executed.
 ;; @params type; Task type.
 ;; @returns (response true) or reverts
-(define-private (schedule-timelock (hash (buff 32)) (target principal) (proxy principal) (eta uint) (type uint)) 
-    (let 
+(define-private (schedule-timelock (hash (buff 32)) (target principal) (proxy principal) (eta uint) (type uint))
+    (let
         (
             (current-ts (unwrap-panic (get-stacks-block-info? time (- stacks-block-height u1))))
             (min-eta (+ current-ts MIN-TIMELOCK-DELAY))
-        ) 
+        )
         (asserts! (is-eq (get eta (get-timelock hash)) u0) ERR-TIMELOCK-EXISTS)
         (asserts! (>= eta min-eta) ERR-TIMELOCK-MIN-ETA)
         (ok (map-set timelock-map hash {target: target, proxy: proxy, eta: eta, type: type}))
@@ -45,7 +45,7 @@
 ;; Cancels an existing timelock by setting its eta to zero.
 ;; @params hash; The hash of the timelock to cancel
 ;; @returns (response true) or reverts
-(define-private (cancel-timelock (hash (buff 32))) 
+(define-private (cancel-timelock (hash (buff 32)))
     (let
         (
             (eta (get eta (get-timelock hash)))
@@ -59,7 +59,7 @@
 ;; To finalize, the timelock must currently exist and the required time delay must have passed.
 ;; @params hash; The hash of the timelock to finalize
 ;; @returns (response true) or reverts
-(define-private (finalize-timelock (hash (buff 32))) 
+(define-private (finalize-timelock (hash (buff 32)))
     (let
         (
             (current-ts (unwrap-panic (get-stacks-block-info? time (- stacks-block-height u1))))
@@ -87,7 +87,7 @@
 (define-constant ERR-NOT-STARTED (err u13071))
 
 ;; Schedules a new task
-;; @gateway-impl; Trait reference of the current gateway implementation. 
+;; @gateway-impl; Trait reference of the current gateway implementation.
 ;; @param source-chain; The name of the source chain.
 ;; @param message-id; The unique identifier of the message.
 ;; @param source-address; The address of the sender on the source chain.
@@ -125,8 +125,8 @@
 (define-constant ACTION-CANCEL-TASK u3)
 
 ;; Finalizes a scheduled task
-;; @proxy; Proxy trait reference to run task with. 
-;; @payload-hash; Hash to find the scheduled task. This is the hash passed while scheduling the task.
+;; @proxy; Proxy trait reference to run task with.
+;; @payload; Hash to find the scheduled task. This is the hash passed while scheduling the task.
 ;; @returns (response true) or reverts
 (define-public (finalize
     (proxy <proxy-trait>)
@@ -142,9 +142,9 @@
         (try! (finalize-timelock payload-hash))
         (asserts! (is-eq (contract-of proxy) (get proxy timelock)) ERR-INVALID-PROXY)
         (asserts! (is-eq
-            (if (is-eq type ACTION-SET-IMPLEMENTATION) 
+            (if (is-eq type ACTION-SET-IMPLEMENTATION)
                 (try! (contract-call? proxy set-impl target))
-                (if (is-eq type ACTION-SET-GOVERNANCE) 
+                (if (is-eq type ACTION-SET-GOVERNANCE)
                     (try! (contract-call? proxy set-governance target))
                     false
             )
@@ -154,7 +154,7 @@
 )
 
 ;; Cancels a scheduled task
-;; @gateway-impl; Trait reference of the current gateway implementation. 
+;; @gateway-impl; Trait reference of the current gateway implementation.
 ;; @param source-chain; The name of the source chain.
 ;; @param message-id; The unique identifier of the message.
 ;; @param source-address; The address of the sender on the source chain.
