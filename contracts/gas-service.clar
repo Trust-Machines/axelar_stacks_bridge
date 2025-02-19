@@ -72,10 +72,11 @@
     (amount uint))
     (begin
         (asserts! (is-correct-impl gas-impl) ERR-INVALID-IMPL)
-        (contract-call? gas-impl
+        (try! (contract-call? gas-impl
             collect-fees
             receiver
             amount))
+        (contract-call? .gas-storage emit-fees-collected-event receiver amount))
 )
 
 ;; Read-only functions

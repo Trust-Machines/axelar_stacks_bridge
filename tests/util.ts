@@ -358,3 +358,4 @@ export const deployGasService = (gasCollector: string = contractCaller) => {
   );
   expect(result).toBeOk(boolCV(true));
 };
+

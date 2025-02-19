@@ -129,7 +129,7 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
         (print {
             type: "fees-collected",
             receiver: receiver,

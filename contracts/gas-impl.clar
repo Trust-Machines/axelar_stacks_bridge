@@ -119,14 +119,11 @@
     (receiver principal)
     (amount uint))
     (begin
-        (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (is-started) ERR-NOT-STARTED)
         (asserts! (is-eq tx-sender (get-gas-collector)) ERR-ONLY-GAS-COLLECTOR)
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (<= amount (stx-get-balance (as-contract tx-sender))) ERR-INSUFFICIENT-BALANCE)
-        (try! (as-contract (stx-transfer? amount tx-sender receiver)))
-        (try! (contract-call? .gas-storage emit-fees-collected-event receiver amount))
-        (ok true)
+        (as-contract (stx-transfer? amount tx-sender receiver))
     )
 )
 
