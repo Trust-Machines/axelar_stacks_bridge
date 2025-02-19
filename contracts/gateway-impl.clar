@@ -430,48 +430,44 @@
     (unwrap-panic (as-max-len? (append state (unwrap-panic (element-at? state u0))) u100))
 )
 
+(define-data-var signers-temp (list 100 {signer: (buff 33), weight: uint}) (list))
+;; Marker value used to identify that no singer was found, it must be larger
+;; than any valid index (99), so anything big works
+(define-constant SIGNER-NOT-FOUND u12345)
 
-
-(define-private (match-pub-to-signer (unused-pub (buff 33)))
+(define-private (get-valid-signers
+            (signers (list 100 {signer: (buff 33), weight: uint}))
+            (pubs (list 100 (buff 33))))
     (let (
-        (pub (unwrap-panic (element-at? (var-get pubs-temp) (var-get checker-index))))
-        (signer (unwrap-panic (element-at? (var-get signers-temp) (var-get checker-index))))
+            (set-result (var-set signers-temp signers))
+            (validated-signers (get result (fold fold-validate-signers pubs {
+                just-signers: (map get-signer-pub signers),
+                result: (list)
+            }))))
+        (asserts! (is-eq (len validated-signers) (len pubs)) ERR-INVALID-SIGNERS)
+        (var-set signers-temp (list))
+        (ok validated-signers)
+))
+
+(define-private (fold-validate-signers
+        (pub-to-check (buff 33))
+        (acc { just-signers: (list 100 (buff 33)), result: (list 100 {signer: (buff 33), weight: uint}) } ))
+    (let (
+        (just-signers (get just-signers acc))
+        (signer-index (default-to SIGNER-NOT-FOUND (index-of? just-signers pub-to-check)))
     )
-    (asserts! (is-eq pub signer) ERR-INVALID-SIGNERS)
-    (var-set checker-index (+ (var-get checker-index) u1))
-    (ok true))
+    (if (is-eq signer-index SIGNER-NOT-FOUND)
+        acc
+        {
+            just-signers: just-signers,
+            result: (unwrap-panic (as-max-len? (append
+                (get result acc)
+                (unwrap-panic (element-at? (var-get signers-temp) signer-index))
+            ) u100))
+        }
+    )
+  )
 )
-
-(define-data-var pubs-temp (list 100 (buff 33)) (list))
-(define-data-var signers-temp (list 100 (buff 33)) (list))
-(define-data-var checker-index uint u0)
-
-
-(define-private (check-err  (result (response bool uint))
-                            (prior (response bool uint)))
-    (match prior ok-value result
-                err-value (err err-value)))
-
-(define-private (check-signers (signers {
-                    signers: (list 100 {signer: (buff 33), weight: uint}),
-                    threshold: uint,
-                    nonce: (buff 32)
-                })
-                (pubs (list 100 (buff 33)))
-                )
-    (let (
-        (current-signer-hash (unwrap! (get-signer-hash-by-epoch (get-epoch)) ERR-NOT-STARTED))
-        (data-hash (get-signers-hash signers))
-
-    )
-    (var-set pubs-temp pubs)
-    (var-set signers-temp (map get-signer-pub (get signers signers)))
-    (try! (fold check-err (map match-pub-to-signer pubs) (ok true)))
-    (var-set pubs-temp (list))
-    (var-set signers-temp (list))
-    (var-set checker-index u0)
-    (ok true)))
-
 
 ;; This function takes message-hash and proof data and reverts if proof is invalid
 ;; The signers and signatures should be sorted by signer address in ascending order
@@ -499,12 +495,10 @@
             (signers- (get signers signers))
             ;; the signers and signatures should be sorted by signer address in ascending order
             (signers-order-check (asserts! (not (get failed (fold validate-pub-order (map get-signer-pub signers-) {pub: 0x00, failed: false}))) ERR-SIGNERS-ORDER))
-            (signers-- (map pub-to-signer pubs signers-))
-            (total-weight (fold accumulate-weights signers-- u0))
+            (validated-signers (try! (get-valid-signers signers- pubs)))
+            (total-weight (fold accumulate-weights validated-signers u0))
             (weight-check (asserts! (>= total-weight (get threshold signers)) ERR-LOW-SIGNATURES-WEIGHT))
         )
-
-        (try! (check-signers signers pubs))
         (ok true)
     )
 )
