@@ -123,8 +123,8 @@
 (define-read-only (get-its-hub-chain)
     (contract-call? .interchain-token-service-storage get-its-hub-chain))
 
-(define-read-only (get-token-factory)
-    (contract-call? .interchain-token-service-storage get-token-factory))
+(define-read-only (get-token-factory-impl)
+    (contract-call? .interchain-token-service-storage get-token-factory-impl))
 
 (define-read-only (get-its-contract-name)
     (contract-call? .interchain-token-service-storage get-its-contract-name))
@@ -274,7 +274,7 @@
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (let (
-                (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
+                (deployer (if (is-eq caller (get-token-factory-impl)) NULL-ADDRESS caller))
                 (token-id (interchain-token-id-raw deployer salt))
                 (token-manager-address (contract-of token-manager))
                 (contract-principal (try! (decode-contract-principal token-manager-address)))
@@ -349,7 +349,7 @@
         (asserts! (get-is-started) ERR-NOT-STARTED)
         (try! (require-not-paused))
         (let (
-            (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
+            (deployer (if (is-eq caller (get-token-factory-impl)) NULL-ADDRESS caller))
             (token-id (interchain-token-id-raw deployer salt))
             (payload (unwrap-panic (to-consensus-buff? {
                 type: MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN,
@@ -467,7 +467,7 @@
         })
         (caller principal))
     (let (
-            (deployer (if (is-eq caller (get-token-factory)) NULL-ADDRESS caller))
+            (deployer (if (is-eq caller (get-token-factory-impl)) NULL-ADDRESS caller))
             (token-id (interchain-token-id-raw deployer salt))
             (token-address (contract-of token))
             (minter-unpacked (default-to NULL-ADDRESS minter)))

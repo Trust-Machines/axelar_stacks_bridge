@@ -223,6 +223,7 @@
     (get-token-id () (response (buff 32) uint))
     (mint (principal uint) (response bool uint))
     (burn (principal uint) (response bool uint))
+    (get-is-started () (response bool uint))
   )
 )
 
@@ -241,6 +242,7 @@
     (is-minter (principal) (response bool uint))
     (get-operators () (response (list 2 principal) principal))
     (is-operator (principal) (response bool uint))
+    (get-is-started () (response bool uint))
 ))
 
 ;; TODO: write an axelar executable trait and contracts which interact with axelar should

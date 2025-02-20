@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exampleTxProof, MerkleTree, proof_path_to_cv } from "./block-hash";
 import { Cl, StringAsciiCV } from "@stacks/transactions";
-import { bytesToHex } from "@noble/hashes/utils";
 import { asciiToBytes, hexToBytes, intToHex } from "@stacks/common";
 import { nitMockParams, tmMockParams } from "./verification-util";
 import { sha512_256 } from "@noble/hashes/sha512";

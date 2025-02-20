@@ -36,8 +36,8 @@
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
-        (token-address <sip-010-trait>)
-        (token-manager-address <token-manager-trait>)
+        (token <sip-010-trait>)
+        (token-manager <token-manager-trait>)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -55,8 +55,8 @@
                 gateway-impl
                 gas-service-impl
                 its-impl
-                token-address
-                token-manager-address
+                token
+                token-manager
                 verification-params
                 contract-caller)
     ))

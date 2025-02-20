@@ -355,7 +355,7 @@
         (source-chain (string-ascii 19))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
-        (token-address <native-interchain-token-trait>)
+        (token <native-interchain-token-trait>)
         (payload (buff 62000))
         (verification-params {
             nonce: (buff 8),
@@ -373,7 +373,7 @@
             source-chain
             message-id
             source-address
-            token-address
+            token
             payload
             verification-params
             contract-caller)))

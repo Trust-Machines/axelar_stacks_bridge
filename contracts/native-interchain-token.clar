@@ -278,7 +278,7 @@
 (define-data-var token-type (optional uint) none)
 
 (define-data-var is-started bool false)
-(define-read-only (get-is-started) (var-get is-started))
+(define-read-only (get-is-started) (ok (var-get is-started)))
 
 (define-public (setup
     (token-id_ (buff 32))

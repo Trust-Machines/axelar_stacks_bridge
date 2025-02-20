@@ -199,7 +199,7 @@
 (define-public (give-token (sip-010-token <sip-010-trait>) (to principal) (amount uint))
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-its-sender) ERR-NOT-AUTHORIZED)
         (try! (add-flow-in amount))
         (as-contract (transfer-token-from sip-010-token contract-caller to amount))))
 
@@ -212,7 +212,7 @@
 (define-public (take-token (sip-010-token <sip-010-trait>) (from principal) (amount uint))
     (begin
         (asserts! (> amount u0) ERR-ZERO-AMOUNT)
-        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-its-sender) ERR-NOT-AUTHORIZED)
         (try! (add-flow-out amount))
         (transfer-token-from sip-010-token from (as-contract contract-caller) amount)))
 
@@ -239,7 +239,7 @@
 (define-constant ERR-INVALID-PARAMS (err u4054))
 
 (define-data-var is-started bool false)
-(define-read-only (get-is-started) (var-get is-started))
+(define-read-only (get-is-started) (ok (var-get is-started)))
 ;; Constructor function
 ;; @returns (response true) or reverts
 ;; #[allow(unchecked_data)]

@@ -203,7 +203,7 @@
 (define-data-var its-hub-chain (string-ascii 19) "axelarnet")
 
 
-(define-read-only (get-token-factory)
+(define-read-only (get-token-factory-impl)
     (var-get factory-impl))
 
 (define-read-only (get-gas-service)

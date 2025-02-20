@@ -123,7 +123,7 @@
 (define-public (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
     ;; this is assumed to be a read only operation
     ;; #[allow(unchecked_data)]
-    (contract-call? .interchain-token-service interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER (get-canonical-interchain-token-deploy-salt token-address)))
+    (get-interchain-token-id-raw its-impl (get-canonical-interchain-token-deploy-salt token-address)))
 
 
 (define-constant LOCAL-DEPLOYMENT "")
@@ -135,8 +135,8 @@
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
-        (token-address <sip-010-trait>)
-        (token-manager-address <token-manager-trait>)
+        (token <sip-010-trait>)
+        (token-manager <token-manager-trait>)
         (verification-params {
             nonce: (buff 8),
             fee-rate: (buff 8),
@@ -150,23 +150,23 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (is-eq (get deployer
-            (try! (decode-contract-principal (contract-of token-manager-address)))
+            (try! (decode-contract-principal (contract-of token-manager)))
         ) caller) ERR-NOT-TOKEN-DEPLOYER)
-        (asserts! (is-ok (contract-call? token-manager-address get-token-address)) ERR-TOKEN-NOT-ENABLED)
+        (asserts! (unwrap! (contract-call? token-manager get-is-started) ERR-TOKEN-NOT-ENABLED) ERR-TOKEN-NOT-ENABLED)
         (contract-call?
             .interchain-token-service
                 deploy-token-manager
                 gateway-impl
                 gas-service-impl
                 its-impl
-                (get-canonical-interchain-token-deploy-salt (contract-of token-address))
+                (get-canonical-interchain-token-deploy-salt (contract-of token))
                 LOCAL-DEPLOYMENT
                 TOKEN-TYPE-LOCK-UNLOCK
                 (unwrap-panic (to-consensus-buff? {
                     operator: none,
-                    token-address: (contract-of token-address)
+                    token-address: (contract-of token)
                 }))
-                token-manager-address
+                token-manager
                 verification-params)
     ))
 
@@ -388,7 +388,7 @@
     (asserts! (is-eq (contract-of token) (get manager-address token-info)) ERR-TOKEN-MISMATCH)
     ;; #[filter(minter)]
     (try! (check-token-minter token token-id minter))
-    (asserts! (is-some (contract-call? .interchain-token-service-storage get-trusted-address destination-chain)) ERR-INVALID-CHAIN-NAME)
+    (asserts! (contract-call? .interchain-token-service-storage is-trusted-chain destination-chain) ERR-INVALID-CHAIN-NAME)
     (try! (contract-call? .interchain-token-service-storage emit-deploy-remote-interchain-token-approval
         minter
         deployer
