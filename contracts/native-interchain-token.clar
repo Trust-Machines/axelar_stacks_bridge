@@ -10,6 +10,7 @@
 (use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
 
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u1052))
 
 
 ;; ##########################
@@ -157,6 +158,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard address) ERR-NON-STANDARD-ADDRESS)
         (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
@@ -304,9 +306,11 @@
         (var-set token-type (some token-type_))
         ;; #[allow(unchecked_data)]
         (match operator-address op
-            (map-set roles op {
-                flow-limiter: true,
-            })
+            (begin 
+                (asserts! (is-standard op) ERR-NON-STANDARD-ADDRESS)
+                (map-set roles op {
+                    flow-limiter: true,
+                }))
             true)
         ;; #[allow(unchecked_data)]
         (var-set operator (default-to NULL-ADDRESS operator-address))
@@ -317,6 +321,7 @@
         ;; #[allow(unchecked_data)]
         (var-set token-uri token-uri_)
         (var-set token-id token-id_)
+        (asserts! (is-standard minter-unpacked) ERR-NON-STANDARD-ADDRESS)
         ;; #[allow(unchecked_data)]
         (var-set minter minter-unpacked)
         (print
@@ -355,6 +360,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-ONLY-OPERATOR)
+        (asserts! (is-standard new-operator) ERR-NON-STANDARD-ADDRESS)
         ;; #[allow(unchecked_data)]
         (var-set operator new-operator)
         (print {action: "transfer-operatorship", new-operator: new-operator})
@@ -367,6 +373,7 @@
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-eq (var-get minter) contract-caller) ERR-NOT-AUTHORIZED)
         (asserts! (not (is-eq (get-its-impl) new-minter)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard new-minter) ERR-NON-STANDARD-ADDRESS)
         (var-set minter new-minter)
         (print {action: "transfer-mintership", new-minter: new-minter})
         (ok true)))

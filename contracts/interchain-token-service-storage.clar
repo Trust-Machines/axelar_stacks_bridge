@@ -3,6 +3,7 @@
 (define-constant FACTORY-PROXY .interchain-token-factory)
 
 (define-constant ERR-NOT-AUTHORIZED (err u21051))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u21052))
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 
@@ -44,6 +45,7 @@
 (define-public (set-service-impl (new-service-impl principal))
     (begin
         (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard new-service-impl) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set service-impl new-service-impl))
     )
 )
@@ -66,6 +68,7 @@
 (define-public (set-factory-impl (new-factory-impl principal))
     (begin
         (asserts! (is-factory-proxy) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard new-factory-impl) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set factory-impl new-factory-impl))
     )
 )
@@ -80,6 +83,7 @@
 (define-public (set-owner (new-owner principal))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard new-owner) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set owner new-owner))
     )
 )
@@ -95,6 +99,7 @@
 (define-public (set-operator (new-operator principal))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard new-operator) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set operator new-operator))
     )
 )
@@ -182,6 +187,7 @@
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (map-insert used-token-managers manager-address true)
+        (asserts! (is-standard manager-address) ERR-NON-STANDARD-ADDRESS)
         (ok (map-insert token-managers token-id {
             manager-address: manager-address,
             token-type: token-type
@@ -208,6 +214,7 @@
 (define-public (set-gas-service (address principal))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard address) ERR-NON-STANDARD-ADDRESS)
         (var-set gas-service address)
         (ok true)))
 

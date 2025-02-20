@@ -1,6 +1,7 @@
 (define-constant PROXY .gateway)
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u10112))
 
 (define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 
@@ -35,6 +36,7 @@
 (define-public (set-impl (new-impl principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new-impl) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set impl new-impl))
     )
 )
@@ -47,6 +49,7 @@
 (define-public (set-governance (new principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set governance new))
     )
 )
@@ -60,6 +63,7 @@
 (define-public (set-operator (new-operator principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new-operator) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set operator new-operator))
     )
 )

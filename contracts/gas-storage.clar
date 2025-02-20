@@ -2,6 +2,7 @@
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
 (define-constant ERR-OWNER-CANNOT-BE-COLLECTOR (err u10112))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u10113))
 
 (define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 
@@ -38,6 +39,7 @@
 (define-public (set-impl (new-impl principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new-impl) ERR-NON-STANDARD-ADDRESS)
         (ok (var-set impl new-impl))
     )
 )
@@ -50,6 +52,7 @@
 (define-public (set-gas-collector (new-gas-collector principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new-gas-collector) ERR-NON-STANDARD-ADDRESS)
         (asserts! (not (is-eq new-gas-collector (get-owner))) ERR-OWNER-CANNOT-BE-COLLECTOR)
         (ok (var-set gas-collector new-gas-collector))
     )
@@ -63,6 +66,7 @@
 (define-public (set-owner (new-owner principal))
     (begin
         (asserts! (is-proxy-or-impl) ERR-UNAUTHORIZED)
+        (asserts! (is-standard new-owner) ERR-NON-STANDARD-ADDRESS)
         (asserts! (not (is-eq new-owner (get-gas-collector))) ERR-OWNER-CANNOT-BE-COLLECTOR)
         (ok (var-set owner new-owner))
     )

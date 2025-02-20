@@ -18,6 +18,7 @@
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 
 (define-constant ERR-NOT-AUTHORIZED (err u1051))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u1052))
 
 
 (define-data-var token-address (optional principal) none)
@@ -74,6 +75,7 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
+        (asserts! (is-standard address) ERR-NON-STANDARD-ADDRESS)
         (ok (map-set roles address  {flow-limiter: true}))))
 
 ;; This function removes a flow limiter for this TokenManager.
@@ -251,6 +253,7 @@
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK) ERR-UNSUPPORTED-TOKEN-TYPE)
         (var-set is-started true)
+        (asserts! (is-standard token-address_) ERR-NON-STANDARD-ADDRESS)
         ;; #[allow(unchecked_data)]
         (var-set token-address (some token-address_))
         ;; #[allow(unchecked_data)]
@@ -258,9 +261,11 @@
         ;; #[allow(unchecked_data)]
         (var-set operator (default-to NULL-ADDRESS operator-address))
         (match operator-address op
-            (map-set roles op {
-                flow-limiter: true,
-            })
+            (begin 
+                (asserts! (is-standard op) ERR-NON-STANDARD-ADDRESS)
+                (map-set roles op {
+                    flow-limiter: true,
+                }))
             true)
         (ok true)
     )
