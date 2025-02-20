@@ -65,6 +65,29 @@
     )
 )
 
+(define-public (is-message-approved
+    (gateway-impl <gateway-trait>)
+    (source-chain (string-ascii 19))
+    (message-id (string-ascii 128))
+    (source-address (string-ascii 128))
+    (contract-address principal)
+    (payload-hash (buff 32))
+)
+    (begin
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl is-message-approved source-chain message-id source-address contract-address payload-hash))
+)
+
+(define-public (is-message-executed
+    (gateway-impl <gateway-trait>)
+    (source-chain (string-ascii 19))
+    (message-id (string-ascii 128))
+)
+    (begin
+        (asserts! (is-correct-impl gateway-impl) ERR-INVALID-IMPL)
+        (contract-call? gateway-impl is-message-executed source-chain message-id))
+)
+
 ;; General purpose proxy call
 (define-public (call (gateway-impl <gateway-trait>) (fn (string-ascii 32)) (data (buff 65000)))
     (begin
