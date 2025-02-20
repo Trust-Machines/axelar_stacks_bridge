@@ -13,7 +13,7 @@
 
 (define-public (call-contract
     (gateway-impl <gateway-trait>)
-    (destination-chain (string-ascii 20))
+    (destination-chain (string-ascii 19))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
 )
@@ -36,7 +36,7 @@
 
 (define-public (validate-message
     (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 20))
+    (source-chain (string-ascii 19))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))

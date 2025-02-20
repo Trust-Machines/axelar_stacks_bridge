@@ -81,7 +81,7 @@
     (sender principal)
     (amount uint)
     (refund-address principal)
-    (destination-chain (string-ascii 20))
+    (destination-chain (string-ascii 19))
     (destination-address (string-ascii 128))
     (payload-hash (buff 32)))
     (begin

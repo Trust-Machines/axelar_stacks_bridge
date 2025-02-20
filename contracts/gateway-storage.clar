@@ -180,7 +180,7 @@
 
 (define-public (emit-contract-call
         (sender principal)
-        (destination-chain (string-ascii 20))
+        (destination-chain (string-ascii 19))
         (destination-contract-address (string-ascii 128))
         (payload (buff 64000))
         (payload-hash (buff 32))
@@ -202,7 +202,7 @@
 (define-public (emit-message-approved
         (command-id (buff 32))
         (message {
-                source-chain: (string-ascii 20),
+                source-chain: (string-ascii 19),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -221,7 +221,7 @@
 
 (define-public (emit-message-executed
         (command-id (buff 32))
-        (source-chain (string-ascii 20))
+        (source-chain (string-ascii 19))
         (message-id (string-ascii 128))
 )
     (begin

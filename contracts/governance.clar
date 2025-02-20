@@ -95,7 +95,7 @@
 ;; @returns (response true) or reverts
 (define-public (execute
     (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 20))
+    (source-chain (string-ascii 19))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload (buff 64000))
@@ -161,7 +161,7 @@
 ;; @returns (response true) or reverts
 (define-public (cancel
     (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 20))
+    (source-chain (string-ascii 19))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload (buff 64000))
@@ -196,7 +196,7 @@
 ;; @param governance-address; The address of the governance contract
 ;; @returns (response true) or reverts
 (define-public (setup
-    (governance-chain (string-ascii 20))
+    (governance-chain (string-ascii 19))
     (governance-address (string-ascii 128))
 )
     (begin

@@ -27,7 +27,7 @@ Sets the trusted address for a given chain.
 ```clarity
 (define-public (set-trusted-address
   (its-impl <its-trait>)
-  (chain-name (string-ascii 20))
+  (chain-name (string-ascii 19))
   (address (string-ascii 128)))
 ```
 
@@ -66,7 +66,7 @@ Deploys an interchain token on a destination chain.
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 20))
+        (destination-chain (string-ascii 19))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -194,8 +194,8 @@ Sets up the interchain token service contract.
     (its-contract-address-name (string-ascii 128))
     (gas-service-address principal)
     (operator-address principal)
-    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
-    (hub-chain (string-ascii 20))
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 19), address: (string-ascii 128)}))
+    (hub-chain (string-ascii 19))
     (its-impl (optional principal))
 ))
 ```
