@@ -2,7 +2,7 @@ import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import { getTokenId, setupService, setupTokenManager } from "./its-utils";
-import { MessageType, MetadataVersion, TokenType } from "./constants";
+import { ITS_IMPL_ERROR_CODES, MessageType, MetadataVersion, TokenType } from "./constants";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
@@ -11,7 +11,7 @@ const deployer = accounts.get("deployer")!;
 
 describe("Interchain Token Service impl", () => {
   it("should only be called by proxy", () => {
-    const ERR_NOT_PROXY = Cl.uint(21053);
+    const ERR_NOT_PROXY = ITS_IMPL_ERROR_CODES['ERR-NOT-PROXY']
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",

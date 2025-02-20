@@ -7,7 +7,10 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-INVALID-IMPL (err u10211))
+(define-constant ERR-INVALID-IMPL (err u70000))
+(define-constant ERR-UNAUTHORIZED (err u70001))
+(define-constant ERR-SIGNERS-DATA (err u70002))
+(define-constant ERR-STARTED (err u70003))
 
 (define-private (is-correct-impl (gateway-impl <gateway-trait>)) (is-eq (contract-call? .gateway-storage get-impl) (contract-of gateway-impl)))
 
@@ -102,7 +105,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-UNAUTHORIZED (err u10111))
 
 (define-private (is-governance) (is-eq contract-caller (contract-call? .gateway-storage get-governance)))
 
@@ -144,8 +146,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-SIGNERS-DATA (err u5052))
-(define-constant ERR-STARTED (err u6051))
 
 (define-constant DEPLOYER tx-sender)
 

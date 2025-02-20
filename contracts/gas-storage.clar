@@ -1,8 +1,8 @@
 (define-constant PROXY .gas-service)
 
-(define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-OWNER-CANNOT-BE-COLLECTOR (err u10112))
-(define-constant ERR-NON-STANDARD-ADDRESS (err u10113))
+(define-constant ERR-UNAUTHORIZED (err u40000))
+(define-constant ERR-OWNER-CANNOT-BE-COLLECTOR (err u40001))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u40002))
 
 (define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 

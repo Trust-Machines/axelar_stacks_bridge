@@ -6,7 +6,7 @@ const address1 = accounts.get("wallet_1")!;
 
 describe("ITS Storage tests", () => {
   it("Only proxy/impl setters", () => {
-    const ERR_NOT_AUTHORIZED = Cl.uint(21051);
+    const ERR_NOT_AUTHORIZED = Cl.uint(130000);
     expect(
       simnet.callPublicFn(
         "interchain-token-service-storage",

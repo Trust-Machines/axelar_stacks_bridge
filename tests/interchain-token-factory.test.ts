@@ -22,8 +22,9 @@ import {
 } from "./itf-utils";
 import {
   BURN_ADDRESS,
-  ITF_ERRORS,
+  ITF_IMPL_ERRORS,
   MessageType,
+  ITF_PROXY_ERRORS,
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
 } from "./constants";
@@ -72,7 +73,7 @@ describe("interchain-token-factory", () => {
         impl: evilImpl,
       });
 
-      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+      expect(deployTx.result).toBeErr(ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]);
     });
     it("deploys a lock unlock token with its manager", () => {
       const verificationParams = getTokenManagerMockCv();
@@ -113,7 +114,7 @@ describe("interchain-token-factory", () => {
         sender: address1,
       });
 
-      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+      expect(deployTx.result).toBeErr(ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]);
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
@@ -123,7 +124,7 @@ describe("interchain-token-factory", () => {
         impl: evilImpl,
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-IMPL"]);
+      expect(remoteDeployTx.result).toBeErr(ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]);
     });
     it("deploys a mint burn token", () => {
       const verificationParams = getNITMockCv();
@@ -165,7 +166,7 @@ describe("interchain-token-factory", () => {
         minterAddress: `${deployer}.interchain-token-service-impl`,
       });
 
-      expect(deployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
+      expect(deployTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]);
     });
     it("Should register a token if the mint amount is zero", () => {
       const verificationParams = getNITMockCv();
@@ -237,7 +238,7 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
       );
       remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
@@ -248,7 +249,7 @@ describe("interchain-token-factory", () => {
         destinationMinter: "0x" + "00".repeat(20),
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-MINTER"]);
+      expect(remoteDeployTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]);
       let approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
         salt: originalSalt,
@@ -257,7 +258,7 @@ describe("interchain-token-factory", () => {
         destinationChain: "untrusted-chain",
       });
 
-      expect(approvalTx.result).toBeErr(ITF_ERRORS["ERR-INVALID-CHAIN-NAME"]);
+      expect(approvalTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-CHAIN-NAME"]);
 
       approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
@@ -267,7 +268,7 @@ describe("interchain-token-factory", () => {
         destinationChain: "ethereum",
       });
 
-      expect(approvalTx.result).toBeErr(ITF_ERRORS["ERR-NOT-MINTER"]);
+      expect(approvalTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-MINTER"]);
       approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
         salt: originalSalt,
@@ -316,7 +317,7 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
       );
 
       approvalTx = approveDeployRemoteInterchainToken({
@@ -402,7 +403,7 @@ describe("interchain-token-factory", () => {
         [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
         address1,
       );
-      expect(result).toBeErr(ITF_ERRORS['ERR-NOT-IMPLEMENTED'])
+      expect(result).toBeErr(ITF_IMPL_ERRORS['ERR-NOT-IMPLEMENTED'])
     });
   });
 });

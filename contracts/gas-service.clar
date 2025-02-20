@@ -7,8 +7,11 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-INVALID-IMPL (err u10211))
-(define-constant ERR-STARTED (err u60511))
+(define-constant ERR-INVALID-IMPL (err u30000))
+(define-constant ERR-STARTED (err u30001))
+(define-constant ERR-UNAUTHORIZED (err u30002))
+(define-constant ERR-NOT-IMPLEMENTED (err u30003))
+
 (define-constant DEPLOYER tx-sender)
 
 (define-private (is-correct-impl (gas-impl <gas-impl-trait>)) (is-eq (contract-call? .gas-storage get-impl) (contract-of gas-impl)))
@@ -162,8 +165,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-NOT-IMPLEMENTED (err u10112))
 
 
 (define-public (set-impl (gas-impl principal))

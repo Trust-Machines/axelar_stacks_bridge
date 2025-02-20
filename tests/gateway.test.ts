@@ -40,11 +40,11 @@ describe("gateway tests", () => {
       })
     ]);
 
-    expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), Cl.bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(6052));
-    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(6052));
+    expect(simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(50000));
+    expect(simnet.callPublicFn("gateway", "call-contract", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(50000));
+    expect(simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], contractCaller).result).toBeErr(uintCV(50000));
+    expect(simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, stringAsciiCV("foo"), stringAsciiCV("bar"), stringAsciiCV("baz"), Cl.bufferFromAscii("x")], contractCaller).result).toBeErr(uintCV(50000));
+    expect(simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller).result).toBeErr(uintCV(50000));
   });
 
   it("queries", () => {
@@ -65,12 +65,12 @@ describe("gateway tests", () => {
   it("should not run setup func again", () => {
     deployGateway(getSigners(0, 10, 1, 10, "1"));
     const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
-    expect(result).toBeErr(uintCV(6051));
+    expect(result).toBeErr(uintCV(70003));
   });
 
   it("only deployer can run the setup function", () => {
     const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
-    expect(result).toBeErr(uintCV(10111));
+    expect(result).toBeErr(uintCV(70001));
   });
 
   it("call contract", () => {
@@ -167,7 +167,7 @@ describe("gateway tests", () => {
 
       // should not re-validate
       const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
-      expect(validateResult2).toBeErr(uintCV(9052));
+      expect(validateResult2).toBeErr(uintCV(50004));
     });
 
 
@@ -309,7 +309,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(5054));
+      expect(result).toBeErr(uintCV(50017));
     });
 
     it("should reject rotating signers from an old signer set", () => {
@@ -352,7 +352,7 @@ describe("gateway tests", () => {
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
       const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], contractCaller);
-      expect(result2).toBeErr(uintCV(5055));
+      expect(result2).toBeErr(uintCV(50018));
     });
 
     it("should allow rotating signers from an old signer set (called by the operator)", () => {
@@ -449,7 +449,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(5051));
+      expect(result).toBeErr(uintCV(50014));
     });
 
     it('should allow rotating signers before the delay (called by the operator)', () => {
@@ -505,7 +505,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2051))
+      expect(result).toBeErr(uintCV(50006))
     });
 
     it('should reject if signer weight is 0', () => {
@@ -552,7 +552,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2053));
+      expect(result).toBeErr(uintCV(50007));
     });
 
     it('should reject if signers are not ordered', () => {
@@ -599,7 +599,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2054));
+      expect(result).toBeErr(uintCV(50008));
     });
 
     it('should reject if threshold is 0', () => {
@@ -624,7 +624,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2055));
+      expect(result).toBeErr(uintCV(50009));
     });
 
     it('should reject if total weight is lowet than threshold', () => {
@@ -649,7 +649,7 @@ describe("gateway tests", () => {
       const proof = makeProofCV(proofSigners, messageHashToSign);
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2056));
+      expect(result).toBeErr(uintCV(50010));
     });
   });
 
@@ -668,7 +668,7 @@ describe("gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(3051));
+      expect(result).toBeErr(uintCV(50011));
     });
 
 
@@ -700,7 +700,7 @@ describe("gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2054));
+      expect(result).toBeErr(uintCV(50008));
     });
 
     it('should reject if not enough weight provided ', () => {
@@ -731,7 +731,7 @@ describe("gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(3055));
+      expect(result).toBeErr(uintCV(50012));
     });
 
     it('should reject if same signature provided more than once', () => {
@@ -787,7 +787,7 @@ describe("gateway tests", () => {
       });
 
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], contractCaller);
-      expect(result).toBeErr(uintCV(2054));
+      expect(result).toBeErr(uintCV(50008));
     });
   });
 
@@ -890,31 +890,31 @@ describe("gateway tests", () => {
       const proof2 = makeProofCV(proofSigners, messageHashToSign2);
 
       const { result: result2 } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(newSigners2))), bufferCV(serializeCV(proof2))], operatorAddress);
-      expect(result2).toBeErr(uintCV(4051));
+      expect(result2).toBeErr(uintCV(50013));
     });
   });
 
   describe("gateway proxy calls", () => {
     it("should validate impl address", () => {
-      expect(simnet.callPublicFn("gateway", "call-contract", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(10211));
-      expect(simnet.callPublicFn("gateway", "approve-messages", [contractPrincipalCV(deployerAddress, "traits"), Cl.bufferFromHex("0x00"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
-      expect(simnet.callPublicFn("gateway", "validate-message", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
-      expect(simnet.callPublicFn("gateway", "rotate-signers", [contractPrincipalCV(deployerAddress, "traits"), Cl.bufferFromHex("0x00"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
-      expect(simnet.callPublicFn("gateway", "transfer-operatorship", [contractPrincipalCV(deployerAddress, "traits"), principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(10211));
-      expect(simnet.callPublicFn("gateway", "call", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(10211));
+      expect(simnet.callPublicFn("gateway", "call-contract", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz")], contractCaller).result).toBeErr(uintCV(70000));
+      expect(simnet.callPublicFn("gateway", "approve-messages", [contractPrincipalCV(deployerAddress, "traits"), Cl.bufferFromHex("0x00"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(70000));
+      expect(simnet.callPublicFn("gateway", "validate-message", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(70000));
+      expect(simnet.callPublicFn("gateway", "rotate-signers", [contractPrincipalCV(deployerAddress, "traits"), Cl.bufferFromHex("0x00"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(70000));
+      expect(simnet.callPublicFn("gateway", "transfer-operatorship", [contractPrincipalCV(deployerAddress, "traits"), principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70000));
+      expect(simnet.callPublicFn("gateway", "call", [contractPrincipalCV(deployerAddress, "traits"), stringAsciiCV("foo"), Cl.bufferFromHex("0x00")], contractCaller).result).toBeErr(uintCV(70000));
     });
 
     it("dynamic dispatch", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), Cl.bufferFromHex("0x00")], contractCaller);
-      expect(result).toBeErr(uintCV(10112));
+      expect(result).toBeErr(uintCV(50002));
     });
   });
 
   describe("governance only calls", () => {
     it("should be blocked", () => {
-      expect(simnet.callPublicFn("gateway", "set-impl", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(10111));
-      expect(simnet.callPublicFn("gateway", "set-governance", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(10111));
+      expect(simnet.callPublicFn("gateway", "set-impl", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
+      expect(simnet.callPublicFn("gateway", "set-governance", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
     });
   });
 
@@ -933,7 +933,7 @@ describe("gateway tests", () => {
     it("should not allow transferring operatorship", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result } = simnet.callPublicFn("gateway", "transfer-operatorship", [gatewayImplCV, principalCV(operatorAddress)], contractCaller);
-      expect(result).toBeErr(uintCV(1051));
+      expect(result).toBeErr(uintCV(50006));
     });
   });
 });

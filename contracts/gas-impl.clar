@@ -1,14 +1,14 @@
 (impl-trait .traits.gas-service-impl-trait)
 
 ;; Define constants
-(define-constant ERR-INSUFFICIENT-BALANCE (err u10114))
-(define-constant ERR-INVALID-AMOUNT (err u10112))
-(define-constant ERR-INVALID-PRINCIPAL (err u10115))
-(define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-NOT-IMPLEMENTED (err u10113))
-(define-constant ERR-ONLY-OWNER (err u10151))
-(define-constant ERR-ONLY-GAS-COLLECTOR (err u10152))
-(define-constant ERR-NOT-STARTED (err u10153))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u20000))
+(define-constant ERR-INVALID-AMOUNT (err u20001))
+(define-constant ERR-INVALID-PRINCIPAL (err u20002))
+(define-constant ERR-UNAUTHORIZED (err u20003))
+(define-constant ERR-NOT-IMPLEMENTED (err u20004))
+(define-constant ERR-ONLY-OWNER (err u20005))
+(define-constant ERR-ONLY-GAS-COLLECTOR (err u20006))
+(define-constant ERR-NOT-STARTED (err u20007))
 ;; Proxy contract reference
 (define-constant PROXY .gas-service)
 

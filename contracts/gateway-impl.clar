@@ -8,9 +8,26 @@
 
 (define-read-only (get-is-started) (contract-call? .gateway-storage get-is-started))
 
-(define-constant ERR-NOT-STARTED (err u6052))
-(define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-NOT-IMPLEMENTED (err u10112))
+(define-constant ERR-NOT-STARTED (err u50000))
+(define-constant ERR-UNAUTHORIZED (err u50001))
+(define-constant ERR-NOT-IMPLEMENTED (err u50002))
+(define-constant ERR-MESSAGES-DATA (err u50003))
+(define-constant ERR-MESSAGE-NOT-FOUND (err u50004))
+(define-constant ERR-MESSAGE-INSERT (err u50005))
+(define-constant ERR-ONLY-OPERATOR (err u50006))
+(define-constant ERR-SIGNERS-LEN (err u50006))
+(define-constant ERR-SIGNER-WEIGHT (err u50007))
+(define-constant ERR-SIGNERS-ORDER (err u50008))
+(define-constant ERR-SIGNERS-THRESHOLD (err u50009))
+(define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u50010))
+(define-constant ERR-INVALID-SIGNATURE-DATA (err u50011))
+(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u50012))
+(define-constant ERR-INVALID-SIGNERS (err u50013))
+(define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u50014))
+(define-constant ERR-SIGNERS-DATA (err u50015))
+(define-constant ERR-PROOF-DATA (err u50016))
+(define-constant ERR-DUPLICATE-SIGNERS (err u50017))
+(define-constant ERR-NOT-LATEST-SIGNERS (err u50018))
 
 
 ;; Sends a message to the specified destination chain and address with a given payload.
@@ -38,11 +55,7 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-MESSAGES-DATA (err u9051))
-(define-constant ERR-MESSAGE-NOT-FOUND (err u9052))
-(define-constant ERR-MESSAGE-INSERT (err u9061))
 (define-constant MESSAGE-EXECUTED 0x01)
-
 
 ;; Compute the command-id for a message.
 ;; @param source-chain The name of the source chain as registered on Axelar.
@@ -224,7 +237,6 @@
 ;; ####################
 ;; ####################
 
-(define-constant ERR-ONLY-OPERATOR (err u1051))
 
 (define-read-only (get-operator) (contract-call? .gateway-storage get-operator))
 
@@ -316,11 +328,6 @@
 ;; ### Signers validation ###
 ;; ##########################
 
-(define-constant ERR-SIGNERS-LEN (err u2051))
-(define-constant ERR-SIGNER-WEIGHT (err u2053))
-(define-constant ERR-SIGNERS-ORDER (err u2054))
-(define-constant ERR-SIGNERS-THRESHOLD (err u2055))
-(define-constant ERR-SIGNERS-THRESHOLD-MISMATCH (err u2056))
 
 ;; Returns weight of a signer
 ;; @param signer; Signer to validate
@@ -374,8 +381,6 @@
 ;; ### Signature validation ###
 ;; ############################
 
-(define-constant ERR-INVALID-SIGNATURE-DATA (err u3051))
-(define-constant ERR-LOW-SIGNATURES-WEIGHT (err u3055))
 
 ;; Accumulates weight of signers
 ;; @param signer
@@ -462,8 +467,6 @@
 ;; ### Proof validation ###
 ;; ########################
 
-(define-constant ERR-INVALID-SIGNERS (err u4051))
-
 
 ;; This function takes data-hash and proof data and reverts if proof is invalid
 ;; @param data-hash; The hash of the message that was signed
@@ -500,11 +503,6 @@
 ;; ### Signer rotation ####
 ;; ########################
 
-(define-constant ERR-INSUFFICIENT-ROTATION-DELAY (err u5051))
-(define-constant ERR-SIGNERS-DATA (err u5052))
-(define-constant ERR-PROOF-DATA (err u5053))
-(define-constant ERR-DUPLICATE-SIGNERS (err u5054))
-(define-constant ERR-NOT-LATEST-SIGNERS (err u5055))
 
 
 ;; Updates the last rotation timestamp, and enforces the minimum rotation delay if specified

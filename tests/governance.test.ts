@@ -422,7 +422,7 @@ describe("governance tests", () => {
 
     // try to finalize
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
-    expect(resultFinalize).toBeErr(uintCV(13051));
+    expect(resultFinalize).toBeErr(uintCV(80006));
   });
 
   it("should cancel a scheduled task", () => {
@@ -575,7 +575,7 @@ describe("governance tests", () => {
 
     // should not finalize before eta
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
-    expect(resultFinalize).toBeErr(uintCV(12011));
+    expect(resultFinalize).toBeErr(uintCV(80001));
   });
 
   it("should not finalize with invalid type", () => {
@@ -632,12 +632,12 @@ describe("governance tests", () => {
 
     // should not finalize with invalid type
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
-    expect(resultFinalize).toBeErr(uintCV(13041));
+    expect(resultFinalize).toBeErr(uintCV(80005));
   });
 
   it("should revert with incorrect payload", () => {
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(tupleCV({ foo: stringAsciiCV("bar") })))], address1);
-    expect(resultFinalize).toBeErr(uintCV(12021));
+    expect(resultFinalize).toBeErr(uintCV(80002));
   });
 
   it("eta can't be smaller than min-eta", () => {
@@ -687,18 +687,18 @@ describe("governance tests", () => {
 
     // execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    expect(resultExecute).toBeErr(uintCV(12031));
+    expect(resultExecute).toBeErr(uintCV(80003));
   });
 
   it("should not run setup again", () => {
     setupGovernance();
     const { result } = simnet.callPublicFn("governance", "setup", [sourceChain, sourceAddress], deployer);
-    expect(result).toBeErr(uintCV(13081));
+    expect(result).toBeErr(uintCV(80009));
   });
 
   it("should not setup from non-deployer", () => {
     const { result } = simnet.callPublicFn("governance", "setup", [sourceChain, sourceAddress], address1);
-    expect(result).toBeErr(uintCV(13061));
+    expect(result).toBeErr(uintCV(80007));
   });
 
   it("should not execute before setup", () => {
@@ -748,7 +748,7 @@ describe("governance tests", () => {
 
     // try to execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    expect(resultExecute).toBeErr(uintCV(13071));
+    expect(resultExecute).toBeErr(uintCV(80008));
   });
 
   it("should not execute with wrong source-chain/source-address", () => {
@@ -803,6 +803,6 @@ describe("governance tests", () => {
 
     // try to execute on the governance
     const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    expect(resultExecute).toBeErr(uintCV(13061));
+    expect(resultExecute).toBeErr(uintCV(80007));
   });
 });

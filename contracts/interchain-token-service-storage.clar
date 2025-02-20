@@ -2,8 +2,9 @@
 (define-constant SERVICE-PROXY .interchain-token-service)
 (define-constant FACTORY-PROXY .interchain-token-factory)
 
-(define-constant ERR-NOT-AUTHORIZED (err u21051))
-(define-constant ERR-NON-STANDARD-ADDRESS (err u21052))
+(define-constant ERR-NOT-AUTHORIZED (err u130000))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u130001))
+
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
 
 

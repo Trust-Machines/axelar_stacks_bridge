@@ -45,7 +45,8 @@ import {
 } from "./its-utils";
 import { getSigners } from "./util";
 import {
-  ITS_ERROR_CODES,
+  ITS_IMPL_ERROR_CODES,
+  ITS_PROXY_ERROR_CODES,
   ITS_HUB_ROUTING_IDENTIFIER,
   MessageType,
   MetadataVersion,
@@ -89,7 +90,9 @@ describe("Interchain Token Service", () => {
         paused: true,
       });
 
-      expect(deployTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      expect(deployTx.result).toBeErr(
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
 
       const setTrustedAddressTx = simnet.callPublicFn(
         "interchain-token-service",
@@ -103,7 +106,7 @@ describe("Interchain Token Service", () => {
       );
 
       expect(setTrustedAddressTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
       );
 
       const removeTrustedAddressTx = simnet.callPublicFn(
@@ -114,7 +117,7 @@ describe("Interchain Token Service", () => {
       );
 
       expect(removeTrustedAddressTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
       );
     });
     it("Should revert on set pause status when not called by the owner", () => {
@@ -125,7 +128,7 @@ describe("Interchain Token Service", () => {
           [itsImpl, Cl.bool(true)],
           address1,
         ).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should revert on set trusted address when not called by the owner", () => {
@@ -140,7 +143,7 @@ describe("Interchain Token Service", () => {
           ],
           address1,
         ).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should only be allowed to set 'hub' as the trusted address if not the ITS hub chain", () => {
@@ -151,7 +154,7 @@ describe("Interchain Token Service", () => {
           [itsImpl, Cl.stringAscii("ethereum"), Cl.stringAscii("any other")],
           deployer,
         ).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-DESTINATION-ADDRESS"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-INVALID-DESTINATION-ADDRESS"]);
 
       expect(
         simnet.callPublicFn(
@@ -190,7 +193,7 @@ describe("Interchain Token Service", () => {
           [itsImpl, Cl.stringAscii("ethereum")],
           address1,
         ).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
     });
 
     it("Should remove trusted address", () => {
@@ -213,7 +216,7 @@ describe("Interchain Token Service", () => {
       });
 
       expect(deployTokenManagerTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
       );
 
       const deployInterchainTokenTx = deployInterchainToken({
@@ -222,7 +225,7 @@ describe("Interchain Token Service", () => {
       });
 
       expect(deployInterchainTokenTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-INVALID-IMPL"],
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
       );
 
       expect(
@@ -240,7 +243,7 @@ describe("Interchain Token Service", () => {
           tokenAddress: `${address1}.nit`,
           impl: evilImpl,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
     it("Should register an existing token with its manager", () => {
       const verificationParams = getTokenManagerMockCv();
@@ -287,10 +290,9 @@ describe("Interchain Token Service", () => {
     it("Should revert when registering an interchain token when service is paused", () => {
       setPaused({ paused: true });
       expect(deployInterchainToken({ salt }).result).toBeErr(
-        ITS_ERROR_CODES["ERR-PAUSED"],
+        ITS_IMPL_ERROR_CODES["ERR-PAUSED"],
       );
     });
-
 
     it("Should revert when deploying an interchain token twice", () => {
       const verificationParams = getNITMockCv();
@@ -313,9 +315,9 @@ describe("Interchain Token Service", () => {
         verificationParams,
         token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
       });
-   
+
       expect(secondDeployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+        ITS_IMPL_ERROR_CODES["ERR-TOKEN-EXISTS"],
       );
 
       const thirdDeployTx = deployInterchainToken({
@@ -324,14 +326,11 @@ describe("Interchain Token Service", () => {
         verificationParams,
         token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
       });
-   
 
       expect(thirdDeployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+        ITS_IMPL_ERROR_CODES["ERR-TOKEN-EXISTS"],
       );
     });
-
-    
   });
 
   describe("Deploy and Register remote Interchain Token", () => {
@@ -360,7 +359,7 @@ describe("Interchain Token Service", () => {
           symbol: "sample",
           impl: evilImpl,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
       expect(
         deployRemoteInterchainToken({
           salt,
@@ -397,7 +396,7 @@ describe("Interchain Token Service", () => {
           minter: Buffer.from([0]),
           symbol: "sample",
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
     });
 
     it("Should revert on remote interchain token deployment if paused", () => {
@@ -423,7 +422,7 @@ describe("Interchain Token Service", () => {
           minter: Buffer.from([0]),
           symbol: "sample",
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
   });
 
@@ -440,7 +439,7 @@ describe("Interchain Token Service", () => {
           tokenAddress: `${deployer}.sample-sip-010`,
           impl: evilImpl,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
     it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
       const verificationParams = getNITMockCv();
@@ -470,7 +469,7 @@ describe("Interchain Token Service", () => {
         }).result,
       ).toBeErr(
         // ERR-MESSAGE-NOT-FOUND
-        Cl.uint(9052),
+        Cl.uint(50004),
       );
     });
 
@@ -506,7 +505,7 @@ describe("Interchain Token Service", () => {
           salt,
           tokenType: 0,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-UNSUPPORTED-TOKEN-TYPE"]);
     });
 
     it("Should revert when deploying a custom token manager twice", () => {
@@ -528,7 +527,7 @@ describe("Interchain Token Service", () => {
       });
 
       expect(secondDeployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+        ITS_IMPL_ERROR_CODES["ERR-TOKEN-EXISTS"],
       );
 
       const thirdDeployTx = deployTokenManager({
@@ -538,7 +537,7 @@ describe("Interchain Token Service", () => {
       });
 
       expect(thirdDeployTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-TOKEN-EXISTS"],
+        ITS_IMPL_ERROR_CODES["ERR-TOKEN-EXISTS"],
       );
     });
 
@@ -549,7 +548,7 @@ describe("Interchain Token Service", () => {
         deployTokenManager({
           salt,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
   });
 
@@ -572,7 +571,9 @@ describe("Interchain Token Service", () => {
         caller: deployer,
         impl: evilImpl,
       });
-      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      expect(transferTx.result).toBeErr(
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
     });
     it("Should be able to initiate an interchain token transfer for lockUnlock with a normal SIP-010 token", () => {
       const verificationParams = getTokenManagerMockCv();
@@ -696,7 +697,7 @@ describe("Interchain Token Service", () => {
           tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
           caller: deployer,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ZERO-AMOUNT"]);
     });
 
     it("Should revert on initiate interchain token transfer when service is paused", () => {
@@ -717,7 +718,7 @@ describe("Interchain Token Service", () => {
           tokenManagerAddress: Cl.contractPrincipal(deployer, "token-manager"),
           caller: deployer,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
   });
 
@@ -735,7 +736,7 @@ describe("Interchain Token Service", () => {
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
     });
 
     it("Should revert on execute receive interchain token if remote address validation fails", () => {
@@ -772,7 +773,7 @@ describe("Interchain Token Service", () => {
             ),
           ),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-REMOTE-SERVICE"]);
     });
 
     it("Should revert on execute deploy interchain token if the service is paused", () => {
@@ -789,7 +790,7 @@ describe("Interchain Token Service", () => {
           sourceChain: TRUSTED_CHAIN,
           tokenAddress: `${deployer}.sample-sip-010`,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
 
     it("Should revert on execute receive interchain token if the service is paused", () => {
@@ -827,7 +828,7 @@ describe("Interchain Token Service", () => {
             ),
           ),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
   });
 
@@ -843,7 +844,7 @@ describe("Interchain Token Service", () => {
           payload: Cl.bufferFromHex("0x"),
           impl: evilImpl,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
     it("Should be able to receive lock/unlock token", () => {
       const verificationParams = getTokenManagerMockCv();
@@ -1038,7 +1039,9 @@ describe("Interchain Token Service", () => {
         },
         impl: evilImpl,
       });
-      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      expect(transferTx.result).toBeErr(
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
 
       expect(
         callContractWithInterchainToken({
@@ -1056,7 +1059,7 @@ describe("Interchain Token Service", () => {
           tokenId,
           tokenManagerAddress: Cl.address(tokenAddress),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
     });
     it("Should revert on an interchain transfer if service is paused", () => {
       const amount = 100;
@@ -1082,7 +1085,7 @@ describe("Interchain Token Service", () => {
             version: Cl.uint(MetadataVersion.ContractCall),
           },
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
 
     it(`Should initiate an interchain token transfer via the interchainTransfer standard contract call & express call lockUnlock`, () => {
@@ -1223,7 +1226,9 @@ describe("Interchain Token Service", () => {
           version: Cl.uint(MetadataVersion.ContractCall),
         },
       });
-      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+      expect(callContractTx.result).toBeErr(
+        ITS_IMPL_ERROR_CODES["ERR-ZERO-AMOUNT"],
+      );
     });
 
     it(`Should be able to initiate an interchain token transfer via the interchainTransfer function on the service when the service is approved as well [lockUnlock]`, () => {
@@ -1402,7 +1407,9 @@ describe("Interchain Token Service", () => {
           version: Cl.uint(MetadataVersion.ContractCall),
         },
       });
-      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-ZERO-AMOUNT"]);
+      expect(callContractTx.result).toBeErr(
+        ITS_IMPL_ERROR_CODES["ERR-ZERO-AMOUNT"],
+      );
     });
 
     it("Should revert on callContractWithInterchainToken function when service is paused", () => {
@@ -1436,7 +1443,7 @@ describe("Interchain Token Service", () => {
           version: Cl.uint(MetadataVersion.ContractCall),
         },
       });
-      expect(callContractTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      expect(callContractTx.result).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
 
     it("Should revert on interchainTransfer function when service is paused", () => {
@@ -1470,7 +1477,7 @@ describe("Interchain Token Service", () => {
           version: Cl.uint(MetadataVersion.ContractCall),
         },
       });
-      expect(transferTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      expect(transferTx.result).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
 
     it("Should revert on interchainTransfer function with invalid metadata version", () => {
@@ -1516,7 +1523,7 @@ describe("Interchain Token Service", () => {
         },
       });
       expect(transferTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-INVALID-METADATA-VERSION"],
+        ITS_IMPL_ERROR_CODES["ERR-INVALID-METADATA-VERSION"],
       );
     });
 
@@ -1562,7 +1569,7 @@ describe("Interchain Token Service", () => {
         },
       });
       expect(callContractTx.result).toBeErr(
-        ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"],
+        ITS_PROXY_ERROR_CODES["ERR-UNTRUSTED-CHAIN"],
       );
     });
   });
@@ -1910,7 +1917,7 @@ describe("Interchain Token Service", () => {
           token: Cl.address(tokenAddress) as ContractPrincipalCV,
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
     });
 
     it("Should revert with UntrustedChain when the message type is RECEIVE_FROM_HUB and untrusted original source chain", () => {
@@ -1955,7 +1962,7 @@ describe("Interchain Token Service", () => {
           token: Cl.address(tokenAddress) as ContractPrincipalCV,
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
     });
 
     it("Should revert with InvalidPayload when the message type is RECEIVE_FROM_HUB and has invalid inner payload.", () => {
@@ -1993,7 +2000,7 @@ describe("Interchain Token Service", () => {
           token: Cl.address(tokenAddress) as ContractPrincipalCV,
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-PAYLOAD"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-INVALID-PAYLOAD"]);
     });
 
     it("Should revert with UntrustedChain when receiving a direct message from the ITS Hub. Not supported yet", () => {
@@ -2040,7 +2047,7 @@ describe("Interchain Token Service", () => {
           token: Cl.address(tokenAddress) as ContractPrincipalCV,
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-UNTRUSTED-CHAIN"]);
     });
   });
 
@@ -2119,7 +2126,9 @@ describe("Interchain Token Service", () => {
         impl: evilImpl,
       });
 
-      expect(setFlowTx.result).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+      expect(setFlowTx.result).toBeErr(
+        ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"],
+      );
     });
 
     it("Should revert if the service is paused", () => {
@@ -2142,7 +2151,7 @@ describe("Interchain Token Service", () => {
         limit: Cl.uint(500),
       });
 
-      expect(setFlowTx.result).toBeErr(ITS_ERROR_CODES["ERR-PAUSED"]);
+      expect(setFlowTx.result).toBeErr(ITS_IMPL_ERROR_CODES["ERR-PAUSED"]);
     });
 
     it("Should be able to send token only if it does not trigger the mint limit", () => {
@@ -2366,6 +2375,10 @@ describe("Interchain Token Service", () => {
 
     describe("Should be able to remove a flow limiter", () => {
       function runCurrentTests(contractName: string) {
+        const ERROR_NOT_AUTHORIZED =
+          contractName === "token-manager"
+            ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
+            : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
         expect(
           addFlowLimiter({
             contractName,
@@ -2391,7 +2404,7 @@ describe("Interchain Token Service", () => {
         ).toBeOk(Cl.bool(false));
 
         expect(setTokenFlowLimit(contractName, 100, address2).result).toBeErr(
-          NIT_ERRORS["ERR-NOT-AUTHORIZED"],
+          ERROR_NOT_AUTHORIZED,
         );
       }
       it("lock unlock", () => {
@@ -2413,13 +2426,17 @@ describe("Interchain Token Service", () => {
 
     describe("Should revert if trying to add a flow limiter as not the operator", () => {
       function runCurrentTests(contractName: string) {
+        const ERROR_NOT_AUTHORIZED =
+          contractName === "token-manager"
+            ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
+            : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
         expect(
           addFlowLimiter({
             contractName,
             limiterAddress: address2,
             operator: address2,
           }).result,
-        ).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
+        ).toBeErr(ERROR_NOT_AUTHORIZED);
 
         expect(
           isFlowLimiter({
@@ -2429,7 +2446,7 @@ describe("Interchain Token Service", () => {
         ).toBeOk(Cl.bool(false));
 
         expect(setTokenFlowLimit(contractName, 100, address2).result).toBeErr(
-          NIT_ERRORS["ERR-NOT-AUTHORIZED"],
+          ERROR_NOT_AUTHORIZED,
         );
       }
       it("lock unlock", () => {
@@ -2481,7 +2498,11 @@ describe("Interchain Token Service", () => {
       it("lock unlock", () => {
         setupTokenManager({});
         const contractName = "token-manager";
-        runCurrentTests(contractName);
+        runCurrentTests(
+          contractName,
+          undefined,
+          TOKEN_MANAGER_ERRORS["ERR-NOT-OPERATOR"],
+        );
       });
       it("mint burn", () => {
         const contractName = "native-interchain-token";
@@ -2513,7 +2534,7 @@ describe("Interchain Token Service", () => {
             newOperator: address2,
             impl: evilImpl,
           }).result,
-        ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+        ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
         expect(
           transferITSOperatorShip({
             operator,
@@ -2534,7 +2555,7 @@ describe("Interchain Token Service", () => {
             operator: operator,
             newOperator: address2,
           }).result,
-        ).toBeErr(ITS_ERROR_CODES["ERR-ONLY-OPERATOR"]);
+        ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ONLY-OPERATOR"]);
       });
     });
   });
@@ -2551,9 +2572,9 @@ describe("Interchain Token Service", () => {
           owner: deployer,
           newOwner: address2,
         }).result,
-      ).toBeErr(ITS_ERROR_CODES["ERR-ONLY-OWNER"])
-    })
-  })
+      ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ONLY-OWNER"]);
+    });
+  });
   it("dynamic dispatch", () => {
     expect(
       simnet.callPublicFn(
@@ -2562,7 +2583,7 @@ describe("Interchain Token Service", () => {
         [evilImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
         address1,
       ).result,
-    ).toBeErr(ITS_ERROR_CODES["ERR-INVALID-IMPL"]);
+    ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
     expect(
       simnet.callPublicFn(
         "interchain-token-service",
@@ -2570,6 +2591,6 @@ describe("Interchain Token Service", () => {
         [itsImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
         address1,
       ).result,
-    ).toBeErr(ITS_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
+    ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
   });
 });

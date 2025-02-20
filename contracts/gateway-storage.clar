@@ -1,7 +1,7 @@
 (define-constant PROXY .gateway)
 
-(define-constant ERR-UNAUTHORIZED (err u10111))
-(define-constant ERR-NON-STANDARD-ADDRESS (err u10112))
+(define-constant ERR-UNAUTHORIZED (err u60000))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u60001))
 
 (define-private (is-proxy-or-impl) (or (is-eq contract-caller PROXY) (is-eq contract-caller (var-get impl))))
 

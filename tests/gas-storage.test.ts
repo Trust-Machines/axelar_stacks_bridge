@@ -37,7 +37,7 @@ describe("gas storage tests", () => {
         [contractPrincipalCV(deployer, "new-impl")],
         address1
       );
-      expect(failedSetImpl).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
+      expect(failedSetImpl).toBeErr(uintCV(40000)); // ERR-UNAUTHORIZED
     });
   });
 
@@ -59,7 +59,7 @@ describe("gas storage tests", () => {
         [principalCV(address2)],
         address1
       );
-      expect(result).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
+      expect(result).toBeErr(uintCV(40000)); // ERR-UNAUTHORIZED
     });
 
     it("should allow owner change through proxy or impl", () => {

@@ -35,7 +35,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
+      expect(result).toBeErr(uintCV(20003)); // ERR-UNAUTHORIZED
     });
   });
 
@@ -52,7 +52,7 @@ describe("gas-impl tests", () => {
         ],
         address1
       );
-      expect(result).toBeErr(uintCV(10111)); // ERR_UNAUTHORIZE
+      expect(result).toBeErr(uintCV(20003)); // ERR_UNAUTHORIZE
     });
   });
 
@@ -89,7 +89,7 @@ describe("gas-impl tests", () => {
         ],
         address1 // Call from non-gas-collector address
       );
-      expect(result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+      expect(result).toBeErr(uintCV(20006)); // ERR-GAS-COLLECTOR-ONLY
     });
 
     it("should fail when amount is zero", () => {
@@ -105,7 +105,7 @@ describe("gas-impl tests", () => {
         ],
         address2 // Call from gas collector
       );
-      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(20001)); // ERR-INVALID-AMOUNT
     });
 
     it("should fail when amount exceeds balance", () => {
@@ -121,7 +121,7 @@ describe("gas-impl tests", () => {
         ],
         address2 // Call from gas collector
       );
-      expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(20000)); // ERR-INSUFFICIENT-BALANCE
     });
 
     it("should successfully refund when called by gas collector", () => {
@@ -180,7 +180,7 @@ describe("gas-impl tests", () => {
         [gasImplContract, principalCV(address3), uintCV(1000)],
         address1 // Call from non-gas-collector address
       );
-      expect(result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+      expect(result).toBeErr(uintCV(20006)); // ERR-GAS-COLLECTOR-ONLY
     });
 
     it("should fail when amount is zero", () => {
@@ -190,7 +190,7 @@ describe("gas-impl tests", () => {
         [gasImplContract, principalCV(address3), uintCV(0)],
         address2 // Call from gas collector
       );
-      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(20001)); // ERR-INVALID-AMOUNT
     });
 
     it("should fail when amount exceeds balance", () => {
@@ -200,7 +200,7 @@ describe("gas-impl tests", () => {
         [gasImplContract, principalCV(address3), uintCV(10000)], // More than available
         address2 // Call from gas collector
       );
-      expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(20000)); // ERR-INSUFFICIENT-BALANCE
     });
 
     it("should successfully collect fees when called by gas collector", () => {
@@ -288,6 +288,6 @@ describe("transfer-ownership", () => {
       [gasImplContract, principalCV(address2)],
       address1
     );
-    expect(result).toBeErr(uintCV(10151)); // ERR-ONLY-OWNER
+    expect(result).toBeErr(uintCV(20005)); // ERR-ONLY-OWNER
   });
 });

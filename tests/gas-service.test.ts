@@ -54,7 +54,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10211));
+      ).toBeErr(uintCV(30000));
     });
 
     it("should pay native gas for contract call", () => {
@@ -109,7 +109,7 @@ describe("gas service tests", () => {
         address1
       );
 
-      expect(result).toBeErr(uintCV(10112)); // ERR-INVALID-AMOUNT
+      expect(result).toBeErr(uintCV(20001)); // ERR-INVALID-AMOUNT
     });
 
     it("should check balance for refunds", () => {
@@ -126,7 +126,7 @@ describe("gas service tests", () => {
         address1
       );
 
-      expect(result).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+      expect(result).toBeErr(uintCV(20000)); // ERR-INSUFFICIENT-BALANCE
     });
 
     // Governance and Implementation tests
@@ -137,7 +137,7 @@ describe("gas service tests", () => {
       expect(
         simnet.callPublicFn("gas-service", "set-impl", [newImpl], address1)
           .result
-      ).toBeErr(uintCV(10111)); // ERR-UNAUTHORIZED
+      ).toBeErr(uintCV(30002)); // ERR-UNAUTHORIZED
     });
 
     // Refund validation tests
@@ -156,7 +156,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+      ).toBeErr(uintCV(20000)); // ERR-INSUFFICIENT-BALANCE
     });
 
     // Fee collection tests
@@ -178,7 +178,7 @@ describe("gas service tests", () => {
           [gasImplContract, principalCV(address1), uintCV(balance + 1000)],
           address1
         ).result
-      ).toBeErr(uintCV(10114)); // ERR-INSUFFICIENT-BALANCE
+      ).toBeErr(uintCV(20000)); // ERR-INSUFFICIENT-BALANCE
     });
 
     // Unimplemented function tests
@@ -198,7 +198,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10113)); // err-not-implemented
+      ).toBeErr(uintCV(20004)); // err-not-implemented
 
       expect(
         simnet.callPublicFn(
@@ -214,7 +214,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10113));
+      ).toBeErr(uintCV(20004));
 
       expect(
         simnet.callPublicFn(
@@ -231,7 +231,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10113));
+      ).toBeErr(uintCV(20004));
 
       expect(
         simnet.callPublicFn(
@@ -247,7 +247,7 @@ describe("gas service tests", () => {
           ],
           address1
         ).result
-      ).toBeErr(uintCV(10113));
+      ).toBeErr(uintCV(20004));
     });
 
     // Event emission tests
@@ -384,7 +384,7 @@ describe("gas service tests", () => {
           [gasImplContract, principalCV(address1)],
           deployer
         );
-        expect(result).toBeErr(uintCV(10112));
+        expect(result).toBeErr(uintCV(40001));
       })
 
       it("should prevent non-owner from transferring ownership", () => {
@@ -395,7 +395,7 @@ describe("gas service tests", () => {
           [gasImplContract, principalCV(address2)],
           address1
         );
-        expect(result).toBeErr(uintCV(10151)); // ERR-ONLY-OWNER
+        expect(result).toBeErr(uintCV(20005)); // ERR-ONLY-OWNER
 
         // Verify owner hasn't changed
         const ownerCV = simnet.callReadOnlyFn(
@@ -422,7 +422,7 @@ describe("gas service tests", () => {
         [gasImplContract, principalCV(address3)],
         address2 // Call from non-gas-collector address
       );
-      expect(result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+      expect(result).toBeErr(uintCV(20006)); // ERR-GAS-COLLECTOR-ONLY
     });
 
     it("should successfully transfer gas collector role when called by current gas collector", () => {
@@ -467,7 +467,7 @@ describe("gas service tests", () => {
         ],
         address1 // Old gas collector
       );
-      expect(refundResult.result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+      expect(refundResult.result).toBeErr(uintCV(20006)); // ERR-GAS-COLLECTOR-ONLY
 
       // Try to call collect-fees from old gas collector (should fail)
       const collectResult = simnet.callPublicFn(
@@ -476,7 +476,7 @@ describe("gas service tests", () => {
         [gasImplContract, principalCV(address1), uintCV(1000)],
         address1 // Old gas collector
       );
-      expect(collectResult.result).toBeErr(uintCV(10152)); // ERR-GAS-COLLECTOR-ONLY
+      expect(collectResult.result).toBeErr(uintCV(20006)); // ERR-GAS-COLLECTOR-ONLY
 
       // Verify new gas collector can call these functions
       // First add some balance for testing
@@ -525,7 +525,7 @@ describe("gas service tests", () => {
         [gasImplContract, principalCV(simnet.deployer)], // Try to set owner as collector
         address1
       );
-      expect(result).toBeErr(uintCV(10112)); // ERR-OWNER-CANNOT-BE-COLLECTOR
+      expect(result).toBeErr(uintCV(40001)); // ERR-OWNER-CANNOT-BE-COLLECTOR
     });
 
     it("should emit transfer-gas-collector event", () => {

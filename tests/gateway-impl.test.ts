@@ -8,11 +8,11 @@ const address1 = accounts.get("wallet_1")!;
 
 describe("gateway impl tests", () => {
   it("proxy only public functions", () => {
-    expect(simnet.callPublicFn("gateway-impl", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz"), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
-    expect(simnet.callPublicFn("gateway-impl", "validate-message", [stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), Cl.bufferFromHex("0x00"), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
-    expect(simnet.callPublicFn("gateway-impl", "transfer-operatorship", [principalCV(address1), principalCV(address1)], address1).result).toBeErr(uintCV(10111));
-    expect(simnet.callPublicFn("gateway-impl", "rotate-signers-inner", [tupleCV({ "signers": listCV([]), "threshold": uintCV(1), "nonce": Cl.bufferFromHex("0x00") }), boolCV(false)], address1).result).toBeErr(uintCV(10111));
-    expect(simnet.callPublicFn("gateway-impl", "dispatch", [stringAsciiCV(""), Cl.bufferFromHex("0x00")], address1).result).toBeErr(uintCV(10111));
+    expect(simnet.callPublicFn("gateway-impl", "call-contract", [stringAsciiCV("foo"), stringAsciiCV("bar"), Cl.bufferFromAscii("baz"), principalCV(address1)], address1).result).toBeErr(uintCV(50001));
+    expect(simnet.callPublicFn("gateway-impl", "validate-message", [stringAsciiCV(""), stringAsciiCV(""), stringAsciiCV(""), Cl.bufferFromHex("0x00"), principalCV(address1)], address1).result).toBeErr(uintCV(50001));
+    expect(simnet.callPublicFn("gateway-impl", "transfer-operatorship", [principalCV(address1), principalCV(address1)], address1).result).toBeErr(uintCV(50001));
+    expect(simnet.callPublicFn("gateway-impl", "rotate-signers-inner", [tupleCV({ "signers": listCV([]), "threshold": uintCV(1), "nonce": Cl.bufferFromHex("0x00") }), boolCV(false)], address1).result).toBeErr(uintCV(50001));
+    expect(simnet.callPublicFn("gateway-impl", "dispatch", [stringAsciiCV(""), Cl.bufferFromHex("0x00")], address1).result).toBeErr(uintCV(50001));
   });
 
   it("proxy only public functions (approve-messages)", () => {
@@ -45,7 +45,7 @@ describe("gateway impl tests", () => {
 
     const proof = makeProofCV(proofSigners, messageHashToSign);
 
-    expect(simnet.callPublicFn("gateway-impl", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(10111));
+    expect(simnet.callPublicFn("gateway-impl", "approve-messages", [bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(50001));
   });
 
   it("proxy only public functions (rotate-signers)", () => {
@@ -70,6 +70,6 @@ describe("gateway impl tests", () => {
 
     const proof = makeProofCV(proofSigners, messageHashToSign);
 
-    expect(simnet.callPublicFn("gateway-impl", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(10111));
+    expect(simnet.callPublicFn("gateway-impl", "rotate-signers", [bufferCV(serializeCV(signersToCv(newSigners))), bufferCV(serializeCV(proof))], address1).result).toBeErr(uintCV(50001));
   });
 });

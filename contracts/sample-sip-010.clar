@@ -29,9 +29,9 @@
 ;;
 
 
-(define-constant ERR-INSUFFICIENT-BALANCE (err u2051))
-(define-constant ERR-INVALID-PARAMS (err u2052))
-(define-constant ERR-NOT-AUTHORIZED (err u2054))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u160000))
+(define-constant ERR-INVALID-PARAMS (err u160001))
+(define-constant ERR-NOT-AUTHORIZED (err u160002))
 
 (define-fungible-token itscoin)
 

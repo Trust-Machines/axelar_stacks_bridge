@@ -17,8 +17,18 @@
 ;; The token will be locked/unlocked at the token manager.
 (define-constant TOKEN-TYPE-LOCK-UNLOCK u2)
 
-(define-constant ERR-NOT-AUTHORIZED (err u1051))
-(define-constant ERR-NON-STANDARD-ADDRESS (err u1052))
+(define-constant ERR-ONLY-OPERATOR (err u170000))
+(define-constant ERR-NOT-AUTHORIZED (err u170001))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u170002))
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u170003))
+(define-constant ERR-NOT-MANAGED-TOKEN (err u170004))
+(define-constant ERR-ZERO-AMOUNT (err u170005))
+(define-constant ERR-STARTED (err u170006))
+(define-constant ERR-NOT-STARTED (err u170007))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u170008))
+(define-constant ERR-INVALID-PARAMS (err u170009))
+
+
 
 
 (define-data-var token-address (optional principal) none)
@@ -59,7 +69,6 @@
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u2051))
 
 (define-map flows uint {
     flow-in: uint,
@@ -187,8 +196,6 @@
 ;; ### Token Manager ####
 ;; ######################
 ;; ######################
-(define-constant ERR-NOT-MANAGED-TOKEN (err u3051))
-(define-constant ERR-ZERO-AMOUNT (err u3052))
 
 ;; This function gives token to a specified address from the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
@@ -233,10 +240,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u4051))
-(define-constant ERR-NOT-STARTED (err u4052))
-(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
-(define-constant ERR-INVALID-PARAMS (err u4054))
 
 (define-data-var is-started bool false)
 (define-read-only (get-is-started) (ok (var-get is-started)))
@@ -288,7 +291,6 @@
 ;; ####################
 ;; ####################
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
-(define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
 
 (define-read-only (is-operator-raw (address principal))

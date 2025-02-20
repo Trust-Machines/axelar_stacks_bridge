@@ -9,10 +9,17 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-TIMELOCK-EXISTS (err u12001))
-(define-constant ERR-TIMELOCK-NOT-READY (err u12011))
-(define-constant ERR-TIMELOCK-HASH (err u12021))
-(define-constant ERR-TIMELOCK-MIN-ETA (err u12031))
+(define-constant ERR-TIMELOCK-EXISTS (err u80000))
+(define-constant ERR-TIMELOCK-NOT-READY (err u80001))
+(define-constant ERR-TIMELOCK-HASH (err u80002))
+(define-constant ERR-TIMELOCK-MIN-ETA (err u80003))
+(define-constant ERR-PAYLOAD-DATA (err u80004))
+(define-constant ERR-INVALID-TYPE (err u80005))
+(define-constant ERR-INVALID-PROXY (err u80006))
+(define-constant ERR-UNAUTHORIZED (err u80007))
+(define-constant ERR-NOT-STARTED (err u80008))
+(define-constant ERR-STARTED (err u80009))
+
 
 (define-constant MIN-TIMELOCK-DELAY u43200) ;; 12 hours
 
@@ -80,11 +87,6 @@
 (define-data-var governance-chain-hash (buff 32) 0x00)
 (define-data-var governance-address-hash (buff 32) 0x00)
 
-(define-constant ERR-PAYLOAD-DATA (err u13021))
-(define-constant ERR-INVALID-TYPE (err u13041))
-(define-constant ERR-INVALID-PROXY (err u13051))
-(define-constant ERR-UNAUTHORIZED (err u13061))
-(define-constant ERR-NOT-STARTED (err u13071))
 
 ;; Schedules a new task
 ;; @gateway-impl; Trait reference of the current gateway implementation.
@@ -187,7 +189,6 @@
 
 (define-data-var is-started bool false)
 
-(define-constant ERR-STARTED (err u13081))
 
 (define-constant DEPLOYER tx-sender)
 

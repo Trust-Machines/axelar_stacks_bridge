@@ -9,9 +9,17 @@
 (impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.native-interchain-token-trait)
 (use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
 
-(define-constant ERR-NOT-AUTHORIZED (err u1051))
-(define-constant ERR-NON-STANDARD-ADDRESS (err u1052))
-
+(define-constant ERR-NOT-AUTHORIZED (err u150000))
+(define-constant ERR-NON-STANDARD-ADDRESS (err u150001))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u150002))
+(define-constant ERR-INVALID-PARAMS (err u150003))
+(define-constant ERR-ZERO-AMOUNT (err u150004))
+(define-constant ERR-NOT-MANAGED-TOKEN (err u150005))
+(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u150006))
+(define-constant ERR-STARTED (err u150007))
+(define-constant ERR-NOT-STARTED (err u150008))
+(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u150009))
+(define-constant ERR-ONLY-OPERATOR (err u150010))
 
 ;; ##########################
 ;; ##########################
@@ -19,9 +27,6 @@
 ;; ##########################
 ;; ##########################
 
-(define-constant ERR-INSUFFICIENT-BALANCE (err u2051))
-(define-constant ERR-INVALID-PARAMS (err u2052))
-(define-constant ERR-ZERO-AMOUNT (err u2053))
 
 (define-fungible-token itscoin)
 
@@ -64,7 +69,6 @@
 ;;
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
 
-(define-constant ERR-NOT-MANAGED-TOKEN (err u2053))
 
 
 
@@ -142,7 +146,6 @@
 ;; 6 BTC hours
 (define-constant EPOCH-TIME u36)
 
-(define-constant ERR-FLOW-LIMIT-EXCEEDED (err u3051))
 
 (define-map flows uint {
     flow-in: uint,
@@ -270,9 +273,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u4051))
-(define-constant ERR-NOT-STARTED (err u4052))
-(define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u4053))
 (define-constant DEPLOYER tx-sender)
 
 (define-data-var token-type (optional uint) none)
@@ -336,7 +336,6 @@
     )
 )
 (define-constant NULL-ADDRESS (unwrap-panic (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) 0x0000000000000000000000000000000000000000)))
-(define-constant ERR-ONLY-OPERATOR (err u5051))
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-its-impl)
     (contract-call? 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage get-service-impl))

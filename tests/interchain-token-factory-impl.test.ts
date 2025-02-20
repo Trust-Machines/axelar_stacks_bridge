@@ -7,7 +7,7 @@ import {
   setupTokenManager,
 } from "./its-utils";
 import { Cl, randomBytes } from "@stacks/transactions";
-import { ITF_ERRORS } from "./constants";
+import { ITF_IMPL_ERRORS } from "./constants";
 import { getCanonicalInterChainTokenId } from "./itf-utils";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
@@ -32,7 +32,7 @@ describe("Interchain token factory impl", () => {
         ],
         address1,
       ).result,
-    ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);
+    ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
     const proofSigners = getSigners(0, 10, 1, 10, "1");
     const tokenId = getCanonicalInterChainTokenId({}).value;
     const salt = randomBytes(32);
@@ -55,7 +55,7 @@ describe("Interchain token factory impl", () => {
         ],
         address1,
       ).result,
-    ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);
+    ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
 
     expect(
       simnet.callPublicFn(
@@ -74,7 +74,7 @@ describe("Interchain token factory impl", () => {
         ],
         address1,
       ).result,
-    ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);
+    ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
 
     setupNIT({ tokenId, minter: address1 });
     expect(
@@ -95,7 +95,7 @@ describe("Interchain token factory impl", () => {
         ],
         address1,
       ).result,
-    ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);
+    ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
     expect(
       simnet.callPublicFn(
         "interchain-token-factory-impl",
@@ -103,6 +103,6 @@ describe("Interchain token factory impl", () => {
         [Cl.stringAscii("fn"), Cl.bufferFromHex("0x"), Cl.address(address1)],
         address1,
       ).result,
-    ).toBeErr(ITF_ERRORS["ERR-NOT-PROXY"]);
+    ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
   });
 });

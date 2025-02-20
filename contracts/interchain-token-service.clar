@@ -13,11 +13,12 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-INVALID-IMPL (err u20211))
-(define-constant ERR-UNTRUSTED-CHAIN (err u22051))
-(define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u22087))
-(define-constant ERR-ZERO-AMOUNT (err u22088))
-(define-constant ERR-NOT-IMPLEMENTED (err u22089))
+(define-constant ERR-INVALID-IMPL (err u140001))
+(define-constant ERR-UNTRUSTED-CHAIN (err u140002))
+(define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u140003))
+(define-constant ERR-ZERO-AMOUNT (err u140004))
+(define-constant ERR-NOT-IMPLEMENTED (err u140005))
+(define-constant ERR-STARTED (err u140006))
 
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 
@@ -470,7 +471,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant ERR-STARTED (err u24051))
 
 
 
