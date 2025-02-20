@@ -172,20 +172,6 @@
     )
 )
 
-(define-public (gateway-call-contract
-    (gateway-impl <gateway-trait>)
-    (gas-service-impl <gas-service-trait>)
-    (destination-chain (string-ascii 20))
-    (destination-address (string-ascii 128))
-    (payload (buff 64000))
-    (gas-value uint))
-    (begin
-        (asserts! (is-correct-impl-raw contract-caller) ERR-INVALID-IMPL)
-        ;; This needs to be generic but guards must be implemented in the impl
-        ;; #[allow(unchecked_data)]
-        (try! (pay-native-gas-for-contract-call gas-service-impl gas-value tx-sender destination-chain destination-address payload))
-        (as-contract (contract-call? .gateway call-contract gateway-impl destination-chain destination-address payload))))
-
 (define-public (gateway-validate-message
     (gateway-impl <gateway-trait>)
     (source-chain (string-ascii 20))

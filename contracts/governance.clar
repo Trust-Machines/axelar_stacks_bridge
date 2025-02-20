@@ -102,7 +102,6 @@
 )
     (let
         (
-            (command-id (contract-call? .gateway-impl message-to-command-id source-chain message-id))
             (data (unwrap! (from-consensus-buff? {
                 proxy: principal,
                 target: principal,
@@ -169,7 +168,6 @@
 )
     (let
         (
-            (command-id (contract-call? .gateway-impl message-to-command-id source-chain message-id))
             (data (unwrap! (from-consensus-buff? {
                 hash: (buff 32),
                 type: uint
