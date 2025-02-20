@@ -907,7 +907,7 @@ describe("gateway tests", () => {
     it("dynamic dispatch", () => {
       deployGateway(getSigners(0, 10, 1, 10, "1"));
       const { result } = simnet.callPublicFn("gateway", "call", [gatewayImplCV, stringAsciiCV("foo"), Cl.bufferFromHex("0x00")], contractCaller);
-      expect(result).toBeOk(boolCV(true));
+      expect(result).toBeErr(uintCV(10112));
     });
   });
 

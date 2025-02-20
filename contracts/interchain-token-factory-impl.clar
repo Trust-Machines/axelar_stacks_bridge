@@ -46,6 +46,7 @@
 (define-constant ERR-PAUSED (err u211064))
 (define-constant ERR-INVALID-PARAMS (err u211065))
 (define-constant ERR-NOT-TOKEN-DEPLOYER (err u211066))
+(define-constant ERR-NOT-IMPLEMENTED (err u211067))
 
 
 
@@ -516,7 +517,7 @@
 (define-public (dispatch (fn (string-ascii 32)) (data (buff 65000)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
-        (ok true)
+        ERR-NOT-IMPLEMENTED
     )
 )
 

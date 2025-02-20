@@ -44,6 +44,7 @@ export const ITS_ERROR_CODES = {
   "ERR-ONLY-OWNER": Cl.uint(25052),
   "ERR-STARTED": Cl.uint(24051),
   "ERR-NOT-STARTED": Cl.uint(24052),
+  "ERR-NOT-IMPLEMENTED": Cl.uint(22091),
 };
 
 export const TRUSTED_CHAIN = "axelarnet";
@@ -111,6 +112,7 @@ export const ITF_ERRORS = {
   "ERR-TOKEN-MISMATCH": Cl.uint(211060),
   "ERR-INVALID-CHAIN-NAME": Cl.uint(211061),
   "ERR-REMOTE-DEPLOYMENT-NOT-APPROVED": Cl.uint(211062),
+  "ERR-NOT-IMPLEMENTED": Cl.uint(211067)
 };
 
 export const BURN_ADDRESS = "ST000000000000000000002AMW42H";

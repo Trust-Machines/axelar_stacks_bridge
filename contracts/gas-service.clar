@@ -163,6 +163,8 @@
 ;; ######################
 
 (define-constant ERR-UNAUTHORIZED (err u10111))
+(define-constant ERR-NOT-IMPLEMENTED (err u10112))
+
 
 (define-public (set-impl (gas-impl principal))
     (let
@@ -184,7 +186,7 @@
 )
 
 (define-public (set-governance (governance principal))
-    (ok true))
+    ERR-NOT-IMPLEMENTED)
 
 ;; Constructor function
 ;; @param gas-collector

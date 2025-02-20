@@ -20,6 +20,7 @@
 
 (define-constant ERR-INVALID-IMPL (err u210211))
 (define-constant ERR-NOT-AUTHORIZED (err u210212))
+(define-constant ERR-NOT-IMPLEMENTED (err u210213))
 
 (define-private (is-correct-impl (interchain-token-factory-impl <itf-trait>))
     (is-eq
@@ -242,7 +243,7 @@
 )
 
 (define-public (set-governance (governance principal))
-    (ok true))
+    ERR-NOT-IMPLEMENTED)
 
 ;; General purpose proxy call
 (define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000)))

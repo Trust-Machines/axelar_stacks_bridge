@@ -17,6 +17,7 @@
 (define-constant ERR-UNTRUSTED-CHAIN (err u22051))
 (define-constant ERR-HUB-TRUSTED-ADDRESS-MISSING (err u22087))
 (define-constant ERR-ZERO-AMOUNT (err u22088))
+(define-constant ERR-NOT-IMPLEMENTED (err u22089))
 
 (define-constant MESSAGE-TYPE-SEND-TO-HUB u3)
 
@@ -465,7 +466,7 @@
 )
 
 (define-public (set-governance (governance principal))
-    (ok true))
+    ERR-NOT-IMPLEMENTED)
 
 
 

@@ -62,6 +62,7 @@
 (define-constant ERR-INVALID-PARAMS (err u22088))
 (define-constant ERR-GATEWAY-NOT-DEPLOYED (err u22089))
 (define-constant ERR-NOT-TOKEN-DEPLOYER (err u22090))
+(define-constant ERR-NOT-IMPLEMENTED (err u22091))
 
 
 
@@ -819,6 +820,6 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (ok true)
+        ERR-NOT-IMPLEMENTED
     )
 )

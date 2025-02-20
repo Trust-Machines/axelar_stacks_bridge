@@ -10,6 +10,8 @@
 
 (define-constant ERR-NOT-STARTED (err u6052))
 (define-constant ERR-UNAUTHORIZED (err u10111))
+(define-constant ERR-NOT-IMPLEMENTED (err u10112))
+
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -598,6 +600,6 @@
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (ok true)
+        ERR-NOT-IMPLEMENTED
     )
 )

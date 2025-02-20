@@ -2570,6 +2570,6 @@ describe("Interchain Token Service", () => {
         [itsImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
         address1,
       ).result,
-    ).toBeOk(Cl.bool(true));
+    ).toBeErr(ITS_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
   });
 });

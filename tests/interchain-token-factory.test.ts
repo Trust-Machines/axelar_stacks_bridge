@@ -402,7 +402,7 @@ describe("interchain-token-factory", () => {
         [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
         address1,
       );
-      expect(result).toBeOk(Cl.bool(true));
+      expect(result).toBeErr(ITF_ERRORS['ERR-NOT-IMPLEMENTED'])
     });
   });
 });
