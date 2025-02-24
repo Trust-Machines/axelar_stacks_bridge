@@ -13,7 +13,7 @@ which are also taken into account in the Amplifier Ampd & CosmWasm Contracts as 
 | Limit                                                         | Value                        |
 |---------------------------------------------------------------|------------------------------|
 | Cross-chain Message Size (i.e. `payload`)                     | 64 KB                        |
-| Chain Name Length (i.e. `destination-chain` & `source-chain`) | 20 ASCII chars               |
+| Chain Name Length (i.e. `destination-chain` & `source-chain`) | 19 ASCII chars               |
 | Signer Set Size                                               | 100 signers max              |
 | Signature Verification                                        | 100 signatures max           |
 | Message Approval Batching                                     | 10 messages max              |
