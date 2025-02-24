@@ -61,7 +61,7 @@
 ;; The address of the interchain token service.
 
 ;; Getter for the contract id.
-;; @return bytes32 The contract id of this contract.
+;; @return (buff 32) The contract id of this contract.
 (define-read-only (get-contract-id)
     (ok CONTRACT-ID))
 
@@ -78,7 +78,7 @@
 
 ;; Calculates the salt for a canonical interchain token.
 ;; @param token-address The address of the token.
-;; @return salt The calculated salt for the interchain token.
+;; @return (buff 32) The calculated salt for the interchain token.
 (define-read-only (get-canonical-interchain-token-deploy-salt (token-address principal))
         (keccak256
             (concat
@@ -101,14 +101,14 @@
 ;; Computes the ID for an interchain token based on the deployer and a salt.
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
-;; @return token-id The ID of the interchain token.
+;; @return (buff 32) The ID of the interchain token.
 (define-private (get-interchain-token-id-raw (its-impl <its-trait>) (salt (buff 32)))
     (contract-call? .interchain-token-service interchain-token-id its-impl TOKEN-FACTORY-DEPLOYER salt))
 
 ;; Computes the ID for an interchain token based on the deployer and a salt.
 ;; @param deployer The address that deployed the interchain token.
 ;; @param salt A unique identifier used in the deployment process.
-;; @return token-id The ID of the interchain token.
+;; @return (buff 32) The ID of the interchain token.
 (define-public (get-interchain-token-id (its-impl <its-trait>) (deployer principal) (salt (buff 32)))
     (let ((deploy-salt (get-interchain-token-deploy-salt deployer salt)))
     ;; this is assumed to be a read only operation
@@ -118,7 +118,7 @@
 
 ;; Computes the ID for a canonical interchain token based on its address.
 ;; @param token-address The address of the canonical interchain token.
-;; @return token-id The ID of the canonical interchain token.
+;; @return (buff 32) The ID of the canonical interchain token.
 (define-public (get-canonical-interchain-token-id (its-impl <its-trait>) (token-address principal))
     ;; this is assumed to be a read only operation
     ;; #[allow(unchecked_data)]
@@ -355,11 +355,13 @@
 
 ;; Allow the minter to approve the deployer for a remote interchain token deployment that uses a custom destinationMinter address.
 ;; This ensures that a token deployer can't choose the destinationMinter itself, and requires the approval of the minter to reduce trust assumptions on the deployer.
+;; @param its-impl The implementation of the InterChainTokenService contract.
 ;; @param deployer The address of the deployer.
 ;; @param salt_ The unique salt for deploying the token.
 ;; @param destination-chain The name of the destination chain.
 ;; @param destination-minter The minter address to set on the deployed token on the destination chain. This can be arbitrary bytes
 ;; @param token The token to deploy.
+;; @param caller the proxy contract-caller passed from the proxy
 ;; since the encoding of the account is dependent on the destination chain.
 (define-public (approve-deploy-remote-interchain-token
     (its-impl <its-trait>)
@@ -399,9 +401,11 @@
 
 
 ;; Allows the minter to revoke a deployer's approval for a remote interchain token deployment that uses a custom destination-minter address.
+;; @param its-impl The implementation of the InterChainTokenService contract.
 ;; @param deployer The address of the deployer.
 ;; @param salt_ The unique salt for deploying the token.
 ;; @param destination-chain The name of the destination chain.
+;; @param caller the contract-caller passed from the proxy
 (define-public (revoke-deploy-remote-interchain-token
         (its-impl <its-trait>)
         (deployer principal)
@@ -470,6 +474,9 @@
 
 
 ;; Deploys a remote interchain token on a specified destination chain.
+;; @param gateway-impl The address of the current gateway contract implementation
+;; @param gas-service-impl The address of the current gas service contract implementation
+;; @param its-impl The address of the current Interchain Token Service contract implementation
 ;; @param deploy-salt The salt used for the deployment.
 ;; @param minter The address to receive the minter and operator role of the token, in addition to ITS.
 ;; @param destination-chain The name of the destination chain.

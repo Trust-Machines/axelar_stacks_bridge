@@ -28,6 +28,10 @@
         (contract-of interchain-token-factory-impl)))
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
+;; @param itf-impl The address of the current InterChainTokenFactory implementation contract
+;; @param gateway-impl The address of the current Gateway implementation contract
+;; @param gas-service-impl The address of the current GasService implementation contract
+;; @param its-impl The address of the current InterchainTransferService implementation contract
 ;; @param token-address The address of the canonical token.
 ;; @param token-manager-address The address of the token manager.
 ;; @param verification-params The verification parameters for the canonical token.
@@ -63,6 +67,10 @@
 
 
 ;; Deploys a canonical interchain token on a remote chain.
+;; @param itf-impl The address of the current InterChainTokenFactory implementation contract
+;; @param gateway-impl The address of the current Gateway implementation contract
+;; @param gas-service-impl The address of the current GasService implementation contract
+;; @param its-impl The address of the current InterchainTransferService implementation contract
 ;; @param token The address of the original token on the original chain.
 ;; @param destination-chain The name of the chain where the token will be deployed.
 ;; @param gas-value The gas amount to be sent for deployment.

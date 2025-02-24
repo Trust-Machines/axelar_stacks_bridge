@@ -82,6 +82,7 @@
 ;; ####################
 
 ;; Sets the trusted address and its hash for a remote chain
+;; @param its-impl The implementation of the Interchain Token Service
 ;; @param chain-name Chain name of the remote chain
 ;; @param address the string representation of the trusted address
 ;; #[allow(unchecked_data)]
@@ -91,6 +92,7 @@
         (contract-call? its-impl set-trusted-address chain-name address contract-caller)))
 
 ;; Remove the trusted address of the chain.
+;; @param its-impl The implementation of the Interchain Token Service
 ;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
 (define-public (remove-trusted-address (its-impl <its-trait>) (chain-name  (string-ascii 19)))
@@ -146,6 +148,8 @@
 ;; @dev This method also determines whether the ITS call should be routed via the ITS Hub.
 ;; If the `(is-eq (get-trusted-address destination-chain) "hub")`, then the call is wrapped and routed to the ITS Hub destination.
 ;; Right now only ITS hub payloads are supported
+;; @param gateway-impl The implementation of the Gateway contract
+;; @param gas-service-impl The implementation of the Gas Service contract
 ;; @param destination-chain The target chain where the contract will be called.
 ;; @param payload The data payload for the transaction.
 ;; @param metadata-version The version of the metadata to be used, currently only contract-call is supported.
@@ -216,6 +220,9 @@
             contract-caller)))
 
 ;; Deploys an interchain token on a destination chain.
+;; @param gateway-impl The implementation of the Gateway contract
+;; @param gas-service-impl The implementation of the GasService contract
+;; @param its-impl The implementation of the InterchainTokenService contract
 ;; @param salt The salt to be used during deployment.
 ;; @param destination-chain The destination chain where the token will be deployed.
 ;; @param name The name of the token.
@@ -277,6 +284,9 @@
             contract-caller)))
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
+;; @param gateway-impl The implementation of the Gateway contract
+;; @param gas-service-impl The implementation of the GasService contract
+;; @param its-impl The implementation of the InterchainTokenService contract
 ;; @param token-manager The TokenManager contract associated with the token being transferred
 ;; @param token The token to be transferred.
 ;; @param token-id The token ID of the token to be transferred

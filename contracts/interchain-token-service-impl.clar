@@ -136,7 +136,7 @@
 ;;  Calculates the token-id that would correspond to a link for a given deployer with a specified salt.
 ;;  @param sender The address of the TokenManager deployer.
 ;;  @param salt The salt that the deployer uses for the deployment.
-;;  @return token-id The token-id that the custom TokenManager would get (or has gotten).
+;;  @return (buff 32) The token-id that the custom TokenManager would get (or has gotten).
 (define-read-only (interchain-token-id-raw (sender principal) (salt (buff 32)))
     (keccak256 (concat
         (concat PREFIX-INTERCHAIN-TOKEN-ID (unwrap-panic (to-consensus-buff? sender)))
@@ -244,11 +244,12 @@
 ;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because validators
 ;; would check the contract code for validity before deployment locally
 ;; @param gateway-impl The implementation of the gateway contract
+;; @param gas-service-impl The implementation of the GasService contract
 ;; @param salt The salt to be used during deployment.
 ;; @param destination-chain The name of the chain to deploy the TokenManager and standardized token to.
 ;; @param token-manager-type The type of token manager to be deployed. Cannot be NATIVE_INTERCHAIN_TOKEN.
 ;; @param params The params that will be used to initialize the TokenManager.
-;; @param gas-value The amount of native tokens to be used to pay for gas for the remote deployment.
+;; @param verification-params The params that will be used to verify the token manager local deployment
 ;; @param caller the contract caller passed by the proxy
 (define-public (deploy-token-manager
         (gateway-impl <gateway-trait>)
@@ -324,6 +325,7 @@
 
 ;; Deploys an interchain token on a destination chain.
 ;; @param gateway-impl the gateway implementation contract address.
+;; @param gas-service-impl the gas service implementation contract address.
 ;; @param salt The salt to be used during deployment.
 ;; @param destination-chain the destination chain name.
 ;; @param name The name of the token.
@@ -443,6 +445,7 @@
 ;; validators will need to verify the contract code and parameters
 ;; If minter is none, no additional minter is set on the token, only ITS is allowed to mint.
 ;; @param gateway-impl the gateway implementation contract address.
+;; @param gas-service-impl the gas service implementation contract address.
 ;; @param salt The salt to be used during deployment.
 ;; @param token the deployed native interchain token contract address
 ;; @param supply The already minted supply of the deployed token.
@@ -526,8 +529,13 @@
             (token-address (contract-of token))
             (contract-principal (try! (decode-contract-principal token-address)))
             (token-id (get token-id payload-decoded))
+            (wrapped-source-chain (get source-chain payload-decoded))
         )
-        (asserts! (not (is-eq (get source-chain payload-decoded) (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (not (is-eq wrapped-source-chain (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-chain wrapped-source-chain) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
+        (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
+        (asserts! (is-trusted-address wrapped-source-chain ITS-HUB-ROUTING-IDENTIFIER) ERR-NOT-REMOTE-SERVICE)
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
         ;; #[filter(verification-params, caller)]
         (try! (native-interchain-token-checks token NULL-ADDRESS token-id u0 verification-params caller))
@@ -554,6 +562,7 @@
 ;; Initiates an interchain transfer of a specified token to a destination chain.
 ;; @dev The function retrieves the TokenManager associated with the token-id.
 ;; @param gateway-impl the gateway implementation contract address.
+;; @param gas-service-impl the gas service implementation contract address.
 ;; @param token-manager the token manager contract address.
 ;; @param token the token contract address
 ;; @param token-id The unique identifier of the token to be transferred.
@@ -603,6 +612,7 @@
 
 ;; Initiates an interchain call contract with interchain token to a destination chain.
 ;; @param gateway-impl the gateway implementation contract address.
+;; @param gas-service-impl the gas service implementation contract address.
 ;; @param token-manager the token manager contract address.
 ;; @param token the token contract address
 ;; @param token-id The unique identifier of the token to be transferred.
@@ -675,6 +685,8 @@
         (ok true)))
 
 ;; Transmit a callContractWithInterchainToken for the given token-id.
+;; @param gateway-impl The gateway implementation.
+;; @param gas-service-impl the gas service implementation contract address.
 ;; @param token-id The token-id of the TokenManager (which must be the msg.sender).
 ;; @param source-address The address where the token is coming from, which will also be used for gas reimbursement.
 ;; @param destination-chain The name of the chain to send tokens to.
@@ -756,6 +768,7 @@
         (asserts! (is-trusted-chain wrapped-source-chain) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-chain source-chain) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
+        (asserts! (is-trusted-address wrapped-source-chain ITS-HUB-ROUTING-IDENTIFIER) ERR-NOT-REMOTE-SERVICE)
         (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
         (try! (as-contract
             (contract-call? .interchain-token-service gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))

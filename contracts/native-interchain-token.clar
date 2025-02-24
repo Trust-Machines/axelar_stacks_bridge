@@ -155,7 +155,7 @@
 
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flowLimiter the address of the new flow limiter.
+;; @param address the address of the new flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
@@ -166,7 +166,7 @@
 
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flowLimiter the address of an existing flow limiter.
+;; @param address the address of an existing flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
     (begin

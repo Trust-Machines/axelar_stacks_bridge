@@ -78,7 +78,7 @@
 
 ;; This function adds a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flow-limiter the address of the new flow limiter.
+;; @param address the address of the new flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
     (begin
@@ -89,7 +89,7 @@
 
 ;; This function removes a flow limiter for this TokenManager.
 ;; Can only be called by the operator.
-;; @param flow-limiter the address of an existing flow limiter.
+;; @param address the address of an existing flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (remove-flow-limiter (address principal))
     (begin
@@ -119,7 +119,7 @@
 
 ;; This function sets the flow limit for this TokenManager.
 ;; Can only be called by the flow limiters.
-;; @param flow-limit The maximum difference between the tokens
+;; @param limit The maximum difference between the tokens
 ;; flowing in and/or out at any given interval of time (6h).
 ;; #[allow(unchecked_data)]
 (define-public (set-flow-limit (limit uint))
@@ -199,7 +199,6 @@
 
 ;; This function gives token to a specified address from the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
-;; @param token-manager The trait interface of the token manager
 ;; @param to The address to give tokens to.
 ;; @param amount The amount of tokens to give.
 ;; @return (response bool uint)
@@ -212,7 +211,6 @@
 
 ;; This function takes token from a specified address to the token manager.
 ;; @param sip-010-token The sip-010 interface of the token.
-;; @param token-manager The trait interface of the token manager
 ;; @param from The address to take tokens from.
 ;; @param amount The amount of token to take.
 ;; @return (response bool uint)
@@ -277,8 +275,8 @@
 ;;  * @notice Getter function for the parameters of a lock/unlock TokenManager.
 ;;  * @dev This function will be mainly used by frontends.
 ;;  * @param operator_ The operator of the TokenManager.
-;;  * @param tokenAddress_ The token to be managed.
-;;  * @return params_ The resulting params to be passed to custom TokenManager deployments.
+;;  * @param token-address_ The token to be managed.
+;;  * @return (buff 500) The resulting params to be passed to custom TokenManager deployments.
 (define-read-only (get-params (operator_ (optional principal)) (token-address_ principal))
     (ok (unwrap-panic (to-consensus-buff? {
         operator: operator_,

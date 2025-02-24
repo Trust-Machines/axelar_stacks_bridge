@@ -149,12 +149,12 @@
 
 (define-constant DEPLOYER tx-sender)
 
-;; Constructor function
-;; @param signers; The data for the new signers.
-;; @param operator_
-;; @previous-signers-retention_
-;; @domain-separator_
-;; @minimum-rotation-delay_
+;; Initial setup function should be only called once to start the protocol
+;; @param signers The initial gateway signer set
+;; @param operator_ The initial gateway operator
+;; @param domain-separator_ The initial gateway domain separator used to create messages for signing
+;; @minimum-rotation-delay_ The minimum delay between two rotations of the gateway signers
+;; @previous-signers-retention_ How many epochs should previous signers remain valid (when reverting to an old set by the operator)
 ;; @returns (response true) or reverts
 (define-public (setup
     (signers (buff 8192))

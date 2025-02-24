@@ -35,6 +35,7 @@
 ;; @param destination-chain; The chain where the destination contract exists. A registered chain name on Axelar must be used here
 ;; @param destination-contract-address; The address of the contract to call on the destination chain
 ;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
+;; @param sender the proxy contract-caller passed from the proxy
 (define-public (call-contract
     (destination-chain (string-ascii 19))
     (destination-contract-address (string-ascii 128))
@@ -155,6 +156,7 @@
 ;; @param message-id; The unique identifier of the message.
 ;; @param source-address; The address of the sender on the source chain.
 ;; @param payload-hash The keccak256 hash of the payload data.
+;; @param sender the proxy contract-caller passed from the proxy
 ;; @returns (response true) or reverts
 (define-public (validate-message
     (source-chain (string-ascii 19))
@@ -350,7 +352,7 @@
 )
 
 ;; This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
-;; @param new-signers; Signers to validate
+;; @param signers; Signers to validate
 ;; @returns (response true) or reverts
 (define-private (validate-signers (signers {
             signers: (list 100 {signer: (buff 33), weight: uint}),

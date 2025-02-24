@@ -138,14 +138,22 @@ Calls a contract on a destination chain with an interchain token.
 Executes the deployment of an interchain token.
 
 ```clarity
-(define-public (execute-deploy-interchain-token
-        (gateway-impl <gateway-trait>)
+(gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
+        (source-chain (string-ascii 19))
         (message-id (string-ascii 128))
-        (source-chain (string-ascii 32))
         (source-address (string-ascii 128))
-        (token-address principal)
-        (payload (buff 1024))))
+        (token <native-interchain-token-trait>)
+        (payload (buff 62000))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }))
 ```
 
 ### 11. `execute-receive-interchain-token`
