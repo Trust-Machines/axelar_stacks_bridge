@@ -903,7 +903,7 @@ describe("gateway tests", () => {
   
       // show that the rotation fails
       const { result } = simnet.callPublicFn("gateway", "rotate-signers", [gatewayImplCV, bufferCV(serializeCV(signersToCv(maliciousSigners))), bufferCV(serializeCV(maliciousProof))], contractCaller);
-      expect(result).toBeErr(Cl.uint(4051));
+      expect(result).toBeErr(Cl.uint(50013));
     });
 
     it("should reject rotating signers from operator with a previous proof", () => {
