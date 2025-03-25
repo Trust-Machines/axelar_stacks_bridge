@@ -276,8 +276,6 @@
 ;; no additional minter is set on the token. Reverts if the minter does not have mint permission for the token.
 ;; @param destination-chain The name of the destination chain.
 ;; @param destination-minter The minter address to set on the deployed token on the destination chain. This can be arbitrary bytes
-;; since the encoding of the account is dependent on the destination chain. If this is empty, then the `minter` of the token on the current chain
-;; is used as the destination minter, which makes it convenient when deploying to other EVM chains.
 ;; @param gas-value The amount of gas to send for the deployment.
 ;; @param token The token to deploy.
 ;; @param token-manager The token manager to use for the token.
