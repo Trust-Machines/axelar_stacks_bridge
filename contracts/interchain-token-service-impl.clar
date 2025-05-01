@@ -64,7 +64,7 @@
 (define-constant ERR-NOT-IMPLEMENTED (err u120038))
 (define-constant ERR-ONLY-OPERATOR (err u120039))
 (define-constant ERR-ONLY-OWNER (err u120040))
-(define-constant ERR-NOT-STARTED (err u120040))
+(define-constant ERR-NOT-STARTED (err u120041))
 (define-constant ERR-INVALID-MINTER (err u120042))
 
 
