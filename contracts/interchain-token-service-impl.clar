@@ -65,6 +65,7 @@
 (define-constant ERR-ONLY-OPERATOR (err u120039))
 (define-constant ERR-ONLY-OWNER (err u120040))
 (define-constant ERR-NOT-STARTED (err u120040))
+(define-constant ERR-INVALID-MINTER (err u120042))
 
 
 ;; This type is reserved for interchain tokens deployed by ITS, and can't be used by custom token managers.
@@ -524,12 +525,14 @@
                 name: (string-ascii 32),
                 symbol: (string-ascii 32),
                 decimals: uint,
-                minter-bytes: (buff 128),
+                minter-bytes: (buff 20),
             } payload) ERR-INVALID-PAYLOAD))
             (token-address (contract-of token))
             (contract-principal (try! (decode-contract-principal token-address)))
             (token-id (get token-id payload-decoded))
             (wrapped-source-chain (get source-chain payload-decoded))
+            (minter-bytes (get minter-bytes payload-decoded))
+            (minter (if (is-eq (len minter-bytes) u20) (unwrap! (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) minter-bytes) ERR-INVALID-MINTER) NULL-ADDRESS))
         )
         (asserts! (not (is-eq wrapped-source-chain (get-its-hub-chain))) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-chain wrapped-source-chain) ERR-UNTRUSTED-CHAIN)
@@ -538,7 +541,7 @@
         (asserts! (is-trusted-address wrapped-source-chain ITS-HUB-ROUTING-IDENTIFIER) ERR-NOT-REMOTE-SERVICE)
         (asserts! (is-eq MESSAGE-TYPE-DEPLOY-INTERCHAIN-TOKEN (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE)
         ;; #[filter(verification-params, caller)]
-        (try! (native-interchain-token-checks token NULL-ADDRESS token-id u0 verification-params caller))
+        (try! (native-interchain-token-checks token minter token-id u0 verification-params caller))
         (asserts! (not (contract-call? .interchain-token-service-storage is-manager-address-used token-address)) ERR-TOKEN-EXISTS)
         (asserts!
             (unwrap! (insert-token-manager token-id token-address TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN) ERR-NOT-AUTHORIZED)
