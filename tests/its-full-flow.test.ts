@@ -1,4 +1,20 @@
+import { Cl, cvToHex, randomBytes } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
+import {
+  MessageType,
+  MetadataVersion,
+  NIT_ERRORS,
+  TRUSTED_ADDRESS,
+  TRUSTED_CHAIN,
+} from "./constants";
+import {
+  deployRemoteCanonicalInterchainToken,
+  factoryDeployInterchainToken,
+  factoryDeployRemoteInterchainToken,
+  getCanonicalInterChainTokenId,
+  getInterchainTokenId,
+  registerCanonicalInterchainToken,
+} from "./itf-utils";
 import {
   approveReceiveInterchainTransfer,
   buildIncomingInterchainTransferPayload,
@@ -17,23 +33,7 @@ import {
   transferMinterShip,
   transferSip010,
 } from "./its-utils";
-import {
-  factoryDeployInterchainToken,
-  deployRemoteCanonicalInterchainToken,
-  getCanonicalInterChainTokenId,
-  getInterchainTokenId,
-  registerCanonicalInterchainToken,
-  factoryDeployRemoteInterchainToken,
-} from "./itf-utils";
-import { Cl, cvToHex, randomBytes } from "@stacks/transactions";
 import { getSigners } from "./util";
-import {
-  MessageType,
-  MetadataVersion,
-  NIT_ERRORS,
-  TRUSTED_ADDRESS,
-  TRUSTED_CHAIN,
-} from "./constants";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -101,7 +101,7 @@ describe("Interchain Token Service Full Flow", () => {
                 symbol: Cl.stringAscii(symbol),
                 decimals: Cl.uint(decimals),
                 minter: Cl.bufferFromHex(
-                  "0x0000000000000000000000000000000000000000",
+                  "0x",
                 ),
               }),
             ),
@@ -124,7 +124,7 @@ describe("Interchain Token Service Full Flow", () => {
               symbol: Cl.stringAscii(symbol),
               decimals: Cl.uint(decimals),
               minter: Cl.bufferFromHex(
-                "0x0000000000000000000000000000000000000000",
+                "0x",
               ),
               "destination-chain": Cl.stringAscii(chain),
             }),
