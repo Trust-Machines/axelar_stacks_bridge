@@ -169,7 +169,7 @@ describe("gateway tests", () => {
       const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
       expect(validateResult2).toBeErr(uintCV(50019));
 
-      // should not re-validate with invalid message id
+      // should not validate with invalid message id
       const messageId2 = stringAsciiCV("11");
       const { result: validateResult3 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId2, sourceAddress, payloadHash], contractCaller);
       expect(validateResult3).toBeErr(uintCV(50004));
