@@ -1,7 +1,7 @@
+import { boolCV, bufferCV, Cl, contractPrincipalCV, cvToJSON, listCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
-import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
-import { boolCV, bufferCV, contractPrincipalCV, cvToJSON, Cl, listCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { keccak256 } from "./its-utils";
+import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -423,106 +423,6 @@ describe("governance tests", () => {
     // try to finalize
     const { result: resultFinalize } = simnet.callPublicFn("governance", "finalize", [contractPrincipalCV(accounts.get("deployer")!, "gateway"), bufferCV(serializeCV(payload))], address1);
     expect(resultFinalize).toBeErr(uintCV(80006));
-  });
-
-  it("should cancel a scheduled task", () => {
-    setupGovernance();
-
-    //-- Schedule task 
-    const payload = tupleCV({
-      target: contractPrincipalCV(deployer, 'governance-2'),
-      proxy: contractPrincipalCV(deployer, 'gateway'),
-      eta: uintCV(eta),
-      type: uintCV(2)
-    })
-    const payloadHash = bufferCV(keccak256(serializeCV(payload)));
-
-    const messages = listCV([
-      tupleCV({
-        "source-chain": sourceChain,
-        "message-id": messageId,
-        "source-address": sourceAddress,
-        "contract-address": contractAddress,
-        "payload-hash": payloadHash
-      })
-    ]);
-
-    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-governance", [], address1);
-    expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
-
-    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
-
-    const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
-      return cvToJSON(result).value;
-    })();
-
-    const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], address1);
-      return cvToJSON(result).value;
-    })();
-
-    const messageHashToSign = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)], address1);
-      return cvToJSON(result).value
-    })();
-
-    const proof = makeProofCV(proofSigners, messageHashToSign);
-
-    // approve message on the gateway
-    const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
-
-    // execute on the governance
-    const { result: resultExecute } = simnet.callPublicFn("governance", "execute", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload))], address1);
-    expect(resultExecute).toBeOk(boolCV(true));
-
-    // check timelock
-    const { result: timelock } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
-    expect(timelock).toStrictEqual(payload);
-
-    //-- Cancel task
-    messageId = stringAsciiCV("2");
-
-    const payload2 = tupleCV({
-      hash: payloadHash,
-      type: uintCV(3)
-    });
-    const payloadHash2 = bufferCV(keccak256(serializeCV(payload2)));
-
-    const messages2 = listCV([
-      tupleCV({
-        "source-chain": sourceChain,
-        "message-id": messageId,
-        "source-address": sourceAddress,
-        "contract-address": contractAddress,
-        "payload-hash": payloadHash2
-      })
-    ]);
-
-    const dataHash2 = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages2], address1);
-      return cvToJSON(result).value;
-    })();
-
-    const messageHashToSign2 = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash2)], address1);
-      return cvToJSON(result).value
-    })();
-
-    const proof2 = makeProofCV(proofSigners, messageHashToSign2);
-
-    // approve message on the gateway
-    const { result: resultApprove2 } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages2)), bufferCV(serializeCV(proof2))], address1);
-    expect(resultApprove2).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
-
-    // execute on the governance
-    const { result: resultExecute2 } = simnet.callPublicFn("governance", "cancel", [gatewayImplCV, sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload2))], address1);
-    expect(resultExecute2).toBeOk(boolCV(true));
-
-    // check timelock. it should be deleted.
-    const { result: timelock2 } = simnet.callReadOnlyFn("governance", "get-timelock", [payloadHash], address1);
-    expect(cvToJSON(timelock2).value.eta.value).toBe('0')
   });
 
   it("should not finalize before eta", () => {

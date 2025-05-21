@@ -49,19 +49,6 @@
     )
 )
 
-;; Cancels an existing timelock by setting its eta to zero.
-;; @params hash; The hash of the timelock to cancel
-;; @returns (response true) or reverts
-(define-private (cancel-timelock (hash (buff 32)))
-    (let
-        (
-            (eta (get eta (get-timelock hash)))
-        )
-        (asserts! (> eta u0) ERR-TIMELOCK-HASH)
-        (ok (map-delete timelock-map hash))
-    )
-)
-
 ;; Finalizes an existing timelock and sets its eta back to zero.
 ;; To finalize, the timelock must currently exist and the required time delay must have passed.
 ;; @params hash; The hash of the timelock to finalize
@@ -123,7 +110,6 @@
 
 (define-constant ACTION-SET-IMPLEMENTATION u1)
 (define-constant ACTION-SET-GOVERNANCE u2)
-(define-constant ACTION-CANCEL-TASK u3)
 
 ;; Finalizes a scheduled task
 ;; @proxy; Proxy trait reference to run task with.
@@ -151,33 +137,6 @@
             )
         ) true) ERR-INVALID-TYPE)
         (ok true)
-    )
-)
-
-;; Cancels a scheduled task
-;; @gateway-impl; Trait reference of the current gateway implementation.
-;; @param source-chain; The name of the source chain.
-;; @param message-id; The unique identifier of the message.
-;; @param source-address; The address of the sender on the source chain.
-;; @param payload; The payload that contains the new impl address and eta.
-;; @returns (response true) or reverts
-(define-public (cancel
-    (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 19))
-    (message-id (string-ascii 128))
-    (source-address (string-ascii 128))
-    (payload (buff 64000))
-)
-    (let
-        (
-            (data (unwrap! (from-consensus-buff? {
-                hash: (buff 32),
-                type: uint
-            } payload) ERR-PAYLOAD-DATA))
-        )
-        (asserts! (is-eq (get type data) ACTION-CANCEL-TASK) ERR-INVALID-TYPE)
-        (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
-        (cancel-timelock (get hash data))
     )
 )
 
