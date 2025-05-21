@@ -201,7 +201,7 @@
 
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-data-var its-hub-chain (string-ascii 19) "axelarnet")
+(define-data-var its-hub-chain (string-ascii 19) "axelar")
 
 
 (define-read-only (get-token-factory-impl)
