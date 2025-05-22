@@ -174,7 +174,10 @@
                 hash: (buff 32),
                 type: uint
             } payload) ERR-PAYLOAD-DATA))
+            (source-chain-hash (keccak256 (unwrap-panic (to-consensus-buff? source-chain))))
+            (source-address-hash (keccak256 (unwrap-panic (to-consensus-buff? source-address))))
         )
+        (asserts! (and (is-eq source-chain-hash (var-get governance-chain-hash)) (is-eq source-address-hash (var-get governance-address-hash))) ERR-UNAUTHORIZED)
         (asserts! (is-eq (get type data) ACTION-CANCEL-TASK) ERR-INVALID-TYPE)
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address (keccak256 payload)))
         (cancel-timelock (get hash data))
