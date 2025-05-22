@@ -1,8 +1,8 @@
 
-import { boolCV, BufferCV, bufferCV, bufferCVFromString, contractPrincipalCV, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV, Cl } from "@stacks/transactions";
+import { boolCV, BufferCV, bufferCV, bufferCVFromString, Cl, contractPrincipalCV, cvToJSON, cvToValue, listCV, principalCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
-import { contractCallEventToObj, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, deployGateway, operatorAddress, contractCaller, transferOperatorshipEventToObj, gatewayImplCV, deployerAddress } from "./util";
 import { Signers } from "./types";
+import { contractCaller, contractCallEventToObj, deployerAddress, deployGateway, gatewayImplCV, getSigners, makeProofCV, messageApprovedEventToObj, messageExecutedEventToObj, operatorAddress, SIGNER_KEYS, signersRotatedEventToObj, signersToCv, signMessageHashForAddress, transferOperatorshipEventToObj } from "./util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -165,9 +165,14 @@ describe("gateway tests", () => {
       const isExecutedAfter = simnet.callReadOnlyFn("gateway-impl", "is-message-executed", [sourceChain, messageId], contractCaller).result;
       expect(isExecutedAfter).toBeOk(boolCV(true));
 
-      // should not re-validate
+      // should not re-validate executed message
       const { result: validateResult2 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId, sourceAddress, payloadHash], contractCaller);
-      expect(validateResult2).toBeErr(uintCV(50004));
+      expect(validateResult2).toBeErr(uintCV(50019));
+
+      // should not validate with invalid message id
+      const messageId2 = stringAsciiCV("11");
+      const { result: validateResult3 } = simnet.callPublicFn("gateway", "validate-message", [gatewayImplCV, sourceChain, messageId2, sourceAddress, payloadHash], contractCaller);
+      expect(validateResult3).toBeErr(uintCV(50004));
     });
 
 

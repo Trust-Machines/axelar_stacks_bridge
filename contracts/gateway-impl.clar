@@ -28,7 +28,7 @@
 (define-constant ERR-PROOF-DATA (err u50016))
 (define-constant ERR-DUPLICATE-SIGNERS (err u50017))
 (define-constant ERR-NOT-LATEST-SIGNERS (err u50018))
-
+(define-constant ERR-MESSAGE-EXECUTED (err u50019))
 
 ;; Sends a message to the specified destination chain and address with a given payload.
 ;; This function is the entry point for general message passing between chains.
@@ -174,10 +174,13 @@
                 contract-address: sender,
                 payload-hash: payload-hash
             }))
+        (message (get-message command-id))
     )
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq (get-message command-id) message-hash) ERR-MESSAGE-NOT-FOUND)
+        (asserts! (not (is-eq message 0x00)) ERR-MESSAGE-NOT-FOUND)
+        (asserts! (not (is-eq message 0x01)) ERR-MESSAGE-EXECUTED)
+        (asserts! (is-eq message message-hash) ERR-MESSAGE-NOT-FOUND)
         (try! (contract-call? .gateway-storage set-message command-id MESSAGE-EXECUTED))
         (try! (contract-call? .gateway-storage emit-message-executed command-id source-chain message-id))
         (ok true)
