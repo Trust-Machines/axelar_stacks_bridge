@@ -119,7 +119,7 @@
         (asserts! (and (is-eq source-chain-hash (var-get governance-chain-hash)) (is-eq source-address-hash (var-get governance-address-hash))) ERR-UNAUTHORIZED)
         (asserts! (not (is-eq type ACTION-CANCEL-TASK)) ERR-INVALID-TYPE)
         (try! (contract-call? .gateway validate-message gateway-impl source-chain message-id source-address payload-hash))
-        (schedule-timelock payload-hash (get target data) (get proxy data) (get eta data) (get type data))
+        (schedule-timelock payload-hash (get target data) (get proxy data) (get eta data) type)
     )
 )
 
