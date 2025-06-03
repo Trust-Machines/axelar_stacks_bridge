@@ -1,12 +1,23 @@
 import {
   BufferCV,
-  randomBytes,
   Cl,
   ContractPrincipalCV,
+  randomBytes,
   TupleCV,
 } from "@stacks/transactions";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import {
+  ITS_HUB_ROUTING_IDENTIFIER,
+  ITS_IMPL_ERROR_CODES,
+  ITS_PROXY_ERROR_CODES,
+  MessageType,
+  MetadataVersion,
+  NIT_ERRORS,
+  TOKEN_MANAGER_ERRORS,
+  TRUSTED_ADDRESS,
+  TRUSTED_CHAIN,
+} from "./constants";
 import {
   addFlowLimiter,
   approveDeployNativeInterchainToken,
@@ -44,17 +55,6 @@ import {
   transferTokenOperatorShip,
 } from "./its-utils";
 import { getSigners } from "./util";
-import {
-  ITS_IMPL_ERROR_CODES,
-  ITS_PROXY_ERROR_CODES,
-  ITS_HUB_ROUTING_IDENTIFIER,
-  MessageType,
-  MetadataVersion,
-  NIT_ERRORS,
-  TOKEN_MANAGER_ERRORS,
-  TRUSTED_ADDRESS,
-  TRUSTED_CHAIN,
-} from "./constants";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
@@ -2032,7 +2032,7 @@ describe("Interchain Token Service", () => {
         sender,
         tokenId,
         data: Cl.bufferFromHex("0x"),
-        sourceChain: TRUSTED_CHAIN,
+        sourceChain: "oneCoin",
       });
       approveReceiveInterchainTransfer({
         payload,
