@@ -27,7 +27,7 @@ Sets the trusted address for a given chain.
 ```clarity
 (define-public (set-trusted-address
   (its-impl <its-trait>)
-  (chain-name (string-ascii 19))
+  (chain-name (string-ascii 20))
   (address (string-ascii 128)))
 ```
 
@@ -38,7 +38,7 @@ Removes the trusted address for a given chain.
 ```clarity
 (define-public (remove-trusted-address
     (its-impl <its-trait>)
-    (chain-name (string-ascii 32))))
+    (chain-name (string-ascii 20))))
 ```
 
 ### 5. `deploy-token-manager`
@@ -50,7 +50,7 @@ Deploys a token manager on a destination chain.
             (gateway-impl <gateway-trait>)
             (its-impl <its-trait>)
             (salt (buff 32))
-            (destination-chain (string-ascii 32))
+            (destination-chain (string-ascii 20))
             (token-manager-type uint)
             (token <sip-010-trait>)
             (token-manager <token-manager-trait>)
@@ -66,7 +66,7 @@ Deploys an interchain token on a destination chain.
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -83,7 +83,6 @@ Deploys an interchain token on a destination chain.
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 32))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -102,7 +101,7 @@ Initiates an interchain transfer of a specified token to a destination chain.
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 32))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 100))
         (amount uint)
         (metadata {
@@ -123,7 +122,7 @@ Calls a contract on a destination chain with an interchain token.
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 32))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 100))
         (amount uint)
         (metadata {
@@ -141,7 +140,7 @@ Executes the deployment of an interchain token.
 (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token <native-interchain-token-trait>)
@@ -165,7 +164,7 @@ Executes the receipt of an interchain token.
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
         (message-id (string-ascii 128))
-        (source-chain (string-ascii 32))
+        (source-chain (string-ascii 20))
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (destination-contract <interchain-token-executable-trait>)
@@ -202,7 +201,7 @@ Sets up the interchain token service contract.
     (its-contract-address-name (string-ascii 128))
     (gas-service-address principal)
     (operator-address principal)
-    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 19), address: (string-ascii 128)}))
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
     (hub-chain (string-ascii 19))
     (its-impl (optional principal))
 ))
@@ -228,7 +227,7 @@ Emitted when a trusted address is set for a chain.
 ```clarity
 {
     type: "trusted-address-set",
-    chain: (string-ascii 128),
+    chain: (string-ascii 20),
     address: principal
 }
 ```
@@ -240,7 +239,7 @@ Emitted when a trusted address is removed for a chain.
 ```clarity
 {
     type: "trusted-address-removed",
-    chain: (string-ascii 128)
+    chain: (string-ascii 20)
 }
 ```
 
@@ -277,6 +276,7 @@ Emitted when an interchain token deployment is started.
 ```clarity
 {
     type:"interchain-token-deployment-started",
+    destination-chain: (string-ascii 20),
     token-id: (buff 32),
     name: (string-ascii 32),
     symbol: (string-ascii 32),
@@ -295,7 +295,7 @@ Emitted when an interchain transfer is initiated.
     type: "interchain-transfer",
     token-id: (buff 32),
     source-address: principal,
-    destination-chain: (string-ascii 32),
+    destination-chain: (string-ascii 20),
     destination-address: (buff 100),
     amount: uint,
     data: (buff 32)
@@ -323,7 +323,7 @@ Emitted when an interchain transfer is received.
 {
     type: "interchain-transfer-received",
     token-id: (buff 32),
-    source-chain: (string-ascii 32),
+    source-chain: (string-ascii 20),
     source-address: (string-ascii 128),
     destination-address: (buff 64),
     amount: uint,

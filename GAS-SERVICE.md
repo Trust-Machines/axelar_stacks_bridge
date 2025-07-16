@@ -44,7 +44,7 @@ Parameters:
 - `gas-impl` <gas-impl-trait> - Current impl contract
 - `amount`: uint - Amount of uSTX to pay
 - `sender`: principal - The transaction initiator
-- `destination-chain`: (string-ascii 19) - Target chain identifier/name
+- `destination-chain`: (string-ascii 20) - Target chain identifier/name
 - `destination-address`: (string-ascii 128) - Target address on destination chain
 - `payload`: (buff 64000) - Contract call payload
 - `refund-address`: principal - Address for potential refunds
@@ -149,7 +149,7 @@ The contracts implement several levels of access control:
     sender: principal,
     amount: uint,
     refund-address: principal,
-    destination-chain: (string-ascii 19),
+    destination-chain: (string-ascii 20),
     destination-address: (string-ascii 128),
     payload-hash: (buff 32)
 }

@@ -95,7 +95,7 @@
 ;; @param its-impl The implementation of the Interchain Token Service
 ;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
-(define-public (remove-trusted-address (its-impl <its-trait>) (chain-name  (string-ascii 20)))
+(define-public (remove-trusted-address (its-impl <its-trait>) (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl remove-trusted-address chain-name contract-caller)))
