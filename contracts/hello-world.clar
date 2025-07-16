@@ -6,7 +6,7 @@
 
 (define-data-var value
     {
-        source-chain: (string-ascii 19),
+        source-chain: (string-ascii 20),
         message-id: (string-ascii 128),
         source-address: (string-ascii 128),
         source-address-its: (buff 128),
@@ -23,7 +23,7 @@
 (define-read-only (get-value) (var-get value))
 
 (define-public (set-remote-value
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
     (gas-amount uint)
@@ -49,7 +49,7 @@
 )
 
 (define-public (execute
-    (source-chain (string-ascii 19))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload (buff 64000))
@@ -68,7 +68,7 @@
 )
 
 (define-public (execute-with-interchain-token
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (buff 128))
         (payload (buff 64000))

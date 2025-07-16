@@ -86,7 +86,7 @@
 ;; @param chain-name Chain name of the remote chain
 ;; @param address the string representation of the trusted address
 ;; #[allow(unchecked_data)]
-(define-public (set-trusted-address (its-impl <its-trait>) (chain-name (string-ascii 19)) (address (string-ascii 128)))
+(define-public (set-trusted-address (its-impl <its-trait>) (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl set-trusted-address chain-name address contract-caller)))
@@ -95,18 +95,18 @@
 ;; @param its-impl The implementation of the Interchain Token Service
 ;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
-(define-public (remove-trusted-address (its-impl <its-trait>) (chain-name  (string-ascii 19)))
+(define-public (remove-trusted-address (its-impl <its-trait>) (chain-name  (string-ascii 20)))
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl remove-trusted-address chain-name contract-caller)))
 
 (define-read-only (get-its-hub-chain)
     (contract-call? .interchain-token-service-storage get-its-hub-chain))
-(define-read-only (get-trusted-address (chain (string-ascii 19)))
+(define-read-only (get-trusted-address (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage get-trusted-address chain))
 
 
-(define-private (get-call-params (destination-chain (string-ascii 19)) (payload (buff 63000)))
+(define-private (get-call-params (destination-chain (string-ascii 20)) (payload (buff 63000)))
     (let (
             (destination-address (unwrap! (get-trusted-address destination-chain) ERR-UNTRUSTED-CHAIN))
             (destination-address-hash (keccak256 (unwrap-panic (to-consensus-buff? destination-address))))
@@ -130,7 +130,7 @@
         (gas-service-impl <gas-service-trait>)
         (amount uint)
         (refund-address principal)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (string-ascii 128))
         (payload (buff 64000)))
             (contract-call? .gas-service pay-native-gas-for-contract-call
@@ -157,7 +157,7 @@
 (define-public (its-hub-call-contract
     (gateway-impl <gateway-trait>)
     (gas-service-impl <gas-service-trait>)
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (payload (buff 63000))
     (metadata-version uint)
     (gas-value uint))
@@ -179,7 +179,7 @@
 
 (define-public (gateway-validate-message
     (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 19))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32)))
@@ -193,7 +193,7 @@
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (token-manager-type uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
@@ -235,7 +235,7 @@
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -302,7 +302,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata {
@@ -333,7 +333,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata {
@@ -363,7 +363,7 @@
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token <native-interchain-token-trait>)
@@ -392,7 +392,7 @@
 (define-public (execute-receive-interchain-token
         (gateway-impl <gateway-trait>)
         (its-impl <its-trait>)
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token-manager <token-manager-trait>)
@@ -490,8 +490,8 @@
     (its-contract-address-name (string-ascii 128))
     (gas-service-address principal)
     (operator-address principal)
-    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 19), address: (string-ascii 128)}))
-    (hub-chain (string-ascii 19))
+    (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)}))
+    (hub-chain (string-ascii 20))
     (its-impl (optional principal))
 )
     (begin

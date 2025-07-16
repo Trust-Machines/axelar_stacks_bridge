@@ -180,7 +180,7 @@
         (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (token <sip-010-trait>)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (gas-value uint)
         (caller principal))
     (let
@@ -251,7 +251,7 @@
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (gas-value uint)
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>)
@@ -285,7 +285,7 @@
         (its-impl <its-trait>)
         (salt_ (buff 32))
         (minter_ principal)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-minter (optional (buff 128)))
         (gas-value uint)
         (token <sip-010-trait>)
@@ -344,7 +344,7 @@
 (define-private (get-deploy-approval-key (approval {
         minter: principal,
         token-id: (buff 32),
-        destination-chain: (string-ascii 19),
+        destination-chain: (string-ascii 20),
     }))
     (keccak256 (concat PREFIX-DEPLOY-APPROVAL
         (unwrap-panic (to-consensus-buff? approval))
@@ -365,7 +365,7 @@
     (its-impl <its-trait>)
     (deployer principal)
     (salt_ (buff 32))
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-minter (buff 128))
     (token <native-interchain-token-trait>)
     (caller principal)
@@ -408,7 +408,7 @@
         (its-impl <its-trait>)
         (deployer principal)
         (salt_ (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (caller principal))
     (let (
         (proxy-check (asserts! (is-proxy) ERR-NOT-PROXY))
@@ -437,7 +437,7 @@
     (approval {
         minter: principal,
         token-id: (buff 32),
-        destination-chain: (string-ascii 19),
+        destination-chain: (string-ascii 20),
     })
     (destination-minter (buff 128))
 )
@@ -487,7 +487,7 @@
         (its-impl <its-trait>)
         (deploy-salt (buff 32))
         (minter (buff 128))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (gas-value uint)
         (token <sip-010-trait>))
         (let (

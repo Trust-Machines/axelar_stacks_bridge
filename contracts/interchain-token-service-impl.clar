@@ -198,19 +198,19 @@
 ;; Gets the trusted address at a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @return The trusted address for the chain. Returns none if the chain is untrusted
-(define-read-only (get-trusted-address (chain (string-ascii 19)))
+(define-read-only (get-trusted-address (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage get-trusted-address chain))
 ;; Checks whether the interchain sender is a trusted address
 ;; @param chain Chain name of the sender
 ;; @param address Address of the sender
 ;; @return bool true if the sender chain/address are trusted, false otherwise
-(define-read-only (is-trusted-address (chain-name (string-ascii 19)) (address (string-ascii 128)))
+(define-read-only (is-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (is-eq address (default-to "" (get-trusted-address chain-name))))
 
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @param address the string representation of the trusted address
-(define-public (set-trusted-address (chain-name (string-ascii 19)) (address (string-ascii 128)) (caller principal))
+(define-public (set-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
@@ -225,7 +225,7 @@
 
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
-(define-public (remove-trusted-address  (chain-name (string-ascii 19)) (caller principal))
+(define-public (remove-trusted-address (chain-name (string-ascii 20)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
@@ -236,7 +236,7 @@
 ;; Check if the chain is trusted
 ;; @param chain Chain name that should be checked for trust
 ;; @return true, if the chain is trusted
-(define-read-only (is-trusted-chain (chain (string-ascii 19)))
+(define-read-only (is-trusted-chain (chain (string-ascii 20)))
     (contract-call? .interchain-token-service-storage is-trusted-chain chain))
 
 
@@ -256,7 +256,7 @@
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (token-manager-type uint)
         (params (buff 62000))
         (token-manager <token-manager-trait>)
@@ -339,7 +339,7 @@
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -494,7 +494,7 @@
 (define-public (execute-deploy-interchain-token
         (gateway-impl <gateway-trait>)
         (gas-service-impl <gas-service-trait>)
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token <native-interchain-token-trait>)
@@ -520,7 +520,7 @@
         (let (
             (payload-decoded (unwrap! (from-consensus-buff? {
                 type: uint,
-                source-chain: (string-ascii 19),
+                source-chain: (string-ascii 20),
                 token-id: (buff 32),
                 name: (string-ascii 32),
                 symbol: (string-ascii 32),
@@ -580,7 +580,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata {
@@ -630,7 +630,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata {
@@ -666,7 +666,7 @@
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata {
@@ -702,7 +702,7 @@
         (gas-service-impl <gas-service-trait>)
         (token-id (buff 32))
         (source-address principal)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (metadata-version uint)
@@ -734,7 +734,7 @@
 
 (define-public (execute-receive-interchain-token
         (gateway-impl <gateway-trait>)
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (message-id (string-ascii 128))
         (source-address (string-ascii 128))
         (token-manager <token-manager-trait>)
@@ -750,7 +750,7 @@
         (let (
             (payload-decoded (unwrap! (from-consensus-buff? {
                 type: uint,
-                source-chain: (string-ascii 19),
+                source-chain: (string-ascii 20),
                 token-id: (buff 32),
                 source-address: (buff 128),
                 destination-address: (buff 128),

@@ -1825,7 +1825,7 @@ describe("Interchain Token Service", () => {
 
         (define-constant ERR-NOT-AUTHORIZED (err u1151))
         (define-public (execute-with-interchain-token
-                (source-chain (string-ascii 19))
+                (source-chain (string-ascii 20))
                 (message-id (string-ascii 128))
                 (source-address (buff 128))
                 (payload (buff 64000))
