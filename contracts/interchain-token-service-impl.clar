@@ -214,7 +214,7 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts! (is-eq caller (get-operator)) ERR-NOT-AUTHORIZED)
+        (asserts! (or (is-eq caller (get-owner)) (is-eq caller (get-operator))) ERR-NOT-AUTHORIZED)
         (asserts!
             (or
                 (is-eq (get-its-hub-chain) chain-name)
@@ -225,11 +225,11 @@
 
 ;; Remove the trusted address of the chain.
 ;; @param chain Chain name that should be made untrusted
-(define-public (remove-trusted-address  (chain-name (string-ascii 19)) (caller principal))
+(define-public (remove-trusted-address (chain-name (string-ascii 19)) (caller principal))
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
+        (asserts! (or (is-eq caller (get-owner)) (is-eq caller (get-operator))) ERR-NOT-AUTHORIZED)
         (try! (contract-call? .interchain-token-service-storage emit-trusted-address-removed chain-name))
         (contract-call? .interchain-token-service-storage remove-trusted-address chain-name)))
 

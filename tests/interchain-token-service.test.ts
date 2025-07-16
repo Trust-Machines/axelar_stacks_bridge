@@ -2594,14 +2594,15 @@ describe("Interchain Token Service", () => {
     ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
   });
 
-  it("Transfer operatorship and owner should'nt call set-trusted-address", () => {
+  it("Transfer operatorship, owner and operator should set-trusted-address/remove-trusted-address, but others should not", () => {
+
     expect(
       simnet.callPublicFn(
         "interchain-token-service",
         "transfer-operatorship",
         [
           itsImpl,
-          Cl.principal(address2),
+          Cl.principal(address1),
         ],
         deployer,
       ).result,
@@ -2618,7 +2619,7 @@ describe("Interchain Token Service", () => {
         ],
         deployer,
       ).result,
-    ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+    ).toBeOk(Cl.bool(true));
 
     expect(
       simnet.callPublicFn(
@@ -2627,10 +2628,59 @@ describe("Interchain Token Service", () => {
         [
           itsImpl,
           Cl.stringAscii(TRUSTED_CHAIN),
-          Cl.stringAscii("any arbitrary address 2"),
+          Cl.stringAscii("any arbitrary address"),
+        ],
+        address1,
+      ).result,
+    ).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "set-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN),
+          Cl.stringAscii("any arbitrary address"),
         ],
         address2,
       ).result,
+    ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "remove-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN)
+        ],
+        deployer,
+      ).result,
     ).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "remove-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN)
+        ],
+        address1,
+      ).result,
+    ).toBeOk(Cl.bool(false));
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "remove-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN)
+        ],
+        address2,
+      ).result,
+    ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
   });
 });
