@@ -2593,4 +2593,44 @@ describe("Interchain Token Service", () => {
       ).result,
     ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
   });
+
+  it("Transfer operatorship and owner should'nt call set-trusted-address", () => {
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "transfer-operatorship",
+        [
+          itsImpl,
+          Cl.principal(address2),
+        ],
+        deployer,
+      ).result,
+    ).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "set-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN),
+          Cl.stringAscii("any arbitrary address"),
+        ],
+        deployer,
+      ).result,
+    ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-AUTHORIZED"]);
+
+    expect(
+      simnet.callPublicFn(
+        "interchain-token-service",
+        "set-trusted-address",
+        [
+          itsImpl,
+          Cl.stringAscii(TRUSTED_CHAIN),
+          Cl.stringAscii("any arbitrary address 2"),
+        ],
+        address2,
+      ).result,
+    ).toBeOk(Cl.bool(true));
+  });
 });

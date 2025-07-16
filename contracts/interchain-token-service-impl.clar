@@ -214,7 +214,7 @@
     (begin
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
-        (asserts!  (is-eq caller (get-owner)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq caller (get-operator)) ERR-NOT-AUTHORIZED)
         (asserts!
             (or
                 (is-eq (get-its-hub-chain) chain-name)
