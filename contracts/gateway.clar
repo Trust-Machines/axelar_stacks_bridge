@@ -158,6 +158,7 @@
 ;; @returns (response true) or reverts
 (define-public (setup
     (signers (buff 8192))
+    (owner principal)
     (operator_ principal)
     (domain-separator_ (buff 32))
     (minimum-rotation-delay_ uint)
@@ -174,6 +175,7 @@
         (asserts! (is-eq (contract-call? .gateway-storage get-is-started) false) ERR-STARTED)
         (asserts! (is-eq contract-caller DEPLOYER) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-impl rotate-signers-inner signers_ false))
+        (try! (contract-call? .gateway-storage set-owner owner))
         (try! (contract-call? .gateway-storage set-operator operator_))
         (try! (contract-call? .gateway-storage set-domain-separator domain-separator_))
         (try! (contract-call? .gateway-storage set-minimum-rotation-delay minimum-rotation-delay_))

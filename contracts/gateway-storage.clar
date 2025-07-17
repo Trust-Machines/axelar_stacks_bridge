@@ -42,7 +42,7 @@
 )
 
 ;; Owner (governance) contract address
-(define-data-var owner principal .governance)
+(define-data-var owner principal contract-caller)
 
 (define-read-only (get-owner) (var-get owner))
 

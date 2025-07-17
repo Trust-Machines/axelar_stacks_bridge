@@ -110,10 +110,12 @@ describe("governance tests", () => {
       })
     ]);
 
+    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+
     const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-owner", [], address1);
     expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
 
-    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+ 
 
     const signersHash = (() => {
       const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
@@ -447,10 +449,10 @@ describe("governance tests", () => {
       })
     ]);
 
+    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+    
     const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-owner", [], address1);
     expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
-
-    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
 
     const signersHash = (() => {
       const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
