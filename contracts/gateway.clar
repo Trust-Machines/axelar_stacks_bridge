@@ -106,14 +106,14 @@
 ;; ######################
 
 
-(define-private (is-governance) (is-eq contract-caller (contract-call? .gateway-storage get-governance)))
+(define-private (is-owner) (is-eq contract-caller (contract-call? .gateway-storage get-owner)))
 
 (define-public (set-impl (new principal))
     (let
         (
             (prev (contract-call? .gateway-storage get-impl))
         )
-        (asserts! (is-governance) ERR-UNAUTHORIZED)
+        (asserts! (is-owner) ERR-UNAUTHORIZED)
         (try! (contract-call? .gateway-storage set-impl new))
         (print {
             type: "gateway-impl-updated",
@@ -124,15 +124,15 @@
     )
 )
 
-(define-public (set-governance (new principal))
+(define-public (set-owner (new principal))
     (let
         (
-            (prev (contract-call? .gateway-storage get-governance))
+            (prev (contract-call? .gateway-storage get-owner))
         )
-        (asserts! (is-governance) ERR-UNAUTHORIZED)
-        (try! (contract-call? .gateway-storage set-governance new))
+        (asserts! (is-owner) ERR-UNAUTHORIZED)
+        (try! (contract-call? .gateway-storage set-owner new))
         (print {
-            type: "gateway-governance-updated",
+            type: "gateway-owner-updated",
             prev: prev,
             new: new
         })

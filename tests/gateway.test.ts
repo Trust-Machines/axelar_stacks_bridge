@@ -982,7 +982,7 @@ describe("gateway tests", () => {
   describe("governance only calls", () => {
     it("should be blocked", () => {
       expect(simnet.callPublicFn("gateway", "set-impl", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
-      expect(simnet.callPublicFn("gateway", "set-governance", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
+      expect(simnet.callPublicFn("gateway", "set-owner", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
     });
   });
 
