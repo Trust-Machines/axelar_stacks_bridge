@@ -459,7 +459,7 @@ describe("Interchain Token Service", () => {
               name: Cl.stringAscii("unapproved-token"),
               symbol: Cl.stringAscii("unapproved-token"),
               decimals: Cl.uint(6),
-              "minter-bytes": Cl.bufferFromHex("0x00"),
+              "minter-bytes": Cl.bufferFromHex(""),
               verificationParams,
             }),
           ),

@@ -532,7 +532,12 @@
             (token-id (get token-id payload-decoded))
             (wrapped-source-chain (get source-chain payload-decoded))
             (minter-bytes (get minter-bytes payload-decoded))
-            (minter (if (is-eq (len minter-bytes) u20) (unwrap! (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) minter-bytes) ERR-INVALID-MINTER) NULL-ADDRESS))
+            (minter (if (is-eq (len minter-bytes) u20)
+                ;; true branch, minter bytes array has 20 length
+                (unwrap! (principal-construct? (if (is-eq chain-id u1) 0x16 0x1a) minter-bytes) ERR-INVALID-MINTER)
+                ;; false branch, minter bytes array does not have 20 length, then it must be an empty array
+                (begin (asserts! (is-eq (len minter-bytes) u0) ERR-INVALID-MINTER) NULL-ADDRESS)
+            ))
         )
         (asserts! (is-trusted-chain wrapped-source-chain) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-eq source-chain (get-its-hub-chain)) ERR-UNTRUSTED-CHAIN)
