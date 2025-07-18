@@ -41,16 +41,16 @@
     )
 )
 
-;; Governance contract address
-(define-data-var governance principal .governance)
+;; Owner (governance) contract address
+(define-data-var owner principal contract-caller)
 
-(define-read-only (get-governance) (var-get governance))
+(define-read-only (get-owner) (var-get owner))
 
-(define-public (set-governance (new principal))
+(define-public (set-owner (new principal))
     (begin
         (asserts! (is-proxy) ERR-UNAUTHORIZED)
         (asserts! (is-standard new) ERR-NON-STANDARD-ADDRESS)
-        (ok (var-set governance new))
+        (ok (var-set owner new))
     )
 )
 

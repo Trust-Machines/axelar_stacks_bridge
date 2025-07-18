@@ -64,12 +64,12 @@ describe("gateway tests", () => {
 
   it("should not run setup func again", () => {
     deployGateway(getSigners(0, 10, 1, 10, "1"));
-    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
+    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), contractPrincipalCV(deployerAddress, "governance"), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
     expect(result).toBeErr(uintCV(70003));
   });
 
   it("only deployer can run the setup function", () => {
-    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
+    const { result } = simnet.callPublicFn("gateway", "setup", [bufferCV(serializeCV(signersToCv(getSigners(0, 10, 1, 10, "2")))), contractPrincipalCV(deployerAddress, "governance"), principalCV(operatorAddress), bufferCVFromString('stacks-axelar-1'), uintCV(0), uintCV(0)], operatorAddress);
     expect(result).toBeErr(uintCV(70001));
   });
 
@@ -982,7 +982,7 @@ describe("gateway tests", () => {
   describe("governance only calls", () => {
     it("should be blocked", () => {
       expect(simnet.callPublicFn("gateway", "set-impl", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
-      expect(simnet.callPublicFn("gateway", "set-governance", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
+      expect(simnet.callPublicFn("gateway", "set-owner", [principalCV(contractCaller)], contractCaller).result).toBeErr(uintCV(70001));
     });
   });
 

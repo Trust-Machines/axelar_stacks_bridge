@@ -2,6 +2,7 @@ import {
   boolCV,
   bufferCV,
   bufferCVFromString,
+  Cl,
   contractPrincipalCV,
   createStacksPrivateKey,
   cvToJSON,
@@ -12,8 +13,8 @@ import {
   signMessageHashRsv,
   tupleCV,
   uintCV,
-  Cl,
 } from "@stacks/transactions";
+import { expect } from "vitest";
 import {
   ContractCallEvent,
   MessageApprovedEvent,
@@ -22,7 +23,6 @@ import {
   SignersRotatedEvent,
   TransferOperatorshipEvent,
 } from "./types";
-import { expect } from "vitest";
 
 // following code to generate
 // pubkey => priv
@@ -327,6 +327,7 @@ export const deployGateway = (
     "setup",
     [
       bufferCV(serializeCV(signersToCv(signers))),
+      contractPrincipalCV(deployerAddress, "governance"),
       operator,
       domainSeparator,
       minimumRotationDelay,
