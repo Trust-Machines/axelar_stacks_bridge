@@ -447,7 +447,7 @@
 (define-public (set-impl (its-impl principal))
     (let
         (
-            (governance-impl (contract-call? .gateway-storage get-governance))
+            (governance-impl (contract-call? .gateway-storage get-owner))
             (prev (contract-call? .interchain-token-service-storage get-service-impl))
 
         )
@@ -462,7 +462,7 @@
     )
 )
 
-(define-public (set-governance (governance principal))
+(define-public (set-owner (governance principal))
     ERR-NOT-IMPLEMENTED)
 
 

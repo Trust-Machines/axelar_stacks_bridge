@@ -148,7 +148,7 @@
             (if (is-eq type ACTION-SET-IMPLEMENTATION)
                 (try! (contract-call? proxy set-impl target))
                 (if (is-eq type ACTION-SET-GOVERNANCE)
-                    (try! (contract-call? proxy set-governance target))
+                    (try! (contract-call? proxy set-owner target))
                     false
             )
         ) true) ERR-INVALID-TYPE)

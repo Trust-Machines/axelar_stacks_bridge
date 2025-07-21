@@ -1,7 +1,7 @@
+import { boolCV, bufferCV, Cl, contractPrincipalCV, cvToJSON, listCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
-import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
-import { boolCV, bufferCV, contractPrincipalCV, cvToJSON, Cl, listCV, serializeCV, stringAsciiCV, tupleCV, uintCV } from "@stacks/transactions";
 import { keccak256 } from "./its-utils";
+import { deployGateway, gatewayImplCV, getSigners, makeProofCV, signersToCv } from "./util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -110,10 +110,12 @@ describe("governance tests", () => {
       })
     ]);
 
-    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-governance", [], address1);
+    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+
+    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-owner", [], address1);
     expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
 
-    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+ 
 
     const signersHash = (() => {
       const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
@@ -153,7 +155,7 @@ describe("governance tests", () => {
     expect(resultFinalize).toBeOk(boolCV(true));
 
     // impl should be updated
-    const { result: impl2 } = simnet.callReadOnlyFn("gateway-storage", "get-governance", [], address1);
+    const { result: impl2 } = simnet.callReadOnlyFn("gateway-storage", "get-owner", [], address1);
     expect(impl2).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance-2"));
   });
 
@@ -447,10 +449,10 @@ describe("governance tests", () => {
       })
     ]);
 
-    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-governance", [], address1);
-    expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
-
     const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
+    
+    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-owner", [], address1);
+    expect(impl).toStrictEqual(contractPrincipalCV(accounts.get("deployer")!, "governance"));
 
     const signersHash = (() => {
       const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);

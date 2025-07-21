@@ -170,7 +170,7 @@
 (define-public (set-impl (gas-impl principal))
     (let
         (
-            (governance-impl (contract-call? .gateway-storage get-governance))
+            (governance-impl (contract-call? .gateway-storage get-owner))
             (prev (contract-call? .gas-storage get-impl))
         )
         (asserts! (is-eq contract-caller governance-impl) ERR-UNAUTHORIZED)
@@ -186,7 +186,7 @@
     )
 )
 
-(define-public (set-governance (governance principal))
+(define-public (set-owner (governance principal))
     ERR-NOT-IMPLEMENTED)
 
 ;; Constructor function

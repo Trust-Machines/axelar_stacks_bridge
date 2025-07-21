@@ -1,7 +1,7 @@
 (define-trait proxy-trait
   (
     (set-impl (principal) (response bool uint))
-    (set-governance (principal) (response bool uint))
+    (set-owner (principal) (response bool uint))
   )
 )
 
