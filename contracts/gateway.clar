@@ -151,6 +151,7 @@
 
 ;; Initial setup function should be only called once to start the protocol
 ;; @param signers The initial gateway signer set
+;; @param owner The initial gateway owner
 ;; @param operator_ The initial gateway operator
 ;; @param domain-separator_ The initial gateway domain separator used to create messages for signing
 ;; @minimum-rotation-delay_ The minimum delay between two rotations of the gateway signers
