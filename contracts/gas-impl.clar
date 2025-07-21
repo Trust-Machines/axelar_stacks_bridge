@@ -55,7 +55,7 @@
 (define-public (pay-native-gas-for-contract-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
@@ -135,7 +135,7 @@
 (define-public (pay-gas-for-contract-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))
@@ -160,7 +160,7 @@
 (define-public (pay-native-gas-for-express-call
     (amount uint)
     (sender principal)
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-address (string-ascii 128))
     (payload (buff 64000))
     (refund-address principal))

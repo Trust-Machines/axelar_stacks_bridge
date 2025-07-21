@@ -124,23 +124,23 @@
 ;; ####################
 ;; ####################
 
-(define-map trusted-chain-address (string-ascii 19) (string-ascii 128))
+(define-map trusted-chain-address (string-ascii 20) (string-ascii 128))
 
 
 ;; Gets the trusted address at a remote chain
 ;; @param chain Chain name of the remote chain
 ;; @return trustedAddress_ The trusted address for the chain. Returns '' if the chain is untrusted
-(define-read-only (get-trusted-address (chain (string-ascii 19)))
+(define-read-only (get-trusted-address (chain (string-ascii 20)))
     (map-get? trusted-chain-address chain))
 
-(define-read-only (is-trusted-chain (chain-name (string-ascii 19)))
+(define-read-only (is-trusted-chain (chain-name (string-ascii 20)))
     (is-some (map-get? trusted-chain-address chain-name)))
 
 ;; Sets the trusted address and its hash for a remote chain
 ;; @param chain-name Chain name of the remote chain
 ;; @param address the string representation of the trusted address
 ;; #[allow(unchecked_data)]
-(define-public (set-trusted-address (chain-name (string-ascii 19)) (address (string-ascii 128)))
+(define-public (set-trusted-address (chain-name (string-ascii 20)) (address (string-ascii 128)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-set trusted-chain-address chain-name address))))
@@ -148,16 +148,16 @@
 ;; Remove the trusted address of the chain.
 ;; @param chain-name Chain name that should be made untrusted
 ;; #[allow(unchecked_data)]
-(define-public (remove-trusted-address  (chain-name (string-ascii 19)))
+(define-public (remove-trusted-address (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (ok (map-delete trusted-chain-address chain-name))))
 
 (define-private (extract-and-set-trusted-address
-    (entry {chain-name: (string-ascii 19), address: (string-ascii 128)}))
+    (entry {chain-name: (string-ascii 20), address: (string-ascii 128)}))
         (map-set trusted-chain-address (get chain-name entry) (get address entry)))
 
-(define-public (set-trusted-addresses (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 19), address: (string-ascii 128)})))
+(define-public (set-trusted-addresses (trusted-chain-names-addresses (list 50 {chain-name: (string-ascii 20), address: (string-ascii 128)})))
     (begin
         (asserts! (is-service-proxy) ERR-NOT-AUTHORIZED)
         (map extract-and-set-trusted-address trusted-chain-names-addresses)
@@ -201,7 +201,7 @@
 
 ;; @dev Chain name where ITS Hub exists. This is used for routing ITS calls via ITS hub.
 ;; This is set as a constant, since the ITS Hub will exist on Axelar.
-(define-data-var its-hub-chain (string-ascii 19) "axelar")
+(define-data-var its-hub-chain (string-ascii 20) "axelar")
 
 
 (define-read-only (get-token-factory-impl)
@@ -225,7 +225,7 @@
 
 ;; logic for write guards will be in the calling context (proxy, impl)
 ;; #[allow(unchecked_data)]
-(define-public (set-its-hub-chain (chain-name (string-ascii 19)))
+(define-public (set-its-hub-chain (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-proxy-or-service-impl) ERR-NOT-AUTHORIZED)
         (var-set its-hub-chain chain-name)
@@ -279,7 +279,7 @@
 
 
 (define-public (emit-trusted-address-set
-        (chain-name (string-ascii 19))
+        (chain-name (string-ascii 20))
         (address (string-ascii 128)))
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
@@ -291,7 +291,7 @@
         (ok true)))
 
 (define-public (emit-trusted-address-removed
-        (chain-name (string-ascii 19)))
+        (chain-name (string-ascii 20)))
     (begin
         (asserts! (is-service-impl) ERR-NOT-AUTHORIZED)
         (print {
@@ -316,7 +316,7 @@
 
 (define-public (emit-token-manager-deployment-started
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (token-manager-type uint)
         (params (buff 62000)))
     (begin
@@ -347,7 +347,7 @@
 
 (define-public (emit-interchain-token-deployment-started
         (token-id  (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (name (string-ascii 32))
         (symbol (string-ascii 32))
         (decimals uint)
@@ -370,7 +370,7 @@
 (define-public (emit-interchain-transfer
         (token-id  (buff 32))
         (source-address principal)
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-address (buff 128))
         (amount uint)
         (data (buff 32))
@@ -390,7 +390,7 @@
 
 (define-public (emit-interchain-transfer-received
         (token-id  (buff 32))
-        (source-chain (string-ascii 19))
+        (source-chain (string-ascii 20))
         (source-address (buff 128))
         (destination-address principal)
         (amount uint)
@@ -413,7 +413,7 @@
         (minter principal)
         (deployer principal)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         (destination-minter (buff 128))
         )
     (begin
@@ -432,7 +432,7 @@
         (minter principal)
         (deployer principal)
         (token-id (buff 32))
-        (destination-chain (string-ascii 19))
+        (destination-chain (string-ascii 20))
         )
     (begin
         (asserts! (is-factory-impl) ERR-NOT-AUTHORIZED)

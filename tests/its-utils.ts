@@ -15,23 +15,22 @@ import {
 import createKeccakHash from "keccak";
 import { expect } from "vitest";
 import {
-  deployGasService,
+  BURN_ADDRESS,
+  ITS_HUB_ROUTING_IDENTIFIER,
+  MessageType,
+  MetadataVersion,
+  TokenType,
+  TRUSTED_ADDRESS,
+  TRUSTED_CHAIN,
+} from "./constants";
+import { Signers } from "./types";
+import {
   deployGateway,
   gasImplContract,
   gatewayImplCV,
   makeProofCV,
-  signersToCv,
+  signersToCv
 } from "./util";
-import { Signers } from "./types";
-import {
-  TokenType,
-  MessageType,
-  TRUSTED_ADDRESS,
-  MetadataVersion,
-  TRUSTED_CHAIN,
-  ITS_HUB_ROUTING_IDENTIFIER,
-  BURN_ADDRESS,
-} from "./constants";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
@@ -373,7 +372,7 @@ export function buildIncomingDeployInterchainTokenPayload({
     name: Cl.stringAscii("native-interchain-token"),
     symbol: Cl.stringAscii("NIT"),
     decimals: Cl.uint(6),
-    "minter-bytes": Cl.buffer(Buffer.from([0])),
+    "minter-bytes": Cl.bufferFromHex(""),
   });
 }
 

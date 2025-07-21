@@ -37,7 +37,7 @@
 ;; @param payload; The payload to be sent to the destination contract, usually representing an encoded function call with arguments
 ;; @param sender the proxy contract-caller passed from the proxy
 (define-public (call-contract
-    (destination-chain (string-ascii 19))
+    (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 64000))
     (sender principal)
@@ -62,7 +62,7 @@
 ;; @param source-chain The name of the source chain as registered on Axelar.
 ;; @param message-id The unique message id for the message.
 ;; @returns (buff 32) the command-id.
-(define-read-only (message-to-command-id (source-chain (string-ascii 19)) (message-id (string-ascii 128)))
+(define-read-only (message-to-command-id (source-chain (string-ascii 20)) (message-id (string-ascii 128)))
     ;; Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is unambiguous
     (keccak256 (unwrap-panic (to-consensus-buff? (concat (concat source-chain "_") message-id)))))
 
@@ -71,7 +71,7 @@
 ;; @returns (buff 32) the message hash
 (define-private (get-message-hash (message {
         message-id: (string-ascii 128),
-        source-chain: (string-ascii 19),
+        source-chain: (string-ascii 20),
         source-address: (string-ascii 128),
         contract-address: principal,
         payload-hash: (buff 32)
@@ -83,7 +83,7 @@
 ;; @param messages;
 ;; @returns (response (buff 32))
 (define-read-only (data-hash-from-messages (messages (list 10 {
-                source-chain: (string-ascii 19),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -96,7 +96,7 @@
 ;; @params message;
 ;; @returns (some message) or none
 (define-private (approve-message (message {
-                source-chain: (string-ascii 19),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -135,7 +135,7 @@
             } proof) ERR-SIGNERS-DATA))
         (messages_ (unwrap! (from-consensus-buff?
             (list 10 {
-                source-chain: (string-ascii 19),
+                source-chain: (string-ascii 20),
                 message-id: (string-ascii 128),
                 source-address: (string-ascii 128),
                 contract-address: principal,
@@ -159,7 +159,7 @@
 ;; @param sender the proxy contract-caller passed from the proxy
 ;; @returns (response true) or reverts
 (define-public (validate-message
-    (source-chain (string-ascii 19))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
@@ -196,7 +196,7 @@
 ;; @param payload-hash; The keccak256 hash of the payload data.
 ;; @returns (response bool)
 (define-read-only (is-message-approved
-    (source-chain (string-ascii 19))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (contract-address principal)
@@ -221,7 +221,7 @@
 ;; @param message-id; The unique identifier of the message.
 ;; @returns (response bool)
 (define-read-only (is-message-executed
-    (source-chain (string-ascii 19))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
 )
     (ok (is-eq MESSAGE-EXECUTED (get-message (message-to-command-id source-chain message-id))))

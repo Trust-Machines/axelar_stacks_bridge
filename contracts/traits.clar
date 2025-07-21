@@ -7,11 +7,11 @@
 
 (define-trait gateway-trait
 	(
-		(call-contract ((string-ascii 19) (string-ascii 128) (buff 64000) principal) (response bool uint))
+		(call-contract ((string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (approve-messages ((buff 4096) (buff 16384)) (response (list 10 (response bool uint)) uint))
-        (validate-message ((string-ascii 19) (string-ascii 128) (string-ascii 128) (buff 32) principal) (response bool uint))
-        (is-message-approved  ((string-ascii 19) (string-ascii 128) (string-ascii 128) principal (buff 32)) (response bool uint))
-        (is-message-executed  ((string-ascii 19) (string-ascii 128)) (response bool uint))
+        (validate-message ((string-ascii 20) (string-ascii 128) (string-ascii 128) (buff 32) principal) (response bool uint))
+        (is-message-approved  ((string-ascii 20) (string-ascii 128) (string-ascii 128) principal (buff 32)) (response bool uint))
+        (is-message-executed  ((string-ascii 20) (string-ascii 128)) (response bool uint))
         (rotate-signers ((buff 8192) (buff 16384)) (response bool uint))
         (transfer-operatorship (principal principal) (response bool uint))
         (dispatch ((string-ascii 32) (buff 65000)) (response bool uint))
@@ -28,7 +28,7 @@
         ;; tokenId,
         ;; tokenAddress,
         ;; amount
-        (string-ascii 19)
+        (string-ascii 20)
         (string-ascii 128)
         (buff 128)
         (buff 64000)
@@ -43,13 +43,13 @@
     (set-paused (bool principal) (response bool uint))
     (transfer-operatorship (principal principal) (response bool uint))
     (transfer-ownership (principal principal) (response bool uint))
-    (set-trusted-address ((string-ascii 19) (string-ascii 128) principal) (response bool uint))
-    (remove-trusted-address  ((string-ascii 19) principal) (response bool uint))
+    (set-trusted-address ((string-ascii 20) (string-ascii 128) principal) (response bool uint))
+    (remove-trusted-address  ((string-ascii 20) principal) (response bool uint))
     (deploy-token-manager
         (<gateway-trait>
         <gas-service-impl-trait>
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         uint
         (buff 62000)
         <token-manager-trait>
@@ -67,7 +67,7 @@
         (<gateway-trait>
         <gas-service-impl-trait>
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         (string-ascii 32)
         (string-ascii 32)
         uint
@@ -98,7 +98,7 @@
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         (buff 128)
         uint
         {
@@ -115,7 +115,7 @@
         <token-manager-trait>
         <sip-010-trait>
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         (buff 128)
         uint
         {
@@ -128,7 +128,7 @@
     (execute-deploy-interchain-token
         (<gateway-trait>
         <gas-service-impl-trait>
-        (string-ascii 19)
+        (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
         <native-interchain-token-trait>
@@ -145,7 +145,7 @@
         (response bool uint))
     (execute-receive-interchain-token
         (<gateway-trait>
-        (string-ascii 19)
+        (string-ascii 20)
         (string-ascii 128)
         (string-ascii 128)
         <token-manager-trait>
@@ -250,7 +250,7 @@
 (define-trait axelar-executable (
   ;; the gateway validate-message pub fn MUST be called in contracts that implements of this trait
   (execute (
-    (string-ascii 19)
+    (string-ascii 20)
     (string-ascii 128)
     (string-ascii 128)
     (buff 64000)
@@ -283,7 +283,7 @@
                 <gas-service-impl-trait>
                 <interchain-token-service-trait>
                 <sip-010-trait>
-                (string-ascii 19)
+                (string-ascii 20)
                 uint
                 principal
             )
@@ -315,7 +315,7 @@
                 <interchain-token-service-trait>
                 (buff 32)
                 principal
-                (string-ascii 19)
+                (string-ascii 20)
                 uint
                 <sip-010-trait>
                 <token-manager-trait>
@@ -330,7 +330,7 @@
                 <interchain-token-service-trait>
                 (buff 32)
                 principal
-                (string-ascii 19)
+                (string-ascii 20)
                 (optional (buff 128))
                 uint
                 <sip-010-trait>
@@ -342,7 +342,7 @@
         <interchain-token-service-trait>
         principal
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         (buff 128)
         <native-interchain-token-trait>
         principal
@@ -353,7 +353,7 @@
         <interchain-token-service-trait>
         principal
         (buff 32)
-        (string-ascii 19)
+        (string-ascii 20)
         principal
         ) (response bool uint))
 ))
@@ -361,16 +361,16 @@
 ;; Add this new trait for gas service implementation
 (define-trait gas-service-impl-trait
     (
-        (pay-native-gas-for-contract-call (uint principal (string-ascii 19) (string-ascii 128) (buff 64000) principal) (response bool uint))
+        (pay-native-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (add-native-gas (uint (buff 32) uint principal) (response bool uint))
         (refund ((buff 32) uint principal uint) (response bool uint))
         (collect-fees (principal uint) (response bool uint))
         (get-balance () (response uint uint))
         (transfer-ownership (principal) (response bool uint))
         (transfer-gas-collector (principal) (response bool uint))
-        (pay-gas-for-contract-call (uint principal (string-ascii 19) (string-ascii 128) (buff 64000) principal) (response bool uint))
+        (pay-gas-for-contract-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (add-gas (uint principal (buff 32) uint principal) (response bool uint))
-        (pay-native-gas-for-express-call (uint principal (string-ascii 19) (string-ascii 128) (buff 64000) principal) (response bool uint))
+        (pay-native-gas-for-express-call (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal) (response bool uint))
         (add-native-express-gas (uint principal (buff 32) uint principal) (response bool uint))
     )
 )

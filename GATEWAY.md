@@ -5,7 +5,7 @@
 ```clarity
 (define-public (call-contract
     (gateway-impl <gateway-trait>)
-    (destination-chain (string-ascii 32))
+    (destination-chain (string-ascii 20))
     (destination-contract-address (string-ascii 128))
     (payload (buff 10240))
 )
@@ -22,7 +22,7 @@
 ```clarity
 (define-public (validate-message
     (gateway-impl <gateway-trait>)
-    (source-chain (string-ascii 32))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (payload-hash (buff 32))
@@ -41,7 +41,7 @@
 
 ```clarity
 (define-read-only (is-message-approved
-    (source-chain (string-ascii 32))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
     (source-address (string-ascii 128))
     (contract-address principal)
@@ -51,7 +51,7 @@
 
 ```clarity
 (define-read-only (is-message-executed
-    (source-chain (string-ascii 32))
+    (source-chain (string-ascii 20))
     (message-id (string-ascii 128))
 )
 ```
@@ -63,7 +63,7 @@
 
 ```clarity
     (list 10 {
-        source-chain: (string-ascii 32),
+        source-chain: (string-ascii 20),
         message-id: (string-ascii 128),
         source-address: (string-ascii 128),
         contract-address: principal,
@@ -252,7 +252,7 @@ const proof = bufferCV(
 {
     type: "contract-call",
     sender: principal,
-    destination-chain: (string-ascii 32),
+    destination-chain: (string-ascii 20),
     destination-contract-address: (string-ascii 128),
     payload-hash: (buff 32),
     payload: (buff 10240)
@@ -282,7 +282,7 @@ The deserialization function [contractCallEventToObj](./tests/util.ts#L148) outp
 {
     type: "message-approved",
     command-id: (buff 32),
-    source-chain: (string-ascii 32),
+    source-chain: (string-ascii 20),
     message-id: (string-ascii 128),
     source-address: (string-ascii 128),
     contract-address: principal,
@@ -314,7 +314,7 @@ The deserialization function [messageApprovedEventToObj](./tests/util.ts#L161) o
 {
     type: "message-executed",
     command-id: (buff 32),
-    source-chain: (string-ascii 32),
+    source-chain: (string-ascii 20),
     message-id: (string-ascii 128)
 }
 ```
