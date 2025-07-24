@@ -775,6 +775,7 @@
         (asserts! (is-eq source-chain (get-its-hub-chain)) ERR-UNTRUSTED-CHAIN)
         (asserts! (is-trusted-address source-chain source-address) ERR-NOT-REMOTE-SERVICE)
         (asserts! (is-trusted-address wrapped-source-chain ITS-HUB-ROUTING-IDENTIFIER) ERR-NOT-REMOTE-SERVICE)
+        (asserts! (is-eq  MESSAGE-TYPE-INTERCHAIN-TRANSFER (get type payload-decoded)) ERR-INVALID-MESSAGE-TYPE) 
         (asserts! (is-eq (get manager-address token-info) (contract-of token-manager)) ERR-TOKEN-MANAGER-MISMATCH)
         (try! (as-contract
             (contract-call? .interchain-token-service gateway-validate-message gateway-impl source-chain message-id source-address (keccak256 payload))
