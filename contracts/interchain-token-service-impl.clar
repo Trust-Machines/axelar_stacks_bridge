@@ -958,6 +958,42 @@
     )
 )
 
+(define-public (link-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (salt (buff 32))
+        (destination-chain (string-ascii 20))
+        (destination-token-address (buff 32))
+        (token-manager-type uint)
+        (link-params (buff 65000))
+        (gas-value uint)
+        (caller principal)
+    )
+    ERR-NOT-IMPLEMENTED
+)
+
+(define-public (register-custom-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (salt (buff 32))
+        (token <sip-010-trait>)
+        (token-manager-type uint)
+        (link-params (buff 65000))
+        (caller principal)
+    )
+    ERR-NOT-IMPLEMENTED
+)
+
+(define-public (register-token-metadata
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (token <sip-010-trait>)
+        (gas-value uint)
+        (caller principal)
+    )
+    ERR-NOT-IMPLEMENTED
+)
+
 (define-private (check-interchain-transfer-params
         (token-manager <token-manager-trait>)
         (token <sip-010-trait>)
