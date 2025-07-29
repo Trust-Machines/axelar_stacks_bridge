@@ -245,8 +245,6 @@
     )
     (register-custom-token
         (
-            <gateway-trait>
-            <gas-service-impl-trait>
             (buff 32)
             <sip-010-trait>
             uint
@@ -627,8 +625,6 @@
     )
     (register-custom-token
         (
-            <gateway-trait>
-            <gas-service-impl-trait>
             <interchain-token-service-trait>
             (buff 32)
             <sip-010-trait>

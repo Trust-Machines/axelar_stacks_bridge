@@ -391,8 +391,6 @@
 )
 
 (define-public (register-custom-token
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
         (its-impl <its-trait>)
         (salt (buff 32))
         (token <sip-010-trait>)

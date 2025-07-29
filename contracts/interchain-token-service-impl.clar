@@ -973,8 +973,6 @@
 )
 
 (define-public (register-custom-token
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
         (token <sip-010-trait>)
         (token-manager-type uint)

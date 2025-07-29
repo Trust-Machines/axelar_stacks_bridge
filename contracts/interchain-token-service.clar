@@ -456,8 +456,6 @@
 
 (define-public (register-custom-token
         (its-impl <its-trait>)
-        (gateway-impl <gateway-trait>)
-        (gas-service-impl <gas-service-trait>)
         (salt (buff 32))
         (token <sip-010-trait>)
         (token-manager-type uint)
@@ -465,8 +463,7 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl register-custom-token gateway-impl
-            gas-service-impl salt token token-manager-type link-params
+        (contract-call? its-impl register-custom-token salt token token-manager-type link-params
             contract-caller
         )
     )
