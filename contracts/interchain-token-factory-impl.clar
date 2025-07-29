@@ -381,7 +381,7 @@
         (its-impl <its-trait>)
         (salt (buff 32))
         (destination-chain (string-ascii 20))
-        (destination-token-address (buff 32))
+        (destination-token-address (buff 128))
         (token-manager-type uint)
         (link-params (buff 65000))
         (gas-value uint)

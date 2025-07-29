@@ -235,13 +235,13 @@
             <gas-service-impl-trait>
             (buff 32)
             (string-ascii 20)
-            (buff 32)
+            (buff 128)
             uint
             (buff 65000)
             uint
             principal
         )
-        (response bool uint)
+        (response (buff 32) uint)
     )
     (register-custom-token
         (
@@ -610,7 +610,7 @@
             uint
             principal
         )
-        (response bool uint)
+        (response (buff 32) uint)
     )
     (register-custom-token
         (
