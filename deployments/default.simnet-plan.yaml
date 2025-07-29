@@ -95,14 +95,14 @@ plan:
             path: contracts/governance.clar
             clarity-version: 3
         - emulated-contract-publish:
-            contract-name: hello-world
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/hello-world.clar
-            clarity-version: 3
-        - emulated-contract-publish:
             contract-name: interchain-token-service-storage
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/interchain-token-service-storage.clar
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: hello-world
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/hello-world.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-factory

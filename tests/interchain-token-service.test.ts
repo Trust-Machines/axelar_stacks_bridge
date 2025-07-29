@@ -34,6 +34,7 @@ import {
   executeDeployInterchainToken,
   executeReceiveInterchainToken,
   getFlowLimit,
+  getHelloWorldValue,
   getSip010Balance,
   getTokenId,
   interchainTransfer,
@@ -1742,6 +1743,110 @@ describe("Interchain Token Service", () => {
       expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
     });
 
+    it("Should be able to receive lock/unlock token with non empty data and call destination contract", () => {
+      const verificationParams = getTokenManagerMockCv();
+      setupTokenManager({
+        contract: `${address1}.token-man`,
+        sender: address1,
+      });
+      deployTokenManager({
+        salt,
+        tokenAddress: Cl.address(
+          `${deployer}.sample-sip-010`
+        ) as ContractPrincipalCV,
+        tokenManagerAddress: Cl.address(
+          `${address1}.token-man`
+        ) as ContractPrincipalCV,
+        verificationParams,
+      });
+
+      const amount = 100;
+      const sender = deployer;
+      const recipient = `${deployer}.hello-world`;
+      const destinationAddress = "some eth address";
+      const destinationChain = "ethereum";
+      const gasValue = 100;
+      const tokenAddress = `${deployer}.sample-sip-010`;
+      const managerAddress = `${address1}.token-man`;
+      const recipientInitialBalance = getSip010Balance({
+        address: recipient,
+        contractAddress: tokenAddress,
+      });
+
+      const senderInitialBalance = getSip010Balance({
+        address: sender,
+        contractAddress: tokenAddress,
+      });
+
+      expect(
+        interchainTransfer({
+          amount: Cl.uint(amount),
+          destinationAddress: Cl.bufferFromAscii(destinationAddress),
+          destinationChain: Cl.stringAscii(destinationChain),
+          gasValue: Cl.uint(gasValue),
+          tokenAddress: Cl.address(tokenAddress),
+          tokenId,
+          tokenManagerAddress: Cl.address(managerAddress),
+          caller: deployer,
+        }).result
+      ).toBeOk(Cl.bool(true));
+
+      const payload = buildIncomingInterchainTransferPayload({
+        amount,
+        recipient,
+        sender,
+        tokenId,
+        data: Cl.bufferFromHex("0xdeadbeef"),
+      });
+      approveReceiveInterchainTransfer({
+        payload,
+        proofSigners,
+      });
+      expect(getHelloWorldValue()).toBeTuple({
+        "source-chain": Cl.stringAscii(""),
+        "message-id": Cl.stringAscii(""),
+        "source-address": Cl.stringAscii(""),
+        payload: Cl.bufferFromHex("0x00"),
+        "source-address-its": Cl.bufferFromHex("0x00"),
+      });
+      const receiveTokenTx = executeReceiveInterchainToken({
+        messageId: "approved-interchain-transfer-message",
+        sourceChain: TRUSTED_CHAIN,
+        sourceAddress: TRUSTED_ADDRESS,
+        tokenManager: Cl.contractPrincipal(address1, "token-man"),
+        token: Cl.contractPrincipal(deployer, "sample-sip-010"),
+        payload: Cl.buffer(Cl.serialize(payload)),
+        destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
+      });
+      expect(receiveTokenTx.result).toBeOk(
+        Cl.buffer(
+          keccak256(Cl.serialize(Cl.stringAscii("its-execute-success")))
+        )
+      );
+
+      expect(getHelloWorldValue()).toBeTuple({
+        "source-chain": Cl.stringAscii(destinationChain),
+        "message-id": Cl.stringAscii("approved-interchain-transfer-message"),
+        "source-address": Cl.stringAscii(""),
+        payload: Cl.bufferFromHex("0xdeadbeef"),
+        "source-address-its": Cl.buffer(Cl.serialize(Cl.address(deployer))),
+      });
+
+      const recipientFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: recipient,
+      });
+
+      const senderFinalBalance = getSip010Balance({
+        contractAddress: tokenAddress,
+        address: sender,
+      });
+      expect(recipientFinalBalance).toBe(
+        recipientInitialBalance + BigInt(amount)
+      );
+      expect(senderFinalBalance).toBe(senderInitialBalance - BigInt(amount));
+    });
+
     it("Should be able to receive mint/burn token", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
@@ -2594,7 +2699,13 @@ describe("Interchain Token Service", () => {
       simnet.callPublicFn(
         "interchain-token-service",
         "call",
-        [itsImpl, gatewayImplCV, gasImplContract, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
+        [
+          itsImpl,
+          gatewayImplCV,
+          gasImplContract,
+          Cl.stringAscii("foo"),
+          Cl.bufferFromHex("0x00"),
+        ],
         address1
       ).result
     ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-NOT-IMPLEMENTED"]);
