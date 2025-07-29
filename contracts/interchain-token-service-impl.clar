@@ -977,6 +977,13 @@
             (is-eq (contract-of token-manager) (get manager-address token-info))
             ERR-TOKEN-MANAGER-MISMATCH
         )
+        (asserts!
+            (is-eq (contract-of token)
+                (unwrap! (contract-call? token-manager get-token-address)
+                    ERR-TOKEN-MANAGER-NOT-DEPLOYED
+                ))
+            ERR-TOKEN-NOT-FOUND
+        )
         (asserts! (<= (get version metadata) LATEST-METADATA-VERSION)
             ERR-INVALID-METADATA-VERSION
         )
@@ -1100,6 +1107,13 @@
                     (contract-of token-manager)
                 )
                 ERR-TOKEN-MANAGER-MISMATCH
+            )
+            (asserts!
+                (is-eq (contract-of token)
+                    (unwrap! (contract-call? token-manager get-token-address)
+                        ERR-TOKEN-MANAGER-NOT-DEPLOYED
+                    ))
+                ERR-TOKEN-NOT-FOUND
             )
             (try! (as-contract (contract-call? .interchain-token-service gateway-validate-message
                 gateway-impl source-chain message-id source-address
