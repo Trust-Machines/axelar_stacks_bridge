@@ -803,6 +803,34 @@
                 verification-params caller
             ))
             (asserts!
+                (is-eq (get name payload-decoded)
+                    (unwrap! (contract-call? token get-name)
+                        ERR-TOKEN-NOT-DEPLOYED
+                    ))
+                ERR-TOKEN-METADATA-NAME-INVALID
+            )
+            ;; #[allow(unchecked_data)]
+            (asserts!
+                (is-eq
+                    (unwrap! (contract-call? token get-symbol)
+                        ERR-TOKEN-NOT-DEPLOYED
+                    )
+                    (get symbol payload-decoded)
+                )
+                ERR-TOKEN-METADATA-SYMBOL-INVALID
+            )
+            ;; #[allow(unchecked_data)]
+            (asserts!
+                (is-eq
+                    (unwrap! (contract-call? token get-decimals)
+                        ERR-TOKEN-NOT-DEPLOYED
+                    )
+                    (get decimals payload-decoded)
+                )
+                ERR-TOKEN-METADATA-DECIMALS-INVALID
+            )
+
+            (asserts!
                 (not (contract-call? .interchain-token-service-storage
                     is-manager-address-used token-address
                 ))
