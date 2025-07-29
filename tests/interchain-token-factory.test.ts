@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   buildOutgoingGMPMessage,
+  itsImpl,
   keccak256,
   setupNIT,
   setupService,
   setupTokenManager,
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
-import { getSigners } from "./util";
+import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
   factoryDeployInterchainToken,
   deployRemoteCanonicalInterchainToken,
@@ -48,8 +49,8 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory-impl",
         implCode,
         { clarityVersion: 2 },
-        address2,
-      ).result,
+        address2
+      ).result
     ).toBeBool(true);
     setupService(proofSigners);
   });
@@ -58,13 +59,13 @@ describe("interchain-token-factory", () => {
       "interchain-token-factory-impl",
       "get-contract-id",
       [],
-      address1,
+      address1
     ).result as ResponseOkCV<BufferCV>;
 
     expect(contractId).toBeOk(
       Cl.buffer(
-        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory"))),
-      ),
+        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory")))
+      )
     );
   });
   describe("Canonical Interchain Token Factory", () => {
@@ -124,7 +125,9 @@ describe("interchain-token-factory", () => {
         impl: evilImpl,
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]);
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]
+      );
     });
     it("deploys a mint burn token", () => {
       const verificationParams = getNITMockCv();
@@ -238,7 +241,7 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"]
       );
       remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
@@ -249,7 +252,9 @@ describe("interchain-token-factory", () => {
         destinationMinter: "0x" + "00".repeat(20),
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]);
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]
+      );
       let approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
         salt: originalSalt,
@@ -258,7 +263,9 @@ describe("interchain-token-factory", () => {
         destinationChain: "untrusted-chain",
       });
 
-      expect(approvalTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-CHAIN-NAME"]);
+      expect(approvalTx.result).toBeErr(
+        ITF_IMPL_ERRORS["ERR-INVALID-CHAIN-NAME"]
+      );
 
       approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
@@ -317,7 +324,7 @@ describe("interchain-token-factory", () => {
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"]
       );
 
       approvalTx = approveDeployRemoteInterchainToken({
@@ -352,8 +359,8 @@ describe("interchain-token-factory", () => {
               symbol: Cl.stringAscii("NIT"),
               decimals: Cl.uint(6),
               minter: Cl.bufferFromHex("0xdeadbeef"),
-            }),
-          ),
+            })
+          )
         ),
       });
       const [
@@ -392,7 +399,7 @@ describe("interchain-token-factory", () => {
           destinationContractAddress: TRUSTED_ADDRESS,
           payload,
           sender: Cl.address(`${deployer}.interchain-token-service`),
-        }),
+        })
       );
     });
 
@@ -400,10 +407,17 @@ describe("interchain-token-factory", () => {
       const { result } = simnet.callPublicFn(
         "interchain-token-factory",
         "call",
-        [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
-        address1,
+        [
+          itfImpl,
+          gatewayImplCV,
+          gasImplContract,
+          itsImpl,
+          Cl.stringAscii("foo"),
+          Cl.bufferFromHex("0x00"),
+        ],
+        address1
       );
-      expect(result).toBeErr(ITF_IMPL_ERRORS['ERR-NOT-IMPLEMENTED'])
+      expect(result).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-IMPLEMENTED"]);
     });
   });
 });

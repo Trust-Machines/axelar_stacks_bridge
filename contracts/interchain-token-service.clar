@@ -553,12 +553,14 @@
 ;; General purpose proxy call
 (define-public (call
         (its-impl <its-trait>)
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
         (fn (string-ascii 32))
         (data (buff 65000))
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl dispatch fn data contract-caller)
+        (contract-call? its-impl dispatch gateway-impl gas-service-impl fn data contract-caller)
     )
 )
 

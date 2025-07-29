@@ -280,7 +280,13 @@
         )
     )
     (dispatch
-        ((string-ascii 32) (buff 65000) principal)
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 32)
+            (buff 65000)
+            principal
+        )
         (response bool uint)
     )
     (interchain-token-id
@@ -578,7 +584,14 @@
         (response bool uint)
     )
     (dispatch
-        ((string-ascii 32) (buff 65000) principal)
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (string-ascii 32)
+            (buff 65000)
+            principal
+        )
         (response bool uint)
     )
     (deploy-remote-interchain-token-with-minter

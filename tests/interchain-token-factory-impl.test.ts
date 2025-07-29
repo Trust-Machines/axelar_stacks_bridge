@@ -30,8 +30,8 @@ describe("Interchain token factory impl", () => {
           getTokenManagerMockCv(),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
     const proofSigners = getSigners(0, 10, 1, 10, "1");
     const tokenId = getCanonicalInterChainTokenId({}).value;
@@ -53,8 +53,8 @@ describe("Interchain token factory impl", () => {
           Cl.uint(1000),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
 
     expect(
@@ -72,8 +72,8 @@ describe("Interchain token factory impl", () => {
           getNITMockCv(),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
 
     setupNIT({ tokenId, minter: address1 });
@@ -93,16 +93,23 @@ describe("Interchain token factory impl", () => {
           Cl.address(`${address1}.nit`),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
     expect(
       simnet.callPublicFn(
         "interchain-token-factory-impl",
         "dispatch",
-        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x"), Cl.address(address1)],
-        address1,
-      ).result,
+        [
+          gatewayImplCV,
+          gasImplContract,
+          itsImpl,
+          Cl.stringAscii("fn"),
+          Cl.bufferFromHex("0x"),
+          Cl.address(address1),
+        ],
+        address1
+      ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
   });
 });

@@ -2,7 +2,12 @@ import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import { getTokenId, setupService, setupTokenManager } from "./its-utils";
-import { ITS_IMPL_ERROR_CODES, MessageType, MetadataVersion, TokenType } from "./constants";
+import {
+  ITS_IMPL_ERROR_CODES,
+  MessageType,
+  MetadataVersion,
+  TokenType,
+} from "./constants";
 import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
 
 const accounts = simnet.getAccounts();
@@ -11,14 +16,14 @@ const deployer = accounts.get("deployer")!;
 
 describe("Interchain Token Service impl", () => {
   it("should only be called by proxy", () => {
-    const ERR_NOT_PROXY = ITS_IMPL_ERROR_CODES['ERR-NOT-PROXY']
+    const ERR_NOT_PROXY = ITS_IMPL_ERROR_CODES["ERR-NOT-PROXY"];
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
         "set-paused",
         [Cl.bool(true), Cl.address(address1)],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -26,8 +31,8 @@ describe("Interchain Token Service impl", () => {
         "interchain-token-service-impl",
         "transfer-operatorship",
         [Cl.address(address1), Cl.address(address1)],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -35,10 +40,9 @@ describe("Interchain Token Service impl", () => {
         "interchain-token-service-impl",
         "transfer-ownership",
         [Cl.address(address1), Cl.address(address1)],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
-
 
     expect(
       simnet.callPublicFn(
@@ -49,8 +53,8 @@ describe("Interchain Token Service impl", () => {
           Cl.stringAscii("0x0000000000000000000000000000000000000000"),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -58,8 +62,8 @@ describe("Interchain Token Service impl", () => {
         "interchain-token-service-impl",
         "remove-trusted-address",
         [Cl.stringAscii("ethereum"), Cl.address(address1)],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
     const salt = randomBytes(32);
     const verificationParams = getTokenManagerMockCv();
@@ -82,8 +86,8 @@ describe("Interchain Token Service impl", () => {
           verificationParams,
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
     const proofSigners = getSigners(0, 10, 1, 10, "1");
     const tokenId = getTokenId(salt).result as BufferCV;
@@ -106,8 +110,8 @@ describe("Interchain Token Service impl", () => {
           Cl.uint(1000),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -124,8 +128,8 @@ describe("Interchain Token Service impl", () => {
           getNITMockCv(),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
     expect(
       simnet.callPublicFn(
@@ -147,8 +151,8 @@ describe("Interchain Token Service impl", () => {
           Cl.uint(1000),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
     expect(
       simnet.callPublicFn(
@@ -170,8 +174,8 @@ describe("Interchain Token Service impl", () => {
           Cl.uint(1000),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -189,8 +193,8 @@ describe("Interchain Token Service impl", () => {
           getNITMockCv(),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -212,18 +216,18 @@ describe("Interchain Token Service impl", () => {
                 "token-id": tokenId,
                 "source-address": Cl.bufferFromHex("0x00"),
                 "destination-address": Cl.buffer(
-                  Cl.serialize(Cl.address(address1)),
+                  Cl.serialize(Cl.address(address1))
                 ),
                 amount: Cl.uint(1000),
                 data: Cl.bufferFromHex("0x"),
-              }),
-            ),
+              })
+            )
           ),
           Cl.none(),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
 
     expect(
@@ -236,16 +240,22 @@ describe("Interchain Token Service impl", () => {
           Cl.uint(0),
           Cl.address(address1),
         ],
-        address1,
-      ).result,
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
         "dispatch",
-        [Cl.stringAscii("fn"), Cl.bufferFromHex("0x"), Cl.address(address1)],
-        address1,
-      ).result,
+        [
+          gatewayImplCV,
+          gasImplContract,
+          Cl.stringAscii("fn"),
+          Cl.bufferFromHex("0x"),
+          Cl.address(address1),
+        ],
+        address1
+      ).result
     ).toBeErr(ERR_NOT_PROXY);
   });
 });

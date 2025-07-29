@@ -617,6 +617,9 @@
 ;; #########################
 
 (define-public (dispatch
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (its-impl <its-trait>)
         (fn (string-ascii 32))
         (data (buff 65000))
         (caller principal)
