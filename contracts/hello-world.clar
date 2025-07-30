@@ -1,7 +1,7 @@
-(use-trait gateway-trait .traits.gateway-trait)
-(use-trait gas-service-trait .traits.gas-service-impl-trait)
-(impl-trait .traits.interchain-token-executable-trait)
-(impl-trait .traits.axelar-executable)
+(use-trait gateway-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.gateway-trait)
+(use-trait gas-service-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.gas-service-impl-trait)
+(impl-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.interchain-token-executable-trait)
+(impl-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.axelar-executable)
 (define-constant ERR-NOT-AUTHORIZED (err u90000))
 
 (define-data-var value {
@@ -32,11 +32,11 @@
     )
     (begin
         (try! (stx-transfer? gas-amount contract-caller (as-contract tx-sender)))
-        (try! (contract-call? .gas-service pay-native-gas-for-contract-call gas-service
+        (try! (contract-call? 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.gas-service pay-native-gas-for-contract-call gas-service
             gas-amount (as-contract tx-sender) destination-chain
             destination-contract-address payload contract-caller
         ))
-        (try! (contract-call? .gateway call-contract gateway-impl destination-chain
+        (try! (contract-call? 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.gateway call-contract gateway-impl destination-chain
             destination-contract-address payload
         ))
         (ok true)
@@ -51,12 +51,12 @@
         (gateway-impl <gateway-trait>)
     )
     (begin
-        (try! (contract-call? .gateway validate-message gateway-impl source-chain
+        (try! (contract-call? 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.gateway validate-message gateway-impl source-chain
             message-id source-address (keccak256 payload)
         ))
         (asserts!
             (is-eq contract-caller
-                (contract-call? .interchain-token-service-storage
+                (contract-call? 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.interchain-token-service-storage
                     get-service-impl
                 ))
             ERR-NOT-AUTHORIZED
@@ -85,7 +85,7 @@
     (begin
         (asserts!
             (is-eq contract-caller
-                (contract-call? .interchain-token-service-storage
+                (contract-call? 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.interchain-token-service-storage
                     get-service-impl
                 ))
             ERR-NOT-AUTHORIZED

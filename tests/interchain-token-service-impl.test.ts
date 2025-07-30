@@ -8,7 +8,7 @@ import {
   MetadataVersion,
   TokenType,
 } from "./constants";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -68,7 +68,7 @@ describe("Interchain Token Service impl", () => {
     const salt = randomBytes(32);
     const verificationParams = getTokenManagerMockCv();
     setupTokenManager({
-      contract: `${address1}.token-man`,
+      contract: `${address1}.${tmMockParams.name}`,
       sender: address1,
     });
     expect(
@@ -82,7 +82,7 @@ describe("Interchain Token Service impl", () => {
           Cl.stringAscii("ethereum"),
           Cl.uint(TokenType.LOCK_UNLOCK),
           Cl.bufferFromHex("0x"),
-          Cl.address(`${address1}.token-man`),
+          Cl.address(`${address1}.${tmMockParams.name}`),
           verificationParams,
           Cl.address(address1),
         ],
@@ -122,7 +122,7 @@ describe("Interchain Token Service impl", () => {
           gatewayImplCV,
           gasImplContract,
           Cl.buffer(salt),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           Cl.uint(10),
           Cl.none(),
           getNITMockCv(),
@@ -138,8 +138,8 @@ describe("Interchain Token Service impl", () => {
         [
           gatewayImplCV,
           gasImplContract,
-          Cl.address(`${address1}.nit`),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           tokenId,
           Cl.stringAscii("ethereum"),
           Cl.bufferFromHex("0x00"),
@@ -161,8 +161,8 @@ describe("Interchain Token Service impl", () => {
         [
           gatewayImplCV,
           gasImplContract,
-          Cl.address(`${address1}.nit`),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           tokenId,
           Cl.stringAscii("ethereum"),
           Cl.bufferFromHex("0x00"),
@@ -188,7 +188,7 @@ describe("Interchain Token Service impl", () => {
           Cl.stringAscii("ethereum"),
           Cl.stringAscii("0x00"),
           Cl.stringAscii("0x00"),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           Cl.bufferFromHex("0x"),
           getNITMockCv(),
           Cl.address(address1),

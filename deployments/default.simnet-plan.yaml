@@ -5,13 +5,13 @@ network: simnet
 genesis:
   wallets:
     - name: deployer
-      address: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      address: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
       balance: "100000000000000"
     - name: faucet
       address: STNHKEPYEPJ8ET55ZZ0M5A34J0R3N5FM2CMMMAZ6
       balance: "100000000000000"
     - name: wallet_1
-      address: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
+      address: ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880
       balance: "100000000000000"
     - name: wallet_2
       address: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
@@ -51,97 +51,97 @@ plan:
       transactions:
         - emulated-contract-publish:
             contract-name: clarity-stacks
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/clarity-stacks.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gas-storage
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gas-storage.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: traits
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/traits.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gas-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gas-impl.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gateway-storage
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gateway-storage.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gas-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gas-service.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gateway-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gateway-impl.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: gateway
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/gateway.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: governance
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/governance.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-service-storage
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/interchain-token-service-storage.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: hello-world
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/hello-world.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-factory
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/interchain-token-factory.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/interchain-token-service.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-factory-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/interchain-token-factory-impl.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: verify-onchain
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/verify-onchain.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: interchain-token-service-impl
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/interchain-token-service-impl.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: native-interchain-token
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/native-interchain-token.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: sample-sip-010
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/sample-sip-010.clar
             clarity-version: 3
         - emulated-contract-publish:
             contract-name: token-manager
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            emulated-sender: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
             path: contracts/token-manager.clar
             clarity-version: 3
       epoch: "3.0"

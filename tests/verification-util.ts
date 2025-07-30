@@ -33,12 +33,12 @@ const nitSalt =
 
 const senderAddress = getAddressFromPrivateKey(
   senderKey,
-  TransactionVersion.Testnet,
+  TransactionVersion.Testnet
 );
 
 async function getTxInfo({ txId }: { txId: string }) {
   const txInfoRes = await fetch(
-    `https://api.testnet.hiro.so/extended/v1/tx/${txId}`,
+    `https://api.testnet.hiro.so/extended/v1/tx/${txId}`
   );
   const txInfoData = await txInfoRes.json();
   return txInfoData;
@@ -46,14 +46,14 @@ async function getTxInfo({ txId }: { txId: string }) {
 
 async function getRawTx({ txId }: { txId: string }) {
   const txRawRes = await fetch(
-    `https://api.testnet.hiro.so/extended/v1/tx/${txId}/raw`,
+    `https://api.testnet.hiro.so/extended/v1/tx/${txId}/raw`
   );
   const txRawData = (await txRawRes.json()) as any;
   const txRaw = txRawData.raw_tx;
   return txRaw;
 }
 
-async function getVerificationParams(txId: string) {
+export async function getVerificationParams(txId: string) {
   const txRaw = await getRawTx({ txId });
   const txInfoData = (await getTxInfo({ txId })) as any;
 
@@ -62,7 +62,7 @@ async function getVerificationParams(txId: string) {
   const block = new Uint8Array(
     await (
       await fetch(`https://api.testnet.hiro.so/v3/blocks/height/${blockHeight}`)
-    ).arrayBuffer(),
+    ).arrayBuffer()
   );
 
   const block_version = block.slice(0, 1);
@@ -78,11 +78,11 @@ async function getVerificationParams(txId: string) {
   const pastSignatures = 210 + signatureCount * 65;
   // const signerBitVecLen = Number("0x" + bytesToHex(block.slice(pastSignatures, pastSignatures + 2)))
   const signerBitVecByteLen = Number(
-    "0x" + bytesToHex(block.slice(pastSignatures + 2, pastSignatures + 6)),
+    "0x" + bytesToHex(block.slice(pastSignatures + 2, pastSignatures + 6))
   );
   const signer_bitvec = block.slice(
     pastSignatures,
-    pastSignatures + 6 + signerBitVecByteLen,
+    pastSignatures + 6 + signerBitVecByteLen
   );
 
   const txs = block.slice(pastSignatures + 10 + signerBitVecByteLen);
@@ -110,7 +110,7 @@ async function getVerificationParams(txId: string) {
     nonce: Cl.bufferFromHex(intToHex(txInfoData.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(txInfoData.fee_rate, 8)),
     signature: Cl.bufferFromHex(
-      (tx.auth.spendingCondition as SingleSigSpendingCondition).signature.data,
+      (tx.auth.spendingCondition as SingleSigSpendingCondition).signature.data
     ),
     proof: proof_path_to_cv(txIndex, proof, proof.length),
     "tx-block-height": Cl.uint(txInfoData.block_height),
@@ -168,7 +168,7 @@ export async function deployTm() {
 
 async function getTokenTxId(contract: string) {
   const res = await fetch(
-    `https://api.testnet.hiro.so/extended/v1/contract/${contract}`,
+    `https://api.testnet.hiro.so/extended/v1/contract/${contract}`
   );
 
   const json = (await res.json()) as any;
@@ -276,7 +276,7 @@ function getFactoryInterchainSalt(salt: string, deployer: string) {
   salt = salt.replace(/^0x/, "");
 
   const interchainTokenSaltPrefix = keccak_256(
-    Cl.serialize(Cl.stringAscii("interchain-token-salt")),
+    Cl.serialize(Cl.stringAscii("interchain-token-salt"))
   );
   const chainNameHash = keccak_256(Cl.serialize(Cl.stringAscii("stacks")));
 
@@ -286,13 +286,13 @@ function getFactoryInterchainSalt(salt: string, deployer: string) {
       ...chainNameHash,
       ...Cl.serialize(Cl.principal(deployer)),
       ...hexToBytes(salt),
-    ]),
+    ])
   );
 }
 
 function getInterChainTokenId(sender: string, salt: string) {
   const interchainTokenIdPrefix = keccak_256(
-    Cl.serialize(Cl.stringAscii("its-interchain-token-id")),
+    Cl.serialize(Cl.stringAscii("its-interchain-token-id"))
   );
 
   return keccak_256(
@@ -300,14 +300,14 @@ function getInterChainTokenId(sender: string, salt: string) {
       ...interchainTokenIdPrefix,
       ...Cl.serialize(Cl.principal(sender)),
       ...hexToBytes(salt),
-    ]),
+    ])
   );
 }
 
 function getInterchainTokenId(salt: Uint8Array, deployer: string) {
   return getInterChainTokenId(
     "ST000000000000000000002AMW42H",
-    bytesToHex(getFactoryInterchainSalt(bytesToHex(salt), deployer)),
+    bytesToHex(getFactoryInterchainSalt(bytesToHex(salt), deployer))
   );
 }
 
@@ -389,29 +389,35 @@ export async function registerNIT() {
 // );
 
 export const nitMockParams = {
-  nonce: 1,
-  feeRate: 0x10000,
-  sig: "01b21e6c5a630e28d041a8c60e3e9841769252fc3608b1dd72e0a4775fb31f6b9d28ee416ef2e93477a7be4748e799aaeff5bdcd8d0c009974fe4ecc47b759426f",
-  name: "nit",
-  deployer: "ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5",
-  txIndex: 0,
-  txId: "bb4ca8f9fbe3e64c89d9ed2cbf3aa1486bdcf4e284df4455ce268fe385d94dac",
-  blockHeight: 126,
+  sig: "00a58b3b9e170bf03960a663772ac411b047e7e6e04e9e3344ad3eceafb4d2b97e6374331ef0762585252bb8f4239857852d138fbf6ebcb3bee46df18093d1487f",
+  txIndex: 1,
+  nonce: 0,
+  feeRate: 65536,
+  name: "native-interchain-token-1753888793828",
+  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  txIds: [
+    "ea576d1880c4f744e5f00794d4ebd66635d5dc68ed7a8e01bff6bf364f007955",
+    "8b7d6b81596cbe38a358436efe738c79e41d42a605ac2ec89418410027b42e37",
+  ],
+  blockHeight: 3351111,
   blockHeader:
-    "00000000000000007e000000000025d780eddb7c5ff1d52564dbac67fa941e5e53cd1889b02f4ef87ea3b467fa20941514b04db78ea65157f13b0d5b9dd55238412543f4a319dc19ead1f161298a1743c8b8115bda851b78cc7d58cafda84b430083c0fe913bdd40aa2bcb1c65662272395116bd32b8ceb3777aa72a605de91dbe390606cc0000000067b7481800c6a99e740e88cc11bec1bb32ebb7523cea3f46555ef41cd290e5ad328c93f15411985cca380187190ad49d624d4bf62023fb49ffb72dd72f80b8c1eab65fe039001000000002ffff",
+    "00000000000033224700000000574cb970d65be35d5e0b0aaef0c3201b20f6bd90c9210f1b472c4b9b6652f568f8d99d71ca2c2cb8498da4a4fd92f207b8f0a7b44bda561844259699c281cc6d20ba16fb122996a9043c18d872cbc4dc48b77431965b8fd64eb1857327e7aa033165c06b1fe4bb5e2e481c80bd1bdfaa102eb8f97049677100000000688a3e040059e11512413f2d7c9c9535dd9fc1c7fcb490e3943e9fd0c66361ed5a4e32d0174601bf9bf27b57de2cf9bf9a4bd10306258647062eb12dddd563b83b052479a3013500000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1f",
 };
 
 export const tmMockParams = {
-  nonce: 2,
-  feeRate: 0x10000,
-  sig: "00e8a976c2d5967bb14043238aebf612fd8bc981f390a3112a619866f9c19b3d806b056415a55cb18e54c9323ef40932fc1bb462be38d9be73dccd1ec1f2c7f199",
-  name: "token-man",
-  deployer: "ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5",
-  txIndex: 0,
-  txId: "3fe8b4d4e873d10d3a6676111808af5b63297dd8799e02d824f4d83f15e6495e",
-  blockHeight: 130,
+  sig: "00353923b23f465696841cf6b1024e2714c2083587eed99fa207dc8d2b66ed42202e35f135d57f2e7092c72513a0115ffa730596a623eb2eebd2cc2f9a93e5b10c",
+  txIndex: 1,
+  nonce: 1,
+  feeRate: 65536,
+  name: "token-manager-1753888793828",
+  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  txIds: [
+    "2306dd88dbca084ed275669308a33a5101cd9d5afaa5f5f79c904f6b7eea5b1d",
+    "726ac55806dc4a28bae37781c714761c5a747081d715c7d2f70c536982c55c1b",
+  ],
+  blockHeight: 3351115,
   blockHeader:
-    "000000000000000082000000000026c1e0071f791c4510ffc6f0aac00d46591fb134f8598fe882465881656dd6f8db6607185166ddaaed969455bf745bd2944694a808b4cc40000463c06ddaca1fbda4af2d49a4c425efea964a57de4431a92f91dedf59e93884bca3dbf547af74d97f519bf6623fec715ee6655c1403495f5991d409a4440000000067b7482701b44b5388d440302ade9a4bea06656ec1c7a849cf804ed1e136cf2bf76cf030723e1c2e80f6169221d3d8ee59a133c78e939a5ff9cca86c670c914c8b950227bb001000000002ffff",
+    "00000000000033224b00000000574cb970d65be35d5e0b0aaef0c3201b20f6bd90c9210f1b3b85b91936f32a124ccd62474fc0ce021afc261a99ac13215d79d30d6f6acd35b17cc535bda7dba28375616408b7420ebf6dca4b44d36e560caa169fb5683d2a7bac2acf36fb5246b661183c3c0b2f9a92c7d48faf5aa15eb9e0c4991802f8dd00000000688a3e0f01ee6f4a1ff7317a04c0eca2594668cffecd78183301dcb931b413f1ca9e74d7865e5ff4ceef9253ea050c6ed665bd290c21019172270fa2d7c0736e199f9a710e013500000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1f",
 };
 
 export const getTokenManagerMockCv = () => {
@@ -422,39 +428,40 @@ export const getTokenManagerMockCv = () => {
       Cl.uint(tmMockParams.blockHeight),
       Cl.buffer(sha512_256(hexToBytes(tmMockParams.blockHeader))),
     ],
-    simnet.deployer,
+    simnet.deployer
   );
 
   const isAlreadyDeployed = simnet.getContractSource(
-    `${tmMockParams.deployer}.${tmMockParams.name}`,
+    `${tmMockParams.deployer}.${tmMockParams.name}`
   );
   if (!isAlreadyDeployed) {
     const tokenManagerSource = simnet.callReadOnlyFn(
       "verify-onchain",
       "get-token-manager-source",
       [],
-      simnet.deployer,
+      simnet.deployer
     ).result as StringAsciiCV;
     simnet.deployContract(
       tmMockParams.name,
       tokenManagerSource.data,
       { clarityVersion: 3 },
-      tmMockParams.deployer,
+      tmMockParams.deployer
     );
   }
+  const proof = MerkleTree.new(tmMockParams.txIds.map(hexToBytes)).proof(tmMockParams.txIndex)
 
   return Cl.tuple({
     nonce: Cl.bufferFromHex(intToHex(tmMockParams.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(tmMockParams.feeRate, 8)),
     signature: Cl.bufferFromHex(tmMockParams.sig),
     proof: proof_path_to_cv(
-      0,
-      MerkleTree.new([hexToBytes(tmMockParams.txId)]).proof(0),
-      1,
+      tmMockParams.txIndex,
+      proof,
+      proof.length
     ),
     "tx-block-height": Cl.uint(tmMockParams.blockHeight),
     "block-header-without-signer-signatures": Cl.bufferFromHex(
-      tmMockParams.blockHeader,
+      tmMockParams.blockHeader
     ),
   });
 };
@@ -467,11 +474,11 @@ export const getNITMockCv = () => {
       Cl.uint(nitMockParams.blockHeight),
       Cl.buffer(sha512_256(hexToBytes(nitMockParams.blockHeader))),
     ],
-    simnet.deployer,
+    simnet.deployer
   );
 
   const isAlreadyDeployed = simnet.getContractSource(
-    `${nitMockParams.deployer}.${nitMockParams.name}`,
+    `${nitMockParams.deployer}.${nitMockParams.name}`
   );
 
   if (!isAlreadyDeployed) {
@@ -480,21 +487,22 @@ export const getNITMockCv = () => {
       nitMockParams.name,
       nitSource!,
       { clarityVersion: 3 },
-      nitMockParams.deployer,
+      nitMockParams.deployer
     );
   }
+  const proof = MerkleTree.new(nitMockParams.txIds.map(hexToBytes)).proof(nitMockParams.txIndex)
   return Cl.tuple({
     nonce: Cl.bufferFromHex(intToHex(nitMockParams.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(nitMockParams.feeRate, 8)),
     signature: Cl.bufferFromHex(nitMockParams.sig),
     proof: proof_path_to_cv(
-      0,
-      MerkleTree.new([hexToBytes(nitMockParams.txId)]).proof(0),
-      1,
+      nitMockParams.txIndex,
+      proof,
+      proof.length
     ),
     "tx-block-height": Cl.uint(nitMockParams.blockHeight),
     "block-header-without-signer-signatures": Cl.bufferFromHex(
-      nitMockParams.blockHeader,
+      nitMockParams.blockHeader
     ),
   });
 };
@@ -506,10 +514,10 @@ export function deserializeTransactionCustom(bytesReader: BytesReader) {
 
 export function deserializeRawBlockTxs(
   txs: Uint8Array | BytesReader,
-  processedTxs: string[] = [],
+  processedTxs: string[] = []
 ) {
   const { transaction, reader } = deserializeTransactionCustom(
-    txs instanceof BytesReader ? txs : new BytesReader(txs),
+    txs instanceof BytesReader ? txs : new BytesReader(txs)
   );
 
   processedTxs = processedTxs.concat(transaction.txid());

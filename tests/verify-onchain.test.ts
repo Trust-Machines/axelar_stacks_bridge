@@ -63,7 +63,7 @@ describe("onchain tx verification", () => {
       simnet.deployer,
     );
 
-    const tree = MerkleTree.new([hexToBytes(tmMockParams.txId)]);
+    const tree = MerkleTree.new(tmMockParams.txIds.map(hexToBytes));
 
     const proof = tree.proof(tmMockParams.txIndex);
 
@@ -97,7 +97,7 @@ describe("onchain tx verification", () => {
       simnet.deployer,
     );
 
-    const tree = MerkleTree.new([hexToBytes(nitMockParams.txId)]);
+    const tree = MerkleTree.new(nitMockParams.txIds.map(hexToBytes));
 
     const proof = tree.proof(nitMockParams.txIndex);
 

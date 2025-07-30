@@ -10,7 +10,7 @@ import {
 import { BURN_ADDRESS } from "./constants";
 import { itsImpl } from "./its-utils";
 import { gasImplContract, gatewayImplCV } from "./util";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -21,7 +21,7 @@ export const itfImpl = Cl.address(`${deployer}.interchain-token-factory-impl`);
 export function factoryDeployInterchainToken({
   sender,
   salt,
-  tokenAddress = `${address1}.nit`,
+  tokenAddress = `${address1}.${nitMockParams.name}`,
   initialSupply = 0,
   minterAddress = BURN_ADDRESS,
   impl = itfImpl,
@@ -243,7 +243,7 @@ export function factoryDeployRemoteInterchainTokenWithMinter({
   );
 }
 
-const NIT = `${address1}.nit`;
+const NIT = `${address1}.${nitMockParams.name}`;
 export function approveDeployRemoteInterchainToken({
   deployer,
   salt,

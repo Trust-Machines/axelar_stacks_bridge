@@ -89,7 +89,7 @@ describe("gateway tests", () => {
       destinationChain,
       destinationContractAddress: destinationAddress,
       payload: operatorAddress,
-      payloadHash: '0x9ed02951dbf029855b46b102cc960362732569e83d00a49a7575d7aed229890e'
+      payloadHash: '0xbf1f4411d4e693bc2269d608646aa165c5589e51803ea378393da25622e58134'
     });
   });
 

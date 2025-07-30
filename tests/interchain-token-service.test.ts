@@ -56,7 +56,7 @@ import {
   transferTokenOperatorShip,
 } from "./its-utils";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -241,7 +241,7 @@ describe("Interchain Token Service", () => {
           ),
           sourceAddress: "interchain-token-service",
           sourceChain: "stacks",
-          tokenAddress: `${address1}.nit`,
+          tokenAddress: `${address1}.${nitMockParams.name}`,
           impl: evilImpl,
         }).result
       ).toBeErr(ITS_PROXY_ERROR_CODES["ERR-INVALID-IMPL"]);
@@ -249,13 +249,13 @@ describe("Interchain Token Service", () => {
     it("Should register an existing token with its manager", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
 
       const deployTx = deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -272,7 +272,7 @@ describe("Interchain Token Service", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         minter: address1,
         operator: address1,
         sender: address1,
@@ -282,7 +282,7 @@ describe("Interchain Token Service", () => {
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -299,7 +299,7 @@ describe("Interchain Token Service", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         minter: address1,
         operator: address1,
         sender: address1,
@@ -308,13 +308,13 @@ describe("Interchain Token Service", () => {
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
       });
       const secondDeployTx = deployInterchainToken({
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
       });
 
       expect(secondDeployTx.result).toBeErr(
@@ -325,7 +325,7 @@ describe("Interchain Token Service", () => {
         salt: randomBytes(32),
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
       });
 
       expect(thirdDeployTx.result).toBeErr(
@@ -339,13 +339,13 @@ describe("Interchain Token Service", () => {
     it("Should initialize a remote interchain token deployment", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
 
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -377,13 +377,13 @@ describe("Interchain Token Service", () => {
     it("Should revert on remote interchain token deployment if destination chain is not trusted", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
 
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -403,12 +403,12 @@ describe("Interchain Token Service", () => {
     it("Should revert on remote interchain token deployment if paused", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       setPaused({ paused: true });
@@ -445,7 +445,7 @@ describe("Interchain Token Service", () => {
     it("Should revert on receiving a remote interchain token deployment if not approved by the gateway", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         tokenId,
         sender: address1,
       });
@@ -466,7 +466,7 @@ describe("Interchain Token Service", () => {
           ),
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
-          tokenAddress: `${address1}.nit`,
+          tokenAddress: `${address1}.${nitMockParams.name}`,
         }).result
       ).toBeErr(
         // ERR-MESSAGE-NOT-FOUND
@@ -482,7 +482,7 @@ describe("Interchain Token Service", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         sender: address1,
       });
       expect(
@@ -491,7 +491,7 @@ describe("Interchain Token Service", () => {
           payload: Cl.serialize(payload),
           sourceAddress: TRUSTED_ADDRESS,
           sourceChain: TRUSTED_CHAIN,
-          tokenAddress: `${address1}.nit`,
+          tokenAddress: `${address1}.${nitMockParams.name}`,
           verificationParams,
         }).result
       ).toBeOk(Cl.bool(true));
@@ -512,18 +512,18 @@ describe("Interchain Token Service", () => {
     it("Should revert when deploying a custom token manager twice", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
       const secondDeployTx = deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -533,7 +533,7 @@ describe("Interchain Token Service", () => {
 
       const thirdDeployTx = deployTokenManager({
         salt: randomBytes(32),
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -579,12 +579,12 @@ describe("Interchain Token Service", () => {
     it("Should be able to initiate an interchain token transfer for lockUnlock with a normal SIP-010 token", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       const amount = 1000;
@@ -592,7 +592,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const senderInitialBalance = getSip010Balance({
         address: deployer,
         contractAddress: "sample-sip-010",
@@ -679,12 +679,12 @@ describe("Interchain Token Service", () => {
     it("Should revert on initiate interchain token transfer with zero amount", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       expect(
@@ -695,7 +695,7 @@ describe("Interchain Token Service", () => {
           gasValue: Cl.uint(100),
           tokenAddress: Cl.contractPrincipal(deployer, "sample-sip-010"),
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
           caller: deployer,
         }).result
       ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ZERO-AMOUNT"]);
@@ -743,12 +743,12 @@ describe("Interchain Token Service", () => {
     it("Should revert on execute receive interchain token if remote address validation fails", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       expect(
@@ -756,7 +756,7 @@ describe("Interchain Token Service", () => {
           messageId: "interchain-transfer-received",
           sourceChain: TRUSTED_CHAIN,
           sourceAddress: "untrusted address",
-          tokenManager: Cl.contractPrincipal(address1, "token-man"),
+          tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: Cl.buffer(
             Cl.serialize(
@@ -797,12 +797,12 @@ describe("Interchain Token Service", () => {
     it("Should revert on execute receive interchain token if the service is paused", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
       setPaused({ paused: true });
@@ -811,7 +811,7 @@ describe("Interchain Token Service", () => {
           messageId: "interchain-transfer-received",
           sourceChain: TRUSTED_CHAIN,
           sourceAddress: TRUSTED_ADDRESS,
-          tokenManager: Cl.contractPrincipal(address1, "token-man"),
+          tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: Cl.buffer(
             Cl.serialize(
@@ -850,12 +850,12 @@ describe("Interchain Token Service", () => {
     it("Should be able to receive lock/unlock token", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -866,7 +866,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -906,7 +906,7 @@ describe("Interchain Token Service", () => {
           messageId: "approved-interchain-transfer-message",
           sourceChain: TRUSTED_CHAIN,
           sourceAddress: TRUSTED_ADDRESS,
-          tokenManager: Cl.contractPrincipal(address1, "token-man"),
+          tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result
@@ -932,7 +932,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
       const deployTx = deployInterchainToken({
@@ -948,13 +948,13 @@ describe("Interchain Token Service", () => {
       const destinationAddress = "some eth address";
       const destinationChain = "ethereum";
       const gasValue = 100;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       expect(
         mintNIT({
           amount,
           minter: address1,
-          NITAddress: `${address1}.nit`,
+          NITAddress: `${address1}.${nitMockParams.name}`,
         }).result
       ).toBeOk(Cl.bool(true));
       const recipientInitialBalance = getSip010Balance({
@@ -1093,12 +1093,12 @@ describe("Interchain Token Service", () => {
       {
         const verificationParams = getTokenManagerMockCv();
         setupTokenManager({
-          contract: `${address1}.token-man`,
+          contract: `${address1}.${tmMockParams.name}`,
           sender: address1,
         });
         deployTokenManager({
           salt,
-          tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
           verificationParams,
         });
 
@@ -1107,7 +1107,7 @@ describe("Interchain Token Service", () => {
         const destinationChain = "ethereum";
         const gasValue = 100;
         const tokenAddress = `${deployer}.sample-sip-010`;
-        const managerAddress = `${address1}.token-man`;
+        const managerAddress = `${address1}.${tmMockParams.name}`;
         const transferTx = interchainTransfer({
           amount: Cl.uint(amount),
           destinationAddress: Cl.bufferFromAscii(destinationAddress),
@@ -1141,7 +1141,7 @@ describe("Interchain Token Service", () => {
       setupNIT({
         tokenId,
         minter: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         sender: address1,
         operator: address1,
       });
@@ -1155,7 +1155,7 @@ describe("Interchain Token Service", () => {
       const destinationAddress = "some eth address";
       const destinationChain = "ethereum";
       const gasValue = 100;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       expect(
         mintNIT({
@@ -1197,7 +1197,7 @@ describe("Interchain Token Service", () => {
       setupNIT({
         tokenId,
         minter: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         sender: address1,
         operator: address1,
       });
@@ -1211,7 +1211,7 @@ describe("Interchain Token Service", () => {
       const destinationAddress = Cl.bufferFromAscii("some eth address");
       const destinationChain = Cl.stringAscii("ethereum");
       const gasValue = Cl.uint(100);
-      const tokenAddress = Cl.address(`${address1}.nit`) as ContractPrincipalCV;
+      const tokenAddress = Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV;
 
       const callContractTx = callContractWithInterchainToken({
         amount,
@@ -1235,12 +1235,12 @@ describe("Interchain Token Service", () => {
     it(`Should be able to initiate an interchain token transfer via the interchainTransfer function on the service when the service is approved as well [lockUnlock]`, () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         verificationParams,
       });
 
@@ -1249,7 +1249,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const transferTx = interchainTransfer({
         amount: Cl.uint(amount),
         destinationAddress: Cl.bufferFromAscii(destinationAddress),
@@ -1282,20 +1282,20 @@ describe("Interchain Token Service", () => {
       const destinationChain = Cl.stringAscii("ethereum");
       const gasValue = Cl.uint(100);
       const tokenAddress = {
-        mintBurn: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+        mintBurn: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
         lockUnlock: Cl.address(
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
       };
       const tokenManager = {
-        mintBurn: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
-        lockUnlock: Cl.address(`${address1}.token-man`) as ContractPrincipalCV,
+        mintBurn: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        lockUnlock: Cl.address(`${address1}.${tmMockParams.name}`) as ContractPrincipalCV,
       };
       beforeEach(() => {
         const verificationParams = getTokenManagerMockCv();
         expect(
           setupTokenManager({
-            contract: `${address1}.token-man`,
+            contract: `${address1}.${tmMockParams.name}`,
             sender: address1,
           }).result
         ).toBeOk(Cl.bool(true));
@@ -1303,7 +1303,7 @@ describe("Interchain Token Service", () => {
           deployTokenManager({
             salt: lockUnlockSalt,
             tokenManagerAddress: Cl.address(
-              `${address1}.token-man`
+              `${address1}.${tmMockParams.name}`
             ) as ContractPrincipalCV,
             verificationParams,
           }).result
@@ -1313,13 +1313,13 @@ describe("Interchain Token Service", () => {
           setupNIT({
             tokenId: tokenId.mintBurn,
             minter: address1,
-            contract: `${address1}.nit`,
+            contract: `${address1}.${nitMockParams.name}`,
             operator: address1,
             sender: address1,
           }).result
         ).toBeOk(Cl.bool(true));
         const deployTx = deployInterchainToken({
-          token: Cl.contractPrincipal(address1, "nit"),
+          token: Cl.contractPrincipal(address1, nitMockParams.name),
           salt: mintBurnSalt,
           minter: Cl.address(address1),
           verificationParams: nitVerificationParams,
@@ -1330,7 +1330,7 @@ describe("Interchain Token Service", () => {
           mintNIT({
             amount: 100000,
             minter: address1,
-            NITAddress: `${address1}.nit`,
+            NITAddress: `${address1}.${nitMockParams.name}`,
           }).result
         ).toBeOk(Cl.bool(true));
 
@@ -1370,7 +1370,7 @@ describe("Interchain Token Service", () => {
     it("Should revert on callContractWithInterchainToken if data is empty", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1379,7 +1379,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1392,7 +1392,7 @@ describe("Interchain Token Service", () => {
       ) as ContractPrincipalCV;
 
       const tokenManager = Cl.address(
-        `${address1}.token-man`
+        `${address1}.${tmMockParams.name}`
       ) as ContractPrincipalCV;
       const callContractTx = callContractWithInterchainToken({
         amount: amount,
@@ -1484,7 +1484,7 @@ describe("Interchain Token Service", () => {
     it("Should revert on interchainTransfer function with invalid metadata version", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1493,7 +1493,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1507,7 +1507,7 @@ describe("Interchain Token Service", () => {
       ) as ContractPrincipalCV;
 
       const tokenManager = Cl.address(
-        `${address1}.token-man`
+        `${address1}.${tmMockParams.name}`
       ) as ContractPrincipalCV;
       const transferTx = interchainTransfer({
         amount: amount,
@@ -1531,7 +1531,7 @@ describe("Interchain Token Service", () => {
     it("Should revert on callContractWithInterchainToken when destination chain is untrusted chain", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1540,7 +1540,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1553,7 +1553,7 @@ describe("Interchain Token Service", () => {
       ) as ContractPrincipalCV;
 
       const tokenManager = Cl.address(
-        `${address1}.token-man`
+        `${address1}.${tmMockParams.name}`
       ) as ContractPrincipalCV;
       const callContractTx = callContractWithInterchainToken({
         amount: amount,
@@ -1579,7 +1579,7 @@ describe("Interchain Token Service", () => {
     it("Should be able to receive lock/unlock token", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1588,7 +1588,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1599,7 +1599,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -1639,7 +1639,7 @@ describe("Interchain Token Service", () => {
           messageId: "approved-interchain-transfer-message",
           sourceChain: TRUSTED_CHAIN,
           sourceAddress: TRUSTED_ADDRESS,
-          tokenManager: Cl.contractPrincipal(address1, "token-man"),
+          tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
           token: Cl.contractPrincipal(deployer, "sample-sip-010"),
           payload: Cl.buffer(Cl.serialize(payload)),
         }).result
@@ -1662,7 +1662,7 @@ describe("Interchain Token Service", () => {
     it("Should be able to receive lock/unlock token with empty data and not call destination contract", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1671,7 +1671,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1683,7 +1683,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -1722,7 +1722,7 @@ describe("Interchain Token Service", () => {
         messageId: "approved-interchain-transfer-message",
         sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
-        tokenManager: Cl.contractPrincipal(address1, "token-man"),
+        tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
         token: Cl.contractPrincipal(deployer, "sample-sip-010"),
         payload: Cl.buffer(Cl.serialize(payload)),
         destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
@@ -1746,7 +1746,7 @@ describe("Interchain Token Service", () => {
     it("Should be able to receive lock/unlock token with non empty data and call destination contract", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
@@ -1755,7 +1755,7 @@ describe("Interchain Token Service", () => {
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -1767,7 +1767,7 @@ describe("Interchain Token Service", () => {
       const destinationChain = "ethereum";
       const gasValue = 100;
       const tokenAddress = `${deployer}.sample-sip-010`;
-      const managerAddress = `${address1}.token-man`;
+      const managerAddress = `${address1}.${tmMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -1813,7 +1813,7 @@ describe("Interchain Token Service", () => {
         messageId: "approved-interchain-transfer-message",
         sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
-        tokenManager: Cl.contractPrincipal(address1, "token-man"),
+        tokenManager: Cl.contractPrincipal(address1, tmMockParams.name),
         token: Cl.contractPrincipal(deployer, "sample-sip-010"),
         payload: Cl.buffer(Cl.serialize(payload)),
         destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
@@ -1853,7 +1853,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
       const deployTx = deployInterchainToken({
@@ -1866,7 +1866,7 @@ describe("Interchain Token Service", () => {
       const amount = 100;
       const sender = address1;
       const recipient = address2;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -1909,7 +1909,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
       const deployTx = deployInterchainToken({
@@ -1945,7 +1945,7 @@ describe("Interchain Token Service", () => {
         { clarityVersion: 2 },
         deployer
       );
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
       const recipientInitialBalance = getSip010Balance({
         address: recipient,
         contractAddress: tokenAddress,
@@ -1987,7 +1987,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
       const deployTx = deployInterchainToken({
@@ -2000,7 +2000,7 @@ describe("Interchain Token Service", () => {
       const amount = 100;
       const sender = address1;
       const recipient = address2;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       const payload = buildIncomingInterchainTransferPayload({
         amount,
@@ -2031,7 +2031,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
       const deployTx = deployInterchainToken({
@@ -2044,7 +2044,7 @@ describe("Interchain Token Service", () => {
       const amount = 100;
       const sender = address1;
       const recipient = address2;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       const payload = buildIncomingInterchainTransferPayload({
         amount,
@@ -2076,7 +2076,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
 
@@ -2087,7 +2087,7 @@ describe("Interchain Token Service", () => {
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       const payload = Cl.tuple({
         type: Cl.stringAscii("invalid"),
@@ -2114,7 +2114,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         minter: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
       });
 
@@ -2122,14 +2122,14 @@ describe("Interchain Token Service", () => {
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.contractPrincipal(address1, "nit"),
+        token: Cl.contractPrincipal(address1, nitMockParams.name),
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
 
       const amount = 100;
       const sender = address1;
       const recipient = address2;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       const payload = buildIncomingInterchainTransferPayload({
         amount,
@@ -2183,15 +2183,15 @@ describe("Interchain Token Service", () => {
       return transferFrom({
         amount,
         tokenAddress: `${deployer}.sample-sip-010`,
-        tokenManagerAddress: `${address1}.token-man`,
+        tokenManagerAddress: `${address1}.${tmMockParams.name}`,
         from: deployer,
       });
     }
     function sendMintBurn(amount: number) {
       return transferFrom({
         amount,
-        tokenAddress: `${address1}.nit`,
-        tokenManagerAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
+        tokenManagerAddress: `${address1}.${nitMockParams.name}`,
         from: address1,
       });
     }
@@ -2199,7 +2199,7 @@ describe("Interchain Token Service", () => {
       const messageId = Buffer.from(randomBytes(32)).toString("hex");
       const sender = address1;
       const recipient = address2;
-      const tokenAddress = `${address1}.nit`;
+      const tokenAddress = `${address1}.${nitMockParams.name}`;
 
       const payload = buildIncomingInterchainTransferPayload({
         amount,
@@ -2239,13 +2239,13 @@ describe("Interchain Token Service", () => {
     it("Should revert if the service is paused", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
@@ -2262,19 +2262,19 @@ describe("Interchain Token Service", () => {
     it("Should be able to send token only if it does not trigger the mint limit", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       deployTokenManager({
         salt,
         tokenManagerAddress: Cl.address(
-          `${address1}.token-man`
+          `${address1}.${tmMockParams.name}`
         ) as ContractPrincipalCV,
         verificationParams,
       });
       const setFlowTx = setFlowLimit({
         tokenId,
-        tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+        tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
         limit: Cl.uint(500),
       });
 
@@ -2297,7 +2297,7 @@ describe("Interchain Token Service", () => {
       setupNIT({
         tokenId,
         minter: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
         sender: address1,
       });
@@ -2306,13 +2306,13 @@ describe("Interchain Token Service", () => {
           salt,
           minter: Cl.address(address1),
           verificationParams,
-          token: Cl.address(`${address1}.nit`) as ContractPrincipalCV,
+          token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
         }).result
       ).toBeOk(Cl.bool(true));
 
       expect(
         mintNIT({
-          NITAddress: `${address1}.nit`,
+          NITAddress: `${address1}.${nitMockParams.name}`,
           amount: 1000_000,
           minter: address1,
         }).result
@@ -2321,7 +2321,7 @@ describe("Interchain Token Service", () => {
         setFlowLimit({
           tokenId,
           limit: Cl.uint(500),
-          tokenManagerAddress: Cl.contractPrincipal(address1, "nit"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
         }).result
       ).toBeOk(Cl.bool(true));
       // test that the transfer limit is not reached
@@ -2346,7 +2346,7 @@ describe("Interchain Token Service", () => {
       setupNIT({
         tokenId,
         minter: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         operator: address1,
         sender: address1,
       });
@@ -2360,17 +2360,17 @@ describe("Interchain Token Service", () => {
       mintNIT({
         amount: 1000,
         minter: address1,
-        NITAddress: `${address1}.nit`,
+        NITAddress: `${address1}.${nitMockParams.name}`,
       });
       expect(
         setFlowLimit({
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, "nit"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
           limit: Cl.uint(500),
         }).result
       ).toBeOk(Cl.bool(true));
 
-      expect(getFlowLimit(`${address1}.nit`).result).toBeOk(Cl.uint(500));
+      expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(Cl.uint(500));
       expect(receiveMintBurnToken(501).result).toBeErr(
         NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
       );
@@ -2396,21 +2396,21 @@ describe("Interchain Token Service", () => {
       it("lock unlock", () => {
         const verificationParams = getTokenManagerMockCv();
         setupTokenManager({
-          contract: `${address1}.token-man`,
+          contract: `${address1}.${tmMockParams.name}`,
           sender: address1,
         });
         deployTokenManager({
           salt,
-          tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
           verificationParams,
         });
 
         setFlowLimit({
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, "token-man"),
+          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
           limit: Cl.uint(5),
         });
-        expect(getFlowLimit(`${address1}.token-man`).result).toBeOk(Cl.uint(5));
+        expect(getFlowLimit(`${address1}.${tmMockParams.name}`).result).toBeOk(Cl.uint(5));
       });
       it("mint burn", () => {
         const verificationParams = getNITMockCv();
@@ -2418,7 +2418,7 @@ describe("Interchain Token Service", () => {
           tokenId,
           minter: address1,
           sender: address1,
-          contract: `${address1}.nit`,
+          contract: `${address1}.${nitMockParams.name}`,
           operator: address1,
         });
         const deployTx = deployInterchainToken({
@@ -2431,11 +2431,11 @@ describe("Interchain Token Service", () => {
         expect(
           setFlowLimit({
             tokenId,
-            tokenManagerAddress: Cl.contractPrincipal(address1, "nit"),
+            tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
             limit: Cl.uint(5),
           }).result
         ).toBeOk(Cl.bool(true));
-        expect(getFlowLimit(`${address1}.nit`).result).toBeOk(Cl.uint(5));
+        expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(Cl.uint(5));
       });
     });
   });

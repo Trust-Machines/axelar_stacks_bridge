@@ -31,7 +31,7 @@ import {
 	makeProofCV,
 	signersToCv,
 } from "./util";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -414,7 +414,7 @@ export function approveRemoteInterchainToken({
 
 export function deployInterchainToken({
 	salt,
-	token = Cl.contractPrincipal(address1, "nit"),
+	token = Cl.contractPrincipal(address1, nitMockParams.name),
 	supply = 0,
 	minter,
 	impl = itsImpl,

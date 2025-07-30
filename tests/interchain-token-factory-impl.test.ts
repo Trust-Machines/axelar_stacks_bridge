@@ -9,7 +9,7 @@ import {
 import { Cl, randomBytes } from "@stacks/transactions";
 import { ITF_IMPL_ERRORS } from "./constants";
 import { getCanonicalInterChainTokenId } from "./itf-utils";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -66,7 +66,7 @@ describe("Interchain token factory impl", () => {
           gasImplContract,
           itsImpl,
           Cl.buffer(salt),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           Cl.uint(1000),
           Cl.address(deployer),
           getNITMockCv(),
@@ -89,8 +89,8 @@ describe("Interchain token factory impl", () => {
           Cl.address(address1),
           Cl.stringAscii("ethereum"),
           Cl.uint(1000),
-          Cl.address(`${address1}.nit`),
-          Cl.address(`${address1}.nit`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
+          Cl.address(`${address1}.${nitMockParams.name}`),
           Cl.address(address1),
         ],
         address1

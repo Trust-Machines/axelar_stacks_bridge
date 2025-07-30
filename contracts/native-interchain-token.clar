@@ -5,8 +5,8 @@
 
 ;; traits
 ;;
-(impl-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.native-interchain-token-trait)
-(use-trait sip-010-trait 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.traits.sip-010-trait)
+(impl-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.native-interchain-token-trait)
+(use-trait sip-010-trait 'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.traits.sip-010-trait)
 
 (define-constant ERR-NOT-AUTHORIZED (err u150000))
 (define-constant ERR-NON-STANDARD-ADDRESS (err u150001))
@@ -413,7 +413,7 @@
 (define-data-var operator principal NULL-ADDRESS)
 (define-read-only (get-its-impl)
     (contract-call?
-        'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.interchain-token-service-storage
+        'ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS.interchain-token-service-storage
         get-service-impl
     )
 )
