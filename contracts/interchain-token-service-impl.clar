@@ -434,11 +434,23 @@
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
             )
             (asserts!
+                (let ((flow-limiters (unwrap! (contract-call? token-manager get-flow-limiters)
+                        ERR-TOKEN-NOT-DEPLOYED
+                    )))
+                    (or
+                        (is-eq flow-limiters (list))
+                        (is-eq flow-limiters (list operator))
+                    )
+                )
+                ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
+            )
+            (asserts!
                 (not (contract-call? .interchain-token-service-storage
                     is-manager-address-used token-manager-address
                 ))
                 ERR-TOKEN-EXISTS
             )
+
             (asserts!
                 (unwrap!
                     (insert-token-manager token-id token-manager-address

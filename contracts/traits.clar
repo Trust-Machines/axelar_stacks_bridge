@@ -361,6 +361,10 @@
         (principal)
         (response bool uint)
     )
+    (get-flow-limiters
+        ()
+        (response (list 50 principal) uint)
+    )
     (is-flow-limiter
         (principal)
         (response bool uint)
@@ -439,6 +443,10 @@
     (is-flow-limiter
         (principal)
         (response bool uint)
+    )
+    (get-flow-limiters
+        ()
+        (response (list 50 principal) uint)
     )
     (get-flow-limit
         ()

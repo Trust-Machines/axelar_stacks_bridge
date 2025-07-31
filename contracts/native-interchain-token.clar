@@ -19,6 +19,7 @@
 (define-constant ERR-NOT-STARTED (err u150008))
 (define-constant ERR-UNSUPPORTED-TOKEN-TYPE (err u150009))
 (define-constant ERR-ONLY-OPERATOR (err u150010))
+(define-constant ERR-FLOW-LIMITERS-FULL (err u150011))
 
 ;; ##########################
 ;; ##########################
@@ -174,10 +175,9 @@
     (ok (is-minter-raw address))
 )
 
-(define-map roles
-    principal
-    { flow-limiter: bool }
-)
+(define-data-var temp-selected-to-remove (optional principal) none)
+;; List of flow limiters with a maximum of 50 principals
+(define-data-var flow-limiters (list 50 principal) (list))
 
 ;; ######################
 ;; ######################
@@ -202,12 +202,24 @@
 ;; @param address the address of the new flow limiter.
 ;; #[allow(unchecked_data)]
 (define-public (add-flow-limiter (address principal))
-    (begin
+    (let ((current-limiters (var-get flow-limiters)))
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
         (asserts! (is-standard address) ERR-NON-STANDARD-ADDRESS)
-        (ok (map-set roles address { flow-limiter: true }))
+        (asserts! (not (is-some (index-of current-limiters address)))
+            ERR-INVALID-PARAMS
+        )
+        (asserts! (< (len current-limiters) u50) ERR-FLOW-LIMITERS-FULL)
+        (var-set flow-limiters
+            (unwrap! (as-max-len? (append current-limiters address) u50)
+                ERR-FLOW-LIMITERS-FULL
+            ))
+        (ok true)
     )
+)
+
+(define-private (is-not-selected-to-remove (addr principal))
+    (not (is-eq addr (unwrap-panic (var-get temp-selected-to-remove))))
 )
 
 ;; This function removes a flow limiter for this TokenManager.
@@ -218,10 +230,11 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
-        (match (map-get? roles address)
-            ;; no need to check limiter if they don't exist it will be a noop
-            limiter-roles
-            (ok (map-set roles address (merge limiter-roles { flow-limiter: false })))
+        (let ((current-limiters (var-get flow-limiters)))
+            (var-set temp-selected-to-remove (some address))
+            (var-set flow-limiters
+                (filter is-not-selected-to-remove current-limiters)
+            )
             (ok true)
         )
     )
@@ -237,8 +250,11 @@
 (define-read-only (is-flow-limiter-raw (addr principal))
     (or
         (is-eq addr (get-its-impl))
-        (default-to false (get flow-limiter (map-get? roles addr)))
+        (is-some (index-of (var-get flow-limiters) addr))
     )
+)
+(define-read-only (get-flow-limiters)
+    (ok (var-get flow-limiters))
 )
 
 ;;
@@ -378,7 +394,11 @@
         (match operator-address
             op (begin
                 (asserts! (is-standard op) ERR-NON-STANDARD-ADDRESS)
-                (map-set roles op { flow-limiter: true })
+                (var-set flow-limiters
+                    (unwrap!
+                        (as-max-len? (append (var-get flow-limiters) op) u50)
+                        ERR-FLOW-LIMITERS-FULL
+                    ))
             )
             true
         )

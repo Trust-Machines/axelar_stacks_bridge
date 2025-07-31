@@ -8,7 +8,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { getVerificationParams } from "./verification-util.ts";
 const deployerKey =
   "db4f3b0e5bd03b05f96f90f35b46918aff8da6bf44a276b3c1cf4aa1f8c879ab01";
-const timestamp = 1753888793829;
+const timestamp = 1753977556022;
 const tmSource = await readFile(
   new URL("../contracts/token-manager.clar", import.meta.url),
   "utf-8"
