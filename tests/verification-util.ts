@@ -86,8 +86,8 @@ export async function getVerificationParams(txId: string) {
   );
 
   const txs = block.slice(pastSignatures + 10 + signerBitVecByteLen);
-  const txids = deserializeRawBlockTxs(txs);
-  const tx_merkle_tree = MerkleTree.new(txids.map(hexToBytes));
+  const txIds = deserializeRawBlockTxs(txs);
+  const tx_merkle_tree = MerkleTree.new(txIds.map(hexToBytes));
 
   const blockHeader = new Uint8Array([
     ...block_version,
@@ -106,16 +106,28 @@ export async function getVerificationParams(txId: string) {
 
   const tx = deserializeTransaction(txRaw);
 
-  return Cl.tuple({
+  const sig = (tx.auth.spendingCondition as SingleSigSpendingCondition)
+    .signature.data;
+  const verificationParams = Cl.tuple({
     nonce: Cl.bufferFromHex(intToHex(txInfoData.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(txInfoData.fee_rate, 8)),
-    signature: Cl.bufferFromHex(
-      (tx.auth.spendingCondition as SingleSigSpendingCondition).signature.data
-    ),
+    signature: Cl.bufferFromHex(sig),
     proof: proof_path_to_cv(txIndex, proof, proof.length),
     "tx-block-height": Cl.uint(txInfoData.block_height),
     "block-header-without-signer-signatures": Cl.buffer(blockHeader),
   });
+  return {
+    verificationParams,
+    sig,
+    txIndex,
+    nonce: txInfoData.nonce,
+    feeRate: txInfoData.fee_rate,
+    name: txInfoData.smart_contract.contract_id.split(".")[1],
+    deployer: txInfoData.sender_address,
+    txIds,
+    blockHeight: txInfoData.block_height,
+    blockHeader: bytesToHex(blockHeader),
+  };
 }
 
 export async function setupTm() {
@@ -178,7 +190,7 @@ async function getTokenTxId(contract: string) {
 
 export async function registerTm() {
   const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
-  const verificationParams = await getVerificationParams(tmTxHash);
+  const { verificationParams } = await getVerificationParams(tmTxHash);
   const tx = await makeContractCall({
     contractAddress: referenceAddy,
     contractName: "interchain-token-factory",
@@ -205,7 +217,7 @@ export async function registerTm() {
 
 export async function verifyTm() {
   const tmTxHash = await getTokenTxId(`${senderAddress}.${tmName}`);
-  const verificationParams = await getVerificationParams(tmTxHash);
+  const { verificationParams } = await getVerificationParams(tmTxHash);
 
   const verifyRes = await fetchCallReadOnlyFunction({
     contractAddress: referenceAddy,
@@ -340,7 +352,7 @@ export async function setupNIT() {
 
 export async function registerNIT() {
   const nitTxHash = await getTokenTxId(`${senderAddress}.${nitName}`);
-  const verificationParams = await getVerificationParams(nitTxHash);
+  const { verificationParams } = await getVerificationParams(nitTxHash);
   const tx = await makeContractCall({
     contractAddress: referenceAddy,
     contractName: "interchain-token-factory",
@@ -388,38 +400,6 @@ export async function registerNIT() {
 //   )
 // );
 
-export const nitMockParams = {
-  sig: "00a58b3b9e170bf03960a663772ac411b047e7e6e04e9e3344ad3eceafb4d2b97e6374331ef0762585252bb8f4239857852d138fbf6ebcb3bee46df18093d1487f",
-  txIndex: 1,
-  nonce: 0,
-  feeRate: 65536,
-  name: "native-interchain-token-1753888793828",
-  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
-  txIds: [
-    "ea576d1880c4f744e5f00794d4ebd66635d5dc68ed7a8e01bff6bf364f007955",
-    "8b7d6b81596cbe38a358436efe738c79e41d42a605ac2ec89418410027b42e37",
-  ],
-  blockHeight: 3351111,
-  blockHeader:
-    "00000000000033224700000000574cb970d65be35d5e0b0aaef0c3201b20f6bd90c9210f1b472c4b9b6652f568f8d99d71ca2c2cb8498da4a4fd92f207b8f0a7b44bda561844259699c281cc6d20ba16fb122996a9043c18d872cbc4dc48b77431965b8fd64eb1857327e7aa033165c06b1fe4bb5e2e481c80bd1bdfaa102eb8f97049677100000000688a3e040059e11512413f2d7c9c9535dd9fc1c7fcb490e3943e9fd0c66361ed5a4e32d0174601bf9bf27b57de2cf9bf9a4bd10306258647062eb12dddd563b83b052479a3013500000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1f",
-};
-
-export const tmMockParams = {
-  sig: "00353923b23f465696841cf6b1024e2714c2083587eed99fa207dc8d2b66ed42202e35f135d57f2e7092c72513a0115ffa730596a623eb2eebd2cc2f9a93e5b10c",
-  txIndex: 1,
-  nonce: 1,
-  feeRate: 65536,
-  name: "token-manager-1753888793828",
-  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
-  txIds: [
-    "2306dd88dbca084ed275669308a33a5101cd9d5afaa5f5f79c904f6b7eea5b1d",
-    "726ac55806dc4a28bae37781c714761c5a747081d715c7d2f70c536982c55c1b",
-  ],
-  blockHeight: 3351115,
-  blockHeader:
-    "00000000000033224b00000000574cb970d65be35d5e0b0aaef0c3201b20f6bd90c9210f1b3b85b91936f32a124ccd62474fc0ce021afc261a99ac13215d79d30d6f6acd35b17cc535bda7dba28375616408b7420ebf6dca4b44d36e560caa169fb5683d2a7bac2acf36fb5246b661183c3c0b2f9a92c7d48faf5aa15eb9e0c4991802f8dd00000000688a3e0f01ee6f4a1ff7317a04c0eca2594668cffecd78183301dcb931b413f1ca9e74d7865e5ff4ceef9253ea050c6ed665bd290c21019172270fa2d7c0736e199f9a710e013500000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1f",
-};
-
 export const getTokenManagerMockCv = () => {
   simnet.callPublicFn(
     "clarity-stacks",
@@ -448,17 +428,15 @@ export const getTokenManagerMockCv = () => {
       tmMockParams.deployer
     );
   }
-  const proof = MerkleTree.new(tmMockParams.txIds.map(hexToBytes)).proof(tmMockParams.txIndex)
+  const proof = MerkleTree.new(tmMockParams.txIds.map(hexToBytes)).proof(
+    tmMockParams.txIndex
+  );
 
   return Cl.tuple({
     nonce: Cl.bufferFromHex(intToHex(tmMockParams.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(tmMockParams.feeRate, 8)),
     signature: Cl.bufferFromHex(tmMockParams.sig),
-    proof: proof_path_to_cv(
-      tmMockParams.txIndex,
-      proof,
-      proof.length
-    ),
+    proof: proof_path_to_cv(tmMockParams.txIndex, proof, proof.length),
     "tx-block-height": Cl.uint(tmMockParams.blockHeight),
     "block-header-without-signer-signatures": Cl.bufferFromHex(
       tmMockParams.blockHeader
@@ -490,16 +468,14 @@ export const getNITMockCv = () => {
       nitMockParams.deployer
     );
   }
-  const proof = MerkleTree.new(nitMockParams.txIds.map(hexToBytes)).proof(nitMockParams.txIndex)
+  const proof = MerkleTree.new(nitMockParams.txIds.map(hexToBytes)).proof(
+    nitMockParams.txIndex
+  );
   return Cl.tuple({
     nonce: Cl.bufferFromHex(intToHex(nitMockParams.nonce, 8)),
     "fee-rate": Cl.bufferFromHex(intToHex(nitMockParams.feeRate, 8)),
     signature: Cl.bufferFromHex(nitMockParams.sig),
-    proof: proof_path_to_cv(
-      nitMockParams.txIndex,
-      proof,
-      proof.length
-    ),
+    proof: proof_path_to_cv(nitMockParams.txIndex, proof, proof.length),
     "tx-block-height": Cl.uint(nitMockParams.blockHeight),
     "block-header-without-signer-signatures": Cl.bufferFromHex(
       nitMockParams.blockHeader
@@ -527,3 +503,36 @@ export function deserializeRawBlockTxs(
   }
   return deserializeRawBlockTxs(reader, processedTxs);
 }
+
+export const nitMockParams = {
+  sig: "0180c60b7c69d69e4ba514f70976e084141adb6b6259db6c77ac8e3e448794587e69739573a87ec32c44a22726680c37816a30a72bb28528942e5c6e6f98ff0307",
+  txIndex: 2,
+  nonce: 2,
+  feeRate: "65536",
+  name: "native-interchain-token-1753888793829",
+  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  txIds: [
+    "181d4c1094019f5abeec9259ad013b8268bdbb4c95b94a5f20bab8d2d7b5db42",
+    "4ce9fd98e3939a0d471a56a1d13d7b7fa859f51f21b48c70b021ec48d7d8aa0c",
+    "0f3a813896992bef137d87d39a28a80935dd44bba25356ac370eedc8aeb99afb",
+  ],
+  blockHeight: 3373973,
+  blockHeader:
+    "000000000000337b950000000057ad7710ee53dee13589ed3bb04bc50263c76b6acd37d38fb61b7528b56dd5fd39010fc18b4f9a5e0a9947ff1682b037b06b1306f9fd1980f166ce3bcc6b8bec433537c55006120706a9e1e66bd2f58a90d99cd402cd11b0fb854ae29a05143c9013607441a7b521a83dfe6ba9bad627aa726d543a62233b00000000688b6a170033331851b19fe1e7854231a352322174d30f8dfb2d7e46584f03d48fdbbabd2779fd2a578dbd3222dc47eac8ba05d3223e724d8ef07c83c05a2d9309ab463c92013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f",
+};
+
+export const tmMockParams = {
+  sig: "009e7643201634bbb367464877ac0417d31e044a0ea7b96fd2999768fbf05bf703589888bce5dcf02488b11e2ab91d112452f21e5c3a550925b06578406f36d1f9",
+  txIndex: 1,
+  nonce: 3,
+  feeRate: "65536",
+  name: "token-manager-1753888793829",
+  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  txIds: [
+    "593154a79d76f6a3e78de47cba35fcf5ae5ec52715c98fd9bf414b4fb56097bc",
+    "42a03765048fd445718bdce619bf6a85aa4f2e72b9a66dba012d9c668daf6096",
+  ],
+  blockHeight: 3373975,
+  blockHeader:
+    "000000000000337b970000000057ad7710ee53dee13589ed3bb04bc50263c76b6acd37d38f1a13c040e2767dd4b2ed0f780912c58f6783363489a76eb791a143bc2f08e0ffe07c36ca7e8d47b3dcc216acf76725f710c43cf26b50b52653db8e5970af67b9f4724f819da66b579bec88cf500a429a932bafe8001d42843bcf556975da148b00000000688b6a1e006a909b975d6df1a021cafb4d11b5b50fb526a107cfa56bada38fe2a3c0db8d001353112cecbbbb75174217f18ff050f3e7a20544817d51dd9a322992a39d3ae7013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f",
+};

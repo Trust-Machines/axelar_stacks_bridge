@@ -1,24 +1,14 @@
 import {
-  AddressVersion,
   AnchorMode,
   broadcastTransaction,
-  type BufferCV,
   makeContractDeploy,
   PostConditionMode,
-  pubKeyfromPrivKey,
-  publicKeyToAddress,
-  type SingleSigSpendingCondition,
 } from "@stacks/transactions";
-import { bytesToHex } from "@stacks/common";
 import { readFile, writeFile } from "node:fs/promises";
 import { getVerificationParams } from "./verification-util.ts";
 const deployerKey =
   "db4f3b0e5bd03b05f96f90f35b46918aff8da6bf44a276b3c1cf4aa1f8c879ab01";
-const deployerAddress = publicKeyToAddress(
-  AddressVersion.TestnetSingleSig,
-  pubKeyfromPrivKey(deployerKey)
-);
-const timestamp = 1753888793828;
+const timestamp = 1753888793829;
 const tmSource = await readFile(
   new URL("../contracts/token-manager.clar", import.meta.url),
   "utf-8"
@@ -28,7 +18,6 @@ const nitSource = await readFile(
   new URL("../contracts/native-interchain-token.clar", import.meta.url),
   "utf-8"
 );
-
 
 const getTx = async (txId: string) => {
   const response = await fetch(
@@ -75,10 +64,7 @@ const replaceSources = async () => {
       )
   );
 };
-const deployContract = async (
-  name: string,
-  source: string,
-) => {
+const deployContract = async (name: string, source: string) => {
   const tx = await makeContractDeploy({
     contractName: name,
     senderKey: deployerKey,
@@ -92,40 +78,37 @@ const deployContract = async (
 
   const receipt = await broadcastTransaction(tx, "testnet");
 
-  const txData = await waitForTx(receipt.txid);
+  await waitForTx(receipt.txid);
 
-  const verificationParams = await getVerificationParams(receipt.txid);
+  const { verificationParams, ...params } = await getVerificationParams(
+    receipt.txid
+  );
 
-  return {
-    sig: (tx.auth.spendingCondition as SingleSigSpendingCondition).signature
-      .data,
-    txIndex: txData.tx_index,
-    nonce: txData.nonce,
-    feeRate: 0x10000,
-    name,
-    deployer: deployerAddress,
-    txId: receipt.txid,
-    blockHeight: txData.block_height,
-    blockHeader: bytesToHex(
-      (
-        verificationParams.data[
-          "block-header-without-signer-signatures"
-        ] as BufferCV
-      ).buffer
-    ),
-  };
+  return params;
 };
 
 const nitParams = await deployContract(
   "native-interchain-token-" + timestamp,
-  nitSource,
+  nitSource
 );
 
-const tmParams = await deployContract(
-  "token-manager-" + timestamp,
-  tmSource,
+const tmParams = await deployContract("token-manager-" + timestamp, tmSource);
+
+const verificationUtils = await readFile(
+  new URL("../tests/verification-util.ts", import.meta.url),
+  "utf-8"
+);
+await writeFile(
+  new URL("../tests/verification-util.ts", import.meta.url),
+  verificationUtils
+    .replace(
+      /export const nitMockParams = \{[\n\s\w\:\",-\[\]]+\n?};/,
+      `export const nitMockParams = ${JSON.stringify(nitParams, null, 2)};`
+    )
+    .replace(
+      /export const tmMockParams = \{[\n\s\w\:\",-\[\]]+\n?};/,
+      `export const tmMockParams = ${JSON.stringify(tmParams, null, 2)};`
+    )
 );
 
-console.log("NIT Params:", nitParams);
-console.log("TM Params:", tmParams);
 await replaceSources();
