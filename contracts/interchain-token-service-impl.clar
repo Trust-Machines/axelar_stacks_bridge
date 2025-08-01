@@ -440,7 +440,6 @@
                     (or
                         (is-eq flow-limiters (list))
                         (is-eq flow-limiters (list operator))
-                        (is-eq flow-limiters (list NULL-ADDRESS))
                     )
                 )
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
@@ -635,6 +634,17 @@
                     ERR-TOKEN-NOT-DEPLOYED
                 ))
             ERR-TOKEN-METADATA-SUPPLY-INVALID
+        )
+        (asserts!
+            (let ((flow-limiters (unwrap! (contract-call? token get-flow-limiters)
+                    ERR-TOKEN-NOT-DEPLOYED
+                )))
+                (or
+                    (is-eq flow-limiters (list))
+                    (is-eq flow-limiters (list minter))
+                )
+            )
+            ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
         )
         (ok true)
     )
