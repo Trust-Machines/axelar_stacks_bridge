@@ -440,6 +440,7 @@
                     (or
                         (is-eq flow-limiters (list))
                         (is-eq flow-limiters (list operator))
+                        (is-eq flow-limiters (list NULL-ADDRESS))
                     )
                 )
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
