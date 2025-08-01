@@ -56,7 +56,12 @@ import {
   transferTokenOperatorShip,
 } from "./its-utils";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+  tmMockParams,
+} from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -282,7 +287,9 @@ describe("Interchain Token Service", () => {
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        token: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
       });
 
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -308,13 +315,17 @@ describe("Interchain Token Service", () => {
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        token: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
       });
       const secondDeployTx = deployInterchainToken({
         salt,
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        token: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
       });
 
       expect(secondDeployTx.result).toBeErr(
@@ -325,7 +336,9 @@ describe("Interchain Token Service", () => {
         salt: randomBytes(32),
         minter: Cl.address(address1),
         verificationParams,
-        token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        token: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
       });
 
       expect(thirdDeployTx.result).toBeErr(
@@ -695,7 +708,10 @@ describe("Interchain Token Service", () => {
           gasValue: Cl.uint(100),
           tokenAddress: Cl.contractPrincipal(deployer, "sample-sip-010"),
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
           caller: deployer,
         }).result
       ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ZERO-AMOUNT"]);
@@ -1098,7 +1114,10 @@ describe("Interchain Token Service", () => {
         });
         deployTokenManager({
           salt,
-          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
           verificationParams,
         });
 
@@ -1211,7 +1230,9 @@ describe("Interchain Token Service", () => {
       const destinationAddress = Cl.bufferFromAscii("some eth address");
       const destinationChain = Cl.stringAscii("ethereum");
       const gasValue = Cl.uint(100);
-      const tokenAddress = Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV;
+      const tokenAddress = Cl.address(
+        `${address1}.${nitMockParams.name}`
+      ) as ContractPrincipalCV;
 
       const callContractTx = callContractWithInterchainToken({
         amount,
@@ -1282,14 +1303,20 @@ describe("Interchain Token Service", () => {
       const destinationChain = Cl.stringAscii("ethereum");
       const gasValue = Cl.uint(100);
       const tokenAddress = {
-        mintBurn: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+        mintBurn: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
         lockUnlock: Cl.address(
           `${deployer}.sample-sip-010`
         ) as ContractPrincipalCV,
       };
       const tokenManager = {
-        mintBurn: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
-        lockUnlock: Cl.address(`${address1}.${tmMockParams.name}`) as ContractPrincipalCV,
+        mintBurn: Cl.address(
+          `${address1}.${nitMockParams.name}`
+        ) as ContractPrincipalCV,
+        lockUnlock: Cl.address(
+          `${address1}.${tmMockParams.name}`
+        ) as ContractPrincipalCV,
       };
       beforeEach(() => {
         const verificationParams = getTokenManagerMockCv();
@@ -2306,7 +2333,9 @@ describe("Interchain Token Service", () => {
           salt,
           minter: Cl.address(address1),
           verificationParams,
-          token: Cl.address(`${address1}.${nitMockParams.name}`) as ContractPrincipalCV,
+          token: Cl.address(
+            `${address1}.${nitMockParams.name}`
+          ) as ContractPrincipalCV,
         }).result
       ).toBeOk(Cl.bool(true));
 
@@ -2321,7 +2350,10 @@ describe("Interchain Token Service", () => {
         setFlowLimit({
           tokenId,
           limit: Cl.uint(500),
-          tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            nitMockParams.name
+          ),
         }).result
       ).toBeOk(Cl.bool(true));
       // test that the transfer limit is not reached
@@ -2365,12 +2397,17 @@ describe("Interchain Token Service", () => {
       expect(
         setFlowLimit({
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            nitMockParams.name
+          ),
           limit: Cl.uint(500),
         }).result
       ).toBeOk(Cl.bool(true));
 
-      expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(Cl.uint(500));
+      expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(
+        Cl.uint(500)
+      );
       expect(receiveMintBurnToken(501).result).toBeErr(
         NIT_ERRORS["ERR-FLOW-LIMIT-EXCEEDED"]
       );
@@ -2401,16 +2438,24 @@ describe("Interchain Token Service", () => {
         });
         deployTokenManager({
           salt,
-          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
           verificationParams,
         });
 
         setFlowLimit({
           tokenId,
-          tokenManagerAddress: Cl.contractPrincipal(address1, tmMockParams.name),
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
           limit: Cl.uint(5),
         });
-        expect(getFlowLimit(`${address1}.${tmMockParams.name}`).result).toBeOk(Cl.uint(5));
+        expect(getFlowLimit(`${address1}.${tmMockParams.name}`).result).toBeOk(
+          Cl.uint(5)
+        );
       });
       it("mint burn", () => {
         const verificationParams = getNITMockCv();
@@ -2431,11 +2476,16 @@ describe("Interchain Token Service", () => {
         expect(
           setFlowLimit({
             tokenId,
-            tokenManagerAddress: Cl.contractPrincipal(address1, nitMockParams.name),
+            tokenManagerAddress: Cl.contractPrincipal(
+              address1,
+              nitMockParams.name
+            ),
             limit: Cl.uint(5),
           }).result
         ).toBeOk(Cl.bool(true));
-        expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(Cl.uint(5));
+        expect(getFlowLimit(`${address1}.${nitMockParams.name}`).result).toBeOk(
+          Cl.uint(5)
+        );
       });
     });
   });
@@ -2661,6 +2711,114 @@ describe("Interchain Token Service", () => {
             newOperator: address2,
           }).result
         ).toBeErr(ITS_IMPL_ERROR_CODES["ERR-ONLY-OPERATOR"]);
+      });
+    });
+
+    describe("Should be able to remove ITS impl as flow limiter and restore functionality", () => {
+      function runCurrentTests(contractName: string) {
+        const ERROR_NOT_AUTHORIZED = contractName.includes("token-manager")
+          ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
+          : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
+
+        const itsImplAddress = `${deployer}.interchain-token-service-impl`;
+
+        // First verify ITS impl can set flow limits (it should be a flow limiter by default)
+        expect(
+          setFlowLimit({
+            tokenId,
+            tokenManagerAddress: Cl.contractPrincipal(address1, contractName),
+            limit: Cl.uint(100),
+          }).result
+        ).toBeOk(Cl.bool(true));
+
+        // Remove ITS impl as a flow limiter
+        expect(
+          removeFlowLimiter({
+            contractName: `${address1}.${contractName}`,
+            limiterAddress: itsImplAddress,
+            operator: address1,
+          }).result
+        ).toBeOk(Cl.bool(true));
+
+        // Verify ITS impl is no longer a flow limiter
+        expect(
+          isFlowLimiter({
+            contractName: `${address1}.${contractName}`,
+            limiterAddress: itsImplAddress,
+          }).result
+        ).toBeOk(Cl.bool(false));
+
+        // Verify setFlowLimit now fails since ITS impl is not a flow limiter
+        expect(
+          setFlowLimit({
+            tokenId,
+            tokenManagerAddress: Cl.contractPrincipal(address1, contractName),
+            limit: Cl.uint(200),
+          }).result
+        ).toBeErr(ERROR_NOT_AUTHORIZED);
+
+        // Add ITS impl back as a flow limiter
+        expect(
+          addFlowLimiter({
+            contractName: `${address1}.${contractName}`,
+            limiterAddress: itsImplAddress,
+            operator: address1,
+          }).result
+        ).toBeOk(Cl.bool(true));
+
+        // Verify ITS impl is now a flow limiter again
+        expect(
+          isFlowLimiter({
+            contractName: `${address1}.${contractName}`,
+            limiterAddress: itsImplAddress,
+          }).result
+        ).toBeOk(Cl.bool(true));
+
+        // Verify setFlowLimit now works again
+        expect(
+          setFlowLimit({
+            tokenId,
+            tokenManagerAddress: Cl.contractPrincipal(address1, contractName),
+            limit: Cl.uint(300),
+          }).result
+        ).toBeOk(Cl.bool(true));
+      }
+
+      it("lock unlock", () => {
+        const verificationParams = getTokenManagerMockCv();
+        setupTokenManager({
+          contract: `${address1}.${tmMockParams.name}`,
+          sender: address1,
+        });
+        deployTokenManager({
+          salt,
+          tokenAddress: Cl.address(
+            `${deployer}.sample-sip-010`
+          ) as ContractPrincipalCV,
+          tokenManagerAddress: Cl.address(
+            `${address1}.${tmMockParams.name}`
+          ) as ContractPrincipalCV,
+          verificationParams,
+        });
+        runCurrentTests(tmMockParams.name);
+      });
+
+      it("mint burn", () => {
+        const verificationParams = getNITMockCv();
+        setupNIT({
+          tokenId,
+          minter: address1,
+          contract: `${address1}.${nitMockParams.name}`,
+          operator: address1,
+          sender: address1,
+        });
+        deployInterchainToken({
+          salt,
+          minter: Cl.address(address1),
+          verificationParams,
+        });
+
+        runCurrentTests(nitMockParams.name);
       });
     });
   });

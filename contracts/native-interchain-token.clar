@@ -178,6 +178,7 @@
 (define-data-var temp-selected-to-remove (optional principal) none)
 ;; List of flow limiters with a maximum of 50 principals
 (define-data-var flow-limiters (list 50 principal) (list))
+(define-data-var is-its-flow-limiter bool true)
 
 ;; ######################
 ;; ######################
@@ -210,10 +211,14 @@
             ERR-INVALID-PARAMS
         )
         (asserts! (< (len current-limiters) u50) ERR-FLOW-LIMITERS-FULL)
-        (var-set flow-limiters
-            (unwrap! (as-max-len? (append current-limiters address) u50)
-                ERR-FLOW-LIMITERS-FULL
-            ))
+        (if (is-eq address (get-its-impl))
+            (var-set is-its-flow-limiter true)
+            (var-set flow-limiters
+                (unwrap! (as-max-len? (append current-limiters address) u50)
+                    ERR-FLOW-LIMITERS-FULL
+                ))
+        )
+
         (ok true)
     )
 )
@@ -230,13 +235,16 @@
     (begin
         (asserts! (var-get is-started) ERR-NOT-STARTED)
         (asserts! (is-operator-raw contract-caller) ERR-NOT-AUTHORIZED)
-        (let ((current-limiters (var-get flow-limiters)))
-            (var-set temp-selected-to-remove (some address))
-            (var-set flow-limiters
-                (filter is-not-selected-to-remove current-limiters)
+        (if (is-eq address (get-its-impl))
+            (var-set is-its-flow-limiter false)
+            (let ((current-limiters (var-get flow-limiters)))
+                (var-set temp-selected-to-remove (some address))
+                (var-set flow-limiters
+                    (filter is-not-selected-to-remove current-limiters)
+                )
             )
-            (ok true)
         )
+        (ok true)
     )
 )
 
@@ -249,7 +257,7 @@
 
 (define-read-only (is-flow-limiter-raw (addr principal))
     (or
-        (is-eq addr (get-its-impl))
+        (and (var-get is-its-flow-limiter) (is-eq addr (get-its-impl)))
         (is-some (index-of (var-get flow-limiters) addr))
     )
 )
