@@ -34,7 +34,7 @@ import {
   transferSip010,
 } from "./its-utils";
 import { getSigners } from "./util";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
@@ -71,7 +71,7 @@ describe("Interchain Token Service Full Flow", () => {
       const verificationParams = getTokenManagerMockCv();
       expect(
         setupTokenManager({
-          contract: `${address1}.token-man`,
+          contract: `${address1}.${tmMockParams.name}`,
           sender: address1,
           operator: null,
         }).result,
@@ -80,7 +80,7 @@ describe("Interchain Token Service Full Flow", () => {
       setupService(proofSigners);
       const deployTx = registerCanonicalInterchainToken({
         verificationParams,
-        tokenManagerAddress: `${address1}.token-man`,
+        tokenManagerAddress: `${address1}.${tmMockParams.name}`,
         sender: address1,
       });
       expect(deployTx.result).toBeOk(Cl.bool(true));
@@ -193,7 +193,7 @@ describe("Interchain Token Service Full Flow", () => {
       });
 
       it("Should send some tokens to another chain via ITS", async () => {
-        const tokenManagerAddress = `${address1}.token-man`;
+        const tokenManagerAddress = `${address1}.${tmMockParams.name}`;
         const transferTx = interchainTransfer({
           amount: Cl.uint(amount),
           destinationAddress: Cl.bufferFromHex(destAddress),
@@ -285,13 +285,13 @@ describe("Interchain Token Service Full Flow", () => {
         minter: address1,
         operator: address1,
         sender: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
       });
       expect(
         mintNIT({
           minter: address1,
           amount: tokenCap,
-          NITAddress: `${address1}.nit`,
+          NITAddress: `${address1}.${nitMockParams.name}`,
         }).result,
       ).toBeOk(Cl.bool(true));
 
@@ -300,7 +300,7 @@ describe("Interchain Token Service Full Flow", () => {
         sender: address1,
         initialSupply: tokenCap,
         minterAddress: address1,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         verificationParams,
       });
 
@@ -335,8 +335,8 @@ describe("Interchain Token Service Full Flow", () => {
         });
         const deployTx = factoryDeployRemoteInterchainToken({
           salt: originalSalt,
-          tokenAddress: `${address1}.nit`,
-          tokenManagerAddress: `${address1}.nit`,
+          tokenAddress: `${address1}.${nitMockParams.name}`,
+          tokenManagerAddress: `${address1}.${nitMockParams.name}`,
           destinationChain: chain,
           gasValue: 100,
           sender: address1,
@@ -411,9 +411,9 @@ describe("Interchain Token Service Full Flow", () => {
           destinationChain: Cl.stringAscii(chain),
           destinationAddress: Cl.bufferFromHex(destAddress),
           gasValue: Cl.uint(gas),
-          tokenAddress: Cl.address(`${address1}.nit`),
+          tokenAddress: Cl.address(`${address1}.${nitMockParams.name}`),
           tokenId: tokenId,
-          tokenManagerAddress: Cl.address(`${address1}.nit`),
+          tokenManagerAddress: Cl.address(`${address1}.${nitMockParams.name}`),
           metadata: {
             data: Cl.bufferFromHex("0x"),
             version: Cl.uint(MetadataVersion.ContractCall),
@@ -433,7 +433,7 @@ describe("Interchain Token Service Full Flow", () => {
           event: "ft_burn_event",
           data: {
             amount: String(amount),
-            asset_identifier: `${address1}.nit::itscoin`,
+            asset_identifier: `${address1}.${nitMockParams.name}::itscoin`,
             sender: address1,
           },
         });
@@ -492,14 +492,14 @@ describe("Interchain Token Service Full Flow", () => {
      */
     it("Should be able to change the token minter", async () => {
       expect(
-        isMinter({ contract: `${address1}.nit`, address: address1 }),
+        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address1 }),
       ).toBeOk(Cl.bool(true));
       expect(
-        isMinter({ contract: `${address1}.nit`, address: address2 }),
+        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address2 }),
       ).toBeOk(Cl.bool(false));
 
       let transferMinterTx = transferMinterShip({
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         newMinter: address2,
         sender: address2,
       });
@@ -507,42 +507,42 @@ describe("Interchain Token Service Full Flow", () => {
       expect(transferMinterTx.result).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
       transferMinterTx = transferMinterShip({
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         newMinter: address2,
         sender: address1,
       });
       expect(transferMinterTx.result).toBeOk(Cl.bool(true));
 
       expect(
-        isMinter({ contract: `${address1}.nit`, address: address1 }),
+        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address1 }),
       ).toBeOk(Cl.bool(false));
       expect(
-        isMinter({ contract: `${address1}.nit`, address: address2 }),
+        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address2 }),
       ).toBeOk(Cl.bool(true));
 
       expect(
         mintNIT({
           minter: address1,
           amount: 100,
-          NITAddress: `${address1}.nit`,
+          NITAddress: `${address1}.${nitMockParams.name}`,
         }).result,
       ).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
       const prevBalance = getSip010Balance({
         address: address2,
-        contractAddress: `${address1}.nit`,
+        contractAddress: `${address1}.${nitMockParams.name}`,
       });
       expect(
         mintNIT({
           minter: address2,
           amount: 100,
-          NITAddress: `${address1}.nit`,
+          NITAddress: `${address1}.${nitMockParams.name}`,
         }).result,
       ).toBeOk(Cl.bool(true));
 
       const newBalance = getSip010Balance({
         address: address2,
-        contractAddress: `${address1}.nit`,
+        contractAddress: `${address1}.${nitMockParams.name}`,
       });
       expect(newBalance).toBe(prevBalance + 100n);
     });
@@ -571,8 +571,8 @@ describe("Interchain Token Service Full Flow", () => {
         messageId,
         sourceChain: TRUSTED_CHAIN,
         sourceAddress: TRUSTED_ADDRESS,
-        tokenManager: Cl.contractPrincipal(address1, "nit"),
-        token: Cl.contractPrincipal(address1, "nit"),
+        tokenManager: Cl.contractPrincipal(address1, nitMockParams.name),
+        token: Cl.contractPrincipal(address1, nitMockParams.name),
         payload: Cl.buffer(Cl.serialize(payload)),
         destinationContract: Cl.contractPrincipal(deployer, "hello-world"),
       });
@@ -596,7 +596,7 @@ describe("Interchain Token Service Full Flow", () => {
         event: "ft_mint_event",
         data: {
           amount: String(amount),
-          asset_identifier: `${address1}.nit::itscoin`,
+          asset_identifier: `${address1}.${nitMockParams.name}::itscoin`,
           recipient: `${deployer}.hello-world`,
         },
       });

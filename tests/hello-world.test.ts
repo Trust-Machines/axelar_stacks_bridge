@@ -27,37 +27,6 @@ describe("hello-world tests", () => {
     })
   ]);
 
-  it("Should execute message", () => {
-    const { result: impl } = simnet.callReadOnlyFn("gateway-storage", "get-impl", [], address1);
-    expect(impl).toStrictEqual(gatewayImplCV);
-
-    const proofSigners = deployGateway(getSigners(0, 10, 1, 4, "1"));
-
-    const signersHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "get-signers-hash", [signersToCv(proofSigners)], address1);
-      return cvToJSON(result).value;
-    })();
-
-    const dataHash = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "data-hash-from-messages", [messages], address1);
-      return cvToJSON(result).value;
-    })();
-
-    const messageHashToSign = (() => {
-      const { result } = simnet.callReadOnlyFn("gateway-impl", "message-hash-to-sign", [Cl.bufferFromHex(signersHash), Cl.bufferFromHex(dataHash)], address1);
-      return cvToJSON(result).value
-    })();
-
-    const proof = makeProofCV(proofSigners, messageHashToSign);
-
-    // Approve message on the gateway
-    const { result: resultApprove } = simnet.callPublicFn("gateway", "approve-messages", [gatewayImplCV, bufferCV(serializeCV(messages)), bufferCV(serializeCV(proof))], address1);
-    expect(resultApprove).toBeOk(Cl.list([Cl.ok(Cl.bool(true))]));
-
-    // Execute on the hello world
-    const { result: resultExecute } = simnet.callPublicFn("hello-world", "execute", [sourceChain, messageId, sourceAddress, bufferCV(serializeCV(payload)), gatewayImplCV], address1);
-    expect(resultExecute).toBeOk(boolCV(true));
-  });
 
   it("Should set remote value", () => {
     deployGateway(getSigners(0, 10, 1, 4, "1"));

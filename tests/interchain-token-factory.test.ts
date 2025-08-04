@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   buildOutgoingGMPMessage,
+  itsImpl,
   keccak256,
   setupNIT,
   setupService,
   setupTokenManager,
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
-import { getSigners } from "./util";
+import { gasImplContract, gatewayImplCV, getSigners } from "./util";
 import {
   factoryDeployInterchainToken,
   deployRemoteCanonicalInterchainToken,
@@ -28,7 +29,7 @@ import {
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
 } from "./constants";
-import { getNITMockCv, getTokenManagerMockCv } from "./verification-util";
+import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -48,8 +49,8 @@ describe("interchain-token-factory", () => {
         "interchain-token-factory-impl",
         implCode,
         { clarityVersion: 2 },
-        address2,
-      ).result,
+        address2
+      ).result
     ).toBeBool(true);
     setupService(proofSigners);
   });
@@ -58,13 +59,13 @@ describe("interchain-token-factory", () => {
       "interchain-token-factory-impl",
       "get-contract-id",
       [],
-      address1,
+      address1
     ).result as ResponseOkCV<BufferCV>;
 
     expect(contractId).toBeOk(
       Cl.buffer(
-        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory"))),
-      ),
+        keccak256(Cl.serialize(Cl.stringAscii("interchain-token-factory")))
+      )
     );
   });
   describe("Canonical Interchain Token Factory", () => {
@@ -78,7 +79,7 @@ describe("interchain-token-factory", () => {
     it("deploys a lock unlock token with its manager", () => {
       const verificationParams = getTokenManagerMockCv();
       setupTokenManager({
-        contract: `${address1}.token-man`,
+        contract: `${address1}.${tmMockParams.name}`,
         operator: null,
         sender: address1,
       });
@@ -87,7 +88,7 @@ describe("interchain-token-factory", () => {
 
       const deployTx = registerCanonicalInterchainToken({
         sender: address1,
-        tokenManagerAddress: `${address1}.token-man`,
+        tokenManagerAddress: `${address1}.${tmMockParams.name}`,
         verificationParams,
       });
 
@@ -118,19 +119,21 @@ describe("interchain-token-factory", () => {
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
         impl: evilImpl,
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]);
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_PROXY_ERRORS["ERR-INVALID-IMPL"]
+      );
     });
     it("deploys a mint burn token", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         minter: address1,
         operator: address1,
         sender: address1,
@@ -139,7 +142,7 @@ describe("interchain-token-factory", () => {
         salt: originalSalt,
         sender: address1,
         verificationParams,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         minterAddress: address1,
       });
 
@@ -147,8 +150,8 @@ describe("interchain-token-factory", () => {
 
       const remoteDeployTx = factoryDeployRemoteInterchainToken({
         salt: originalSalt,
-        tokenAddress: `${address1}.nit`,
-        tokenManagerAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
+        tokenManagerAddress: `${address1}.${nitMockParams.name}`,
         sender: address1,
         minter: BURN_ADDRESS,
       });
@@ -172,7 +175,7 @@ describe("interchain-token-factory", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         minter: address1,
         operator: address1,
         sender: address1,
@@ -182,7 +185,7 @@ describe("interchain-token-factory", () => {
         sender: address1,
         initialSupply: 0,
         minterAddress: address1,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         verificationParams,
       });
 
@@ -192,7 +195,7 @@ describe("interchain-token-factory", () => {
       const verificationParams = getNITMockCv();
       setupNIT({
         tokenId,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         minter: BURN_ADDRESS,
         operator: BURN_ADDRESS,
         sender: address1,
@@ -202,7 +205,7 @@ describe("interchain-token-factory", () => {
         sender: address1,
         initialSupply: 0,
         minterAddress: BURN_ADDRESS,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         verificationParams,
       });
 
@@ -214,7 +217,7 @@ describe("interchain-token-factory", () => {
       setupNIT({
         tokenId,
         minter: address1,
-        contract: `${address1}.nit`,
+        contract: `${address1}.${nitMockParams.name}`,
         sender: address1,
         operator: address1,
       });
@@ -230,26 +233,28 @@ describe("interchain-token-factory", () => {
 
       let remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
-        tokenAddress: `${address1}.nit`,
-        tokenManagerAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
+        tokenManagerAddress: `${address1}.${nitMockParams.name}`,
         sender: address1,
         minter: address1,
         destinationMinter: "0x" + "00".repeat(20),
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"]
       );
       remoteDeployTx = factoryDeployRemoteInterchainTokenWithMinter({
         salt: originalSalt,
-        tokenAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
         tokenManagerAddress: `${deployer}.token-manager`,
         sender: address1,
         minter: BURN_ADDRESS,
         destinationMinter: "0x" + "00".repeat(20),
       });
 
-      expect(remoteDeployTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]);
+      expect(remoteDeployTx.result).toBeErr(
+        ITF_IMPL_ERRORS["ERR-INVALID-MINTER"]
+      );
       let approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
         salt: originalSalt,
@@ -258,7 +263,9 @@ describe("interchain-token-factory", () => {
         destinationChain: "untrusted-chain",
       });
 
-      expect(approvalTx.result).toBeErr(ITF_IMPL_ERRORS["ERR-INVALID-CHAIN-NAME"]);
+      expect(approvalTx.result).toBeErr(
+        ITF_IMPL_ERRORS["ERR-INVALID-CHAIN-NAME"]
+      );
 
       approvalTx = approveDeployRemoteInterchainToken({
         deployer: address1,
@@ -312,12 +319,12 @@ describe("interchain-token-factory", () => {
         sender: address1,
         destinationChain: "ethereum",
         destinationMinter: "0xdeadbeef",
-        tokenAddress: `${address1}.nit`,
-        tokenManagerAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
+        tokenManagerAddress: `${address1}.${nitMockParams.name}`,
       });
 
       expect(remoteDeployTx.result).toBeErr(
-        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"],
+        ITF_IMPL_ERRORS["ERR-REMOTE-DEPLOYMENT-NOT-APPROVED"]
       );
 
       approvalTx = approveDeployRemoteInterchainToken({
@@ -335,8 +342,8 @@ describe("interchain-token-factory", () => {
         sender: address1,
         destinationChain: "ethereum",
         destinationMinter: "0xdeadbeef",
-        tokenAddress: `${address1}.nit`,
-        tokenManagerAddress: `${address1}.nit`,
+        tokenAddress: `${address1}.${nitMockParams.name}`,
+        tokenManagerAddress: `${address1}.${nitMockParams.name}`,
       });
 
       expect(remoteDeployTx.result).toBeOk(Cl.bool(true));
@@ -352,8 +359,8 @@ describe("interchain-token-factory", () => {
               symbol: Cl.stringAscii("NIT"),
               decimals: Cl.uint(6),
               minter: Cl.bufferFromHex("0xdeadbeef"),
-            }),
-          ),
+            })
+          )
         ),
       });
       const [
@@ -392,7 +399,7 @@ describe("interchain-token-factory", () => {
           destinationContractAddress: TRUSTED_ADDRESS,
           payload,
           sender: Cl.address(`${deployer}.interchain-token-service`),
-        }),
+        })
       );
     });
 
@@ -400,10 +407,17 @@ describe("interchain-token-factory", () => {
       const { result } = simnet.callPublicFn(
         "interchain-token-factory",
         "call",
-        [itfImpl, Cl.stringAscii("foo"), Cl.bufferFromHex("0x00")],
-        address1,
+        [
+          itfImpl,
+          gatewayImplCV,
+          gasImplContract,
+          itsImpl,
+          Cl.stringAscii("foo"),
+          Cl.bufferFromHex("0x00"),
+        ],
+        address1
       );
-      expect(result).toBeErr(ITF_IMPL_ERRORS['ERR-NOT-IMPLEMENTED'])
+      expect(result).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-IMPLEMENTED"]);
     });
   });
 });

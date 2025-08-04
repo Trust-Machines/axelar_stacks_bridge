@@ -3,18 +3,18 @@ name = "devnet"
 deployment_fee_rate = 10
 
 [accounts.deployer]
-mnemonic = "twice kind fence tip hidden tilt action fragile skin nothing glory cousin green tomorrow spring wrist shed math olympic multiply hip blue scout claw"
+mnemonic = "silver submit skull country dizzy sail depart arrest coconut island weapon surge trap oyster snow tuition cricket leader garment reward fetch save limit country"
 balance = 100_000_000_000_000
-# secret_key: 753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601
-# stx_address: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-# btc_address: mqVnk6NPRdhntvfm4hh9vvjiRkFDUuSYsH
+# secret_key: 132abef7bab3311cf83749b0c1c23a3fa4a8de1c988dbece03710e5e79daa27601
+# stx_address: ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS
+# btc_address: idk
 
 [accounts.wallet_1]
-mnemonic = "sell invite acquire kitten bamboo drastic jelly vivid peace spawn twice guilt pave pen trash pretty park cube fragile unaware remain midnight betray rebuild"
+mnemonic = "poverty card person pumpkin earth grape obtain voice describe gold monster require evil soon poet album share winner region horror quantum camera fat glance"
 balance = 100_000_000_000_000
-# secret_key: 7287ba251d44a4d3fd9276c88ce34c5c52a038955511cccaf77e61068649c17801
-# stx_address: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
-# btc_address: mr1iPkD9N3RJZZxXRk7xF9d36gffa6exNC
+# secret_key: db4f3b0e5bd03b05f96f90f35b46918aff8da6bf44a276b3c1cf4aa1f8c879ab01
+# stx_address: ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880
+# btc_address: idk
 
 [accounts.wallet_2]
 mnemonic = "hold excess usual excess ring elephant install account glad dry fragile donkey gaze humble truck breeze nation gasp vacuum limb head keep delay hospital"

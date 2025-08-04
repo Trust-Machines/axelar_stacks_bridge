@@ -20,7 +20,7 @@ export function upgradeITSBasedContract(suffix: string) {
   let messageId = Cl.stringAscii("1");
   let sourceAddress = Cl.stringAscii("0xEde3d7425043a1e566D42DCfd6DBec8f2CFB81fB");
   let contractAddress = Cl.contractPrincipal(
-    "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    "ST1DRWEN0XDBPSEX3XVXK57NNT03B6ZZ0D58N36RS",
     "governance",
   );
   

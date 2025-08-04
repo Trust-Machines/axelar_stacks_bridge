@@ -1,4 +1,3 @@
-
 ;; title: interchain-token-factory
 ;; version:
 ;; summary:
@@ -23,9 +22,10 @@
 (define-constant ERR-NOT-IMPLEMENTED (err u110002))
 
 (define-private (is-correct-impl (interchain-token-factory-impl <itf-trait>))
-    (is-eq
-        (contract-call? .interchain-token-service-storage get-factory-impl)
-        (contract-of interchain-token-factory-impl)))
+    (is-eq (contract-call? .interchain-token-service-storage get-factory-impl)
+        (contract-of interchain-token-factory-impl)
+    )
+)
 
 ;; Registers a canonical token as an interchain token and deploys its token manager.
 ;; @param itf-impl The address of the current InterChainTokenFactory implementation contract
@@ -46,25 +46,23 @@
             nonce: (buff 8),
             fee-rate: (buff 8),
             signature: (buff 65),
-            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
             tx-block-height: uint,
             block-header-without-signer-signatures: (buff 800),
         })
     )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call?
-            itf-impl
-                register-canonical-interchain-token
-                gateway-impl
-                gas-service-impl
-                its-impl
-                token
-                token-manager
-                verification-params
-                contract-caller)
-    ))
-
+        (contract-call? itf-impl register-canonical-interchain-token gateway-impl
+            gas-service-impl its-impl token token-manager
+            verification-params contract-caller
+        )
+    )
+)
 
 ;; Deploys a canonical interchain token on a remote chain.
 ;; @param itf-impl The address of the current InterChainTokenFactory implementation contract
@@ -82,17 +80,14 @@
         (its-impl <its-trait>)
         (token <sip-010-trait>)
         (destination-chain (string-ascii 20))
-        (gas-value uint))
+        (gas-value uint)
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-remote-canonical-interchain-token
-            gateway-impl
-            gas-service-impl
-            its-impl
-            token
-            destination-chain
-            gas-value
-            contract-caller)
+            gateway-impl gas-service-impl its-impl token destination-chain
+            gas-value contract-caller
+        )
     )
 )
 
@@ -109,22 +104,23 @@
             nonce: (buff 8),
             fee-rate: (buff 8),
             signature: (buff 65),
-            proof: { tx-index: uint, hashes: (list 14 (buff 32)), tree-depth: uint},
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
             tx-block-height: uint,
             block-header-without-signer-signatures: (buff 800),
-        }))
+        })
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl deploy-interchain-token
-            gateway-impl
-            gas-service-impl
-            its-impl
-            salt_
-            token
-            initial-supply
-            minter
-            verification-params
-            contract-caller)))
+        (contract-call? itf-impl deploy-interchain-token gateway-impl
+            gas-service-impl its-impl salt_ token initial-supply minter
+            verification-params contract-caller
+        )
+    )
+)
 
 ;; This will only be a risk if the user deploying the token remotely
 ;; is deploying an existing malicious token on stacks
@@ -142,20 +138,15 @@
         (gas-value uint)
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>)
-)
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl deploy-remote-interchain-token
-            gateway-impl
-            gas-service-impl
-            its-impl
-            salt_
-            minter_
-            destination-chain
-            gas-value
-            token
-            token-manager
-            contract-caller)))
+        (contract-call? itf-impl deploy-remote-interchain-token gateway-impl
+            gas-service-impl its-impl salt_ minter_ destination-chain
+            gas-value token token-manager contract-caller
+        )
+    )
+)
 
 (define-public (deploy-remote-interchain-token-with-minter
         (itf-impl <itf-trait>)
@@ -169,45 +160,73 @@
         (gas-value uint)
         (token <sip-010-trait>)
         (token-manager <token-manager-trait>)
-)
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-remote-interchain-token-with-minter
-            gateway-impl
-            gas-service-impl
-            its-impl
-            salt_
-            minter_
-            destination-chain
-            destination-minter
-            gas-value
-            token
-            token-manager
-            contract-caller)))
+            gateway-impl gas-service-impl its-impl salt_ minter_
+            destination-chain destination-minter gas-value token
+            token-manager contract-caller
+        )
+    )
+)
+
+(define-public (link-token
+        (itf-impl <itf-trait>)
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (its-impl <its-trait>)
+        (salt (buff 32))
+        (destination-chain (string-ascii 20))
+        (destination-token-address (buff 32))
+        (token-manager-type uint)
+        (link-params (buff 65000))
+        (gas-value uint)
+    )
+    (begin
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl link-token gateway-impl gas-service-impl
+            its-impl salt destination-chain destination-token-address
+            token-manager-type link-params gas-value contract-caller
+        )
+    )
+)
+
+(define-public (register-custom-token
+        (itf-impl <itf-trait>)
+        (its-impl <its-trait>)
+        (salt (buff 32))
+        (token <sip-010-trait>)
+        (token-manager-type uint)
+        (operator principal)
+    )
+    (begin
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl register-custom-token its-impl salt token token-manager-type operator
+            contract-caller
+        )
+    )
+)
 
 ;; Allow the minter to approve the deployer for a remote interchain token deployment that uses a custom destinationMinter address.
 ;; This ensures that a token deployer can't choose the destinationMinter itself, and requires the approval of the minter to reduce trust assumptions on the deployer.
 (define-public (approve-deploy-remote-interchain-token
-    (itf-impl <itf-trait>)
-    (its-impl <its-trait>)
-    (deployer principal)
-    (salt_ (buff 32))
-    (destination-chain (string-ascii 20))
-    (destination-minter (buff 128))
-    (token <native-interchain-token-trait>)
-)
+        (itf-impl <itf-trait>)
+        (its-impl <its-trait>)
+        (deployer principal)
+        (salt_ (buff 32))
+        (destination-chain (string-ascii 20))
+        (destination-minter (buff 128))
+        (token <native-interchain-token-trait>)
+    )
     (begin
-        (asserts!  (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl approve-deploy-remote-interchain-token
-            its-impl
-            deployer
-            salt_
-            destination-chain
-            destination-minter
-            token
-            contract-caller)
-    ))
-
+        (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
+        (contract-call? itf-impl approve-deploy-remote-interchain-token its-impl
+            deployer salt_ destination-chain destination-minter token
+            contract-caller
+        )
+    )
+)
 
 ;; Allows the minter to revoke a deployer's approval for a remote interchain token deployment that uses a custom destinationMinter address.
 (define-public (revoke-deploy-remote-interchain-token
@@ -215,17 +234,15 @@
         (its-impl <its-trait>)
         (deployer principal)
         (salt_ (buff 32))
-        (destination-chain (string-ascii 20)))
+        (destination-chain (string-ascii 20))
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl revoke-deploy-remote-interchain-token
-            its-impl
-            deployer
-            salt_
-            destination-chain
-            contract-caller
-        )))
-
+        (contract-call? itf-impl revoke-deploy-remote-interchain-token its-impl
+            deployer salt_ destination-chain contract-caller
+        )
+    )
+)
 
 ;; ######################
 ;; ######################
@@ -234,29 +251,40 @@
 ;; ######################
 
 (define-public (set-impl (itf-impl principal))
-    (let
-        (
+    (let (
             (governance-impl (contract-call? .gateway-storage get-owner))
             (prev (contract-call? .interchain-token-service-storage get-factory-impl))
         )
         (asserts! (is-eq contract-caller governance-impl) ERR-NOT-AUTHORIZED)
-        (try! (contract-call? .interchain-token-service-storage set-factory-impl itf-impl))
+        (try! (contract-call? .interchain-token-service-storage set-factory-impl
+            itf-impl
+        ))
         (print {
             type: "interchain-token-factory-impl-upgraded",
             prev: prev,
-            new: itf-impl
+            new: itf-impl,
         })
         (ok true)
     )
 )
 
 (define-public (set-owner (governance principal))
-    ERR-NOT-IMPLEMENTED)
+    ERR-NOT-IMPLEMENTED
+)
 
 ;; General purpose proxy call
-(define-public (call (itf-impl <itf-trait>) (fn (string-ascii 32)) (data (buff 65000)))
+(define-public (call
+        (itf-impl <itf-trait>)
+        (gateway <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (interchain-token-service-impl <its-trait>)
+        (fn (string-ascii 32))
+        (data (buff 65000))
+    )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl dispatch fn data contract-caller)
+        (contract-call? itf-impl dispatch gateway gas-service-impl
+            interchain-token-service-impl fn data contract-caller
+        )
     )
 )
