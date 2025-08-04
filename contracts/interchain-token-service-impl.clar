@@ -809,10 +809,7 @@
                 verification-params caller
             ))
             (asserts!
-                (unwrap!
-                    (contract-call? token is-operator
-                        (get deployer contract-principal)
-                    )
+                (unwrap! (contract-call? token is-operator minter)
                     ERR-TOKEN-NOT-DEPLOYED
                 )
                 ERR-TOKEN-METADATA-OPERATOR-INVALID
@@ -824,9 +821,7 @@
                     )))
                     (or
                         (is-eq flow-limiters (list))
-                        (is-eq flow-limiters
-                            (list (get deployer contract-principal))
-                        )
+                        (is-eq flow-limiters (list minter))
                     )
                 )
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
