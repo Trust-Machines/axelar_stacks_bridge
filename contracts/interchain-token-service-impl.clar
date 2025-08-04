@@ -589,12 +589,6 @@
             (get block-header-without-signer-signatures verification-params)
         ))
         (asserts!
-            (unwrap! (contract-call? token is-operator minter)
-                ERR-TOKEN-NOT-DEPLOYED
-            )
-            ERR-TOKEN-METADATA-OPERATOR-INVALID
-        )
-        (asserts!
             (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED)
             ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID
         )
@@ -634,17 +628,6 @@
                     ERR-TOKEN-NOT-DEPLOYED
                 ))
             ERR-TOKEN-METADATA-SUPPLY-INVALID
-        )
-        (asserts!
-            (let ((flow-limiters (unwrap! (contract-call? token get-flow-limiters)
-                    ERR-TOKEN-NOT-DEPLOYED
-                )))
-                (or
-                    (is-eq flow-limiters (list))
-                    (is-eq flow-limiters (list minter))
-                )
-            )
-            ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
         )
         (ok true)
     )
@@ -825,6 +808,29 @@
             (try! (native-interchain-token-checks token minter token-id u0
                 verification-params caller
             ))
+            (asserts!
+                (unwrap!
+                    (contract-call? token is-operator
+                        (get deployer contract-principal)
+                    )
+                    ERR-TOKEN-NOT-DEPLOYED
+                )
+                ERR-TOKEN-METADATA-OPERATOR-INVALID
+            )
+
+            (asserts!
+                (let ((flow-limiters (unwrap! (contract-call? token get-flow-limiters)
+                        ERR-TOKEN-NOT-DEPLOYED
+                    )))
+                    (or
+                        (is-eq flow-limiters (list))
+                        (is-eq flow-limiters
+                            (list (get deployer contract-principal))
+                        )
+                    )
+                )
+                ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
+            )
             (asserts!
                 (is-eq (get name payload-decoded)
                     (unwrap! (contract-call? token get-name)

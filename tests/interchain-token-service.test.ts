@@ -461,6 +461,7 @@ describe("Interchain Token Service", () => {
         contract: `${address1}.${nitMockParams.name}`,
         tokenId,
         sender: address1,
+        operator: address1,
       });
       expect(
         executeDeployInterchainToken({
@@ -497,6 +498,7 @@ describe("Interchain Token Service", () => {
         tokenId,
         contract: `${address1}.${nitMockParams.name}`,
         sender: address1,
+        operator: address1,
       });
       expect(
         executeDeployInterchainToken({
