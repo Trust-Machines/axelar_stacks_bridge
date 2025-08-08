@@ -8,6 +8,7 @@
 ;;
 (use-trait sip-010-trait .traits.sip-010-trait)
 (use-trait token-manager-trait .traits.token-manager-trait)
+(use-trait mintable .traits.mintable)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait its-trait .traits.interchain-token-service-trait)
@@ -244,6 +245,9 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
         (minter principal)
         (verification-params {
             nonce: (buff 8),
@@ -281,7 +285,8 @@
         )
         (contract-call? .interchain-token-service deploy-interchain-token
             gateway-impl gas-service-impl its-impl deploy-salt token
-            initial-supply (some minter) verification-params
+            initial-supply name symbol decimals (some minter)
+            verification-params
         )
     )
 )
@@ -544,7 +549,7 @@
 ;; @param token-id The unique identifier for the token.
 ;; @param minter The address to be checked as a minter for the interchain token.
 (define-private (check-token-minter
-        (token-manager <token-manager-trait>)
+        (token-manager <mintable>)
         (token-id (buff 32))
         (minter principal)
     )

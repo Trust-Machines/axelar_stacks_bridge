@@ -1,14 +1,19 @@
 import { BufferCV, Cl, randomBytes } from "@stacks/transactions";
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
-import { getTokenId, setupService, setupTokenManager } from "./its-utils";
+import { getTokenId, setupService } from "./its-utils";
 import {
   ITS_IMPL_ERROR_CODES,
   MessageType,
   MetadataVersion,
   TokenType,
 } from "./constants";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+  tmMockParams,
+} from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -67,10 +72,7 @@ describe("Interchain Token Service impl", () => {
     ).toBeErr(ERR_NOT_PROXY);
     const salt = randomBytes(32);
     const verificationParams = getTokenManagerMockCv();
-    setupTokenManager({
-      contract: `${address1}.${tmMockParams.name}`,
-      sender: address1,
-    });
+
     expect(
       simnet.callPublicFn(
         "interchain-token-service-impl",
@@ -92,7 +94,6 @@ describe("Interchain Token Service impl", () => {
     const proofSigners = getSigners(0, 10, 1, 10, "1");
     const tokenId = getTokenId(salt).result as BufferCV;
     setupService(proofSigners);
-    setupTokenManager({});
 
     expect(
       simnet.callPublicFn(

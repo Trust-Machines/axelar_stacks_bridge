@@ -330,7 +330,7 @@
         (operator-address (optional principal))
     )
     (begin
-        (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (is-eq token-type_ TOKEN-TYPE-LOCK-UNLOCK)
             ERR-UNSUPPORTED-TOKEN-TYPE

@@ -366,10 +366,6 @@
 ;; ######################
 ;; ######################
 
-(define-constant DEPLOYER tx-sender)
-
-(define-data-var token-type (optional uint) none)
-
 (define-data-var is-started bool false)
 (define-read-only (get-is-started)
     (ok (var-get is-started))
@@ -377,7 +373,6 @@
 
 (define-public (setup
         (token-id_ (buff 32))
-        (token-type_ uint)
         (operator-address (optional principal))
         (name_ (string-ascii 32))
         (symbol_ (string-ascii 32))
@@ -386,19 +381,13 @@
         (minter_ (optional principal))
     )
     (let ((minter-unpacked (default-to NULL-ADDRESS minter_)))
-        (asserts! (is-eq contract-caller DEPLOYER) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
-        (asserts! (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
-            ERR-UNSUPPORTED-TOKEN-TYPE
-        )
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
         (asserts! (not (is-eq minter-unpacked (get-its-impl))) ERR-INVALID-PARAMS)
         (var-set is-started true)
-        ;; #[allow(unchecked_data)]
-        (var-set token-type (some token-type_))
-        ;; #[allow(unchecked_data)]
         (match operator-address
             op (begin
                 (asserts! (is-standard op) ERR-NON-STANDARD-ADDRESS)

@@ -332,7 +332,6 @@ export async function setupNIT() {
     functionName: "setup",
     functionArgs: [
       Cl.buffer(tokenId),
-      Cl.uint(0),
       Cl.none(),
       Cl.stringAscii("NIT-OCV"),
       Cl.stringAscii("NIV"),
@@ -505,30 +504,29 @@ export function deserializeRawBlockTxs(
 }
 
 export const nitMockParams = {
-  sig: "01e8b25f3e05c2e27c1ebab52ee795d72480b33240d921225c8f6e053187d0991e71bdf3f90c485d0496522a3133e396283398da1d424787d4cc62aef7bd8e152e",
-  txIndex: 0,
-  nonce: 11,
-  feeRate: "65536",
-  name: "native-interchain-token-1754052986324",
-  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
-  txIds: ["db93df059fa14f52a65d310f14a2cd2ecc33f1122273ef1cefb5bffee8253e98"],
-  blockHeight: 3398974,
-  blockHeader:
-    "00000000000033dd3e00000000581ba2308e861bcb0015b34de6a7b76dd38650cc53e3aea154f53c523beb310c753cfbe9fac5e8f3abfd615d22b7f5475f2c6684b1c60d2a536c7a01e1963246da427d41a76e0b3bc6f8af8a46e0b2c3cb7acd1a45bff15b7f707ea3880f76782114dbb2a16b04e1b997a52d183687bd1a8718f0c836d2d200000000688cb97b01c024dfd471a871db5e5193d929be7710896f5b22f08497f0bc7b6a654541725458d9b8ea285386ac6e74a632c1d05619ea3630aa5a0da5dbbee9e037c6e8cad9013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f",
+  "sig": "001fc0c474dd5721399c77e3cababfc4491260aaa7b178dc5362aa5fd85f1758ca30eb5106411d76f1d656aa610a741c6b3d0a8a0b4afc1e469938149e1032880d",
+  "txIndex": 0,
+  "nonce": 15,
+  "feeRate": "65536",
+  "name": "native-interchain-token-1754664742908",
+  "deployer": "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  "txIds": [
+    "c277246e7b063652efa72902055f2b02615d7efffae8b6201eeda877173c9f2a"
+  ],
+  "blockHeight": 3509058,
+  "blockHeader": "000000000000358b42000000005b222b70dfdcc360af1a88c614b878a99eb6ef522d20450f68a9a898d4fbed1c1a506d6203020b55de8f9ca5b8b51190c5812f202b851a8ee590c1b422e1661202eb59bcc5b2be68a1b6a62ce72101a7ee76788cbe04f98933c3536eedc082d66a71df3ad8340701b50e68e2cde4bb7f5aa83327a6c29d1b0000000068960f2900e6bdb7ca4786be21fda618af8eebc38749b1f83c8664c2e696730d00b626170b73f332b18c4885b43097bb4fe09ee9be90e9896b785d18341ea3c98c57ede079013200000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff03"
 };
 
 export const tmMockParams = {
-  sig: "01764150d2266dab0afde9f3e603290b13616b565c42e0b5160fe7e417ce7eac5e6178d787d2283d817302b5b66e4e4909be1c0195425cdbc345c27a2f5ad213ed",
-  txIndex: 1,
-  nonce: 12,
-  feeRate: "65536",
-  name: "token-manager-1754052986324",
-  deployer: "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
-  txIds: [
-    "47b85e229d46f8d4d7e206736768432bad42e09abc1715247adadc5f4ad79ec2",
-    "b7d05f27f869e8304cfe780c8482629cdc2462115e4434887d4f8a341f4eae67",
+  "sig": "013e2c2d64e633a0f6e402c4cab587cfb882bfdeb9faf827e9d941a5430e4456b7278390a21cbd644cb9d5803a5cd89542a2fd4025b0f98446f38fe83e2479a0f3",
+  "txIndex": 0,
+  "nonce": 16,
+  "feeRate": "65536",
+  "name": "token-manager-1754664742908",
+  "deployer": "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
+  "txIds": [
+    "6c486c388d4c0003913e6bb1e963174304a1006e0ee2065626dfeb6f26d9234e"
   ],
-  blockHeight: 3398977,
-  blockHeader:
-    "00000000000033dd4100000000581ba2308e861bcb0015b34de6a7b76dd38650cc53e3aea11fecd987bc6ff9dcf5d82154b9dbba96c600f7e197b38c78a1fa281623d55a1dfc57046410ca793e3112f39a98a8d4f85d34a98a354853cb9000017b109918ca9c579e2403bf275a36ebd5a8dc41ccb6d30980653e5ebf2a146adad504007e3600000000688cb9850165b5288378b6e83ee9bfade16ad9bcdad20d158fda788b74679561284e33afc9563d7a80fb7e4c17bdf8178acb8ce9ce188c62321b03fe10269569b82f6bee46013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f",
+  "blockHeight": 3509060,
+  "blockHeader": "000000000000358b44000000005b222b70dfdcc360af1a88c614b878a99eb6ef522d20450fc8dacd6336d1d57ae4e53fe0778b8ac6a01e0f03a6e7f0809d783f804f579d6d0e83fa03f3b70bfa5be952ea538403dd703372d8b4b5a402c8caa9210aec0fb3aee6846bcb4294cc95193075ebe755aac393444422dfb3b273cd006a3d320b650000000068960f3001b2f02096cce838330ded4164bf5cdb817576ebde11aa1e67b268422284cee0250e5160f6e4d67e2c881ed5ebf3db64f5cdb0d135b07905eceba93b70b6487e4f013200000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff03"
 };

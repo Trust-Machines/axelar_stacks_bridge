@@ -135,6 +135,9 @@
             (buff 32)
             <native-interchain-token-trait>
             uint
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
             (optional principal)
             {
             nonce: (buff 8),
@@ -429,6 +432,18 @@
         ()
         (response bool uint)
     )
+    (setup
+        (
+            (buff 32)
+            (optional principal)
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            (optional (string-utf8 256))
+            (optional principal)
+        )
+        (response bool uint)
+    )
 ))
 
 (define-trait token-manager-trait (
@@ -496,6 +511,21 @@
         ()
         (response bool uint)
     )
+    (setup
+        (
+            principal
+            uint
+            (optional principal)
+        )
+        (response bool uint)
+    )
+))
+
+(define-trait mintable (
+    (is-minter
+        (principal)
+        (response bool uint)
+    )
 ))
 
 ;; TODO: write an axelar executable trait and contracts which interact with axelar should
@@ -556,6 +586,9 @@
             <interchain-token-service-trait>
             (buff 32)
             <native-interchain-token-trait>
+            uint
+            (string-ascii 32)
+            (string-ascii 32)
             uint
             principal
             {

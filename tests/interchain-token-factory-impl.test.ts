@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
-import {
-  itsImpl,
-  setupNIT,
-  setupService,
-  setupTokenManager,
-} from "./its-utils";
+import { itsImpl, setupService } from "./its-utils";
 import { Cl, randomBytes } from "@stacks/transactions";
 import { ITF_IMPL_ERRORS } from "./constants";
-import { getCanonicalInterChainTokenId } from "./itf-utils";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+} from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -34,11 +32,9 @@ describe("Interchain token factory impl", () => {
       ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
     const proofSigners = getSigners(0, 10, 1, 10, "1");
-    const tokenId = getCanonicalInterChainTokenId({}).value;
     const salt = randomBytes(32);
 
     setupService(proofSigners);
-    setupTokenManager({});
 
     expect(
       simnet.callPublicFn(
@@ -76,7 +72,6 @@ describe("Interchain token factory impl", () => {
       ).result
     ).toBeErr(ITF_IMPL_ERRORS["ERR-NOT-PROXY"]);
 
-    setupNIT({ tokenId, minter: address1 });
     expect(
       simnet.callPublicFn(
         "interchain-token-factory-impl",
