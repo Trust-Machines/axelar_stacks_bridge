@@ -23,6 +23,9 @@ export function factoryDeployInterchainToken({
   salt,
   tokenAddress = `${address1}.${nitMockParams.name}`,
   initialSupply = 0,
+  name = "Nitter",
+  symbol = "NIT",
+  decimals = 18,
   minterAddress = BURN_ADDRESS,
   impl = itfImpl,
   verificationParams = getNITMockCv(),
@@ -32,6 +35,9 @@ export function factoryDeployInterchainToken({
   salt: Buffer | Uint8Array;
   tokenAddress?: string;
   initialSupply?: number;
+  name?: string;
+  symbol?: string;
+  decimals?: number;
   minterAddress?: string;
   gasValue?: number;
   verificationParams?: TupleCV<
@@ -52,6 +58,9 @@ export function factoryDeployInterchainToken({
       Cl.buffer(salt),
       Cl.address(tokenAddress),
       Cl.uint(initialSupply),
+      Cl.stringAscii(name),
+      Cl.stringAscii(symbol),
+      Cl.uint(decimals),
       Cl.address(minterAddress),
       verificationParams,
     ],

@@ -420,6 +420,9 @@ export function deployInterchainToken({
   salt,
   token = Cl.contractPrincipal(address1, nitMockParams.name),
   supply = 0,
+  name = "Nitter",
+  symbol = "NIT",
+  decimals = 18,
   minter,
   impl = itsImpl,
   verificationParams = getNITMockCv(),
@@ -428,6 +431,9 @@ export function deployInterchainToken({
   salt: Uint8Array | Buffer;
   token?: ContractPrincipalCV;
   supply?: number;
+  name?: string;
+  symbol?: string;
+  decimals?: number;
   minter?: PrincipalCV;
   verificationParams?: TupleCV;
 }) {
@@ -441,6 +447,9 @@ export function deployInterchainToken({
       Cl.buffer(salt),
       token,
       Cl.uint(supply),
+      Cl.stringAscii(name),
+      Cl.stringAscii(symbol),
+      Cl.uint(decimals),
       minter ? Cl.some(minter) : Cl.none(),
       verificationParams,
     ],
