@@ -186,12 +186,6 @@
             )
             ERR-NOT-TOKEN-DEPLOYER
         )
-        (asserts!
-            (unwrap! (contract-call? token-manager get-is-started)
-                ERR-TOKEN-NOT-ENABLED
-            )
-            ERR-TOKEN-NOT-ENABLED
-        )
         (contract-call? .interchain-token-service deploy-token-manager
             gateway-impl gas-service-impl its-impl
             (get-canonical-interchain-token-deploy-salt (contract-of token))
@@ -263,7 +257,13 @@
         })
         (caller principal)
     )
-    (let ((deploy-salt (get-interchain-token-deploy-salt caller salt_)))
+    (let (
+            (deploy-salt (get-interchain-token-deploy-salt caller salt_))
+            (token-minter (if (> initial-supply u0)
+                (as-contract tx-sender)
+                minter
+            ))
+        )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts!
             (is-eq
@@ -283,10 +283,21 @@
             ))
             ERR-INVALID-MINTER
         )
-        (contract-call? .interchain-token-service deploy-interchain-token
+        (try! (contract-call? .interchain-token-service deploy-interchain-token
             gateway-impl gas-service-impl its-impl deploy-salt token
-            initial-supply name symbol decimals (some minter)
+            initial-supply name symbol decimals (some token-minter)
             verification-params
+        ))
+
+        (if (> initial-supply u0)
+            (begin
+                (try! (as-contract (contract-call? token mint caller initial-supply)))
+                (try! (as-contract (contract-call? token transfer-mintership minter)))
+                (try! (as-contract (contract-call? token transfer-operatorship minter)))
+                (ok true)
+            )
+
+            (ok true)
         )
     )
 )

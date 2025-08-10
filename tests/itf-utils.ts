@@ -10,7 +10,11 @@ import {
 import { BURN_ADDRESS } from "./constants";
 import { itsImpl } from "./its-utils";
 import { gasImplContract, gatewayImplCV } from "./util";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+} from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -25,7 +29,7 @@ export function factoryDeployInterchainToken({
   initialSupply = 0,
   name = "Nitter",
   symbol = "NIT",
-  decimals = 18,
+  decimals = 6,
   minterAddress = BURN_ADDRESS,
   impl = itfImpl,
   verificationParams = getNITMockCv(),
@@ -64,7 +68,7 @@ export function factoryDeployInterchainToken({
       Cl.address(minterAddress),
       verificationParams,
     ],
-    sender,
+    sender
   );
 }
 
@@ -77,7 +81,7 @@ export function getCanonicalInterChainTokenId({
     "interchain-token-factory-impl",
     "get-canonical-interchain-token-id",
     [itsImpl, Cl.address(tokenAddress)],
-    address1,
+    address1
   ).result as ResponseOkCV<BufferCV>;
 }
 
@@ -106,7 +110,7 @@ export function registerCanonicalInterchainToken({
       Cl.address(tokenManagerAddress),
       verificationParams,
     ],
-    sender,
+    sender
   );
 }
 
@@ -135,7 +139,7 @@ export function deployRemoteCanonicalInterchainToken({
       Cl.stringAscii(destinationChain),
       Cl.uint(gasValue),
     ],
-    sender,
+    sender
   );
 }
 
@@ -152,7 +156,7 @@ export function getInterchainTokenId({
     "interchain-token-factory-impl",
     "get-interchain-token-id",
     [itsImpl, deployer, salt],
-    sender,
+    sender
   ).result as ResponseOkCV<BufferCV>;
 }
 
@@ -190,7 +194,7 @@ export function factoryDeployRemoteInterchainToken({
       Cl.address(tokenAddress),
       Cl.address(tokenManagerAddress),
     ],
-    sender,
+    sender
   );
 }
 
@@ -205,7 +209,7 @@ export function getInterchainTokenSalt({
     "interchain-token-factory-impl",
     "get-interchain-token-deploy-salt",
     [Cl.address(deployer), Cl.buffer(salt)],
-    address1,
+    address1
   ).result as BufferCV;
 }
 
@@ -248,7 +252,7 @@ export function factoryDeployRemoteInterchainTokenWithMinter({
       Cl.address(tokenAddress),
       Cl.address(tokenManagerAddress),
     ],
-    sender,
+    sender
   );
 }
 
@@ -282,7 +286,7 @@ export function approveDeployRemoteInterchainToken({
       Cl.bufferFromHex(destinationMinter),
       Cl.address(token),
     ],
-    sender,
+    sender
   );
 }
 
@@ -309,6 +313,6 @@ export function revokeDeployRemoteInterchainToken({
       Cl.buffer(salt),
       Cl.stringAscii(destinationChain),
     ],
-    sender,
+    sender
   );
 }

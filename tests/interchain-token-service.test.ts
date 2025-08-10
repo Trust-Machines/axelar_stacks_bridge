@@ -2292,21 +2292,36 @@ describe("Interchain Token Service", () => {
         );
       }
       it("lock unlock", () => {
-        const contractName = "token-manager";
+        const contractName = `${tmMockParams.deployer}.${tmMockParams.name}`;
+        const verificationParams = getTokenManagerMockCv();
+        deployTokenManager({
+          salt,
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
+          verificationParams,
+        });
         runCurrentTests(contractName);
       });
       it("mint burn", () => {
-        const contractName = "native-interchain-token";
+        const contractName = `${nitMockParams.deployer}.${nitMockParams.name}`;
+        const verificationParams = getNITMockCv();
+        deployInterchainToken({
+          salt,
+          minter: Cl.address(address1),
+          verificationParams,
+        });
+
         runCurrentTests(contractName);
       });
     });
 
     describe("Should be able to remove a flow limiter", () => {
       function runCurrentTests(contractName: string) {
-        const ERROR_NOT_AUTHORIZED =
-          contractName === "token-manager"
-            ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
-            : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
+        const ERROR_NOT_AUTHORIZED = contractName.includes("token-manager")
+          ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
+          : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
         expect(
           addFlowLimiter({
             contractName,
@@ -2336,21 +2351,37 @@ describe("Interchain Token Service", () => {
         );
       }
       it("lock unlock", () => {
-        const contractName = "token-manager";
+        const contractName = `${tmMockParams.deployer}.${tmMockParams.name}`;
+        const verificationParams = getTokenManagerMockCv();
+        deployTokenManager({
+          salt,
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
+          verificationParams,
+        });
+
         runCurrentTests(contractName);
       });
       it("mint burn", () => {
-        const contractName = "native-interchain-token";
+        const contractName = `${nitMockParams.deployer}.${nitMockParams.name}`;
+        const verificationParams = getNITMockCv();
+        deployInterchainToken({
+          salt,
+          minter: Cl.address(address1),
+          verificationParams,
+        });
+
         runCurrentTests(contractName);
       });
     });
 
     describe("Should revert if trying to add a flow limiter as not the operator", () => {
       function runCurrentTests(contractName: string) {
-        const ERROR_NOT_AUTHORIZED =
-          contractName === "token-manager"
-            ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
-            : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
+        const ERROR_NOT_AUTHORIZED = contractName.includes("token-manager")
+          ? TOKEN_MANAGER_ERRORS["ERR-NOT-AUTHORIZED"]
+          : NIT_ERRORS["ERR-NOT-AUTHORIZED"];
         expect(
           addFlowLimiter({
             contractName,
@@ -2371,11 +2402,27 @@ describe("Interchain Token Service", () => {
         );
       }
       it("lock unlock", () => {
-        const contractName = "token-manager";
+        const contractName = `${tmMockParams.deployer}.${tmMockParams.name}`;
+        const verificationParams = getTokenManagerMockCv();
+        deployTokenManager({
+          salt,
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
+          verificationParams,
+        });
+
         runCurrentTests(contractName);
       });
       it("mint burn", () => {
-        const contractName = "native-interchain-token";
+        const contractName = `${nitMockParams.deployer}.${nitMockParams.name}`;
+        const verificationParams = getNITMockCv();
+        deployInterchainToken({
+          salt,
+          minter: Cl.address(address1),
+          verificationParams,
+        });
 
         runCurrentTests(contractName);
       });
@@ -2416,7 +2463,17 @@ describe("Interchain Token Service", () => {
         ).toBeErr(ERROR_CODE);
       }
       it("lock unlock", () => {
-        const contractName = "token-manager";
+        const contractName = `${tmMockParams.deployer}.${tmMockParams.name}`;
+        const verificationParams = getTokenManagerMockCv();
+        deployTokenManager({
+          salt,
+          tokenManagerAddress: Cl.contractPrincipal(
+            address1,
+            tmMockParams.name
+          ),
+          verificationParams,
+        });
+
         runCurrentTests(
           contractName,
           undefined,
@@ -2424,7 +2481,14 @@ describe("Interchain Token Service", () => {
         );
       });
       it("mint burn", () => {
-        const contractName = "native-interchain-token";
+        const contractName = `${nitMockParams.deployer}.${nitMockParams.name}`;
+        const verificationParams = getNITMockCv();
+        deployInterchainToken({
+          salt,
+          minter: Cl.address(address1),
+          verificationParams,
+        });
+
         runCurrentTests(contractName);
       });
 

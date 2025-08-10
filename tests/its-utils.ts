@@ -422,7 +422,7 @@ export function deployInterchainToken({
   supply = 0,
   name = "Nitter",
   symbol = "NIT",
-  decimals = 18,
+  decimals = 6,
   minter,
   impl = itsImpl,
   verificationParams = getNITMockCv(),

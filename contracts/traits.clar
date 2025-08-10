@@ -444,6 +444,14 @@
         )
         (response bool uint)
     )
+    (transfer-mintership
+        (principal)
+        (response bool uint)
+    )
+    (transfer-operatorship
+        (principal)
+        (response bool uint)
+    )
 ))
 
 (define-trait token-manager-trait (

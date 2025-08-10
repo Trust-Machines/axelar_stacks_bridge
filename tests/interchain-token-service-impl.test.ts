@@ -125,6 +125,10 @@ describe("Interchain Token Service impl", () => {
           Cl.buffer(salt),
           Cl.address(`${address1}.${nitMockParams.name}`),
           Cl.uint(10),
+          Cl.stringAscii("Nitter"),
+          Cl.stringAscii("NIT"),
+          Cl.uint(6),
+
           Cl.none(),
           getNITMockCv(),
           Cl.address(address1),

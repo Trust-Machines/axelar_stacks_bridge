@@ -27,7 +27,6 @@ import {
   isMinter,
   keccak256,
   mintNIT,
-  setupNIT,
   setupService,
   transferMinterShip,
   transferSip010,

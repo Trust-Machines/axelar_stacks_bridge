@@ -56,7 +56,6 @@
 (define-constant ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID (err u120029))
 (define-constant ERR-TOKEN-METADATA-MINTER-ITS-INVALID (err u120030))
 (define-constant ERR-TOKEN-METADATA-TOKEN-ID-INVALID (err u120031))
-(define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u120032))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u120033))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u120034))
 (define-constant ERR-INVALID-PARAMS (err u120035))
@@ -403,6 +402,13 @@
                 (get tx-block-height verification-params)
                 (get block-header-without-signer-signatures verification-params)
             ))
+            (asserts!
+                (not (contract-call? .interchain-token-service-storage
+                    is-manager-address-used token-manager-address
+                ))
+                ERR-TOKEN-EXISTS
+            )
+
             (try! (contract-call? token-manager setup token token-manager-type
                 (some operator)
             ))
@@ -442,12 +448,6 @@
                     )
                 )
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
-            )
-            (asserts!
-                (not (contract-call? .interchain-token-service-storage
-                    is-manager-address-used token-manager-address
-                ))
-                ERR-TOKEN-EXISTS
             )
 
             (asserts!
@@ -604,13 +604,6 @@
                     ERR-TOKEN-NOT-DEPLOYED
                 ))
             ERR-TOKEN-METADATA-TOKEN-ID-INVALID
-        )
-        (asserts!
-            (is-eq supply
-                (unwrap! (contract-call? token get-total-supply)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-TOKEN-METADATA-SUPPLY-INVALID
         )
         (ok true)
     )
