@@ -689,10 +689,6 @@
             decimals none (some minter-unpacked)
         ))
 
-        (try! (contract-call? token setup token-id (some minter-unpacked) name symbol
-            decimals none (some minter-unpacked)
-        ))
-
         ;; #[filter(verification-params, minter-unpacked, supply)]
         (try! (native-interchain-token-checks token minter-unpacked token-id supply
             verification-params deployer
