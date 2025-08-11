@@ -56,7 +56,6 @@
 (define-constant ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID (err u120029))
 (define-constant ERR-TOKEN-METADATA-MINTER-ITS-INVALID (err u120030))
 (define-constant ERR-TOKEN-METADATA-TOKEN-ID-INVALID (err u120031))
-(define-constant ERR-TOKEN-METADATA-SUPPLY-INVALID (err u120032))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-INVALID (err u120033))
 (define-constant ERR-TOKEN-METADATA-PASSED-MINTER-NOT-NULL (err u120034))
 (define-constant ERR-INVALID-PARAMS (err u120035))
@@ -363,9 +362,6 @@
                 (token-id (interchain-token-id-raw deployer salt))
                 (token-manager-address (contract-of token-manager))
                 (contract-principal (try! (decode-contract-principal token-manager-address)))
-                (managed-token (unwrap! (contract-call? token-manager get-token-address)
-                    ERR-TOKEN-MANAGER-NOT-DEPLOYED
-                ))
                 (data (unwrap!
                     (from-consensus-buff? {
                         operator: (optional principal),
@@ -376,6 +372,7 @@
                     ERR-INVALID-PARAMS
                 ))
                 (operator (default-to NULL-ADDRESS (get operator data)))
+                (token (get token-address data))
             )
             (asserts! (is-valid-token-type token-manager-type)
                 ERR-UNSUPPORTED-TOKEN-TYPE
@@ -406,13 +403,21 @@
                 (get block-header-without-signer-signatures verification-params)
             ))
             (asserts!
+                (not (contract-call? .interchain-token-service-storage
+                    is-manager-address-used token-manager-address
+                ))
+                ERR-TOKEN-EXISTS
+            )
+
+            (try! (contract-call? token-manager setup token token-manager-type
+                (some operator)
+            ))
+
+            (asserts!
                 (is-eq token-manager-type
                     (unwrap! (contract-call? token-manager get-token-type)
                         ERR-TOKEN-MANAGER-NOT-DEPLOYED
                     ))
-                ERR-TOKEN-MANAGER-MISMATCH
-            )
-            (asserts! (is-eq managed-token (get token-address data))
                 ERR-TOKEN-MANAGER-MISMATCH
             )
             (asserts!
@@ -443,12 +448,6 @@
                     )
                 )
                 ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
-            )
-            (asserts!
-                (not (contract-call? .interchain-token-service-storage
-                    is-manager-address-used token-manager-address
-                ))
-                ERR-TOKEN-EXISTS
             )
 
             (asserts!
@@ -548,90 +547,7 @@
     )
 )
 
-(define-private (native-interchain-token-checks
-        (token <native-interchain-token-trait>)
-        (minter principal)
-        (token-id (buff 32))
-        (supply uint)
-        (verification-params {
-            nonce: (buff 8),
-            fee-rate: (buff 8),
-            signature: (buff 65),
-            proof: {
-                tx-index: uint,
-                hashes: (list 14 (buff 32)),
-                tree-depth: uint,
-            },
-            tx-block-height: uint,
-            block-header-without-signer-signatures: (buff 800),
-        })
-        (deployer principal)
-    )
-    (let (
-            (token-address (contract-of token))
-            (contract-principal (try! (decode-contract-principal token-address)))
-        )
-        (asserts!
-            (or
-                (is-eq deployer NULL-ADDRESS)
-                (is-eq (get deployer contract-principal) deployer)
-            )
-            ERR-NOT-TOKEN-DEPLOYER
-        )
-        (try! (contract-call? .verify-onchain verify-nit-deployment
-            (get nonce verification-params)
-            (get fee-rate verification-params)
-            (get signature verification-params)
-            (get contract-name contract-principal)
-            (get deployer contract-principal)
-            (get proof verification-params)
-            (get tx-block-height verification-params)
-            (get block-header-without-signer-signatures verification-params)
-        ))
-        (asserts!
-            (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED)
-            ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-flow-limiter CA)
-                ERR-TOKEN-NOT-DEPLOYED
-            )
-            ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED)
-            ERR-TOKEN-METADATA-MINTER-ITS-INVALID
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-minter minter)
-                ERR-TOKEN-NOT-DEPLOYED
-            )
-            ERR-TOKEN-METADATA-PASSED-MINTER-INVALID
-        )
-        (asserts!
-            (is-eq TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN
-                (unwrap! (contract-call? token get-token-type)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-UNSUPPORTED-TOKEN-TYPE
-        )
-        (asserts!
-            (is-eq token-id
-                (unwrap! (contract-call? token get-token-id)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-TOKEN-METADATA-TOKEN-ID-INVALID
-        )
-        (asserts!
-            (is-eq supply
-                (unwrap! (contract-call? token get-total-supply)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-TOKEN-METADATA-SUPPLY-INVALID
-        )
-        (ok true)
-    )
-)
+
 ;; Used to deploy a native interchain token on stacks
 ;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because
 ;; validators will need to verify the contract code and parameters
@@ -650,6 +566,9 @@
         (salt (buff 32))
         (token <native-interchain-token-trait>)
         (supply uint)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
         (minter (optional principal))
         (verification-params {
             nonce: (buff 8),
@@ -673,6 +592,7 @@
             (token-id (interchain-token-id-raw deployer salt))
             (token-address (contract-of token))
             (minter-unpacked (default-to NULL-ADDRESS minter))
+            (contract-principal (try! (decode-contract-principal token-address)))
         )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts! (get-is-started) ERR-NOT-STARTED)
@@ -687,10 +607,21 @@
         (try! (contract-call? .interchain-token-service-storage
             emit-interchain-token-id-claimed token-id deployer salt
         ))
-        ;; #[filter(verification-params, minter-unpacked, supply)]
-        (try! (native-interchain-token-checks token minter-unpacked token-id supply
-            verification-params deployer
+        (try! (contract-call? .verify-onchain verify-nit-deployment
+            (get nonce verification-params)
+            (get fee-rate verification-params)
+            (get signature verification-params)
+            (get contract-name contract-principal)
+            (get deployer contract-principal)
+            (get proof verification-params)
+            (get tx-block-height verification-params)
+            (get block-header-without-signer-signatures verification-params)
         ))
+
+        (try! (contract-call? token setup token-id u0 (some minter-unpacked) name symbol
+            decimals none (some minter-unpacked)
+        ))
+
         (asserts!
             (unwrap!
                 (insert-token-manager token-id token-address
@@ -804,9 +735,22 @@
                 )
                 ERR-INVALID-MESSAGE-TYPE
             )
-            ;; #[filter(verification-params, caller)]
-            (try! (native-interchain-token-checks token minter token-id u0
-                verification-params caller
+            ;; #[filter(token)]
+            (try! (contract-call? .verify-onchain verify-nit-deployment
+                (get nonce verification-params)
+                (get fee-rate verification-params)
+                (get signature verification-params)
+                (get contract-name contract-principal)
+                (get deployer contract-principal)
+                (get proof verification-params)
+                (get tx-block-height verification-params)
+                (get block-header-without-signer-signatures verification-params)
+            ))
+            (try! (contract-call? token setup (get token-id payload-decoded)
+            u0
+                (some minter) (get name payload-decoded)
+                (get symbol payload-decoded) (get decimals payload-decoded)
+                none (some minter)
             ))
             (asserts!
                 (unwrap! (contract-call? token is-operator minter)
@@ -885,6 +829,31 @@
 (define-read-only (valid-token-address (token-id (buff 32)))
     (ok (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
 )
+
+(define-public (execute-link-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+        (source-address (string-ascii 128))
+        (token-manager <token-manager-trait>)
+        (native-token (optional <native-interchain-token-trait>))
+        (payload (buff 62000))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
+        (caller principal)
+    )
+    ERR-NOT-IMPLEMENTED)
 
 ;; Initiates an interchain transfer of a specified token to a destination chain.
 ;; @dev The function retrieves the TokenManager associated with the token-id.

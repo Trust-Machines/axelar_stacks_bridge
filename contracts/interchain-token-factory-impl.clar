@@ -8,6 +8,7 @@
 ;;
 (use-trait sip-010-trait .traits.sip-010-trait)
 (use-trait token-manager-trait .traits.token-manager-trait)
+(use-trait mintable .traits.mintable)
 (use-trait native-interchain-token-trait .traits.native-interchain-token-trait)
 (use-trait gateway-trait .traits.gateway-trait)
 (use-trait its-trait .traits.interchain-token-service-trait)
@@ -185,12 +186,6 @@
             )
             ERR-NOT-TOKEN-DEPLOYER
         )
-        (asserts!
-            (unwrap! (contract-call? token-manager get-is-started)
-                ERR-TOKEN-NOT-ENABLED
-            )
-            ERR-TOKEN-NOT-ENABLED
-        )
         (contract-call? .interchain-token-service deploy-token-manager
             gateway-impl gas-service-impl its-impl
             (get-canonical-interchain-token-deploy-salt (contract-of token))
@@ -244,6 +239,9 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
         (minter principal)
         (verification-params {
             nonce: (buff 8),
@@ -259,7 +257,13 @@
         })
         (caller principal)
     )
-    (let ((deploy-salt (get-interchain-token-deploy-salt caller salt_)))
+    (let (
+            (deploy-salt (get-interchain-token-deploy-salt caller salt_))
+            (token-minter (if (> initial-supply u0)
+                (as-contract tx-sender)
+                minter
+            ))
+        )
         (asserts! (is-proxy) ERR-NOT-PROXY)
         (asserts!
             (is-eq
@@ -279,9 +283,21 @@
             ))
             ERR-INVALID-MINTER
         )
-        (contract-call? .interchain-token-service deploy-interchain-token
+        (try! (contract-call? .interchain-token-service deploy-interchain-token
             gateway-impl gas-service-impl its-impl deploy-salt token
-            initial-supply (some minter) verification-params
+            initial-supply name symbol decimals (some token-minter)
+            verification-params
+        ))
+
+        (if (> initial-supply u0)
+            (begin
+                (try! (as-contract (contract-call? token mint caller initial-supply)))
+                (try! (as-contract (contract-call? token transfer-mintership minter)))
+                (try! (as-contract (contract-call? token transfer-operatorship minter)))
+                (ok true)
+            )
+
+            (ok true)
         )
     )
 )
@@ -544,7 +560,7 @@
 ;; @param token-id The unique identifier for the token.
 ;; @param minter The address to be checked as a minter for the interchain token.
 (define-private (check-token-minter
-        (token-manager <token-manager-trait>)
+        (token-manager <mintable>)
         (token-id (buff 32))
         (minter principal)
     )

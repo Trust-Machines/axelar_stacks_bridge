@@ -27,14 +27,17 @@ import {
   isMinter,
   keccak256,
   mintNIT,
-  setupNIT,
   setupService,
-  setupTokenManager,
   transferMinterShip,
   transferSip010,
 } from "./its-utils";
 import { getSigners } from "./util";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+  tmMockParams,
+} from "./verification-util";
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
 const address2 = accounts.get("wallet_2")!;
@@ -69,13 +72,6 @@ describe("Interchain Token Service Full Flow", () => {
         contractAddress: "sample-sip-010",
       });
       const verificationParams = getTokenManagerMockCv();
-      expect(
-        setupTokenManager({
-          contract: `${address1}.${tmMockParams.name}`,
-          sender: address1,
-          operator: null,
-        }).result,
-      ).toBeOk(Cl.bool(true));
 
       setupService(proofSigners);
       const deployTx = registerCanonicalInterchainToken({
@@ -100,11 +96,9 @@ describe("Interchain Token Service Full Flow", () => {
                 name: Cl.stringAscii(name),
                 symbol: Cl.stringAscii(symbol),
                 decimals: Cl.uint(decimals),
-                minter: Cl.bufferFromHex(
-                  "0x",
-                ),
-              }),
-            ),
+                minter: Cl.bufferFromHex("0x"),
+              })
+            )
           ),
         });
         const deployRemoteTx = deployRemoteCanonicalInterchainToken({
@@ -114,7 +108,7 @@ describe("Interchain Token Service Full Flow", () => {
         expect(deployRemoteTx.result).toBeOk(Cl.bool(true));
 
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value),
+          deployRemoteTx.events.map((item) => item.data.raw_value)
         ).toContain(
           cvToHex(
             Cl.tuple({
@@ -123,15 +117,13 @@ describe("Interchain Token Service Full Flow", () => {
               name: Cl.stringAscii(name),
               symbol: Cl.stringAscii(symbol),
               decimals: Cl.uint(decimals),
-              minter: Cl.bufferFromHex(
-                "0x",
-              ),
+              minter: Cl.bufferFromHex("0x"),
               "destination-chain": Cl.stringAscii(chain),
-            }),
-          ),
+            })
+          )
         );
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value),
+          deployRemoteTx.events.map((item) => item.data.raw_value)
         ).toContain(
           cvToHex(
             Cl.tuple({
@@ -142,11 +134,11 @@ describe("Interchain Token Service Full Flow", () => {
               "destination-chain": Cl.stringAscii(TRUSTED_CHAIN),
               "destination-address": Cl.stringAscii(TRUSTED_ADDRESS),
               "payload-hash": Cl.buffer(keccak256(Cl.serialize(payload))),
-            }),
-          ),
+            })
+          )
         );
         expect(
-          deployRemoteTx.events.map((item) => item.data.raw_value),
+          deployRemoteTx.events.map((item) => item.data.raw_value)
         ).toContain(
           cvToHex(
             Cl.tuple(
@@ -155,9 +147,9 @@ describe("Interchain Token Service Full Flow", () => {
                 destinationContractAddress: TRUSTED_ADDRESS,
                 payload,
                 sender: Cl.address(`${deployer}.interchain-token-service`),
-              }),
-            ),
-          ),
+              })
+            )
+          )
         );
       }
     });
@@ -252,7 +244,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
             sender: Cl.address(`${deployer}.interchain-token-service`),
-          }),
+          })
         );
       });
     });
@@ -280,20 +272,6 @@ describe("Interchain Token Service Full Flow", () => {
     const tokenCap = 1e9;
     function deployNIT() {
       const verificationParams = getNITMockCv();
-      setupNIT({
-        tokenId,
-        minter: address1,
-        operator: address1,
-        sender: address1,
-        contract: `${address1}.${nitMockParams.name}`,
-      });
-      expect(
-        mintNIT({
-          minter: address1,
-          amount: tokenCap,
-          NITAddress: `${address1}.${nitMockParams.name}`,
-        }).result,
-      ).toBeOk(Cl.bool(true));
 
       const localDeployTx = factoryDeployInterchainToken({
         salt: originalSalt,
@@ -329,8 +307,8 @@ describe("Interchain Token Service Full Flow", () => {
                 symbol: Cl.stringAscii("NIT"),
                 decimals: Cl.uint(decimals),
                 minter: Cl.buffer(Cl.serialize(Cl.address(address1))),
-              }),
-            ),
+              })
+            )
           ),
         });
         const deployTx = factoryDeployRemoteInterchainToken({
@@ -381,7 +359,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
             sender: Cl.address(`${deployer}.interchain-token-service`),
-          }),
+          })
         );
       }
     });
@@ -471,7 +449,7 @@ describe("Interchain Token Service Full Flow", () => {
             destinationContractAddress: TRUSTED_ADDRESS,
             payload,
             sender: Cl.address(`${deployer}.interchain-token-service`),
-          }),
+          })
         );
       }
       it("Should send some tokens to another chain via ITS Hub", async () => {
@@ -492,10 +470,16 @@ describe("Interchain Token Service Full Flow", () => {
      */
     it("Should be able to change the token minter", async () => {
       expect(
-        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address1 }),
+        isMinter({
+          contract: `${address1}.${nitMockParams.name}`,
+          address: address1,
+        })
       ).toBeOk(Cl.bool(true));
       expect(
-        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address2 }),
+        isMinter({
+          contract: `${address1}.${nitMockParams.name}`,
+          address: address2,
+        })
       ).toBeOk(Cl.bool(false));
 
       let transferMinterTx = transferMinterShip({
@@ -514,10 +498,16 @@ describe("Interchain Token Service Full Flow", () => {
       expect(transferMinterTx.result).toBeOk(Cl.bool(true));
 
       expect(
-        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address1 }),
+        isMinter({
+          contract: `${address1}.${nitMockParams.name}`,
+          address: address1,
+        })
       ).toBeOk(Cl.bool(false));
       expect(
-        isMinter({ contract: `${address1}.${nitMockParams.name}`, address: address2 }),
+        isMinter({
+          contract: `${address1}.${nitMockParams.name}`,
+          address: address2,
+        })
       ).toBeOk(Cl.bool(true));
 
       expect(
@@ -525,7 +515,7 @@ describe("Interchain Token Service Full Flow", () => {
           minter: address1,
           amount: 100,
           NITAddress: `${address1}.${nitMockParams.name}`,
-        }).result,
+        }).result
       ).toBeErr(NIT_ERRORS["ERR-NOT-AUTHORIZED"]);
 
       const prevBalance = getSip010Balance({
@@ -537,7 +527,7 @@ describe("Interchain Token Service Full Flow", () => {
           minter: address2,
           amount: 100,
           NITAddress: `${address1}.${nitMockParams.name}`,
-        }).result,
+        }).result
       ).toBeOk(Cl.bool(true));
 
       const newBalance = getSip010Balance({
@@ -578,8 +568,8 @@ describe("Interchain Token Service Full Flow", () => {
       });
       expect(receiveTokenTx.result).toBeOk(
         Cl.buffer(
-          keccak256(Cl.serialize(Cl.stringAscii("its-execute-success"))),
-        ),
+          keccak256(Cl.serialize(Cl.stringAscii("its-execute-success")))
+        )
       );
 
       const [gmpValidateEvent, tokenMintEvent, tokenReceivedNotification] =
@@ -587,7 +577,7 @@ describe("Interchain Token Service Full Flow", () => {
       expect(gmpValidateEvent.data.value).toBeTuple({
         type: Cl.stringAscii("message-executed"),
         "command-id": Cl.buffer(
-          getCommandId({ sourceChain: TRUSTED_CHAIN, messageId }),
+          getCommandId({ sourceChain: TRUSTED_CHAIN, messageId })
         ),
         "message-id": Cl.stringAscii(messageId),
         "source-chain": Cl.stringAscii(TRUSTED_CHAIN),

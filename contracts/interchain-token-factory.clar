@@ -99,6 +99,9 @@
         (salt_ (buff 32))
         (token <native-interchain-token-trait>)
         (initial-supply uint)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
         (minter principal)
         (verification-params {
             nonce: (buff 8),
@@ -116,8 +119,8 @@
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
         (contract-call? itf-impl deploy-interchain-token gateway-impl
-            gas-service-impl its-impl salt_ token initial-supply minter
-            verification-params contract-caller
+            gas-service-impl its-impl salt_ token initial-supply name symbol
+            decimals minter verification-params contract-caller
         )
     )
 )
@@ -202,8 +205,8 @@
     )
     (begin
         (asserts! (is-correct-impl itf-impl) ERR-INVALID-IMPL)
-        (contract-call? itf-impl register-custom-token its-impl salt token token-manager-type operator
-            contract-caller
+        (contract-call? itf-impl register-custom-token its-impl salt token
+            token-manager-type operator contract-caller
         )
     )
 )

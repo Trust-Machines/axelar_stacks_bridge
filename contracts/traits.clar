@@ -135,6 +135,9 @@
             (buff 32)
             <native-interchain-token-trait>
             uint
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
             (optional principal)
             {
             nonce: (buff 8),
@@ -198,6 +201,32 @@
             (string-ascii 128)
             (string-ascii 128)
             <native-interchain-token-trait>
+            (buff 62000)
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (execute-link-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            <token-manager-trait>
+            (optional <native-interchain-token-trait>)
             (buff 62000)
             {
             nonce: (buff 8),
@@ -429,6 +458,27 @@
         ()
         (response bool uint)
     )
+    (setup
+        (
+            (buff 32)
+            uint
+            (optional principal)
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            (optional (string-utf8 256))
+            (optional principal)
+        )
+        (response bool uint)
+    )
+    (transfer-mintership
+        (principal)
+        (response bool uint)
+    )
+    (transfer-operatorship
+        (principal)
+        (response bool uint)
+    )
 ))
 
 (define-trait token-manager-trait (
@@ -496,6 +546,21 @@
         ()
         (response bool uint)
     )
+    (setup
+        (
+            principal
+            uint
+            (optional principal)
+        )
+        (response bool uint)
+    )
+))
+
+(define-trait mintable (
+    (is-minter
+        (principal)
+        (response bool uint)
+    )
 ))
 
 ;; TODO: write an axelar executable trait and contracts which interact with axelar should
@@ -556,6 +621,9 @@
             <interchain-token-service-trait>
             (buff 32)
             <native-interchain-token-trait>
+            uint
+            (string-ascii 32)
+            (string-ascii 32)
             uint
             principal
             {

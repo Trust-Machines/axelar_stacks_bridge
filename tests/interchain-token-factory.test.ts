@@ -3,9 +3,7 @@ import {
   buildOutgoingGMPMessage,
   itsImpl,
   keccak256,
-  setupNIT,
   setupService,
-  setupTokenManager,
 } from "./its-utils";
 import { BufferCV, Cl, randomBytes, ResponseOkCV } from "@stacks/transactions";
 import { gasImplContract, gatewayImplCV, getSigners } from "./util";
@@ -29,7 +27,12 @@ import {
   TRUSTED_ADDRESS,
   TRUSTED_CHAIN,
 } from "./constants";
-import { getNITMockCv, getTokenManagerMockCv, nitMockParams, tmMockParams } from "./verification-util";
+import {
+  getNITMockCv,
+  getTokenManagerMockCv,
+  nitMockParams,
+  tmMockParams,
+} from "./verification-util";
 
 const accounts = simnet.getAccounts();
 const address1 = accounts.get("wallet_1")!;
@@ -78,11 +81,6 @@ describe("interchain-token-factory", () => {
     });
     it("deploys a lock unlock token with its manager", () => {
       const verificationParams = getTokenManagerMockCv();
-      setupTokenManager({
-        contract: `${address1}.${tmMockParams.name}`,
-        operator: null,
-        sender: address1,
-      });
 
       // const tokenId = getCanonicalInterChainTokenId({}).value;
 
@@ -131,13 +129,6 @@ describe("interchain-token-factory", () => {
     });
     it("deploys a mint burn token", () => {
       const verificationParams = getNITMockCv();
-      setupNIT({
-        tokenId,
-        contract: `${address1}.${nitMockParams.name}`,
-        minter: address1,
-        operator: address1,
-        sender: address1,
-      });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
@@ -160,9 +151,6 @@ describe("interchain-token-factory", () => {
     });
 
     it("Should revert an interchain token deployment with the minter as interchainTokenService", () => {
-      setupNIT({
-        tokenId,
-      });
       const deployTx = factoryDeployInterchainToken({
         salt: randomBytes(32),
         sender: address1,
@@ -173,13 +161,6 @@ describe("interchain-token-factory", () => {
     });
     it("Should register a token if the mint amount is zero", () => {
       const verificationParams = getNITMockCv();
-      setupNIT({
-        tokenId,
-        contract: `${address1}.${nitMockParams.name}`,
-        minter: address1,
-        operator: address1,
-        sender: address1,
-      });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
@@ -193,13 +174,6 @@ describe("interchain-token-factory", () => {
     });
     it("Should register a token if the mint amount is zero and minter is the zero address", () => {
       const verificationParams = getNITMockCv();
-      setupNIT({
-        tokenId,
-        contract: `${address1}.${nitMockParams.name}`,
-        minter: BURN_ADDRESS,
-        operator: BURN_ADDRESS,
-        sender: address1,
-      });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,
@@ -214,13 +188,6 @@ describe("interchain-token-factory", () => {
 
     it("Should initiate a remote interchain token deployment without the same minter", () => {
       const verificationParams = getNITMockCv();
-      setupNIT({
-        tokenId,
-        minter: address1,
-        contract: `${address1}.${nitMockParams.name}`,
-        sender: address1,
-        operator: address1,
-      });
       const deployTx = factoryDeployInterchainToken({
         salt: originalSalt,
         sender: address1,

@@ -297,6 +297,9 @@
         (salt (buff 32))
         (token <native-interchain-token-trait>)
         (supply uint)
+        (name (string-ascii 32))
+        (symbol (string-ascii 32))
+        (decimals uint)
         (minter (optional principal))
         (verification-params {
             nonce: (buff 8),
@@ -314,8 +317,8 @@
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
         (contract-call? its-impl deploy-interchain-token gateway-impl
-            gas-service-impl salt token supply minter verification-params
-            contract-caller
+            gas-service-impl salt token supply name symbol decimals minter
+            verification-params contract-caller
         )
     )
 )
@@ -454,6 +457,38 @@
     )
 )
 
+(define-public (execute-link-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (its-impl <its-trait>)
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+        (source-address (string-ascii 128))
+        (token-manager <token-manager-trait>)
+        (native-token (optional <native-interchain-token-trait>))
+        (payload (buff 62000))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
+    )
+    (begin
+        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
+        (contract-call? its-impl execute-link-token gateway-impl
+            gas-service-impl source-chain message-id source-address token-manager
+            native-token
+            payload verification-params contract-caller
+        )
+    )
+)
 (define-public (register-custom-token
         (its-impl <its-trait>)
         (salt (buff 32))
@@ -463,8 +498,8 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl register-custom-token salt token token-manager-type link-params
-            contract-caller
+        (contract-call? its-impl register-custom-token salt token
+            token-manager-type link-params contract-caller
         )
     )
 )
@@ -557,7 +592,9 @@
     )
     (begin
         (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
-        (contract-call? its-impl dispatch gateway-impl gas-service-impl fn data contract-caller)
+        (contract-call? its-impl dispatch gateway-impl gas-service-impl fn data
+            contract-caller
+        )
     )
 )
 
