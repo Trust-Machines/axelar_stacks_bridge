@@ -547,67 +547,7 @@
     )
 )
 
-(define-private (native-interchain-token-checks
-        (token <native-interchain-token-trait>)
-        (minter principal)
-        (token-id (buff 32))
-        (supply uint)
-        (verification-params {
-            nonce: (buff 8),
-            fee-rate: (buff 8),
-            signature: (buff 65),
-            proof: {
-                tx-index: uint,
-                hashes: (list 14 (buff 32)),
-                tree-depth: uint,
-            },
-            tx-block-height: uint,
-            block-header-without-signer-signatures: (buff 800),
-        })
-        (deployer principal)
-    )
-    (let (
-            (token-address (contract-of token))
-            (contract-principal (try! (decode-contract-principal token-address)))
-        )
-        (asserts!
-            (or
-                (is-eq deployer NULL-ADDRESS)
-                (is-eq (get deployer contract-principal) deployer)
-            )
-            ERR-NOT-TOKEN-DEPLOYER
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-operator CA) ERR-TOKEN-NOT-DEPLOYED)
-            ERR-TOKEN-METADATA-OPERATOR-ITS-INVALID
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-flow-limiter CA)
-                ERR-TOKEN-NOT-DEPLOYED
-            )
-            ERR-TOKEN-METADATA-FLOW-LIMITER-ITS-INVALID
-        )
-        (asserts!
-            (unwrap! (contract-call? token is-minter CA) ERR-TOKEN-NOT-DEPLOYED)
-            ERR-TOKEN-METADATA-MINTER-ITS-INVALID
-        )
-        (asserts!
-            (is-eq TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN
-                (unwrap! (contract-call? token get-token-type)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-UNSUPPORTED-TOKEN-TYPE
-        )
-        (asserts!
-            (is-eq token-id
-                (unwrap! (contract-call? token get-token-id)
-                    ERR-TOKEN-NOT-DEPLOYED
-                ))
-            ERR-TOKEN-METADATA-TOKEN-ID-INVALID
-        )
-        (ok true)
-    )
-)
+
 ;; Used to deploy a native interchain token on stacks
 ;; @dev At least the `gas-value` amount of native token must be passed to the function call. `gas-value` exists because
 ;; validators will need to verify the contract code and parameters
@@ -678,14 +618,10 @@
             (get block-header-without-signer-signatures verification-params)
         ))
 
-        (try! (contract-call? token setup token-id (some minter-unpacked) name symbol
+        (try! (contract-call? token setup token-id u0 (some minter-unpacked) name symbol
             decimals none (some minter-unpacked)
         ))
 
-        ;; #[filter(verification-params, minter-unpacked, supply)]
-        (try! (native-interchain-token-checks token minter-unpacked token-id supply
-            verification-params deployer
-        ))
         (asserts!
             (unwrap!
                 (insert-token-manager token-id token-address
@@ -811,14 +747,10 @@
                 (get block-header-without-signer-signatures verification-params)
             ))
             (try! (contract-call? token setup (get token-id payload-decoded)
+            u0
                 (some minter) (get name payload-decoded)
                 (get symbol payload-decoded) (get decimals payload-decoded)
                 none (some minter)
-            ))
-
-            ;; #[filter(verification-params, caller)]
-            (try! (native-interchain-token-checks token minter token-id u0
-                verification-params caller
             ))
             (asserts!
                 (unwrap! (contract-call? token is-operator minter)

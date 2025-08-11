@@ -332,6 +332,7 @@ export async function setupNIT() {
     functionName: "setup",
     functionArgs: [
       Cl.buffer(tokenId),
+      Cl.uint(0), // token type
       Cl.none(),
       Cl.stringAscii("NIT-OCV"),
       Cl.stringAscii("NIV"),
@@ -504,29 +505,29 @@ export function deserializeRawBlockTxs(
 }
 
 export const nitMockParams = {
-  "sig": "001fc0c474dd5721399c77e3cababfc4491260aaa7b178dc5362aa5fd85f1758ca30eb5106411d76f1d656aa610a741c6b3d0a8a0b4afc1e469938149e1032880d",
+  "sig": "010fbb83fb78c47bbfa6db2fbe77d6e7239f3b2055ee22e3be881322c49e72171024c83a0902907e9b05442f4832bdcfea3a9030014e477db00e1f5a5f3f94fcdb",
   "txIndex": 0,
-  "nonce": 15,
+  "nonce": 19,
   "feeRate": "65536",
-  "name": "native-interchain-token-1754664742908",
+  "name": "native-interchain-token-1754915803930",
   "deployer": "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
   "txIds": [
-    "c277246e7b063652efa72902055f2b02615d7efffae8b6201eeda877173c9f2a"
+    "21eb7beccb18bea9fa081fd104480f5455c746a27a9af9027ebfbcebdce3b3a7"
   ],
-  "blockHeight": 3509058,
-  "blockHeader": "000000000000358b42000000005b222b70dfdcc360af1a88c614b878a99eb6ef522d20450f68a9a898d4fbed1c1a506d6203020b55de8f9ca5b8b51190c5812f202b851a8ee590c1b422e1661202eb59bcc5b2be68a1b6a62ce72101a7ee76788cbe04f98933c3536eedc082d66a71df3ad8340701b50e68e2cde4bb7f5aa83327a6c29d1b0000000068960f2900e6bdb7ca4786be21fda618af8eebc38749b1f83c8664c2e696730d00b626170b73f332b18c4885b43097bb4fe09ee9be90e9896b785d18341ea3c98c57ede079013200000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff03"
+  "blockHeight": 3513015,
+  "blockHeader": "000000000000359ab7000000005c61b050767557598fd498b8d68d2d5bb57997485de86317b06b6088762ee304347b45c5da8041755474e22e17ebfec0f070c84d14f394f3118bf12f8a14c1663775e456c19f5e17f61d18e0aa0b8747e02b8a46dfdadb506631173bfa620c3e1978034f0d9a91e56ac3fbf9e90fce81886544b70412c05b000000006899e3df01d94b46bcace333496871f51e6672e2ecc895b630516b5430e54bb9c6f4b0cdab78d72723c5af4051ba9a5bd87b69568e8c1e3096b45610d5e55d1afab8a0fe8f013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f"
 };
 
 export const tmMockParams = {
-  "sig": "013e2c2d64e633a0f6e402c4cab587cfb882bfdeb9faf827e9d941a5430e4456b7278390a21cbd644cb9d5803a5cd89542a2fd4025b0f98446f38fe83e2479a0f3",
+  "sig": "0000ab6eeea5a1211fdd9b5b26a3c27b72c26a328c12aa0c9dd98a5631facfe71e2292c8496e7a81e94ce85d3eee13d278c18c33eb39dafc3fc1c7ece6df6dc0f8",
   "txIndex": 0,
-  "nonce": 16,
+  "nonce": 20,
   "feeRate": "65536",
-  "name": "token-manager-1754664742908",
+  "name": "token-manager-1754915803930",
   "deployer": "ST2FY0JS5R1CRVJXQ2SAX74TYYQXK90FJZRK4R880",
   "txIds": [
-    "6c486c388d4c0003913e6bb1e963174304a1006e0ee2065626dfeb6f26d9234e"
+    "d06a2ff0193c82b1b894fd261b18bd54eeb665bab7cb37efaf0a76958eb8a285"
   ],
-  "blockHeight": 3509060,
-  "blockHeader": "000000000000358b44000000005b222b70dfdcc360af1a88c614b878a99eb6ef522d20450fc8dacd6336d1d57ae4e53fe0778b8ac6a01e0f03a6e7f0809d783f804f579d6d0e83fa03f3b70bfa5be952ea538403dd703372d8b4b5a402c8caa9210aec0fb3aee6846bcb4294cc95193075ebe755aac393444422dfb3b273cd006a3d320b650000000068960f3001b2f02096cce838330ded4164bf5cdb817576ebde11aa1e67b268422284cee0250e5160f6e4d67e2c881ed5ebf3db64f5cdb0d135b07905eceba93b70b6487e4f013200000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff03"
+  "blockHeight": 3513016,
+  "blockHeader": "000000000000359ab8000000005c61b050767557598fd498b8d68d2d5bb57997485de863173baaddcf2d78504240b60c3bc06d7737037bb092f243bce0709749acd3969a12a3000258a147512b4c94ebd680c7c51185c82bdc6ca810b4a03600887f64f9990c7262cfe0ef93657c06044946c7d6dd33f6abc98eb42c2603c991f285a1271f000000006899e3e80111a4d1d70ecc0d9b439dc18424bc3d7cc007f9f34522d54837ebb14db7ab126716148e07fcb484643f6162f5b44926e71bfa59263270f8bfc440c60c64a9a458013400000027ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f"
 };

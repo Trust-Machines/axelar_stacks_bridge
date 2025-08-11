@@ -669,6 +669,7 @@ export function getSip010Balance({
 
 export function setupNIT({
   tokenId,
+  tokenType = 0,
   minter,
   operator,
   name = "Nitter",
@@ -677,6 +678,7 @@ export function setupNIT({
   sender = deployer,
 }: {
   tokenId: BufferCV;
+  tokenType?: number;
   minter?: string;
   operator?: string;
   name?: string;
@@ -690,6 +692,8 @@ export function setupNIT({
     [
       // (token-id_ (buff 32))
       tokenId,
+      // (token-type_ uint)
+      Cl.uint(tokenType),
       // (operator-address (optional principal))
       operator ? Cl.some(Cl.address(operator)) : Cl.none(),
       // (name_ (string-ascii 32))

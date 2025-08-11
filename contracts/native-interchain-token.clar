@@ -84,6 +84,7 @@
 ;; constants
 ;;
 (define-constant TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN u0)
+(define-constant TOKEN-TYPE-MINT-BURN u4)
 
 ;; ##########################
 ;; ##########################
@@ -370,9 +371,12 @@
 (define-read-only (get-is-started)
     (ok (var-get is-started))
 )
+(define-data-var token-type (optional uint) none)
+
 
 (define-public (setup
         (token-id_ (buff 32))
+        (token-type_ uint)
         (operator-address (optional principal))
         (name_ (string-ascii 32))
         (symbol_ (string-ascii 32))
@@ -384,10 +388,17 @@
         (asserts! (is-eq contract-caller (get-its-impl)) ERR-NOT-AUTHORIZED)
         (asserts! (not (var-get is-started)) ERR-STARTED)
         (asserts! (> (len token-id_) u0) ERR-INVALID-PARAMS)
+        (asserts! (or 
+            (is-eq token-type_ TOKEN-TYPE-NATIVE-INTERCHAIN-TOKEN)
+            (is-eq token-type_ TOKEN-TYPE-MINT-BURN))
+            ERR-UNSUPPORTED-TOKEN-TYPE
+        )
         (asserts! (> (len name_) u0) ERR-INVALID-PARAMS)
         (asserts! (> (len symbol_) u0) ERR-INVALID-PARAMS)
         (asserts! (not (is-eq minter-unpacked (get-its-impl))) ERR-INVALID-PARAMS)
         (var-set is-started true)
+        ;; #[allow(unchecked_data)]
+        (var-set token-type (some token-type_))
         (match operator-address
             op (begin
                 (asserts! (is-standard op) ERR-NON-STANDARD-ADDRESS)

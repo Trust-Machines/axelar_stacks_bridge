@@ -435,6 +435,7 @@
     (setup
         (
             (buff 32)
+            uint
             (optional principal)
             (string-ascii 32)
             (string-ascii 32)
