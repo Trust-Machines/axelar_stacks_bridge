@@ -218,6 +218,32 @@
         )
         (response bool uint)
     )
+    (execute-link-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            <token-manager-trait>
+            (optional <native-interchain-token-trait>)
+            (buff 62000)
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
     (execute-receive-interchain-token
         (
             <gateway-trait>

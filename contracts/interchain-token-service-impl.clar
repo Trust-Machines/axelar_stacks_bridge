@@ -830,6 +830,31 @@
     (ok (unwrap! (get-token-info token-id) ERR-TOKEN-NOT-FOUND))
 )
 
+(define-public (execute-link-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+        (source-address (string-ascii 128))
+        (token-manager <token-manager-trait>)
+        (native-token (optional <native-interchain-token-trait>))
+        (payload (buff 62000))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
+        (caller principal)
+    )
+    ERR-NOT-IMPLEMENTED)
+
 ;; Initiates an interchain transfer of a specified token to a destination chain.
 ;; @dev The function retrieves the TokenManager associated with the token-id.
 ;; @param gateway-impl the gateway implementation contract address.

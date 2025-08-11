@@ -457,6 +457,38 @@
     )
 )
 
+(define-public (execute-link-token
+        (gateway-impl <gateway-trait>)
+        (gas-service-impl <gas-service-trait>)
+        (its-impl <its-trait>)
+        (source-chain (string-ascii 20))
+        (message-id (string-ascii 128))
+        (source-address (string-ascii 128))
+        (token-manager <token-manager-trait>)
+        (native-token (optional <native-interchain-token-trait>))
+        (payload (buff 62000))
+        (verification-params {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        })
+    )
+    (begin
+        (asserts! (is-correct-impl its-impl) ERR-INVALID-IMPL)
+        (contract-call? its-impl execute-link-token gateway-impl
+            gas-service-impl source-chain message-id source-address token-manager
+            native-token
+            payload verification-params contract-caller
+        )
+    )
+)
 (define-public (register-custom-token
         (its-impl <its-trait>)
         (salt (buff 32))
