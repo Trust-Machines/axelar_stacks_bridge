@@ -1,0 +1,783 @@
+(define-trait proxy-trait (
+    (set-impl
+        (principal)
+        (response bool uint)
+    )
+    (set-owner
+        (principal)
+        (response bool uint)
+    )
+))
+
+(define-trait gateway-trait (
+    (call-contract
+        ((string-ascii 20) (string-ascii 128) (buff 64000) principal)
+        (response bool uint)
+    )
+    (approve-messages
+        ((buff 4096) (buff 16384))
+        (response (list 10 (response bool uint)) uint)
+    )
+    (validate-message
+        ((string-ascii 20) (string-ascii 128) (string-ascii 128) (buff 32) principal)
+        (response bool uint)
+    )
+    (is-message-approved
+        ((string-ascii 20) (string-ascii 128) (string-ascii 128) principal (buff 32))
+        (response bool uint)
+    )
+    (is-message-executed
+        ((string-ascii 20) (string-ascii 128))
+        (response bool uint)
+    )
+    (rotate-signers
+        ((buff 8192) (buff 16384))
+        (response bool uint)
+    )
+    (transfer-operatorship
+        (principal principal)
+        (response bool uint)
+    )
+    (dispatch
+        ((string-ascii 32) (buff 65000))
+        (response bool uint)
+    )
+))
+
+(define-trait interchain-token-executable-trait (
+    (execute-with-interchain-token
+        (
+            ;; sourceChain,
+            ;; messageId,
+            ;; sourceAddress,
+            ;; data,
+            ;; tokenId,
+            ;; tokenAddress,
+            ;; amount
+            (string-ascii 20)
+            (string-ascii 128)
+            (buff 128)
+            (buff 64000)
+            (buff 32)
+            principal
+            uint
+            ;; must return keccak256('its-execute-success')
+        )
+        (response (buff 32) uint)
+    )
+))
+
+(define-trait interchain-token-service-trait (
+    (set-paused
+        (bool principal)
+        (response bool uint)
+    )
+    (transfer-operatorship
+        (principal principal)
+        (response bool uint)
+    )
+    (transfer-ownership
+        (principal principal)
+        (response bool uint)
+    )
+    (set-trusted-address
+        ((string-ascii 20) (string-ascii 128) principal)
+        (response bool uint)
+    )
+    (remove-trusted-address
+        ((string-ascii 20) principal)
+        (response bool uint)
+    )
+    (deploy-token-manager
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (buff 32)
+            (string-ascii 20)
+            uint
+            (buff 62000)
+            <token-manager-trait>
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-remote-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (buff 32)
+            (string-ascii 20)
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            (buff 128)
+            uint
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (buff 32)
+            <native-interchain-token-trait>
+            uint
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            (optional principal)
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (interchain-transfer
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <token-manager-trait>
+            <sip-010-trait>
+            (buff 32)
+            (string-ascii 20)
+            (buff 128)
+            uint
+            {
+            version: uint,
+            data: (buff 62000),
+        }
+            uint
+            principal
+        )
+        (response bool uint)
+    )
+    (call-contract-with-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <token-manager-trait>
+            <sip-010-trait>
+            (buff 32)
+            (string-ascii 20)
+            (buff 128)
+            uint
+            {
+            version: uint,
+            data: (buff 62000),
+        }
+            uint
+            principal
+        )
+        (response bool uint)
+    )
+    (execute-deploy-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            <native-interchain-token-trait>
+            (buff 62000)
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (execute-link-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            <token-manager-trait>
+            (optional <native-interchain-token-trait>)
+            (buff 62000)
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (execute-receive-interchain-token
+        (
+            <gateway-trait>
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            <token-manager-trait>
+            <sip-010-trait>
+            (buff 64000)
+            (optional <interchain-token-executable-trait>)
+            principal
+        )
+        (response (buff 32) uint)
+    )
+    (link-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (buff 32)
+            (string-ascii 20)
+            (buff 128)
+            uint
+            (buff 65000)
+            uint
+            principal
+        )
+        (response (buff 32) uint)
+    )
+    (register-custom-token
+        (
+            (buff 32)
+            <sip-010-trait>
+            uint
+            (buff 65000)
+            principal
+        )
+        (response (buff 32) uint)
+    )
+    (register-token-metadata
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <sip-010-trait>
+            uint
+            principal
+        )
+        (response bool uint)
+    )
+    (set-flow-limit
+        ((buff 32) <token-manager-trait> uint principal)
+        (response bool uint)
+    )
+    (valid-token-address
+        ((buff 32))
+        (
+            response             {
+            manager-address: principal,
+            token-type: uint,
+        }
+            uint
+        )
+    )
+    (dispatch
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            (string-ascii 32)
+            (buff 65000)
+            principal
+        )
+        (response bool uint)
+    )
+    (interchain-token-id
+        (principal (buff 32))
+        (response (buff 32) uint)
+    )
+))
+
+(define-trait sip-010-trait (
+    (transfer
+        (uint principal principal (optional (buff 34)))
+        (response bool uint)
+    )
+    (get-name
+        ()
+        (response (string-ascii 32) uint)
+    )
+    (get-symbol
+        ()
+        (response (string-ascii 32) uint)
+    )
+    (get-decimals
+        ()
+        (response uint uint)
+    )
+    (get-balance
+        (principal)
+        (response uint uint)
+    )
+    (get-total-supply
+        ()
+        (response uint uint)
+    )
+    (get-token-uri
+        ()
+        (response (optional (string-utf8 256)) uint)
+    )
+))
+
+(define-trait native-interchain-token-trait (
+    (transfer
+        (uint principal principal (optional (buff 34)))
+        (response bool uint)
+    )
+    (get-name
+        ()
+        (response (string-ascii 32) uint)
+    )
+    (get-symbol
+        ()
+        (response (string-ascii 32) uint)
+    )
+    (get-decimals
+        ()
+        (response uint uint)
+    )
+    (get-balance
+        (principal)
+        (response uint uint)
+    )
+    (get-total-supply
+        ()
+        (response uint uint)
+    )
+    (get-token-uri
+        ()
+        (response (optional (string-utf8 256)) uint)
+    )
+    (add-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (remove-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (get-flow-limiters
+        ()
+        (response (list 50 principal) uint)
+    )
+    (is-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (get-flow-limit
+        ()
+        (response uint uint)
+    )
+    (set-flow-limit
+        (uint)
+        (response bool uint)
+    )
+    (get-flow-out-amount
+        ()
+        (response uint uint)
+    )
+    (get-flow-in-amount
+        ()
+        (response uint uint)
+    )
+    (take-token
+        (<sip-010-trait> principal uint)
+        (response bool uint)
+    )
+    (give-token
+        (<sip-010-trait> principal uint)
+        (response bool uint)
+    )
+    (get-token-address
+        ()
+        (response principal uint)
+    )
+    (get-token-type
+        ()
+        (response uint uint)
+    )
+    (is-minter
+        (principal)
+        (response bool uint)
+    )
+    (get-operators
+        ()
+        (response (list 2 principal) principal)
+    )
+    (is-operator
+        (principal)
+        (response bool uint)
+    )
+    (get-token-id
+        ()
+        (response (buff 32) uint)
+    )
+    (mint
+        (principal uint)
+        (response bool uint)
+    )
+    (burn
+        (principal uint)
+        (response bool uint)
+    )
+    (get-is-started
+        ()
+        (response bool uint)
+    )
+    (setup
+        (
+            (buff 32)
+            uint
+            (optional principal)
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            (optional (string-utf8 256))
+            (optional principal)
+        )
+        (response bool uint)
+    )
+    (transfer-mintership
+        (principal)
+        (response bool uint)
+    )
+    (transfer-operatorship
+        (principal)
+        (response bool uint)
+    )
+))
+
+(define-trait token-manager-trait (
+    (add-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (remove-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (is-flow-limiter
+        (principal)
+        (response bool uint)
+    )
+    (get-flow-limiters
+        ()
+        (response (list 50 principal) uint)
+    )
+    (get-flow-limit
+        ()
+        (response uint uint)
+    )
+    (set-flow-limit
+        (uint)
+        (response bool uint)
+    )
+    (get-flow-out-amount
+        ()
+        (response uint uint)
+    )
+    (get-flow-in-amount
+        ()
+        (response uint uint)
+    )
+    (take-token
+        (<sip-010-trait> principal uint)
+        (response bool uint)
+    )
+    (give-token
+        (<sip-010-trait> principal uint)
+        (response bool uint)
+    )
+    (get-token-address
+        ()
+        (response principal uint)
+    )
+    (get-token-type
+        ()
+        (response uint uint)
+    )
+    (is-minter
+        (principal)
+        (response bool uint)
+    )
+    (get-operators
+        ()
+        (response (list 2 principal) principal)
+    )
+    (is-operator
+        (principal)
+        (response bool uint)
+    )
+    (get-is-started
+        ()
+        (response bool uint)
+    )
+    (setup
+        (
+            principal
+            uint
+            (optional principal)
+        )
+        (response bool uint)
+    )
+))
+
+(define-trait mintable (
+    (is-minter
+        (principal)
+        (response bool uint)
+    )
+))
+
+;; TODO: write an axelar executable trait and contracts which interact with axelar should
+
+(define-trait axelar-executable (
+    (execute
+        (
+            (string-ascii 20)
+            (string-ascii 128)
+            (string-ascii 128)
+            (buff 64000)
+            <gateway-trait>
+        )
+        (response bool uint)
+    )
+))
+
+(define-trait interchain-token-factory-trait (
+    (register-canonical-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            <sip-010-trait>
+            <token-manager-trait>
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-remote-canonical-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            <sip-010-trait>
+            (string-ascii 20)
+            uint
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (buff 32)
+            <native-interchain-token-trait>
+            uint
+            (string-ascii 32)
+            (string-ascii 32)
+            uint
+            principal
+            {
+            nonce: (buff 8),
+            fee-rate: (buff 8),
+            signature: (buff 65),
+            proof: {
+                tx-index: uint,
+                hashes: (list 14 (buff 32)),
+                tree-depth: uint,
+            },
+            tx-block-height: uint,
+            block-header-without-signer-signatures: (buff 800),
+        }
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-remote-interchain-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (buff 32)
+            principal
+            (string-ascii 20)
+            uint
+            <sip-010-trait>
+            <token-manager-trait>
+            principal
+        )
+        (response bool uint)
+    )
+    (dispatch
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (string-ascii 32)
+            (buff 65000)
+            principal
+        )
+        (response bool uint)
+    )
+    (deploy-remote-interchain-token-with-minter
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (buff 32)
+            principal
+            (string-ascii 20)
+            (optional (buff 128))
+            uint
+            <sip-010-trait>
+            <token-manager-trait>
+            principal
+        )
+        (response bool uint)
+    )
+    (link-token
+        (
+            <gateway-trait>
+            <gas-service-impl-trait>
+            <interchain-token-service-trait>
+            (buff 32)
+            (string-ascii 20)
+            (buff 32)
+            uint
+            (buff 65000)
+            uint
+            principal
+        )
+        (response (buff 32) uint)
+    )
+    (register-custom-token
+        (
+            <interchain-token-service-trait>
+            (buff 32)
+            <sip-010-trait>
+            uint
+            principal
+            principal
+        )
+        (response (buff 32) uint)
+    )
+    (approve-deploy-remote-interchain-token
+        (
+            <interchain-token-service-trait>
+            principal
+            (buff 32)
+            (string-ascii 20)
+            (buff 128)
+            <native-interchain-token-trait>
+            principal
+        )
+        (response bool uint)
+    )
+    (revoke-deploy-remote-interchain-token
+        (
+            <interchain-token-service-trait>
+            principal
+            (buff 32)
+            (string-ascii 20)
+            principal
+        )
+        (response bool uint)
+    )
+))
+
+;; Add this new trait for gas service implementation
+(define-trait gas-service-impl-trait (
+    (pay-native-gas-for-contract-call
+        (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal)
+        (response bool uint)
+    )
+    (add-native-gas
+        (uint (buff 32) uint principal)
+        (response bool uint)
+    )
+    (refund
+        ((buff 32) uint principal uint)
+        (response bool uint)
+    )
+    (collect-fees
+        (principal uint)
+        (response bool uint)
+    )
+    (get-balance
+        ()
+        (response uint uint)
+    )
+    (transfer-ownership
+        (principal)
+        (response bool uint)
+    )
+    (transfer-gas-collector
+        (principal)
+        (response bool uint)
+    )
+    (pay-gas-for-contract-call
+        (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal)
+        (response bool uint)
+    )
+    (add-gas
+        (uint principal (buff 32) uint principal)
+        (response bool uint)
+    )
+    (pay-native-gas-for-express-call
+        (uint principal (string-ascii 20) (string-ascii 128) (buff 64000) principal)
+        (response bool uint)
+    )
+    (add-native-express-gas
+        (uint principal (buff 32) uint principal)
+        (response bool uint)
+    )
+))
